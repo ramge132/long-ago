@@ -38,5 +38,5 @@ out/
 
 .env
 
-/resources/templates/
+src/main/resources/templates/
 
