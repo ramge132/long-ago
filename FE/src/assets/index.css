@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "HS유지체";
+  src: url("@/assets/fonts/HS유지체.ttf") format("truetype");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "MAKGEOLLI";
+  src: url("@/assets/fonts/MAKGEOLLI.ttf") format("truetype");
+  font-weight: 400;
+}
+
+body {
+  font-family: "HS유지체", "MAKGEOLLI", sans-serif;
+  font-weight: 400; /* 기본 Regular 설정 */
+}
