@@ -3,8 +3,10 @@ package com.example.b101.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,10 +20,17 @@ public class Book {
     @GeneratedValue
     private long id;
 
-
     private String title;
 
-    @ManyToOne
-    private List<Author> authorList = new ArrayList<>();
+    @OneToMany(mappedBy = "book")
+    private List<Author> authors = new ArrayList<>();
+
+    private int viewCnt;
+
+    private int likeCnt;
+
+    @CreatedDate
+    private LocalDateTime createdAt;
+
 
 }
