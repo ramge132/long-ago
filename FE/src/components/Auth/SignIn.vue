@@ -2,34 +2,29 @@
   <div>
     <form
       @submit.prevent="signin"
-      class="w-full flex flex-col items-center mb-12 gap-y-2"
+      class="w-full flex flex-col items-center gap-y-1 font-hs text-sm"
       novalidate
     >
-      <p class="text-2xl">로그인</p>
-
-      <!-- 닉네임 입력 -->
       <div class="relative w-4/5 group">
-        <label for="steam-id" class="text-gray-500 font-semibold">닉네임</label>
+        <label for="id">아이디</label>
         <input
           v-model="id"
           type="text"
-          id="steam-id"
+          id="id"
           placeholder=" "
           required
           class="h-4 w-full p-3 border-2 border-gray-300 rounded-md text-base text-black focus:outline-none focus:ring-2 focus:ring-[#E5E091] focus:border-[#E5E091]"
           :class="id ? 'ring-2 ring-[#E5E091] border-[#E5E091]' : ''"
           autocomplete="off"
         />
-        <p v-if="validation.idError" class="text-red-500 text-xs mt-1">
+        <p v-if="validation.idError" class="text-red-900 text-xs mt-1">
           {{ validation.idError }}
         </p>
       </div>
 
       <!-- 비밀번호 입력 -->
       <div class="relative w-4/5 group">
-        <label for="password" class="text-gray-500 font-semibold"
-          >비밀번호</label
-        >
+        <label for="password">비밀번호</label>
         <input
           v-model="password"
           type="password"
@@ -40,7 +35,7 @@
           :class="password ? 'ring-2 ring-[#E5E091] border-[#E5E091]' : ''"
           autocomplete="off"
         />
-        <p v-if="validation.pwError" class="text-red-500 text-xs mt-1">
+        <p v-if="validation.pwError" class="text-red-900 text-xs mt-1">
           {{ validation.pwError }}
         </p>
       </div>
@@ -48,7 +43,7 @@
       <!-- 구글 로그인 -->
       <div
         id="google-login-button"
-        class="w-4/5 flex items-center justify-center"
+        class="flex items-center justify-center cursor-pointer h-5"
       ></div>
 
       <!-- 카카오 로그인 -->
@@ -59,17 +54,11 @@
         @click="kakaoRegister"
         /> -->
 
-      <!-- 회원가입/비밀번호 찾기 -->
-      <div class="text-sm">
-        <span
-          @click="emit('register')"
-          class="cursor-pointer text-gray-600 hover:text-black"
-          >회원가입</span
-        >
-        |
+      <!-- 비밀번호 찾기 -->
+      <div>
         <span
           @click="findMyPassword"
-          class="cursor-pointer text-gray-600 hover:text-black"
+          class="cursor-pointer text-gray-300 hover:text-black"
           >비밀번호 찾기</span
         >
       </div>
@@ -77,7 +66,7 @@
       <!-- 로그인 버튼 -->
       <button
         type="submit"
-        class="absolute bottom-0 w-full h-12 bg-[#505050] text-white py-2 font-semibold hover:bg-[#E5E091] hover:text-black transition-all rounded-b-3xl"
+        class="w-2/5 h-8 bg-[#505050] text-white py-2 font-semibold hover:bg-[#E5E091] hover:text-black transition-all rounded cursor-pointer"
       >
         로그인
       </button>
@@ -87,6 +76,8 @@
 
 <script setup>
 import { ref, onMounted, defineEmits } from "vue";
+import { postSignIn } from "@/apis/auth";
+import toast from "@/functions/toast";
 // import kakao from "@/assets/icons/kakao.png";
 
 const id = ref("");
@@ -96,13 +87,7 @@ const validation = ref({
   pwError: "",
 });
 
-const emit = defineEmits(["register"]);
-
-const signin = async () => {
-  if (authValidation()) {
-    console.log("로그인 시도");
-  }
-};
+const emit = defineEmits(["signIn"]);
 
 // const kakaoRegister = () => {
 //   console.log("카카오 로그인");
@@ -141,6 +126,23 @@ const jwtDecode = (token) => {
   return JSON.parse(jsonPayload);
 };
 
+const signin = async () => {
+  if (authValidation) {
+    try {
+      const response = await postSignIn({
+        email: id.value,
+        password: password.value,
+      });
+      toast.successToast(`반갑습니다. ${id.value}님!`);
+      emit("signIn", id.value);
+      console.log(response);
+    } catch (error) {
+      console.log("에러", error);
+      toast.errorToast("error");
+    }
+  }
+};
+
 /* global google */
 onMounted(() => {
   const script = document.createElement("script");
@@ -153,7 +155,7 @@ onMounted(() => {
     });
     google.accounts.id.renderButton(
       document.getElementById("google-login-button"),
-      { theme: "outline", size: "large", width: "100%" },
+      { theme: "outline", size: "small", width: "158" },
     );
   };
   document.head.appendChild(script);
