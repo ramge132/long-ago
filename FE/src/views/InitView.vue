@@ -1,14 +1,14 @@
 <template>
-  <div class="w-[100%] h-[100%] flex justify-between">
-    <div class="flex flex-col items-center justify-center w-[45%]">
+  <div class="h-full grid grid-cols-5 justify-between">
+    <div class="col-span-2 flex flex-col items-center justify-center">
       <div class="relative mb-5">
         <div
-          class="rounded-full border border-black w-[120px] h-[120px] overflow-hidden"
+          class="rounded-full border border-black w-44 overflow-hidden"
         >
           <img :src="currentProfile" alt="프로필" />
         </div>
         <div
-          class="absolute bottom-0 right-2 w-[25px] h-[25px] rounded-full bg-gray-200 flex justify-center items-center cursor-pointer"
+          class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-gray-200 flex justify-center items-center cursor-pointer"
           @click="refresh"
         >
           <img
@@ -18,7 +18,7 @@
           />
         </div>
       </div>
-      <div class="flex flex-col mb-10">
+      <div class="flex text-xl flex-col mb-10">
         <label for="">닉네임</label>
         <input
           type="text"
@@ -27,57 +27,46 @@
         />
       </div>
     </div>
-    <div
-      class="w-[50%] pb-5 pl-5 pr-5"
-    >
-      <div class="rounded-xl border  flex flex-col justify-between border-black p-5">
+      <div class="col-span-3 rounded-xl border  flex flex-col justify-between p-5 bg-[#ffffff60] m-10">
         <div class="text-center">
           <h1 class="text-2xl basis-1 my">플레이 방법</h1>
         </div>
-        <div class="border border-dotted border-black rounded-3xl h-[60%]">
+        <div class="border-dotted border-[5px] border-[#00000030] rounded-3xl h-[70%]">
           <swiper class="h-[100%]"
-          :modules="modules"
-      :slides-per-view="1"
-      :space-between="1"
-      :centered-slides="true"
-      navigation  
-      :loop="true"
-      :pagination="pagination"
-      @swiper="onSwiper"
-      @slideChange="onSlideChange"
-    >
-      <swiper-slide v-for="slide in ruleSlides" :key="slide.no" class="p-5 h-[100%]">
-        <div class="flex flex-col items-center h-[100%]">
-          <div class="h-[50%]">
-            <img :src="slide.image" alt="규칙 이미지" class="h-[100%]">
-          </div>
-          <div class="h-[50%] flex flex-col">
-            <p class="self-center font-bold text-xl">{{ slide.title }}</p>
-            <p v-html="slide.text"></p>
-          </div>
+            :modules="modules"
+            :slides-per-view="1"
+            :space-between="1"
+            :centered-slides="true"
+            navigation  
+            :loop="true"
+            :autoplay="{
+              delay: 5000,
+              disableOnInteraction: false,
+            }"
+            :pagination="pagination"
+            @swiper="onSwiper"
+            @slideChange="onSlideChange"
+          >
+            <swiper-slide v-for="slide in ruleSlides" :key="slide.no" class="px-5 py-1 h-[100%]">
+              <div class="flex flex-col items-center h-[100%]">
+                <div class="h-[50%]">
+                  <img :src="slide.image" alt="규칙 이미지" class="h-full max-h-32">
+                </div>
+                <div class="h-[50%] flex flex-col">
+                  <p class="self-center font-bold text-xl">{{ slide.title }}</p>
+                  <p v-html="slide.text" class="text-md"></p>
+                </div>
+              </div>
+            </swiper-slide>
+          </swiper>
         </div>
-      </swiper-slide>
-      
-    </swiper>
+        <div class="flex justify-center cursor-pointer transition-all duration-300 hover:scale-110">
+          <img :src="gameStart" alt="시작하기" class=" h-10">
         </div>
-        <div class="flex justify-center basis-1">
-          <img :src="gameStart" alt="시작하기">
-        </div>
-        
       </div>
     </div>
-  </div>
 </template>
 <script setup>
-import Profile1 from "@/assets/images/profiles/profile1.svg";
-import Profile2 from "@/assets/images/profiles/profile2.svg";
-import Profile3 from "@/assets/images/profiles/profile3.svg";
-import Profile4 from "@/assets/images/profiles/profile4.svg";
-import Profile5 from "@/assets/images/profiles/profile5.svg";
-import Profile6 from "@/assets/images/profiles/profile6.svg";
-import gameStart from "@/assets/images/gameStart.svg";
-import rule1 from "@/assets/images/rules/rule1.svg";
-import rule2 from "@/assets/images/rules/rule2.svg";
 import { ref, onMounted } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import 'swiper/css';
@@ -85,6 +74,10 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import { Profile1, Profile2, Profile3, Profile4, Profile5, Profile6, gameStart, rule1, rule2 } from "@/assets";
+import { useUserStore } from "@/stores/auth";
+
+const userStore = useUserStore();
 const nickname = ref("닉네임");
 
 const profiles = ref([
@@ -111,7 +104,20 @@ const refresh = () => {
 };  
 
 onMounted(() => {
-  nickname.value = JSON.parse(localStorage.getItem("userData")).nickname;
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  if (userData && userData.nickname) {
+    nickname.value = userData.nickname;
+  } else {
+    // 랜덤한 Guest_XXXXX 생성
+    const randomGuest = `이야기꾼_${Math.floor(10000 + Math.random() * 90000)}`;
+    nickname.value = randomGuest;
+
+    console.log(userStore.userData);
+
+    // localStorage에 저장
+    // const newUserData = { ...userData, nickname: randomGuest };
+    // localStorage.setItem("userData", JSON.stringify(newUserData));
+  }
 });
 
 const modules = ref([Navigation, Pagination, Autoplay]);
@@ -160,10 +166,12 @@ const pagination = {
   position: relative;
 }
 .swiper-pagination-bullet-active {
-  background: #0080FF;
+  background: #E5E091;
+  border: 1px solid black;
 }
 .swiper-button-prev, .swiper-button-next {
   color: black;
+  scale: 0.5;
 }
 
 </style>
