@@ -17,26 +17,6 @@ const router = createRouter({
         // },
       ],
     },
-    {
-      path: "/init",
-      name: "Init",
-      component: () => import("@/views/InitView.vue"),
-      beforeEnter: (to, from, next) => {
-        if (!JSON.parse(localStorage.getItem("userData"))) {
-          // if (true) {
-          // 토큰이 없으면 로그인 페이지로 리다이렉트
-          next({ name: "Auth" });
-        } else {
-          // 토큰이 있으면 다음 페이지로 이동
-          next();
-        }
-      },
-    },
-    {
-      path: "/auth",
-      name: "Auth",
-      component: () => import("@/views/AuthView.vue"),
-    },
   ],
 });
 

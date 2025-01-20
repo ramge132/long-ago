@@ -16,5 +16,16 @@
 
 body {
   font-family: "HS유지체", "MAKGEOLLI", sans-serif;
-  font-weight: 400; /* 기본 Regular 설정 */
+  font-weight: 400;
+  cursor: url("@/assets/icons/cursor.cur"), auto; /* 기본 커서 이미지 설정 */
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow:
+      -2px 0 2px black,
+      /* 왼쪽 그림자 */ 2px 0 2px black,
+      /* 오른쪽 그림자 */ 0 2px 2px black,
+      /* 아래쪽 그림자 */ 0 -2px 2px black; /* 위쪽 그림자 */
+  }
 }

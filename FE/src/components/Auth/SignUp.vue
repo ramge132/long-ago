@@ -1,35 +1,30 @@
 <template>
   <div>
     <form
-      @submit.prevent="signin"
-      class="w-full flex flex-col items-center mb-12 gap-y-1"
+      @submit.prevent="register"
+      class="w-full flex flex-col items-center gap-y-1 font-hs text-sm"
       novalidate
     >
-      <p class="text-3xl">회원가입</p>
       <div class="relative w-4/5 group">
-        <label for="steam-id" class="text-gray-500 font-semibold">
-          닉네임
-        </label>
+        <label for="id">아이디</label>
         <input
           v-model="id"
           type="text"
-          id="steam-id"
+          id="id"
           placeholder=" "
           required
           class="h-4 w-full p-3 border-2 border-gray-300 rounded-md text-base text-black focus:outline-none focus:ring-2 focus:ring-[#E5E091] focus:border-[#E5E091]"
           :class="password ? 'ring-2 ring-[#E5E091] border-[#E5E091]' : ''"
           autocomplete="off"
         />
-        <p v-if="validation.idError" class="text-red-500 text-xs mt-1">
+        <p v-if="validation.idError" class="text-red-900 text-xs mt-1">
           {{ validation.idError }}
         </p>
       </div>
 
       <!-- 비밀번호 입력 -->
       <div class="relative w-4/5 mb-4 group">
-        <label for="password" class="text-gray-500 font-semibold">
-          비밀번호
-        </label>
+        <label for="password">비밀번호</label>
         <input
           v-model="password"
           type="password"
@@ -40,23 +35,15 @@
           :class="password ? 'ring-2 ring-[#E5E091] border-[#E5E091]' : ''"
           autocomplete="off"
         />
-        <p v-if="validation.pwError" class="text-red-500 text-xs mt-1">
+        <p v-if="validation.pwError" class="text-red-900 text-xs mt-1">
           {{ validation.pwError }}
         </p>
-      </div>
-
-      <div>
-        <span
-          @click="emit('signin')"
-          class="cursor-pointer text-gray-600 hover:text-black"
-          >이미 회원이신가요? 로그인하기.</span
-        >
       </div>
 
       <!-- 로그인 버튼 -->
       <button
         type="submit"
-        class="absolute bottom-0 w-full h-12 bg-[#505050] text-white py-2 font-semibold hover:bg-[#E5E091] hover:text-black transition-all rounded-b-3xl"
+        class="w-2/5 h-8 bg-[#505050] text-white py-2 font-semibold hover:bg-[#E5E091] hover:text-black transition-all rounded cursor-pointer"
       >
         회원가입
       </button>
@@ -65,6 +52,8 @@
 </template>
 <script setup>
 import { ref, defineEmits } from "vue";
+import { postRegister } from "@/apis/auth";
+import toast from "@/functions/toast";
 
 const id = ref("");
 const password = ref("");
@@ -73,7 +62,7 @@ const validation = ref({
   pwError: "",
 });
 
-const emit = defineEmits(["signin"]);
+const emit = defineEmits(["register"]);
 
 const authValidation = () => {
   // 비밀번호 정규식 (영문, 숫자, 특수문자 각각 최소 1개 이상, 총 8자리 이상)
@@ -104,10 +93,21 @@ const authValidation = () => {
   }
 };
 
-const signin = async () => {
-  console.log(authValidation());
-  console.log("아이디:", id.value);
-  console.log("비밀번호:", password.value);
+const register = async () => {
+  if (authValidation) {
+    try {
+      const response = await postRegister({
+        email: id.value,
+        password: password.value,
+      });
+      toast.successToast("회원가입 성공!");
+      emit("register", id.value);
+      console.log(response);
+    } catch (error) {
+      console.error("에러", error);
+      toast.errorToast("error");
+    }
+  }
 };
 </script>
 <style></style>
