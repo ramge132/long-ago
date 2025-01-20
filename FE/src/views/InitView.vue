@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full grid grid-cols-5 justify-between">
+  <div class="h-full grid grid-cols-5">
     <div class="col-span-2 flex flex-col items-center justify-center">
       <div class="relative mb-5">
         <div
