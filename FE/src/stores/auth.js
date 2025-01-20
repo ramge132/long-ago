@@ -4,7 +4,7 @@ export const useUserStore = defineStore("userData", {
   state: () => ({
     userData: {
       userEmail: localStorage.getItem("userEmail"),
-      userNickname: "",
+      userNickname: localStorage.getItem("userNickname"),
     },
   }),
   actions: {
