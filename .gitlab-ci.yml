@@ -121,6 +121,6 @@ cleanup:
   services:
     - docker:dind:27.4.0
   script:
-    - docker image prun.햣e -f
+    - docker image prune -f
   when: always
 
