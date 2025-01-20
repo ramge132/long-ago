@@ -8,13 +8,11 @@ const router = createRouter({
       name: "Intro",
       component: () => import("@/views/IntroView.vue"),
       children: [
-        // {
-        //   path: '/init',
-        //   name: 'Init',
-        //   component: () => import('@/components/InitView.vue'),
-        //   beforeEnter: (to, from, next) => {
-        //   }
-        // },
+        {
+          path: '',
+          name: 'Init',
+          component: () => import('@/views/InitView.vue'),
+        },
       ],
     },
   ],
