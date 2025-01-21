@@ -1,94 +1,82 @@
 <template>
-  <div class="flex flex-col w-full h-full items-center justify-center p-5 gap-y-5">
-      <img :src="Logo" alt="로고" class=" w-52">
-      <div class="w-full h-full grid grid-cols-3 gap-x-5">
-        <div class="col-span-1 grid grid-cols-2">
-          <!-- 접속한 사용자들 표시 -->
-          <div v-for="(user, index) in participants" :key="user.id"
-            class="flex flex-col justify-end items-center"
-          >
-            <div
-              class="relative rounded-full border border-black w-24 h-24"
+    <div class="flex flex-col w-full h-full items-center justify-center p-5 gap-y-5">
+        <img :src="Logo" alt="로고" class=" w-52">
+        <div class="w-full h-full grid grid-cols-3 gap-x-5">
+          <div class="col-span-1 flex flex-col gap-y-1 h-full">
+            <!-- 접속한 사용자들 표시 -->
+            <div v-for="(user, index) in participants" :key="user.id"
+              class="flex items-center gap-x-3 rounded-md p-1 border border-black"
             >
-              <div class="w-full h-full rounded-full overflow-hidden">
-                <img :src="user.image" alt="프로필" />
+              <div
+                class="relative flex rounded-full border border-black w-10 h-10"
+              >
+                <div class="w-full h-full rounded-full overflow-hidden">
+                  <img :src="user.image" alt="프로필" />
+                </div>
+                <span v-if="user.isBoss" class="absolute -top-4 -left-4 text-2xl z-10">👑</span>
               </div>
-              <span v-if="user.isBoss" class="absolute -top-3 -left-3 text-4xl z-10">👑</span>
+              <div>
+                {{ user.name }}
+              </div>
             </div>
+  
+            <!-- 대기 중 슬롯 표시 -->
+            <div v-for="n in maxParticipants - participants.length" :key="'waiting-' + n"
+              class="flex items-center gap-x-3 rounded-md p-1 border border-black"
+            >
+              <div class="rounded-full border border-black w-10 h-10 bg-gray-500"></div>
+              <div>대기 중...</div>
+            </div>
+            <div class="rounded-md border border-black h-full max-h-44 overflow-y-scroll">
+              <p v-for="(msg, index) in receivedMessages" :key="index"
+                  class="text-sm"
+              >
+              <strong>{{ msg.sender }}:</strong> {{ msg.message }}
+              </p>
+          </div>
+          </div>
+          <div class="col-span-2">
+            <h1>PeerJS Multi-Connection</h1>
+            <p>현재 피어 ID: {{ peerId }}</p>
+            <p>초대 링크: {{ "http://localhost:5173/?roomID=" + compressedId }}</p>
+        
             <div>
-              {{ user.name }}
+              <h3>연결된 피어 목록:</h3>
+              <ul>
+                <li v-for="peer in connectedPeers" :key="peer.id">
+                  {{ peer.id }}
+                </li>
+              </ul>
+            </div>
+        
+            <div v-if="connectedPeers.length">
+              <textarea v-model="message" placeholder="모든 피어에 보낼 메시지를 입력하세요"></textarea>
+              <button @click="broadcastMessage">브로드캐스트 메시지</button>
             </div>
           </div>
-
-          <!-- 대기 중 슬롯 표시 -->
-          <div v-for="n in maxParticipants - participants.length" :key="'waiting-' + n"
-            class="flex flex-col justify-end items-center"
-          >
-            <div class="rounded-full border border-black w-24 h-24 bg-gray-500"></div>
-            <div>대기 중...</div>
-          </div>
         </div>
-        <div class="col-span-2">
-          <h1>PeerJS Multi-Connection</h1>
-          <p>현재 피어 ID: {{ peerId }}</p>
-          <p>base62 압축 ID: {{ peerId }}</p>
-      
-          <div>
-            <label>새로운 상대방 ID:</label>
-            <input v-model="newRemoteId" placeholder="상대방의 Peer ID" />
-            <button @click="connectToPeer">연결</button>
-          </div>
-      
-          <div>
-            <h3>연결된 피어 목록:</h3>
-            <ul>
-              <li v-for="peer in connectedPeers" :key="peer.id">
-                {{ peer.id }}
-              </li>
-            </ul>
-          </div>
-      
-          <div v-if="connectedPeers.length">
-            <textarea v-model="message" placeholder="모든 피어에 보낼 메시지를 입력하세요"></textarea>
-            <button @click="broadcastMessage">브로드캐스트 메시지</button>
-          </div>
-      
-          <div>
-            <h3>받은 메시지:</h3>
-            <ul>
-              <li v-for="(msg, index) in receivedMessages" :key="index">
-                <strong>{{ msg.peerId }}:</strong> {{ msg.message }}
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-  </div>
-</template>
-
+    </div>
+  </template>
+  
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import Peer from "peerjs";
+import { useUserStore } from "@/stores/auth";
 import { Logo } from "@/assets";
 import { Profile1, Profile2, Profile3, Profile4, Profile5, Profile6 } from "@/assets";
 
+const userStore = useUserStore();
 const route = useRoute();
 const peer = ref(null);
 const peerId = ref("");
-const newRemoteId = ref("");
+const compressedId = ref("");
 const message = ref("");
-const connectedPeers = ref([]); // 연결된 피어 목록
-const receivedMessages = ref([]); // 받은 메시지 목록
-
-
-const participants = ref([
-    { id: 1, name: 'User A', image: Profile1, isBoss: true },
-    { id: 2, name: 'User B', image: Profile2, isBoss: false },
-    { id: 3, name: 'User C', image: Profile3, isBoss: false },
-]);
+const connectedPeers = ref([]);
+const receivedMessages = ref([]);
+const participants = ref([]);
 const maxParticipants = 6;
-
+  
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
     const cleanUUID = uuidStr.replace(/-/g, '');
@@ -110,102 +98,183 @@ function decompressUUID(compressedStr) {
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-// Peer 초기화
-const initializePeer = () => {
-  peer.value = new Peer();
-
-  peer.value.on("open", (id) => {
-    console.log("My Peer ID:", id);
-    peerId.value = id;
-  });
-
-  peer.value.on("connection", (conn) => {
-    setupConnection(conn);
-  });
-};
-
-// 연결 설정
-const setupConnection = (conn) => {
-  console.log(conn);
-  console.log("Connected with:", conn.peer);
-
-  // 연결 정보 저장
-  connectedPeers.value.push({
-    id: conn.peer,
-    connection: conn,
-  });
-
-  // 데이터 수신 이벤트
-  conn.on("data", (data) => {
-    console.log(`Message received from ${conn.peer}:`, data);
-    receivedMessages.value.push({ peerId: conn.peer, message: data });
-  });
-
-  // 연결 종료 이벤트
-  conn.on("close", () => {
-    console.log(`Connection with ${conn.peer} closed.`);
-    connectedPeers.value = connectedPeers.value.filter((peer) => peer.id !== conn.peer);
-  });
-};
-
-// 새 피어 연결
-const connectToPeer = () => {
-  if (!newRemoteId.value) {
-    console.error("Remote ID is required.");
-    return;
+// 메시지 송신 함수
+const sendMessage = (type, payload, conn) => {
+  if (conn && conn.open) {
+    conn.send({ type, ...payload });
   }
-
-  // 이미 연결된 피어인지 확인
-  if (connectedPeers.value.some((peer) => peer.id === newRemoteId.value)) {
-    console.warn("Already connected to this peer.");
-    return;
-  }
-
-  const conn = peer.value.connect(newRemoteId.value);
-
-  conn.on("open", () => {
-    console.log("Connection opened with:", newRemoteId.value);
-    setupConnection(conn);
-  });
-
-  conn.on("error", (err) => {
-    console.error(`Error connecting to ${newRemoteId.value}:`, err);
-  });
-
-  newRemoteId.value = ""; // 입력란 초기화
 };
 
-// 메시지 브로드캐스트
+// 브로드캐스트 메시지
 const broadcastMessage = () => {
-  if (!message.value.trim()) {
-    console.error("Message is empty.");
+  if (message.value.trim()) {
+    connectedPeers.value.forEach(peer => {
+      sendMessage("message", { 
+        message: message.value,
+        sender: userStore.userData.userNickname
+      }, peer.connection);
+    });
+    
+    // 자신의 메시지도 표시
+    receivedMessages.value.push({
+      sender: userStore.userData.userNickname,
+      message: message.value
+    });
+    
+    message.value = "";
+  }
+};
+
+// 새로운 연결 설정
+const setupConnection = (conn) => {
+  if (participants.value.length >= maxParticipants) {
+    conn.close();
     return;
   }
 
-  connectedPeers.value.forEach((peer) => {
-    if (peer.connection.open) {
-      peer.connection.send(message.value);
+  conn.on("data", (data) => {
+    switch (data.type) {
+      case "newParticipant":
+        // 현재 참가자 목록 전송
+        sendMessage("currentParticipants", { 
+          participants: participants.value 
+        }, conn);
+        
+        // 새 참가자 정보를 다른 참가자들에게 전파
+        broadcastNewParticipant(data.data);
+        
+        // 참가자 목록에 추가
+        if (!participants.value.some(p => p.id === data.data.id)) {
+          participants.value.push(data.data);
+        }
+        break;
+        
+      case "message":
+        console.log(data);
+        receivedMessages.value.push({
+          sender: data.sender,
+          message: data.message
+        });
+        break;
     }
   });
 
-  console.log("Broadcast message:", message.value);
-  message.value = ""; // 메시지 입력란 초기화
+  // 연결 종료 처리
+  conn.on("close", () => {
+    connectedPeers.value = connectedPeers.value.filter(p => p.id !== conn.peer);
+    participants.value = participants.value.filter(p => p.id !== conn.peer);
+  });
+
+  connectedPeers.value.push({
+    id: conn.peer,
+    connection: conn
+  });
 };
 
-// 컴포넌트 마운트 시 Peer 초기화
-onMounted(() => {
-  initializePeer();
-  console.log(route.query)
-  if(route.query.roomID){
-    console.log("test");
+// 기존 참가자들과 연결
+const handleExistingParticipants = (existingParticipants) => {
+  // 참가자 목록 업데이트
+  participants.value = existingParticipants;
+
+  // 각 참가자와 연결
+  existingParticipants.forEach(async (participant) => {
+    if (participant.id !== peerId.value && 
+        !connectedPeers.value.some(p => p.id === participant.id)) {
+      
+      const conn = peer.value.connect(participant.id);
+
+      conn.on("open", () => {
+        setupConnection(conn);
+      });
+    }
+  });
+};
+
+// 방 참가
+const connectToRoom = async (roomID) => {
+  const bossID = decompressUUID(roomID);
+  
+  const conn = peer.value.connect(bossID);
+
+  conn.on("open", () => {
+    setupConnection(conn);
+    sendMessage("newParticipant", {
+      data: {
+        id: peerId.value,
+        name: userStore.userData.userNickname,
+        image: userStore.userData.userProfile,
+      }
+    }, conn);
+  });
+
+  conn.on("data", (data) => {
+    if (data.type === "currentParticipants") {
+      handleExistingParticipants(data.participants);
+    }
+  });
+};
+
+// 새 참가자 정보 브로드캐스트
+const broadcastNewParticipant = (newParticipant) => {
+  connectedPeers.value.forEach(peer => {
+    if (peer.id !== newParticipant.id && peer.connection.open) {
+      sendMessage("newParticipantJoined", { data: newParticipant }, peer.connection);
+    }
+  });
+};
+
+// Peer 초기화
+const initializePeer = () => {
+  return new Promise((resolve, reject) => {
+    try {
+      peer.value = new Peer();
+
+      peer.value.on("open", (id) => {
+        peerId.value = id;
+        if (peerId.value === decompressUUID(compressUUID(peerId.value))) {
+          compressedId.value = compressUUID(peerId.value);
+        }
+        resolve();
+      });
+
+      peer.value.on("connection", (conn) => {
+        setupConnection(conn);
+      });
+
+      peer.value.on("error", (err) => {
+        console.error("Peer error:", err);
+        reject(err);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// 컴포넌트 마운트
+onMounted(async () => {
+  try {
+    await initializePeer();
+
+    if (route.query.roomID) {
+      connectToRoom(route.query.roomID);
+    } else {
+      participants.value.push({
+        id: peerId.value,
+        name: userStore.userData.userNickname,
+        image: userStore.userData.userProfile,
+      });
+    }
+  } catch (error) {
+    console.error("Peer initialization failed:", error);
   }
 });
 </script>
-
-<style scoped>
-textarea {
-  width: 100%;
-  height: 50px;
-}
-</style>
   
+  <style scoped>
+  textarea {
+    width: 100%;
+    height: 50px;
+  }
+  </style>
+    
