@@ -112,9 +112,9 @@ const start = () => {
   sessionStorage.setItem("userNickname", nickname.value);
   console.log(route.query);
   if(route.query.roomID){
-    router.push(`/webRTC?roomID=${route.query.roomID}`);
+    router.push(`/Lobby?roomID=${route.query.roomID}`);
   } else {
-    router.push('/webRTC');
+    router.push('/Lobby');
   }
 }
 
