@@ -14,4 +14,6 @@ public interface UserRepository extends JpaRepository<User,Long> {
     //소셜 이메일로 사용자 검색
     Optional<User> findByEmail(String email);
 
+
+
 }
