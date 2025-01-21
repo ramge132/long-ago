@@ -1,3 +1,88 @@
+
+## Git Guide
+<details>
+<summary>접기/펼치기</summary>
+<div markdown="1">
+
+<br />
+
+1. 깃 클론
+```bash
+git clone <프로젝트-url>
+```
+```bash
+git clone https://lab.ssafy.com/s12-webmobile1-sub1/S12P11B101.git
+```
+
+<br />
+
+2. 본인 로컬 브랜치 생성 후 이동
+```bash
+git switch -c <브랜치명>
+```
+```bash
+git switch -c taeyeong
+```
+
+<br />
+
+3. 작업 후 변경 사항 확인
+```bash
+git status
+```
+
+<br />
+
+4. 변경 사항 추가
+```bash
+git add <추가할 파일>
+```
+
+<br />
+
+5. 변경 사항 커밋
+```bash
+git commit -m "<태그: 내용 (#Jira Issue number)>"
+```
+```bash
+git commit -m "feat: 사용자 로그인 기능 추가 (#123)"
+```
+- `feat:` 새로운 기능 추가
+- `fix:` 버그 수정
+- `docs:` 문서 수정
+- `style:` 코드 포맷팅, 세미콜론 누락, 코드 변경이 없는 경우
+- `refactor:` 코드 리펙토링
+- `test:` 테스트 코드, 리펙토링 테스트 코드 추가
+- `chore:` 빌드 업무 수정, 패키지 매니저 수정
+- `delete:` 파일 삭제
+
+<br />
+
+6. 로컬 브랜치를 원격 origin에 푸시
+```bash
+git push -u origin <브랜치명>
+```
+```bash
+git push -u origin taeyeong
+```
+
+<br />
+
+7. Merge Request 생성
+- [**Merge Request**](https://lab.ssafy.com/s12-webmobile1-sub1/S12P11B101/-/merge_requests) 메뉴에서 `New Merge Request`를 클릭
+- `Source Branch`(본인 작업 브랜치)와 `Target Branch`를 선택
+- MR 작성 후 리뷰어를 지정하여 Merge Request를 요청
+
+<br />
+
+
+</div>
+</details>
+
+<br />
+<br />
+
+
 ## **1.** 주제
 
 <aside>
