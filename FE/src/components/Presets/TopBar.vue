@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full flex justify-between items-center">
+  <div class="w-full flex justify-between items-center z-10">
     <img :src="Logo" alt="logo" class="w-48 p-3" />
     <div
       class="p-3 font-makgeolli font-semibold text-2xl flex items-center gap-x-5"
