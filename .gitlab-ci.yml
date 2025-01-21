@@ -45,7 +45,7 @@ build_fe:
       - FE/**/* 
     when: always
   - when: never
-  privileged: true
+
 #######################
 # 2. build_be JOB 단계 #
 #######################
@@ -67,7 +67,7 @@ build_be:
       - BE/**/* 
       when: always
     - when: never
-  privileged: true
+
 ######################
 # 3. push_fe JOB 단계 #
 ######################
@@ -89,7 +89,7 @@ push_fe:
       - FE/**/* 
       when: always
     - when: never
-  privileged: true
+
 ######################
 # 4. push_be JOB 단계 #
 ######################
@@ -110,7 +110,7 @@ push_be:
       - BE/**/* 
     when: always
   - when: never
-  privileged: true
+
 ####################
 # 5. 도커 이미지 정리  #
 ####################
@@ -123,4 +123,4 @@ cleanup:
   script:
     - docker image prune -f
   when: always
-  privileged: true
+
