@@ -14,7 +14,10 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import LobbyViewItem from './components/LobbyViewItem.vue';
+
+</script>
 
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
