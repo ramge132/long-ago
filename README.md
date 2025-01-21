@@ -16,7 +16,14 @@ git clone https://lab.ssafy.com/s12-webmobile1-sub1/S12P11B101.git
 
 <br />
 
-2. 본인 로컬 브랜치 생성 후 이동
+1.1  (이미 깃 클론 한 경우) 최신 상태 유지
+```bash
+git pull
+```
+
+<br />
+
+3. 본인 로컬 브랜치 생성 후 이동
 ```bash
 git switch -c <브랜치명>
 ```
@@ -26,21 +33,21 @@ git switch -c taeyeong
 
 <br />
 
-3. 작업 후 변경 사항 확인
+4. 작업 후 변경 파일 확인
 ```bash
 git status
 ```
 
 <br />
 
-4. 변경 사항 추가
+5. 변경 파일 추가
 ```bash
 git add <추가할 파일>
 ```
 
 <br />
 
-5. 변경 사항 커밋
+6. 변경 사항 커밋
 ```bash
 git commit -m "<태그: 내용 (#Jira Issue number)>"
 ```
@@ -58,7 +65,7 @@ git commit -m "feat: 사용자 로그인 기능 추가 (#123)"
 
 <br />
 
-6. 로컬 브랜치를 원격 origin에 푸시
+7. 로컬 브랜치를 원격 origin에 푸시
 ```bash
 git push -u origin <브랜치명>
 ```
@@ -68,7 +75,7 @@ git push -u origin taeyeong
 
 <br />
 
-7. Merge Request 생성
+8. Merge Request 생성
 - [**Merge Request**](https://lab.ssafy.com/s12-webmobile1-sub1/S12P11B101/-/merge_requests) 메뉴에서 `New Merge Request`를 클릭
 - `Source Branch`(본인 작업 브랜치)와 `Target Branch`를 선택
 - MR 작성 후 리뷰어를 지정하여 Merge Request를 요청
