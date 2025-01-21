@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class Scene {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
 

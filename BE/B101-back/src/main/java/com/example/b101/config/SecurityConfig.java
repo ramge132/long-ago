@@ -3,7 +3,6 @@ package com.example.b101.config;
 import com.example.b101.dto.CustomUserDetails;
 import com.example.b101.response.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Configuration
 @EnableWebSecurity
@@ -30,8 +30,7 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/", "/api/user/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll() // Swagger 허용
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .formLogin()
                 .loginProcessingUrl("/api/user/login") // 로그인 처리 URL
@@ -47,7 +46,7 @@ public class SecurityConfig {
                             .success(true)
                             .status(HttpServletResponse.SC_OK)
                             .message("로그인 성공")
-                            .data(Map.of("nickname", userDetails.getNickname()))
+                            .data(Map.of("nickname", Optional.ofNullable(userDetails.getNickname()).orElse("익명 사용자")))
                             .timestamp(java.time.LocalDateTime.now().toString())
                             .path(request.getRequestURI()) // 요청 경로 추가
                             .build();

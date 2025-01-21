@@ -30,5 +30,9 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public boolean usedEmail(String email){
+        return userRepository.findByEmail(email).isPresent();
+    }
+
 
 }

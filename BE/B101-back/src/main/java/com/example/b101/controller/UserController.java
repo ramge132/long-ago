@@ -25,25 +25,20 @@ public class UserController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignUpDto signUpDto, HttpServletRequest request) {
-        if(userService.findByNicKname(signUpDto.getNickname()).isPresent()) {
-            return ApiResponseUtil.failure("이미 사용중인 닉네임입니다."
-                    , HttpStatus.CONFLICT
-            ,request.getRequestURI());
-        }
 
-        if (userService.findByEmail(signUpDto.getEmail()).isPresent()) {
+
+        if (userService.usedEmail(signUpDto.getEmail())) {
             return ApiResponseUtil.failure("이미 사용중인 이메일입니다.",
                     HttpStatus.CONFLICT,
                     request.getRequestURI());
         }
 
         User newUser = new User();
-
         newUser.setEmail(signUpDto.getEmail());
         newUser.setPassword(encoder.encode(signUpDto.getPassword())); //비밀번호 암호화 후 저장
-        newUser.setNickname(signUpDto.getNickname());
-
         userService.saveUser(newUser);
+
+
 
         return ApiResponseUtil.success(null,"회원가입 성공",HttpStatus.CREATED,request.getRequestURI());
     }
@@ -57,14 +52,9 @@ public class UserController {
                     request.getRequestURI());
         }
 
-        return ApiResponseUtil.success(null,"닉네임 사용가능",
+        return ApiResponseUtil.success(nickname,"닉네임 사용가능",
                 HttpStatus.OK,
                 request.getRequestURI());
     }
-
-
-
-
-
 
 }

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -22,8 +23,7 @@ import java.util.List;
 public class User {
 
     @Id // PK
-    @GeneratedValue
-    @Schema(hidden = true)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 사용자 고유 ID
 
     @Column(name="user_email") //일반 회원가입 유저는 null 가능?
@@ -32,7 +32,7 @@ public class User {
     @Column(name = "USER_PASSWORD", length = 255)
     private String password; // 사용자 비밀번호
 
-    @Column(name = "USER_NICKNAME", nullable = false, unique = true, length = 50)
+    @Column(name = "USER_NICKNAME", length = 50)
     private String nickname; // 사용자 닉네임
 
     @Column(name = "CREATED_AT", updatable = false)
