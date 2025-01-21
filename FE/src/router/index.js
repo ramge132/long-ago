@@ -15,6 +15,11 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: "/webRTC",
+      name: "webRCT",
+      component: () => import("@/views/WebRTC.vue")
+    }
   ],
 });
 

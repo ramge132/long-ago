@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full grid grid-cols-5 justify-between">
+  <div class="h-full grid grid-cols-5">
     <div class="col-span-2 flex flex-col items-center justify-center">
       <div class="relative mb-5">
         <div
@@ -60,7 +60,7 @@
             </swiper-slide>
           </swiper>
         </div>
-        <div class="flex justify-center cursor-pointer transition-all duration-300 hover:scale-110">
+        <div @click="start" class="flex justify-center cursor-pointer transition-all duration-300 hover:scale-110">
           <img :src="gameStart" alt="시작하기" class=" h-10">
         </div>
       </div>
@@ -68,6 +68,7 @@
 </template>
 <script setup>
 import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -78,6 +79,8 @@ import { Profile1, Profile2, Profile3, Profile4, Profile5, Profile6, gameStart, 
 import { useUserStore } from "@/stores/auth";
 
 const userStore = useUserStore();
+const router = useRouter();
+const route = useRoute();
 const nickname = ref("닉네임");
 
 const profiles = ref([
@@ -102,6 +105,11 @@ const refresh = () => {
     }
   }
 };  
+
+const start = () => {
+  console.log(route.query);
+  router.push(`/webRTC?roomID=${route.query.roomID}`);
+}
 
 onMounted(() => {
   const userData = JSON.parse(localStorage.getItem("userData"));
@@ -148,7 +156,7 @@ const ruleSlides = ref([
     text: `
     순서대로 돌아가며 카드 한 장을 소비해
     그 카드에 적힌 단어와 연관된 이야기를 작성합니다.
-    게임의 가장 처음 시작하는 이야기는 "옛날 옛적에..." 로 이야기를 시작합니다.
+    게임의 가장 처음 시작하는 이야기는 "아주 먼 옛날" 로 이야기를 시작합니다.
     `
   }
 ]);
