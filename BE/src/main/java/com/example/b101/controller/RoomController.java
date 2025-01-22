@@ -1,14 +1,11 @@
 package com.example.b101.controller;
 
-import com.example.b101.domain.Room;
 import com.example.b101.dto.CreateRoomDto;
 import com.example.b101.service.RoomService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/rooms")
@@ -25,19 +22,15 @@ public class RoomController {
         return roomService.createRoom(createRoomDto,request);
     }
 
-    @GetMapping("/{id}")
-    public Room getRoom(@PathVariable String id) {
-        return roomService.getRoomById(id);
-    }
 
     @GetMapping
-    public List<Room> getAllRooms() {
-        return roomService.getAllRooms();
+    public ResponseEntity<?> getAllRooms(HttpServletRequest request) {
+        return roomService.getAllRooms(request);
     }
 
     @DeleteMapping
-    public void deleteRoom(@RequestParam String id) {
-        roomService.deleteRoom(id);
+    public ResponseEntity<?> deleteRoom(@RequestParam String roomId,HttpServletRequest request) {
+        return roomService.deleteRoom(roomId,request);
     }
 
     @PostMapping("/{roomId}")

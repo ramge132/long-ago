@@ -43,12 +43,20 @@ public class RoomService {
         return roomRepository.findById(id);
     }
 
-    public List<Room> getAllRooms() {
-        return roomRepository.findAll();
+    public ResponseEntity<?> getAllRooms(HttpServletRequest request) {
+        if (roomRepository.findAll().isEmpty()) {
+            return ApiResponseUtil.failure("생성되어 있는 방이 없습니다.",HttpStatus.NOT_FOUND,request.getRequestURI());
+        }
+
+        return ApiResponseUtil.success(roomRepository.findAll(),"전체 방 정보 가져오기 성공",HttpStatus.OK,request.getRequestURI());
     }
 
-    public void deleteRoom(String id) {
+    public ResponseEntity<?> deleteRoom(String id,HttpServletRequest request) {
+        if(roomRepository.findById(id) == null) {
+            return ApiResponseUtil.failure("해당 roomId를 가진 방이 없습니다.",HttpStatus.NOT_FOUND,request.getRequestURI());
+        }
         roomRepository.delete(id);
+        return ApiResponseUtil.success(null,"방 삭제 성공",HttpStatus.OK,request.getRequestURI());
     }
 
     // 사용자 추가
