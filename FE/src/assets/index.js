@@ -20,3 +20,7 @@ export { default as Profile6 } from "./images/profiles/profile6.svg";
 // modes
 export { default as Mode1 } from "./images/modes/mode1.svg";
 export { default as Mode2 } from "./images/modes/mode2.svg";
+
+// icons
+export { default as InviteIcon } from "./icons/invite.svg";
+export { default as PlayIcon } from "./icons/play.svg";

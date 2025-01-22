@@ -130,7 +130,7 @@ const signin = async () => {
   if (authValidation) {
     try {
       const response = await postSignIn({
-        email: id.value,
+        username: id.value,
         password: password.value,
       });
       toast.successToast(`반갑습니다. ${id.value}님!`);

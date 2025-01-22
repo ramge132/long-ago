@@ -107,8 +107,15 @@ const refresh = () => {
 };  
 
 const start = () => {
+  userStore.setUserNickname(nickname);
+  userStore.setUserProfile(currentProfile);
+  sessionStorage.setItem("userNickname", nickname.value);
   console.log(route.query);
-  router.push(`/webRTC?roomID=${route.query.roomID}`);
+  if(route.query.roomID){
+    router.push(`/Lobby?roomID=${route.query.roomID}`);
+  } else {
+    router.push('/Lobby');
+  }
 }
 
 onMounted(() => {
