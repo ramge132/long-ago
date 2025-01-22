@@ -1,126 +1,13 @@
-image: docker:27.4.0
-
-services:
-  - docker:dind:27.4.0
-
-variables:
-  # Docker 데몬에 접근하기 위한 설정
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""
-
-  # Docker Hub 경로
-  FE_IMAGE: "ssafyb101/my-fe"
-  BE_IMAGE: "ssafyb101/my-be"
-
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - FE/node_modules/
-    - BE/.gradle/
-    - BE/build/
-
-# 파이프라인 단계(stage)는 build push cleanup 3단계로 만듬
 stages:
-  - build
-  - push
-  - cleanup
+- test
 
-#######################
-# 1. build_fe JOB 단계 #
-#######################
+lets_test:
 
-build_fe:
-  stage: build
-  image: docker:27.4.0
-  variables:
-    IMAGE_NAME: $FE_IMAGE
-    DOCKERFILE_PATH: FE/Dockerfile
-    CONTEXT: FE
+  stage: test
+
   script:
-    - echo "Building FE Docker image..."
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
-    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-  rules:
-  - changes:
-      - FE/**/* 
-    when: always
-  - when: never
-
-#######################
-# 2. build_be JOB 단계 #
-#######################
-
-build_be:
-  stage: build
-  image: gradle:8.12.0-jdk17-alpine
-  variables:
-    IMAGE_NAME: $BE_IMAGE
-    DOCKERFILE_PATH: BE/Dockerfile
-    CONTEXT: BE
-  script:
-    - echo "Building BE Docker image..."
-    - gradle build -x test --no-daemon
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
-    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-  rules:
-    - changes:
-      - BE/**/* 
-      when: always
-    - when: never
-
-######################
-# 3. push_fe JOB 단계 #
-######################
-
-push_fe:
-  stage: push
-  image: docker:27.4.0
-  variables:
-    IMAGE_NAME: $FE_IMAGE
-  script:
-    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-    - echo "Pushing FE Docker image..."
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
-    - docker push $IMAGE_NAME:latest
-  dependencies:
-    - build_fe
-  rules:
-    - changes:
-      - FE/**/* 
-      when: always
-    - when: never
-
-######################
-# 4. push_be JOB 단계 #
-######################
-push_be:
-  stage: push
-  image: docker:27.4.0
-  variables:
-    IMAGE_NAME: $BE_IMAGE
-  script:
-    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-    - echo "Pushing BE Docker image..."
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
-    - docker push $IMAGE_NAME:latest
-  dependencies:
-    - build_be
-  rules:
-  - changes:
-      - BE/**/* 
-    when: always
-  - when: never
-
-####################
-# 5. 도커 이미지 정리  #
-####################
-
-cleanup:
-  stage: cleanup
-  image: docker:27.4.0
-  services:
-    - docker:dind:27.4.0
-  script:
-    - docker image prune -f
-  when: always
-
+  - echo hello
+  - cd /home/gitlab-runner
+  - touch gen_empty_file
+  tags:
+  - runner-1
