@@ -2,7 +2,7 @@
   <div
     class="bg-no-repeat bg-cover bg-center bg-fairytail-image w-screen h-screen flex flex-col justify-center items-center"
   >
-    <div 
+    <div
       class="relative border-dashed border-2 border-black rounded-lg shadow-md w-2/3 h-5/6 max-w-4xl max-h-[1000px] min-w-[800px] bg-[#ffffff80] flex flex-col justify-center items-center"
     >
       <RouterView v-slot="{ Component }">

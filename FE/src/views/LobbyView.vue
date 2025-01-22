@@ -58,7 +58,7 @@
             <div class="col-span-3 row-span-2 flex flex-col">
               <label>플레이어 카드 개수</label>
               <div class="flex justify-between items-center w-[50%] self-center">
-                <label :for="count + 'cards'" v-for="count in cardCount" :key="count" class="cursor-pointer"
+                <label :for="count + 'cards'" v-for="(count, index) in cardCount" :key="index" class="cursor-pointer"
                   :class="count == selectedCountValue ? 'checked' : ''">
                   {{ count }}
                   <input type="radio" class="hidden" :id="count + 'cards'" name="card" :value="count"
@@ -201,12 +201,12 @@ const sendMessage = (type, payload, conn) => {
 const broadcastMessage = () => {
   if (message.value.trim()) {
     connectedPeers.value.forEach(peer => {
-      sendMessage("message", {
+      sendMessage("message", { 
         message: message.value,
         sender: userStore.userData.userNickname
       }, peer.connection);
     });
-
+    
     // 자신의 메시지도 표시
     receivedMessages.value.push({
       sender: userStore.userData.userNickname,
@@ -230,24 +230,33 @@ const setupConnection = (conn) => {
     switch (data.type) {
       case "newParticipant":
         // 현재 참가자 목록 전송
-        sendMessage("currentParticipants", {
-          participants: participants.value
+        sendMessage("currentParticipants", { 
+          participants: participants.value 
         }, conn);
-
+        
         // 새 참가자 정보를 다른 참가자들에게 전파
         broadcastNewParticipant(data.data);
-
+        
         // 참가자 목록에 추가
         if (!participants.value.some(p => p.id === data.data.id)) {
           participants.value.push(data.data);
         }
         break;
-
+        
       case "message":
-        console.log(data);
         receivedMessages.value.push({
           sender: data.sender,
           message: data.message
+        });
+        scrollToBottom();
+        break;
+
+      case "system":
+        // participants 중 id가 data.id와 같은 값 삭제
+        participants.value = participants.value.filter(participant => participant.id !== data.id);
+        receivedMessages.value.push({
+          sender: "시스템",
+          message: `${data.nickname}님이 나가셨습니다.`
         });
         scrollToBottom();
         break;
@@ -268,7 +277,7 @@ const setupConnection = (conn) => {
 
 // 기존 참가자들과 연결
 const handleExistingParticipants = (existingParticipants) => {
-  console.log(existingParticipants);
+  // console.log(existingParticipants);
   // 참가자 목록 업데이트
   // participants.value = existingParticipants;
   existingParticipants.forEach(newParticipant => {
@@ -276,7 +285,7 @@ const handleExistingParticipants = (existingParticipants) => {
     const isExisting = participants.value.some(
       existing => existing.id === newParticipant.id
     );
-
+    
     // 존재하지 않는 참가자만 추가
     if (!isExisting) {
       participants.value.push(newParticipant);
@@ -287,11 +296,10 @@ const handleExistingParticipants = (existingParticipants) => {
 
   // 각 참가자와 연결
   existingParticipants.forEach(async (participant) => {
-    if (participant.id !== peerId.value &&
-      !connectedPeers.value.some(p => p.id === participant.id)) {
-
+    if (participant.id !== peerId.value && 
+        !connectedPeers.value.some(p => p.id === participant.id)) {
+      
       const conn = peer.value.connect(participant.id);
-      console.log(conn);
 
       conn.on("open", () => {
         setupConnection(conn);
@@ -319,10 +327,10 @@ const connectToRoom = async (roomID) => {
 
   conn.on("data", (data) => {
     if (data.type === "currentParticipants") {
-      console.log("이전 참가자들 정보 도착", data);
+      // console.log("이전 참가자들 정보 도착", data);
       handleExistingParticipants(data.participants);
     } else if (data.type === "newParticipantJoined") {
-      console.log("새로운 참가자 정보 도착", data.data);
+      // console.log("새로운 참가자 정보 도착", data.data);
       participants.value.push(data.data);
     }
   });
@@ -371,22 +379,39 @@ const initializePeer = () => {
 onMounted(async () => {
   try {
     await initializePeer();
-    participants.value.push({
-      id: peerId.value,
-      name: userStore.userData.userNickname,
-      image: userStore.userData.userProfile,
-    });
-
+    
+    // 일반 참여자인 경우
     if (route.query.roomID) {
+      participants.value.push({
+        id: peerId.value,
+        name: userStore.userData.userNickname,
+        image: userStore.userData.userProfile,
+        isBoss: false,
+      });
       connectToRoom(route.query.roomID);
-    } else {
     }
+    // 방장인 경우
+    else {
+      participants.value.push({
+        id: peerId.value,
+        name: userStore.userData.userNickname,
+        image: userStore.userData.userProfile,
+        isBoss: true,
+      });
+      console.log("http://localhost:5173/?roomID=" + compressUUID(peerId.value));
+    };
   } catch (error) {
-    console.error("Peer initialization failed:", error);
+      console.error("Peer initialization failed:", error);
   }
-  InviteLink.value = ("http://localhost:5173/?roomID=" + compressUUID(peerId.value));
+InviteLink.value = ("http://localhost:5173/?roomID=" + compressUUID(peerId.value));
 });
 
+addEventListener("beforeunload", (event) => {
+  // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
+  connectedPeers.value.forEach(peer => {
+    sendMessage("system", { id: peerId.value, nickname: userStore.userData.userNickname }, peer.connection);
+  });
+})
 
 // 레인지 슬라이더 커스텀
 const minTimeValue = ref(10);

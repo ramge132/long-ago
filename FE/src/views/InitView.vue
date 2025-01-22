@@ -44,8 +44,6 @@
               disableOnInteraction: false,
             }"
             :pagination="pagination"
-            @swiper="onSwiper"
-            @slideChange="onSlideChange"
           >
             <swiper-slide v-for="slide in ruleSlides" :key="slide.no" class="px-5 py-1 h-[100%]">
               <div class="flex flex-col items-center h-[100%]">
@@ -110,7 +108,6 @@ const start = () => {
   userStore.setUserNickname(nickname);
   userStore.setUserProfile(currentProfile);
   sessionStorage.setItem("userNickname", nickname.value);
-  console.log(route.query);
   if(route.query.roomID){
     router.push(`/Lobby?roomID=${route.query.roomID}`);
   } else {
@@ -127,8 +124,6 @@ onMounted(() => {
     const randomGuest = `이야기꾼_${Math.floor(10000 + Math.random() * 90000)}`;
     nickname.value = randomGuest;
 
-    console.log(userStore.userData);
-
     // localStorage에 저장
     // const newUserData = { ...userData, nickname: randomGuest };
     // localStorage.setItem("userData", JSON.stringify(newUserData));
@@ -136,13 +131,6 @@ onMounted(() => {
 });
 
 const modules = ref([Navigation, Pagination, Autoplay]);
-
-const onSwiper = (swiper) => {
-  console.log(swiper);
-};
-const onSlideChange = () => {
-  console.log('slide change');
-};
 
 const ruleSlides = ref([
   {
