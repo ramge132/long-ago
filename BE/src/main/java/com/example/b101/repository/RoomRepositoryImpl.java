@@ -40,7 +40,6 @@ public class RoomRepositoryImpl implements RoomRepository {
         redisTemplate.opsForHash().delete(KEY, id);
     }
 
-    @Override
     // 기본적인 데이터 저장 (덮어쓰기 포함)
     public void put(Room room) {
         redisTemplate.opsForHash().put(KEY, room.getId(), room);
