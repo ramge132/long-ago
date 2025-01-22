@@ -39,9 +39,10 @@
       </div>
       <div class="col-span-2">
         <!-- 방 설정 메뉴 표시 -->
+        <form>
         <div class="h-full w-full grid grid-rows-4">
           <div
-            class="row-span-3 grid grid-cols-7 grid-rows-7 gap-x-8 gap-y-8 border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5">
+            class="row-span-3 grid grid-cols-7 grid-rows-7 gap-x-8 gap-y-8 border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5" :class="configurable == false ? 'pointer-events-none' : ''">
             <div class="col-span-4 row-span-2 flex flex-col items-center">
               <label class="self-start">1턴 당 시간(초)</label>
               <div class="w-full flex justify-between">
@@ -49,7 +50,7 @@
               </div>
               <div class="range-container drop-shadow-md">
                 <input type="range" :min="minTimeValue" :max="maxTimeValue" :step="stepTimeValue"
-                  class="range-slider rounded-xl" v-model="selectedTimeValue">
+                  class="range-slider rounded-xl" v-model="roomConfigs.currTurnTime">
                 <div class="ticks flex justify-between items-center p-[2px]">
                   <div v-for="(tick, index) in ticks" :key="index"></div>
                 </div>
@@ -59,12 +60,12 @@
               <label>플레이어 카드 개수</label>
               <div class="flex justify-between items-center w-[50%] self-center">
                 <label :for="count + 'cards'" v-for="(count, index) in cardCount" :key="index" class="cursor-pointer"
-                  :class="count == selectedCountValue ? 'checked' : ''">
+                  :class="count == roomConfigs.currCardCount ? 'checked' : ''">
                   {{ count }}
                   <input type="radio" class="hidden" :id="count + 'cards'" name="card" :value="count"
-                    v-model="selectedCountValue" v-if="count == cardCount[0]" checked>
+                    v-model="roomConfigs.currCardCount" v-if="count == cardCount[0]" checked>
                   <input type="radio" class="hidden" :id="count + 'cards'" name="card" :value="count"
-                    v-model="selectedCountValue" v-if="count != cardCount[0]">
+                    v-model="roomConfigs.currCardCount" v-if="count != cardCount[0]">
                 </label>
               </div>
             </div>
@@ -72,10 +73,10 @@
               <label class="mb-2 block">게임 모드</label>
               <div class="grid grid-cols-2 gap-x-3 h-2/3">
                 <label class="border-2 border-black rounded-xl flex flex-col justify-between p-3"
-                  v-for="(mode, index) in modes" :key="index" :for="'mode' + index" :class="selectedMode === mode.value ? 'shadow-lg scale-105' : ''">
+                  v-for="(mode, index) in modes" :key="index" :for="'mode' + index" :class="roomConfigs.currMode === mode.value ? 'shadow-lg scale-105' : ''">
                   <img :src="mode.icon" alt="모드 아이콘">
                   <p class="text-xs" v-html="mode.text"></p>
-                  <input type="radio" :id="'mode' + index" name="mode" :value="mode.value" v-model="selectedMode"
+                  <input type="radio" :id="'mode' + index" name="mode" :value="mode.value" v-model="roomConfigs.currMode"
                     class="self-center appearance-none border border-black rounded-xl w-5 h-5 checked:bg-white checked:border-[#EB978B] checked:border-4"
                     :checked="index === 0" />
                 </label>
@@ -83,7 +84,7 @@
             </div>
             <div class="col-span-3 row-span-5">
               <label class="mr-3">작화</label>
-              <select class="rounded-lg bg-slate-300 w-[70%] shadow-md pl-3">
+              <select class="rounded-lg bg-slate-300 w-[70%] shadow-md pl-3" v-model="roomConfigs.currStyle">
                 <option value="korean">한국 전통민화</option>
                 <option value="occident">서양 회화</option>
                 <option value="japan">일본 우키요에</option>
@@ -91,15 +92,14 @@
               </select>
             </div>
           </div>
-          <!-- <div class="grid grid-cols-2" v-if="user.isBoss"> -->
           <div class="grid grid-cols-2">
-            <div class="flex justify-center items-center">
-              <button class="border-2 w-[50%] h-[30%] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105" @click="toggleModal">
+            <div class="flex justify-center items-center" :class="configurable == false ? 'col-span-2' : ''">
+              <button type="button" class="border-2 w-[50%] h-[30%] max-w-[150px] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105" @click="toggleModal">
                 <img :src="InviteIcon" alt="초대 아이콘" class="w-1/3 h-1/2 mr-2">
                 초대하기
               </button>
             </div>
-            <div class="flex justify-center items-center">
+            <div class="flex justify-center items-center" v-if="configurable">
                 <button class="border-2 w-[50%] h-[30%] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105">
                   <img :src="PlayIcon" alt="시작 아이콘" class="w-1/3 h-1/2 mr-2">
                   <span>
@@ -109,6 +109,7 @@
             </div>
           </div>
         </div>
+      </form>
       </div>
       <Transition name="fade">
       <div
@@ -130,7 +131,7 @@
                 <input type="text" class="bg-white rounded-xl pl-3 grow text-black mr-3" :value="InviteLink" disabled>
                 <img :src="CopyIcon" alt="복사 아이콘" class="inlin cursor-pointer" @click="copy">
               </div>
-            </div>
+            </div>  
           </div>
         </div>
       </div>
@@ -140,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from "vue";
+import { ref, onMounted, nextTick, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
@@ -158,9 +159,16 @@ const message = ref("");
 const connectedPeers = ref([]);
 const receivedMessages = ref([]);
 const participants = ref([]);
+const roomConfigs = ref({
+  currTurnTime: 10,
+  currCardCount: 4,
+  currMode: "textToPicture",
+  currStyle: "korean"
+});
 const maxParticipants = 6;
 const chatBox = ref(null);
 const {toClipboard} = useCilpboard();
+const configurable = ref(false);
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -259,6 +267,15 @@ const setupConnection = (conn) => {
           message: `${data.nickname}님이 나가셨습니다.`
         });
         scrollToBottom();
+        break;
+
+      case "config":
+        roomConfigs.value = {
+          currTurnTime: data.turnTime,
+          currCardCount: data.cardCount,
+          currMode: data.mode,
+          currStyle: data.style,
+        };
         break;
     }
   });
@@ -389,6 +406,7 @@ onMounted(async () => {
         isBoss: false,
       });
       connectToRoom(route.query.roomID);
+      InviteLink.value = ("http://localhost:5173/?roomID=" + route.query.roomID);
     }
     // 방장인 경우
     else {
@@ -398,12 +416,13 @@ onMounted(async () => {
         image: userStore.userData.userProfile,
         isBoss: true,
       });
+      configurable.value = true;
       console.log("http://localhost:5173/?roomID=" + compressUUID(peerId.value));
+      InviteLink.value = ("http://localhost:5173/?roomID=" + compressUUID(peerId.value));
     };
   } catch (error) {
       console.error("Peer initialization failed:", error);
   }
-InviteLink.value = ("http://localhost:5173/?roomID=" + compressUUID(peerId.value));
 });
 
 addEventListener("beforeunload", (event) => {
@@ -417,7 +436,6 @@ addEventListener("beforeunload", (event) => {
 const minTimeValue = ref(10);
 const maxTimeValue = ref(15);
 const stepTimeValue = ref(1);
-const selectedTimeValue = ref(10);
 
 const ticks = computed(() => {
   const steps = (maxTimeValue.value - minTimeValue.value) / stepTimeValue.value;
@@ -434,7 +452,6 @@ const cardCount = ref([
   4, 5, 6
 ]);
 
-const selectedCountValue = ref(4);
 
 
 // 게임 모드
@@ -452,7 +469,6 @@ const modes = ref([
     value: 'pictureToText'
   }
 ])
-const selectedMode = ref("textToPicture");
 
 
 // 초대 링크 표시
@@ -462,7 +478,7 @@ const toggleModal = () => {
 }
 const InviteLink = ref("");
 
-// 초대링크 클립보드 복사사
+// 초대링크 클립보드 복사
 const copy = async () => {
   try {
     await toClipboard(InviteLink.value);
@@ -472,6 +488,14 @@ const copy = async () => {
     console.error(error);
   }
 }
+
+watch(() => roomConfigs.value, () => {
+  if(configurable.value) {
+    connectedPeers.value.forEach(peer => {
+      sendMessage("config", { turnTime: roomConfigs.value.currTurnTime, cardCount: roomConfigs.value.currCardCount, mode: roomConfigs.value.currMode, style: roomConfigs.value.currStyle}, peer.connection);
+    });
+  }
+}, {deep: true});
 
 </script>
 <style scoped>
