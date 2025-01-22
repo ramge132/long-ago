@@ -1,4 +1,5 @@
 <template>
+  
   <div
     class="bg-no-repeat bg-cover bg-center bg-fairytail-image w-screen h-screen flex flex-col justify-center items-center"
   >
@@ -11,11 +12,16 @@
         </Transition>
       </RouterView>
     </div>
+    <div>
+      <Transition name="fade-out">
+        <TigerAnimation />
+      </Transition>
+    </div>
   </div>
 </template>
 
 <script setup>
-
+import { TigerAnimation } from './components';
 </script>
 
 <style>

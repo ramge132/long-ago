@@ -1,5 +1,6 @@
 // // Presets
 export { default as TopBar } from "./Presets/TopBar.vue";
+export { default as TigerAnimation } from "./Presets/TigerAnimation.vue";
 // export { default as Footer } from "./Presets/MainFooter.vue";
 
 // Auth
