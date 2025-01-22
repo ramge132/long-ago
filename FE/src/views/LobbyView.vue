@@ -82,10 +82,10 @@ const chatBox = ref(null);
 
 
 const scrollToBottom = async () => {
-await nextTick();
-if (chatBox.value) {
-  chatBox.value.scrollTop = chatBox.value.scrollHeight;
-}
+  await nextTick();
+  if (chatBox.value) {
+    chatBox.value.scrollTop = chatBox.value.scrollHeight;
+  }
 };
 
 // UUID 압축/해제 함수
@@ -111,196 +111,222 @@ function decompressUUID(compressedStr) {
 
 // 메시지 송신 함수
 const sendMessage = (type, payload, conn) => {
-if (conn && conn.open) {
-  conn.send({ type, ...payload });
-}
+  if (conn && conn.open) {
+    conn.send({ type, ...payload });
+  }
 };
 
 // 브로드캐스트 메시지
 const broadcastMessage = () => {
-if (message.value.trim()) {
-  connectedPeers.value.forEach(peer => {
-    sendMessage("message", { 
-      message: message.value,
-      sender: userStore.userData.userNickname
-    }, peer.connection);
-  });
-  
-  // 자신의 메시지도 표시
-  receivedMessages.value.push({
-    sender: userStore.userData.userNickname,
-    message: message.value
-  });
+  if (message.value.trim()) {
+    connectedPeers.value.forEach(peer => {
+      sendMessage("message", { 
+        message: message.value,
+        sender: userStore.userData.userNickname
+      }, peer.connection);
+    });
+    
+    // 자신의 메시지도 표시
+    receivedMessages.value.push({
+      sender: userStore.userData.userNickname,
+      message: message.value
+    });
 
-  scrollToBottom();
+    scrollToBottom();
 
-  message.value = "";
-}
+    message.value = "";
+  }
 };
 
 // 새로운 연결 설정
 const setupConnection = (conn) => {
-if (participants.value.length >= maxParticipants) {
-  conn.close();
-  return;
-}
-
-conn.on("data", (data) => {
-  switch (data.type) {
-    case "newParticipant":
-      // 현재 참가자 목록 전송
-      sendMessage("currentParticipants", { 
-        participants: participants.value 
-      }, conn);
-      
-      // 새 참가자 정보를 다른 참가자들에게 전파
-      broadcastNewParticipant(data.data);
-      
-      // 참가자 목록에 추가
-      if (!participants.value.some(p => p.id === data.data.id)) {
-        participants.value.push(data.data);
-      }
-      break;
-      
-    case "message":
-      console.log(data);
-      receivedMessages.value.push({
-        sender: data.sender,
-        message: data.message
-      });
-      scrollToBottom();
-      break;
+  if (participants.value.length >= maxParticipants) {
+    conn.close();
+    return;
   }
-});
 
-// 연결 종료 처리
-conn.on("close", () => {
-  connectedPeers.value = connectedPeers.value.filter(p => p.id !== conn.peer);
-  participants.value = participants.value.filter(p => p.id !== conn.peer);
-});
+  conn.on("data", (data) => {
+    switch (data.type) {
+      case "newParticipant":
+        // 현재 참가자 목록 전송
+        sendMessage("currentParticipants", { 
+          participants: participants.value 
+        }, conn);
+        
+        // 새 참가자 정보를 다른 참가자들에게 전파
+        broadcastNewParticipant(data.data);
+        
+        // 참가자 목록에 추가
+        if (!participants.value.some(p => p.id === data.data.id)) {
+          participants.value.push(data.data);
+        }
+        break;
+        
+      case "message":
+        receivedMessages.value.push({
+          sender: data.sender,
+          message: data.message
+        });
+        scrollToBottom();
+        break;
 
-connectedPeers.value.push({
-  id: conn.peer,
-  connection: conn
-});
+      case "system":
+        // participants 중 id가 data.id와 같은 값 삭제
+        participants.value = participants.value.filter(participant => participant.id !== data.id);
+        receivedMessages.value.push({
+          sender: "시스템",
+          message: `${data.nickname}님이 나가셨습니다.`
+        });
+        scrollToBottom();
+        break;
+    }
+  });
+
+  // 연결 종료 처리
+  conn.on("close", () => {
+    connectedPeers.value = connectedPeers.value.filter(p => p.id !== conn.peer);
+    participants.value = participants.value.filter(p => p.id !== conn.peer);
+  });
+
+  connectedPeers.value.push({
+    id: conn.peer,
+    connection: conn
+  });
 };
 
 // 기존 참가자들과 연결
 const handleExistingParticipants = (existingParticipants) => {
-console.log(existingParticipants);
-// 참가자 목록 업데이트
-// participants.value = existingParticipants;
-existingParticipants.forEach(newParticipant => {
-  // 이미 존재하는 참가자인지 확인
-  const isExisting = participants.value.some(
-    existing => existing.id === newParticipant.id
-  );
-  
-  // 존재하지 않는 참가자만 추가
-  if (!isExisting) {
-    participants.value.push(newParticipant);
-  } else {
-    console.log('이미 존재하는 참가자:', newParticipant);
-  }
-});
-
-// 각 참가자와 연결
-existingParticipants.forEach(async (participant) => {
-  if (participant.id !== peerId.value && 
-      !connectedPeers.value.some(p => p.id === participant.id)) {
+  // console.log(existingParticipants);
+  // 참가자 목록 업데이트
+  // participants.value = existingParticipants;
+  existingParticipants.forEach(newParticipant => {
+    // 이미 존재하는 참가자인지 확인
+    const isExisting = participants.value.some(
+      existing => existing.id === newParticipant.id
+    );
     
-    const conn = peer.value.connect(participant.id);
-    console.log(conn);
+    // 존재하지 않는 참가자만 추가
+    if (!isExisting) {
+      participants.value.push(newParticipant);
+    } else {
+      console.log('이미 존재하는 참가자:', newParticipant);
+    }
+  });
 
-    conn.on("open", () => {
-      setupConnection(conn);
-    });
-  }
-});
+  // 각 참가자와 연결
+  existingParticipants.forEach(async (participant) => {
+    if (participant.id !== peerId.value && 
+        !connectedPeers.value.some(p => p.id === participant.id)) {
+      
+      const conn = peer.value.connect(participant.id);
+
+      conn.on("open", () => {
+        setupConnection(conn);
+      });
+    }
+  });
 };
 
 // 방 참가
 const connectToRoom = async (roomID) => {
-const bossID = decompressUUID(roomID);
+  const bossID = decompressUUID(roomID);
 
-const conn = peer.value.connect(bossID);
+  const conn = peer.value.connect(bossID);
 
-conn.on("open", () => {
-  setupConnection(conn);
-  sendMessage("newParticipant", {
-    data: {
-      id: peerId.value,
-      name: userStore.userData.userNickname,
-      image: userStore.userData.userProfile,
+  conn.on("open", () => {
+    setupConnection(conn);
+    sendMessage("newParticipant", {
+      data: {
+        id: peerId.value,
+        name: userStore.userData.userNickname,
+        image: userStore.userData.userProfile,
+      }
+    }, conn);
+  });
+
+  conn.on("data", (data) => {
+    if (data.type === "currentParticipants") {
+      // console.log("이전 참가자들 정보 도착", data);
+      handleExistingParticipants(data.participants);
+    } else if (data.type === "newParticipantJoined") {
+      // console.log("새로운 참가자 정보 도착", data.data);
+      participants.value.push(data.data);
     }
-  }, conn);
-});
-
-conn.on("data", (data) => {
-  if (data.type === "currentParticipants") {
-    console.log("이전 참가자들 정보 도착", data);
-    handleExistingParticipants(data.participants);
-  } else if (data.type === "newParticipantJoined") {
-    console.log("새로운 참가자 정보 도착", data.data);
-    participants.value.push(data.data);
-  }
-});
+  });
 };
 
 // 새 참가자 정보 브로드캐스트
 const broadcastNewParticipant = (newParticipant) => {
-connectedPeers.value.forEach(peer => {
-  if (peer.id !== newParticipant.id && peer.connection.open) {
-    sendMessage("newParticipantJoined", { data: newParticipant }, peer.connection);
-  }
-});
+  connectedPeers.value.forEach(peer => {
+    if (peer.id !== newParticipant.id && peer.connection.open) {
+      sendMessage("newParticipantJoined", { data: newParticipant }, peer.connection);
+    }
+  });
 };
 
 // Peer 초기화
 const initializePeer = () => {
-return new Promise((resolve, reject) => {
-  try {
-    peer.value = new Peer();
+  return new Promise((resolve, reject) => {
+    try {
+      peer.value = new Peer();
 
-    peer.value.on("open", (id) => {
-      peerId.value = id;
-      if (peerId.value === decompressUUID(compressUUID(peerId.value))) {
-        compressedId.value = compressUUID(peerId.value);
-      }
-      resolve();
-    });
+      peer.value.on("open", (id) => {
+        peerId.value = id;
+        if (peerId.value === decompressUUID(compressUUID(peerId.value))) {
+          compressedId.value = compressUUID(peerId.value);
+        }
+        resolve();
+      });
 
-    peer.value.on("connection", (conn) => {
-      setupConnection(conn);
-    });
+      peer.value.on("connection", (conn) => {
+        setupConnection(conn);
+      });
 
-    peer.value.on("error", (err) => {
-      console.error("Peer error:", err);
-      reject(err);
-    });
-  } catch (error) {
-    reject(error);
-  }
-});
+      peer.value.on("error", (err) => {
+        console.error("Peer error:", err);
+        reject(err);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
 };
 
 // 컴포넌트 마운트
 onMounted(async () => {
 try {
   await initializePeer();
-  participants.value.push({
-    id: peerId.value,
-    name: userStore.userData.userNickname,
-    image: userStore.userData.userProfile,
-  });
-
+  
+  // 일반 참여자인 경우
   if (route.query.roomID) {
+    participants.value.push({
+      id: peerId.value,
+      name: userStore.userData.userNickname,
+      image: userStore.userData.userProfile,
+      isBoss: false,
+    });
     connectToRoom(route.query.roomID);
-  } else {
+  }
+  // 방장인 경우
+  else {
+    participants.value.push({
+      id: peerId.value,
+      name: userStore.userData.userNickname,
+      image: userStore.userData.userProfile,
+      isBoss: true,
+    });
+    console.log("http://localhost:5173/?roomID=" + compressUUID(peerId.value));
   }
 } catch (error) {
   console.error("Peer initialization failed:", error);
 }
 });
+
+addEventListener("beforeunload", (event) => {
+  // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
+  connectedPeers.value.forEach(peer => {
+    sendMessage("system", { id: peerId.value, nickname: userStore.userData.userNickname }, peer.connection);
+  });
+})
 </script>
   
