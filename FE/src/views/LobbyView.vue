@@ -58,7 +58,7 @@
             <div class="col-span-3 row-span-2 flex flex-col">
               <label>플레이어 카드 개수</label>
               <div class="flex justify-between items-center w-[50%] self-center">
-                <label :for="count + 'cards'" v-for="count in cardCount" :key="card" class="cursor-pointer"
+                <label :for="count + 'cards'" v-for="count in cardCount" :key="count" class="cursor-pointer"
                   :class="count == selectedCountValue ? 'checked' : ''">
                   {{ count }}
                   <input type="radio" class="hidden" :id="count + 'cards'" name="card" :value="count"
