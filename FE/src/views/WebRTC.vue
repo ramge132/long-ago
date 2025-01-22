@@ -1,77 +1,88 @@
 <template>
   <div class="flex flex-col w-full h-full items-center justify-center p-5 gap-y-5">
-      <img :src="Logo" alt="로고" class=" w-52">
-      <div class="w-full h-full grid grid-cols-3 gap-x-5">
-        <div class="col-span-1 grid grid-cols-2">
-          <!-- 접속한 사용자들 표시 -->
-          <div v-for="(user, index) in participants" :key="user.id"
-            class="flex flex-col justify-end items-center"
-          >
-            <div
-              class="relative rounded-full border border-black w-24 h-24"
-            >
-              <div class="w-full h-full rounded-full overflow-hidden">
-                <img :src="user.image" alt="프로필" />
-              </div>
-              <span v-if="user.isBoss" class="absolute -top-3 -left-3 text-4xl z-10">👑</span>
+    <img :src="Logo" alt="로고" class=" w-52">
+    <div class="w-full h-full grid grid-cols-3 gap-x-5">
+      <div class="col-span-1 grid grid-cols-2">
+        <!-- 접속한 사용자들 표시 -->
+        <div v-for="(user, index) in participants" :key="user.id" class="flex flex-col justify-end items-center">
+          <div class="relative rounded-full border border-black w-24 h-24">
+            <div class="w-full h-full rounded-full overflow-hidden">
+              <img :src="user.image" alt="프로필" />
             </div>
-            <div>
-              {{ user.name }}
-            </div>
+            <span v-if="user.isBoss" class="absolute -top-3 -left-3 text-4xl z-10">👑</span>
           </div>
-
-          <!-- 대기 중 슬롯 표시 -->
-          <div v-for="n in maxParticipants - participants.length" :key="'waiting-' + n"
-            class="flex flex-col justify-end items-center"
-          >
-            <div class="rounded-full border border-black w-24 h-24 bg-gray-500"></div>
-            <div>대기 중...</div>
+          <div>
+            {{ user.name }}
           </div>
         </div>
-        <div class="col-span-2">
-          <h1>PeerJS Multi-Connection</h1>
-          <p>현재 피어 ID: {{ peerId }}</p>
-          <p>base62 압축 ID: {{ peerId }}</p>
-      
-          <div>
-            <label>새로운 상대방 ID:</label>
-            <input v-model="newRemoteId" placeholder="상대방의 Peer ID" />
-            <button @click="connectToPeer">연결</button>
-          </div>
-      
-          <div>
-            <h3>연결된 피어 목록:</h3>
-            <ul>
-              <li v-for="peer in connectedPeers" :key="peer.id">
-                {{ peer.id }}
-              </li>
-            </ul>
-          </div>
-      
-          <div v-if="connectedPeers.length">
-            <textarea v-model="message" placeholder="모든 피어에 보낼 메시지를 입력하세요"></textarea>
-            <button @click="broadcastMessage">브로드캐스트 메시지</button>
-          </div>
-      
-          <div>
-            <h3>받은 메시지:</h3>
-            <ul>
-              <li v-for="(msg, index) in receivedMessages" :key="index">
-                <strong>{{ msg.peerId }}:</strong> {{ msg.message }}
-              </li>
-            </ul>
-          </div>
+
+        <!-- 대기 중 슬롯 표시 -->
+        <div v-for="n in maxParticipants - participants.length" :key="'waiting-' + n"
+          class="flex flex-col justify-end items-center">
+          <div class="rounded-full border border-black w-24 h-24 bg-gray-500"></div>
+          <div>대기 중...</div>
         </div>
       </div>
+      <div class="col-span-2">
+        <div class="h-full w-full grid grid-rows-4">
+          <div class="row-span-3 grid grid-cols-7 grid-rows-7 gap-x-8 gap-y-8 border drop-shadow-md rounded-xl bg-[#ffffffa3]">
+            <div class="col-span-4 row-span-2 flex flex-col items-center">
+              <label class="self-start">1턴 당 시간(초)</label>
+              <div class="w-full flex justify-between">
+                <p v-for="n in 6" :key="n">{{ n + 9 }}</p>
+              </div>
+              <div class="range-container drop-shadow-md">
+                <input type="range" :min="minTimeValue" :max="maxTimeValue" :step="stepTimeValue" class="range-slider rounded-xl"
+                v-model="selectedTimeValue">
+                <div class="ticks flex justify-between items-center p-[2px]">
+                  <div v-for="(tick, index) in ticks" :key="index"></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-span-3 row-span-2 flex flex-col">
+              <label>플레이어 카드 개수</label>
+              <div class="flex justify-between items-center w-[50%] self-center">
+                <label :for="count + 'cards'" v-for="count in cardCount" :key="card" class="cursor-pointer" :class="count == selectedCountValue ? 'checked' : ''">
+                  {{ count }}
+                  <input type="radio" class="hidden" :id="count + 'cards'" name="card" :value="count" v-model="selectedCountValue" v-if="count == cardCount[0]" checked>
+                  <input type="radio" class="hidden" :id="count + 'cards'" name="card" :value="count" v-model="selectedCountValue" v-if="count != cardCount[0]">
+                </label>
+              </div>
+            </div>
+            <div class="col-span-4 row-span-5">
+              <label>게임 모드</label>
+              <div class="grid grid-cols-2 gap-x-3 h-2/3">
+                <div class="border-2 border-black rounded-xl shadow-lg flex flex-col justify-between" v-for="(mode, index) in modes" :key="index">
+                  <img :src="mode.icon" alt="모드 아이콘">
+                  <p>{{ mode.text }}</p>
+                  <input type="radio" name="mode" :value="mode.value" v-model="selectedMode" class="self-center appearance-none border border-black rounded-xl w-5 h-5 checked:bg-white checked:border-[#EB978B] checked:border-4" :checked="index === 0"/>
+                </div>
+              </div>
+            </div>
+            <div class="col-span-3 row-span-5">
+              <label>작화</label>
+              <select class="rounded-lg bg-slate-300 w-[70%] drop-shadow-md appearance-none">
+                <option value="korean">한국 전통민화</option>
+                <option value="occident">서양 회화</option>
+                <option value="japan">일본 우키요에</option>
+                <option value="egypt">이집트 벽화</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import Peer from "peerjs";
 import { Logo } from "@/assets";
-import { Profile1, Profile2, Profile3, Profile4, Profile5, Profile6 } from "@/assets";
+import { Profile1, Profile2, Profile3, Profile4, Profile5, Profile6, Mode1, Mode2 } from "@/assets";
 
 const route = useRoute();
 const peer = ref(null);
@@ -200,12 +211,103 @@ onMounted(() => {
     console.log("test");
   }
 });
+
+
+
+// 레인지 슬라이더 커스텀
+const minTimeValue = ref(10);
+const maxTimeValue = ref(15);
+const stepTimeValue = ref(1);
+const selectedTimeValue = ref(10);
+
+const ticks = computed(() => {
+  const steps = (maxTimeValue.value - minTimeValue.value) / stepTimeValue.value;
+  const positions = [];
+  for (let i = 0; i <= steps; i++) {
+    positions.push(((i / steps) * 100)); // 위치를 백분율로 계산
+  }
+  return positions;
+});
+
+
+// 플레이어 카드 개수
+const cardCount = ref([
+  4, 5, 6
+]);
+
+const selectedCountValue = ref(4);
+
+
+// 게임 모드
+const modes = ref([
+  {
+    icon: Mode1,
+    text: `문장을 입력하여 그림을 그립니다.
+    재밌는 이야기를 적어주세요!`,
+    value: 'textToPicture'
+  },
+  {
+    icon: Mode2,
+    text: `그림을 그려 이야기를 만듭니다.
+    그림 실력을 뽐내보세요!`,
+    value: 'pictureToText'
+  }
+])
+const selectedMode = ref("textToPicture");
 </script>
 
 <style scoped>
 textarea {
   width: 100%;
   height: 50px;
+}
+
+.range-container {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: #ffffff;
+  outline: none;
+  position: absolute;
+}
+
+.range-slider::-webkit-slider-thumb { 
+  cursor: pointer;
+  position: relative;
+  z-index: 30;
+}
+
+.ticks {
+  width: 100%;
+  height: 20px;
+  pointer-events: none;
+}
+
+.ticks div {  
+  height: 8px;
+  width: 8px;
+  background-color: #6d6d6d;
+  border-radius: 50%;
+  position: relative;
+  z-index: 20;
+}
+
+.checked {
+  border: 2px solid black;
+  border-radius: 30px;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  line-height: 100%;
 }
 </style>
   

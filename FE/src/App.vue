@@ -15,7 +15,6 @@
 </template>
 
 <script setup>
-import LobbyViewItem from './components/LobbyViewItem.vue';
 
 </script>
 

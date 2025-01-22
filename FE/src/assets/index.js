@@ -16,3 +16,7 @@ export { default as Profile3 } from "./images/profiles/profile3.svg";
 export { default as Profile4 } from "./images/profiles/profile4.svg";
 export { default as Profile5 } from "./images/profiles/profile5.svg";
 export { default as Profile6 } from "./images/profiles/profile6.svg";
+
+// modes
+export { default as Mode1 } from "./images/modes/mode1.svg";
+export { default as Mode2 } from "./images/modes/mode2.svg";
