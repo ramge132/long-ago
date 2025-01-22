@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { useUserStore } from "@/stores/auth";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -16,9 +17,17 @@ const router = createRouter({
       ],
     },
     {
-      path: "/webRTC",
-      name: "webRCT",
-      component: () => import("@/views/WebRTC.vue")
+      path: "/Lobby",
+      name: "Lobby",
+      component: () => import("@/views/LobbyView.vue"),
+      beforeEnter: (to, from, next) => {
+        const userStore = useUserStore();
+        if(!userStore.userData.userNickname) {
+          next({ name: "Init" });
+        } else {
+          next();
+        }
+      }
     }
   ],
 });
