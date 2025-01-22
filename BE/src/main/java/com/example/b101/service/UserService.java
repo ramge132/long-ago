@@ -32,8 +32,16 @@ public class UserService {
     }
 
     //닉네임으로 사용자 조회
-    public Optional<User> findByNicKname(String nickname) {
-        return userRepository.findByNickname(nickname);
+    public ResponseEntity<?> findByNicKname(String nickname, HttpServletRequest request) {
+        if(userRepository.findByNickname(nickname).isPresent()) {
+            return ApiResponseUtil.failure("이미 사용중인 닉네임입니다.",
+                    HttpStatus.CONFLICT,
+                    request.getRequestURI());
+        }
+
+        return ApiResponseUtil.success(nickname,"닉네임 사용가능",
+                HttpStatus.OK,
+                request.getRequestURI());
     }
 
     //회원가입
