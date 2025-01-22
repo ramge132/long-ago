@@ -14,7 +14,9 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+
+</script>
 
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
