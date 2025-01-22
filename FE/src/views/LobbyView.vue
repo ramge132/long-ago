@@ -37,7 +37,8 @@
           </button>
         </div>
       </div>
-      <div class="col-span-2 border-2 border-[#00000050] rounded-md">
+      <div class="col-span-2">
+        <!-- 방 설정 메뉴 표시 -->
         <div class="h-full w-full grid grid-rows-4">
           <div
             class="row-span-3 grid grid-cols-7 grid-rows-7 gap-x-8 gap-y-8 border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5">
@@ -90,9 +91,10 @@
               </select>
             </div>
           </div>
+          <!-- <div class="grid grid-cols-2" v-if="user.isBoss"> -->
           <div class="grid grid-cols-2">
             <div class="flex justify-center items-center">
-              <button class="border-2 w-[50%] h-[30%] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105">
+              <button class="border-2 w-[50%] h-[30%] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105" @click="toggleModal">
                 <img :src="InviteIcon" alt="초대 아이콘" class="w-1/3 h-1/2 mr-2">
                 초대하기
               </button>
@@ -108,6 +110,31 @@
           </div>
         </div>
       </div>
+      <Transition name="fade">
+      <div
+        v-if="isOpen"
+        @click="toggleModal"
+        class="absolute bg-[#00000035] w-full h-full top-0 left-0 flex justify-center items-center"
+      >
+        <div
+          @click.stop
+          class="w-96 h-36 text-[#ffffff] font-makgeolli text-2xl rounded-md overflow-hidden flex flex-col"
+        >
+
+          <div
+            class="flex-1 max-w-full bg-[#00000050] overflow-auto flex items-center justify-center"
+          >
+            <div class="w-11/12">
+              <p>초대링크</p>
+              <div class="w-full flex">
+                <input type="text" class="bg-white rounded-xl pl-3 grow text-black mr-3" :value="InviteLink" disabled>
+                <img :src="CopyIcon" alt="복사 아이콘" class="inlin cursor-pointer" @click="copy">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
     </div>
   </div>
 </template>
@@ -118,7 +145,9 @@ import { useRoute } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { Logo } from "@/assets";
-import { Profile1, Profile2, Profile3, Profile4, Profile5, Profile6, Mode1, Mode2, InviteIcon, PlayIcon } from "@/assets";
+import { Profile1, Profile2, Profile3, Profile4, Profile5, Profile6, Mode1, Mode2, InviteIcon, PlayIcon, CopyIcon } from "@/assets";
+import useCilpboard from 'vue-clipboard3';
+import toast from "@/functions/toast";
 
 const userStore = useUserStore();
 const route = useRoute();
@@ -131,7 +160,7 @@ const receivedMessages = ref([]);
 const participants = ref([]);
 const maxParticipants = 6;
 const chatBox = ref(null);
-
+const {toClipboard} = useCilpboard();
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -336,6 +365,8 @@ const initializePeer = () => {
   });
 };
 
+
+
 // 컴포넌트 마운트
 onMounted(async () => {
   try {
@@ -353,6 +384,7 @@ onMounted(async () => {
   } catch (error) {
     console.error("Peer initialization failed:", error);
   }
+  InviteLink.value = ("http://localhost:5173/?roomID=" + compressUUID(peerId.value));
 });
 
 
@@ -396,6 +428,25 @@ const modes = ref([
   }
 ])
 const selectedMode = ref("textToPicture");
+
+
+// 초대 링크 표시
+const isOpen = ref(false);
+const toggleModal = () => {
+  isOpen.value = !isOpen.value;
+}
+const InviteLink = ref("");
+
+// 초대링크 클립보드 복사사
+const copy = async () => {
+  try {
+    await toClipboard(InviteLink.value);
+    console.log('Copied to clipboard');
+    toast.successToast("클립보드에 복사되었습니다.");
+  } catch(error) {
+    console.error(error);
+  }
+}
 
 </script>
 <style scoped>

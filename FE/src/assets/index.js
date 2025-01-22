@@ -24,3 +24,4 @@ export { default as Mode2 } from "./images/modes/mode2.svg";
 // icons
 export { default as InviteIcon } from "./icons/invite.svg";
 export { default as PlayIcon } from "./icons/play.svg";
+export { default as CopyIcon } from "./icons/copy.svg";
