@@ -25,28 +25,13 @@ public class UserController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignUpDto signUpDto, HttpServletRequest request) {
-
-
-        if (userService.usedEmail(signUpDto.getEmail())) {
-            return ApiResponseUtil.failure("이미 사용중인 이메일입니다.",
-                    HttpStatus.CONFLICT,
-                    request.getRequestURI());
-        }
-
-        User newUser = new User();
-        newUser.setEmail(signUpDto.getEmail());
-        newUser.setPassword(encoder.encode(signUpDto.getPassword())); //비밀번호 암호화 후 저장
-        userService.saveUser(newUser);
-
-
-
-        return ApiResponseUtil.success(null,"회원가입 성공",HttpStatus.CREATED,request.getRequestURI());
+        return userService.saveUser(signUpDto, request);
     }
 
 
     @GetMapping("/check-nickname")
     public ResponseEntity<?> checkNickname(@RequestParam("nickname") String nickname,HttpServletRequest request) {
-        if(userService.findByEmail(nickname).isPresent()) {
+        if(userService.findByNicKname(nickname).isPresent()) {
             return ApiResponseUtil.failure("이미 사용중인 닉네임입니다.",
                     HttpStatus.CONFLICT,
                     request.getRequestURI());
