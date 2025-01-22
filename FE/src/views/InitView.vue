@@ -59,7 +59,8 @@
           </swiper>
         </div>
         <div @click="start" class="flex justify-center cursor-pointer transition-all duration-300 hover:scale-110">
-          <img :src="gameStart" alt="시작하기" class=" h-10">
+          <img v-if="!route.query.roomID" :src="gameStart" alt="시작하기기" class=" h-10">
+          <img v-else :src="gameJoin" alt="시작하기" class=" h-10">
         </div>
       </div>
     </div>
@@ -73,7 +74,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import { Profile1, Profile2, Profile3, Profile4, Profile5, Profile6, gameStart, rule1, rule2 } from "@/assets";
+import { Profile1, Profile2, Profile3, Profile4, Profile5, Profile6, gameStart, gameJoin, rule1, rule2 } from "@/assets";
 import { useUserStore } from "@/stores/auth";
 
 const userStore = useUserStore();
