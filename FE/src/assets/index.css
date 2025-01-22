@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 @font-face {
+  font-family: 'KCC-Ganpan';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/KCC-Ganpan.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
   font-family: "HS유지체";
   src: url("@/assets/fonts/HS유지체.ttf") format("truetype");
   font-weight: 400;
@@ -15,8 +22,7 @@
 }
 
 body {
-  font-family: "HS유지체", "MAKGEOLLI", sans-serif;
-  font-weight: 400;
+  font-family: "KCC-Ganpan", "HS유지체", "MAKGEOLLI", sans-serif;
   cursor: url("@/assets/icons/cursor.cur"), auto; /* 기본 커서 이미지 설정 */
 }
 

@@ -7,6 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        kcc: [""],
         hs: ["HS유지체", ...defaultTheme.fontFamily.sans],
         makgeolli: ["MAKGEOLLI", ...defaultTheme.fontFamily.sans],
       },
