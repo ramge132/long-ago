@@ -25,27 +25,17 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // jpa 사용
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-web' //spring web 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'//redis 의존성
+    implementation 'org.projectlombok:lombok'//lombok 의존성
 
+    implementation 'org.springframework.boot:spring-boot-starter-security' //security
+    testImplementation 'org.springframework.security:spring-security-test' //security
+    developmentOnly 'org.springframework.boot:spring-boot-devtools' // devtools 의존성
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'//swagger 의존성
+    runtimeOnly 'com.mysql:mysql-connector-j' //mysql
 
-
-
-    testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'io.projectreactor:reactor-test'// 웹 개발을 위한 필수 의존성
-
-    compileOnly 'org.projectlombok:lombok' // 개발 생산성을 위한 롬복
-    annotationProcessor 'org.projectlombok:lombok'
-
-    developmentOnly 'org.springframework.boot:spring-boot-devtools' // 수정 후 바로 반영 위한 devtools
-
-
-    testImplementation 'org.springframework.boot:spring-boot-starter-test' // 테스트를 위한 의존성
-    runtimeOnly 'com.mysql:mysql-connector-j' // mysql 의존성
-
-    // Swagger/OpenAPI 의존성 추가
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
-
+    annotationProcessor('org.projectlombok:lombok')
 }
 
 tasks.named('test') {
