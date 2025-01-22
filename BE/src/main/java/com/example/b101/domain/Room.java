@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -18,7 +19,9 @@ public class Room implements Serializable {
 
     private String name;
 
-//    private List<User> users;
+    private List<String> users; //참가자 ID
+
+    private String owner; //방장 ID
 
     private int maxCapacity;
 

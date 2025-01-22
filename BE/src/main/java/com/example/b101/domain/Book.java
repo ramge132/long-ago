@@ -18,9 +18,9 @@ public class Book {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private int id;
 
-    @Column(name = "BOOK_TITLE",nullable = true)
+    @Column(name = "BOOK_TITLE",nullable = false)
     private String title;
 
     @OneToMany(mappedBy = "book")
