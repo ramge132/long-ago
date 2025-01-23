@@ -1,7 +1,7 @@
-package com.example.b101.service;
+package com.example.b101.service.user;
 
 import com.example.b101.domain.User;
-import com.example.b101.dto.CustomUserDetails;
+import com.example.b101.dto.user.CustomUserDetails;
 import com.example.b101.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

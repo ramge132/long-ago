@@ -1,4 +1,4 @@
-package com.example.b101.dto;
+package com.example.b101.dto.user;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
