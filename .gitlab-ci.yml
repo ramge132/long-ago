@@ -45,7 +45,7 @@ build_BE:
   when: always
 
   ##
-  build_FE:
+build_FE:
   stage: build_FE
   image: docker:27.4.0
   variables:
