@@ -87,17 +87,17 @@
                 <div class="w-full flex justify-between">
                   <p v-for="n in 6" :key="n">{{ n + 9 }}</p>
                 </div>
-                <div class="range-container drop-shadow-md">
+                <div class="range-container drop-shadow-md relative w-full h-[20px] flex justify-center items-center">
                   <input
                     type="range"
                     :min="minTimeValue"
                     :max="maxTimeValue"
                     :step="stepTimeValue"
-                    class="range-slider rounded-xl"
+                    class="range-slider rounded-xl appearance-none w-full bg-white outline-none absolute"
                     v-model="roomConfigs.currTurnTime"
                   />
-                  <div class="ticks flex justify-between items-center p-[2px]">
-                    <div v-for="(tick, index) in ticks" :key="index"></div>
+                  <div class="ticks w-full h-[20px] pointer-events-none flex justify-between items-center p-[2px]">
+                    <div v-for="(tick, index) in ticks" :key="index" class="h-[8px] w-[8px] bg-[#6d6d6d] rounded-lg relative z-20"></div>
                   </div>
                 </div>
               </div>
@@ -111,7 +111,7 @@
                     v-for="(count, index) in cardCount"
                     :key="index"
                     class="cursor-pointer"
-                    :class="count == roomConfigs.currCardCount ? 'checked' : ''"
+                    :class="count == roomConfigs.currCardCount ? 'border-2 border-black rounded-xl w-[20px] h-[20px] text-center leading-[100%]' : ''"
                   >
                     {{ count }}
                     <input
@@ -639,52 +639,3 @@ watch(
   { deep: true },
 );
 </script>
-<style scoped>
-.range-container {
-  position: relative;
-  width: 100%;
-  height: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.range-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  background: #ffffff;
-  outline: none;
-  position: absolute;
-}
-
-.range-slider::-webkit-slider-thumb {
-  cursor: pointer;
-  position: relative;
-  z-index: 30;
-}
-
-.ticks {
-  width: 100%;
-  height: 20px;
-  pointer-events: none;
-}
-
-.ticks div {
-  height: 8px;
-  width: 8px;
-  background-color: #6d6d6d;
-  border-radius: 50%;
-  position: relative;
-  z-index: 20;
-}
-
-.checked {
-  border: 2px solid black;
-  border-radius: 30px;
-  width: 20px;
-  height: 20px;
-  text-align: center;
-  line-height: 100%;
-}
-</style>
