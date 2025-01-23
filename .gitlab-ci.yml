@@ -1,8 +1,8 @@
 
 # 파이프라인 스테이지
 stages:
-  - build_FE
   - build_BE
+  - build_FE
   - push_FE
   - push_BE
   - cleanup
