@@ -1,8 +1,6 @@
 package com.example.b101.domain;
 
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,8 +10,8 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class Room implements Serializable {
 
     @Id
@@ -21,9 +19,9 @@ public class Room implements Serializable {
 
     private String name;
 
-    private List<String> users; //참가자 ID
+    private List<String> users; //참가자들 sessionID
 
-    private String owner; //방장 ID
+    private String owner; //방장 sessionID
 
     private int maxCapacity;
 

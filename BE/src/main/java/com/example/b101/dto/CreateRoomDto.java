@@ -1,4 +1,4 @@
-package com.example.b101.dto.room;
+package com.example.b101.dto;
 
 import lombok.Data;
 

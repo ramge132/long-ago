@@ -1,10 +1,11 @@
-package com.example.b101.service.room;
+package com.example.b101.service;
 
 import com.example.b101.domain.Room;
-import com.example.b101.dto.room.CreateRoomDto;
+import com.example.b101.dto.CreateRoomDto;
 import com.example.b101.repository.RoomRepository;
 import com.example.b101.common.ApiResponseUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class RoomService {
 
@@ -21,7 +23,7 @@ public class RoomService {
         this.roomRepository = roomRepository;
     }
 
-    public ResponseEntity<?> createRoom(CreateRoomDto createRoomDto,HttpServletRequest request) {
+    public ResponseEntity<?> createRoom(CreateRoomDto createRoomDto, HttpServletRequest request) {
         List<String> users = new ArrayList<>();
         users.add(createRoomDto.getOwnerId());
 
@@ -46,6 +48,7 @@ public class RoomService {
 
     public ResponseEntity<?> getAllRooms(HttpServletRequest request) {
         if (roomRepository.findAll().isEmpty()) {
+            log.info("room not found");
             return ApiResponseUtil.failure("생성되어 있는 방이 없습니다.",
                     HttpStatus.NOT_FOUND,
                     request.getRequestURI());
@@ -58,9 +61,8 @@ public class RoomService {
     }
 
 
-
-    public ResponseEntity<?> deleteRoom(String id,HttpServletRequest request) {
-        if(roomRepository.findById(id) == null) {
+    public ResponseEntity<?> deleteRoom(String id, HttpServletRequest request) {
+        if (roomRepository.findById(id) == null) {
             return ApiResponseUtil.failure("해당 roomId를 가진 방이 없습니다.",
                     HttpStatus.NOT_FOUND,
                     request.getRequestURI());
@@ -72,10 +74,11 @@ public class RoomService {
                 request.getRequestURI());
     }
 
-    // 사용자 추가
-    public ResponseEntity<?> addUserToRoom(String userId, String roomId,HttpServletRequest request) {
+    // 방 입장하기
+    public ResponseEntity<?> addUserToRoom(String userId, String roomId, HttpServletRequest request) {
         Room room = roomRepository.findById(roomId);
         if (room == null) {
+            log.info("room not found");
             return ApiResponseUtil.failure("잘못된 방 ID입니다.",
                     HttpStatus.NOT_FOUND,
                     request.getRequestURI());
@@ -105,9 +108,58 @@ public class RoomService {
     }
 
 
-
-
     //방 나가기
+    public ResponseEntity<?> removeUserFromRoom(String sessionId, String roomId, HttpServletRequest request) {
+        Room room = roomRepository.findById(roomId);
+
+        // roomId와 일치하는 방이 없을 때
+        if (room == null) {
+            return ApiResponseUtil.failure("해당 roomId를 가진 방을 찾을 수 없습니다.",
+                    HttpStatus.NOT_FOUND,
+                    request.getRequestURI());
+        }
+
+        // sessionId가 방에 없는 경우
+        if (!room.getUsers().contains(sessionId)) {
+            return ApiResponseUtil.failure("해당 사용자가 방에 존재하지 않습니다.",
+                    HttpStatus.NOT_FOUND,
+                    request.getRequestURI());
+        }
+
+        // 방장이 나가려고 할 때
+        if (room.getOwner().equals(sessionId)) {
+            room.getUsers().remove(sessionId);
+
+            // 방에 사용자가 남아있을 경우 새로운 방장 지정
+            if (!room.getUsers().isEmpty()) {
+                String newOwnerSessionId = room.getUsers().get(0); // 다음 사용자를 방장으로
+                room.setOwner(newOwnerSessionId);
+                room.setId(newOwnerSessionId); // roomId 업데이트
+                roomRepository.put(room);
+
+                return ApiResponseUtil.success(newOwnerSessionId,
+                        "방장이 나갔습니다. 새로운 방장은 " + newOwnerSessionId + "입니다.",
+                        HttpStatus.OK,
+                        request.getRequestURI());
+            } else {
+                // 방에 사용자가 없으면 방 삭제
+                roomRepository.delete(roomId);
+                return ApiResponseUtil.success(null,
+                        "방장이 방을 나가고 방이 삭제되었습니다.",
+                        HttpStatus.OK,
+                        request.getRequestURI());
+            }
+        }
+
+        // 일반 사용자가 나가는 경우
+        room.getUsers().remove(sessionId);
+        roomRepository.put(room);
+
+        return ApiResponseUtil.success(sessionId,
+                sessionId + "님이 방을 나갔습니다.",
+                HttpStatus.OK,
+                request.getRequestURI());
+    }
 
 
 }

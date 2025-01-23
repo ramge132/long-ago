@@ -1,4 +1,4 @@
-package com.example.b101.response;
+package com.example.b101.common;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

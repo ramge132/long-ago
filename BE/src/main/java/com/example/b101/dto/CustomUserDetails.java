@@ -1,7 +1,8 @@
-package com.example.b101.dto.user;
+package com.example.b101.dto;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
 import java.util.Collection;
 
 public class CustomUserDetails implements UserDetails {
