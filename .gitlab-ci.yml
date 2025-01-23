@@ -137,4 +137,8 @@ cleanup:
     - rm -rf FE/dist
     - rm -rf BE/build
 
+    # 전체 프로젝트 디렉토리 삭제
+    - cd ..
+    - rm -rf $CI_PROJECT_DIR
+
   when: always
