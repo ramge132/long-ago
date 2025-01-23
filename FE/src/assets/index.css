@@ -48,3 +48,15 @@ body {
 ::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.5); /*스크롤바 뒷 배경 색상*/
 }
+
+.range-slider::-webkit-slider-thumb {
+  cursor: pointer;
+  position: relative;
+  scale: 120%;
+  z-index: 30;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  transition: 0.3s ease-in-out;
+  transform: scale(130%);
+}
