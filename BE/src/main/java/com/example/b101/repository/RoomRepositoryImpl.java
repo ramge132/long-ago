@@ -1,6 +1,6 @@
-package com.example.b101.repository.impl;
+package com.example.b101.repository;
+
 import com.example.b101.domain.Room;
-import com.example.b101.repository.RoomRepository;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -41,6 +41,7 @@ public class RoomRepositoryImpl implements RoomRepository {
         redisTemplate.opsForHash().delete(KEY, id);
     }
 
+    @Override
     public void put(Room room) {
         redisTemplate.opsForHash().put(KEY, room.getId(), room);
     }

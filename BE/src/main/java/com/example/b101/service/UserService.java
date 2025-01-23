@@ -1,7 +1,7 @@
-package com.example.b101.service.user;
+package com.example.b101.service;
 
 import com.example.b101.domain.User;
-import com.example.b101.dto.user.SignUpDto;
+import com.example.b101.dto.SignUpDto;
 import com.example.b101.repository.UserRepository;
 import com.example.b101.common.ApiResponseUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,13 +31,13 @@ public class UserService {
 
     //닉네임으로 사용자 조회
     public ResponseEntity<?> findByNickname(String nickname, HttpServletRequest request) {
-        if(userRepository.findByNickname(nickname).isPresent()) {
+        if (userRepository.findByNickname(nickname).isPresent()) {
             return ApiResponseUtil.failure("이미 사용중인 닉네임입니다.",
                     HttpStatus.CONFLICT,
                     request.getRequestURI());
         }
 
-        return ApiResponseUtil.success(nickname,"닉네임 사용가능",
+        return ApiResponseUtil.success(nickname, "닉네임 사용가능",
                 HttpStatus.OK,
                 request.getRequestURI());
     }
@@ -55,10 +55,10 @@ public class UserService {
         newUser.setPassword(encoder.encode(signUpDto.getPassword())); //비밀번호 암호화 후 저장
         userRepository.save(newUser);
 
-        return ApiResponseUtil.success(null,"회원가입 성공",HttpStatus.CREATED,request.getRequestURI());
+        return ApiResponseUtil.success(null, "회원가입 성공", HttpStatus.CREATED, request.getRequestURI());
     }
 
-    public boolean usedEmail(String email){
+    public boolean usedEmail(String email) {
         return userRepository.findByEmail(email).isPresent();
     }
 
