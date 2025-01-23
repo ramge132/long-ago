@@ -29,8 +29,8 @@ public class RedisConfig {
 
 
     @Bean
-    public RedisTemplate<String, Room> redisTemplate(LettuceConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, Room> template = new RedisTemplate<>();
+    public <T> RedisTemplate<String, T> redisTemplate(LettuceConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, T> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
 
         // JSON 직렬화 설정

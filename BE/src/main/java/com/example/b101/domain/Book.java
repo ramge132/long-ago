@@ -20,7 +20,7 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "BOOK_TITLE",nullable = false)
+    @Column(name = "BOOK_TITLE", nullable = false)
     private String title;
 
     @OneToMany(mappedBy = "book")
