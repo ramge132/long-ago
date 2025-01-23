@@ -17,9 +17,9 @@ const router = createRouter({
       ],
     },
     {
-      path: "/Lobby",
-      name: "Lobby",
-      component: () => import("@/views/LobbyView.vue"),
+      path: "/game",
+      name: "Game",
+      component: () => import("@/views/GameView.vue"),
       beforeEnter: (to, from, next) => {
         const userStore = useUserStore();
         if (!userStore.userData.userNickname) {
@@ -28,6 +28,18 @@ const router = createRouter({
           next();
         }
       },
+      children: [
+        {
+          path: "",
+          name: "Lobby",
+          component: () => import("@/views/Game/LobbyView.vue"),
+        },
+        {
+          path: "play",
+          name: "InGame",
+          component: () => import("@/views/Game/LobbyView.vue"),
+        },
+      ]
     },
   ],
 });

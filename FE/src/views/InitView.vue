@@ -140,9 +140,9 @@ const start = () => {
   userStore.setUserProfile(currentProfile);
   sessionStorage.setItem("userNickname", nickname.value);
   if (route.query.roomID) {
-    router.push(`/Lobby?roomID=${route.query.roomID}`);
+    router.push(`/game?roomID=${route.query.roomID}`);
   } else {
-    router.push("/Lobby");
+    router.push("/game");
   }
 };
 
