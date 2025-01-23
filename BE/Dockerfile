@@ -9,7 +9,7 @@ FROM gradle:8.12.0-jdk17-alpine AS build
 WORKDIR /home/gradle/BE
 
 # 종속성 관련 파일만 먼저 복사
-COPY BE/build.gradle BE/settings.gradle ./
+COPY build.gradle settings.gradle ./
 
 #  소스 코드 복사
 COPY src ./src/
