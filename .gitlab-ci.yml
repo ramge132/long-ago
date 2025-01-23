@@ -80,7 +80,7 @@ push_FE:
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
   dependencies:
-    - build_fe
+    - build_FE
   rules:
     - changes:
       - FE/**/* 
@@ -104,10 +104,10 @@ push_BE:
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
   dependencies:
-    - build_fe
+    - build_BE
   rules:
     - changes:
-      - FE/**/* 
+      - BE/**/* 
       when: always
     - when: never
 
