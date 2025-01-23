@@ -127,18 +127,15 @@ cleanup:
     # 불필요한 이미지 제거
     - docker image prune -f
 
-    # 특정 이미지 태그 제거#
+    # 특정 이미지 태그 제거
     - docker rmi $FE_IMAGE:$CI_COMMIT_SHA || true
     - docker rmi $FE_IMAGE:latest || true
     - docker rmi $BE_IMAGE:$CI_COMMIT_SHA || true
     - docker rmi $BE_IMAGE:latest || true
 
-    # 빌드 파일 삭제 (예: FE/dist, BE/build)
-    - rm -rf FE/dist
-    - rm -rf BE/build
-
     # 전체 프로젝트 디렉토리 삭제
     - cd ..
-    - rm -rf $CI_PROJECT_DIR
+    - cd ..
+    - rm -rf s12-webmobile1-sub1
 
   when: always
