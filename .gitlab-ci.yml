@@ -35,11 +35,8 @@ build_FE:
     - echo "==========================="
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-  rules:
-  - changes:
-      - FE/**/* 
-    when: always
-  - when: never
+
+  when: always
 
 #######################
 # 2. build_be JOB 단계 #
@@ -58,11 +55,8 @@ build_be:
     - echo "==========================="
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-  rules:
-    - changes:
-      - BE/**/* 
-      when: always
-    - when: never
+
+  when: always
 
 ######################
 # 3. push_fe JOB 단계 #
@@ -81,11 +75,7 @@ push_FE:
     - docker push $IMAGE_NAME:latest
   dependencies:
     - build_FE
-  rules:
-    - changes:
-        - FE/**/* 
-      when: always
-    - when: never
+  when: always
 
 
 ######################
@@ -104,11 +94,8 @@ push_be:
     - docker push $IMAGE_NAME:latest
   dependencies:
     - build_be
-  rules:
-    - changes:
-        - BE/**/* 
-      when: always
-    - when: never
+  when: always
+
 #######################
 # 5. 도커 이미지 정리  #
 #######################
