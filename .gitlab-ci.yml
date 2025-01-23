@@ -13,6 +13,9 @@ variables:
   FE_IMAGE: "ssafyb101/my-fe"
   BE_IMAGE: "ssafyb101/my-be"
 
+  # 각 스테이지의 job 실행 후, 워크스페이스 유지
+  GIT_STRATEGY: fetch
+
 
 
 #######################
@@ -39,7 +42,7 @@ build_FE:
 # 2. build_be JOB 단계 #
 #######################
 
-build_be:
+build_BE:
   stage: build_BE
   image: gradle:8.12.0-jdk17-alpine
   variables:
@@ -78,7 +81,7 @@ push_FE:
 ######################
 # 4. push_be JOB 단계 #
 ######################
-push_be:
+push_BE:
   stage: push_BE
   variables:
     IMAGE_NAME: $BE_IMAGE
@@ -90,7 +93,7 @@ push_be:
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
   dependencies:
-    - build_be
+    - build_BE
   when: always
 
 #######################
@@ -113,5 +116,9 @@ cleanup:
     - docker rmi $FE_IMAGE:latest || true
     - docker rmi $BE_IMAGE:$CI_COMMIT_SHA || true
     - docker rmi $BE_IMAGE:latest || true
+
+    # 빌드 파일 삭제 (예: FE/dist, BE/build)
+    - rm -rf FE/dist
+    - rm -rf BE/build
 
   when: always
