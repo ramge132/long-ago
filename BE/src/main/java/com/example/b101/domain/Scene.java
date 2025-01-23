@@ -24,9 +24,7 @@ public class Scene {
 
     private int sceneOrder;
 
-    @Column(columnDefinition = "TEXT")
     private String prompt;
-
 
     private String imageUrl;
 

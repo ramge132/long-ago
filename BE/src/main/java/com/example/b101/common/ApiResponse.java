@@ -1,4 +1,4 @@
-package com.example.b101.response;
+package com.example.b101.common;
 
 import lombok.Builder;
 import lombok.Data;

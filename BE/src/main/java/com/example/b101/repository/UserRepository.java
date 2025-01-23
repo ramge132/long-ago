@@ -7,15 +7,15 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-//Long: @Id 필드의 데이터 타입
-public interface UserRepository extends JpaRepository<User,Long> {
+public interface UserRepository extends JpaRepository<User, Integer> {
 
-    //닉네임으로 사용자 검색
+    /**
+     * Optional 타입은 nullpointerException을 방지합니다.
+     */
     Optional<User> findByNickname(String nickname);
 
     //소셜 이메일로 사용자 검색
     Optional<User> findByEmail(String email);
-
 
 
 }

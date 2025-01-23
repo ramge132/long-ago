@@ -19,7 +19,7 @@ public class RoomController {
 
     @PostMapping
     public ResponseEntity<?> createRoom(@RequestBody CreateRoomDto createRoomDto, HttpServletRequest request) {
-        return roomService.createRoom(createRoomDto,request);
+        return roomService.createRoom(createRoomDto, request);
     }
 
 
@@ -28,13 +28,21 @@ public class RoomController {
         return roomService.getAllRooms(request);
     }
 
+
     @DeleteMapping
-    public ResponseEntity<?> deleteRoom(@RequestParam String roomId,HttpServletRequest request) {
-        return roomService.deleteRoom(roomId,request);
+    public ResponseEntity<?> deleteRoom(@RequestParam String roomId, HttpServletRequest request) {
+        return roomService.deleteRoom(roomId, request);
     }
 
     @PostMapping("/{roomId}")
-    public ResponseEntity<?> enterRoom(@PathVariable String roomId, @RequestParam String userid,HttpServletRequest request) {
-        return roomService.addUserToRoom(userid, roomId,request);
+    public ResponseEntity<?> enterRoom(@PathVariable String roomId, @RequestParam String userId, HttpServletRequest request) {
+        return roomService.addUserToRoom(userId, roomId, request);
     }
+
+
+    @PatchMapping("/{roomId}")
+    public ResponseEntity<?> leaveRoom(@PathVariable String roomId, @RequestParam String userId, HttpServletRequest request) {
+        return roomService.removeUserFromRoom(userId, roomId, request);
+    }
+
 }
