@@ -1,6 +1,6 @@
-package com.example.b101.repository;
-
+package com.example.b101.repository.impl;
 import com.example.b101.domain.Room;
+import com.example.b101.repository.RoomRepository;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -10,9 +10,9 @@ import java.util.stream.Collectors;
 @Repository
 public class RoomRepositoryImpl implements RoomRepository {
 
-    private static final String KEY = "Room"; //키 값은 Room으로 고정
+    private static final String KEY = "Room"; // 키 값은 Room으로 고정
 
-    private RedisTemplate<String, Room> redisTemplate;
+    private final RedisTemplate<String, Room> redisTemplate;
 
     public RoomRepositoryImpl(RedisTemplate<String, Room> redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -20,12 +20,12 @@ public class RoomRepositoryImpl implements RoomRepository {
 
     @Override
     public void create(Room room) {
-        redisTemplate.opsForHash().put(KEY, String.valueOf(room.getId()), room);
+        redisTemplate.opsForHash().put(KEY, room.getId(), room);
     }
 
     @Override
     public Room findById(String id) {
-       return (Room) redisTemplate.opsForHash().get(KEY, String.valueOf(id));
+        return (Room) redisTemplate.opsForHash().get(KEY, String.valueOf(id));
     }
 
     @Override
@@ -37,7 +37,13 @@ public class RoomRepositoryImpl implements RoomRepository {
     }
 
     @Override
-    public void delete(Room room) {
-        redisTemplate.opsForHash().delete(KEY, String.valueOf(room.getId()));
+    public void delete(String id) {
+        redisTemplate.opsForHash().delete(KEY, id);
     }
+
+    public void put(Room room) {
+        redisTemplate.opsForHash().put(KEY, room.getId(), room);
+    }
+
+
 }

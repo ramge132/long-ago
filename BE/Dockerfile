@@ -1,4 +1,8 @@
-# 1. 빌드
+#############
+# 1. 빌드   #
+#############
+
+# 베이스 이미지 설정
 FROM gradle:8.12.0-jdk17-alpine AS build
 
 # 컨테이너 안 경로 설정
@@ -7,12 +11,13 @@ WORKDIR /home/gradle/project
 # 종속성 관련 파일만 먼저 복사
 COPY build.gradle settings.gradle ./
 
+#  소스 코드 복사
+COPY ./src ./src/
 
 # Gradle 캐시를 활용하여 종속성 다운로드 및 빌드
 RUN gradle build -x test --no-daemon
 
-# 소스 코드 복사
-COPY ./src ./src/
+
 
 # 2. 실행 가능한 JAR 파일을 포함한 이미지 생성
 FROM openjdk:17-jdk-alpine

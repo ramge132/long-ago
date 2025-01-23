@@ -1,36 +1,40 @@
 package com.example.b101.controller;
 
-import com.example.b101.domain.Room;
+import com.example.b101.dto.CreateRoomDto;
 import com.example.b101.service.RoomService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/rooms")
 public class RoomController {
 
-    @Autowired
-    private RoomService roomService;
+    private final RoomService roomService;
+
+    public RoomController(RoomService roomService) {
+        this.roomService = roomService;
+    }
 
     @PostMapping
-    public void createRoom(@RequestBody Room room) {
-        roomService.createRoom(room);
+    public ResponseEntity<?> createRoom(@RequestBody CreateRoomDto createRoomDto, HttpServletRequest request) {
+        return roomService.createRoom(createRoomDto,request);
     }
 
-    @GetMapping("/{id}")
-    public Room getRoom(@PathVariable String id) {
-        return roomService.getRoomById(id);
-    }
 
     @GetMapping
-    public List<Room> getAllRooms() {
-        return roomService.getAllRooms();
+    public ResponseEntity<?> getAllRooms(HttpServletRequest request) {
+        return roomService.getAllRooms(request);
     }
 
     @DeleteMapping
-    public void deleteRoom(@RequestBody Room room) {
-        roomService.deleteRoom(room);
+    public ResponseEntity<?> deleteRoom(@RequestParam String roomId,HttpServletRequest request) {
+        return roomService.deleteRoom(roomId,request);
+    }
+
+    @PostMapping("/{roomId}")
+    public ResponseEntity<?> enterRoom(@PathVariable String roomId, @RequestParam String userid,HttpServletRequest request) {
+        return roomService.addUserToRoom(userid, roomId,request);
     }
 }
