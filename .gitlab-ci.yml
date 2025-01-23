@@ -46,7 +46,7 @@ build_FE:
 #######################
 
 build_be:
-  stage: build
+  stage: build_BE
   image: gradle:8.12.0-jdk17-alpine
   variables:
     IMAGE_NAME: $BE_IMAGE
