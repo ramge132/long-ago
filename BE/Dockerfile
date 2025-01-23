@@ -12,7 +12,7 @@ WORKDIR /home/gradle/BE
 COPY BE/build.gradle BE/settings.gradle ./
 
 #  소스 코드 복사
-COPY BE/src ./src/
+COPY src ./src/
 
 # Gradle 캐시를 활용하여 종속성 다운로드 및 빌드
 RUN gradle build -x test --no-daemon
