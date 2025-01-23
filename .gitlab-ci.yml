@@ -30,6 +30,7 @@ build_FE:
     - echo "==========================="
     - echo "     FRONT-END빌드 중"
     - echo "==========================="
+    - sudo su
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
 
@@ -50,6 +51,7 @@ build_be:
     - echo "==========================="
     - echo "      BACK-END빌드 중"
     - echo "==========================="
+    - sudo su
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
 
@@ -67,6 +69,7 @@ push_FE:
     - echo "==========================="
     - echo "  FRONT-END 이미지 푸쉬 중"
     - echo "==========================="
+    - sudo su
     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
@@ -86,6 +89,7 @@ push_be:
     - echo "==========================="
     - echo "  BACK-END 이미지 푸쉬 중"
     - echo "==========================="
+    - sudo su
     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
@@ -104,6 +108,7 @@ cleanup:
     - echo "============================="
     - echo "  도커 이미지 및 캐시 정리 중"
     - echo "============================="
+    - sudo su
     
     # 불필요한 이미지 제거
     - docker image prune -f
