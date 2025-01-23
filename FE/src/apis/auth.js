@@ -26,13 +26,15 @@ export const postRegister = async (data) => {
 export const postSignIn = async (data) => {
   try {
     const formData = new FormData();
-    formData.append('username', data.username);
-    formData.append('password', data.password);
+    formData.append("username", data.username);
+    formData.append("password", data.password);
     const response = await apiClient.post(
       import.meta.env.VITE_USERS_SIGNIN,
-      formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    });
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
     return response;
   } catch (error) {
     console.log("API 요청 에러:", error);

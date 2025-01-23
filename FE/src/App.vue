@@ -1,5 +1,4 @@
 <template>
-  
   <div
     class="bg-no-repeat bg-cover bg-center bg-fairytail-image w-screen h-screen flex flex-col justify-center items-center"
   >
@@ -21,7 +20,7 @@
 </template>
 
 <script setup>
-import { TigerAnimation } from './components';
+import { TigerAnimation } from "./components";
 </script>
 
 <style>

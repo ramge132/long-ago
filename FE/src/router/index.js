@@ -10,9 +10,9 @@ const router = createRouter({
       component: () => import("@/views/IntroView.vue"),
       children: [
         {
-          path: '',
-          name: 'Init',
-          component: () => import('@/views/InitView.vue'),
+          path: "",
+          name: "Init",
+          component: () => import("@/views/InitView.vue"),
         },
       ],
     },
@@ -22,13 +22,13 @@ const router = createRouter({
       component: () => import("@/views/LobbyView.vue"),
       beforeEnter: (to, from, next) => {
         const userStore = useUserStore();
-        if(!userStore.userData.userNickname) {
+        if (!userStore.userData.userNickname) {
           next({ name: "Init" });
         } else {
           next();
         }
-      }
-    }
+      },
+    },
   ],
 });
 

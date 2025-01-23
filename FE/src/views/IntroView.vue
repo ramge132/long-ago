@@ -2,7 +2,7 @@
   <div class="w-full h-full flex flex-col justify-center">
     <TopBar />
     <div class="h-full">
-      <RouterView/>
+      <RouterView />
     </div>
   </div>
 </template>
