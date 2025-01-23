@@ -39,7 +39,7 @@ const router = createRouter({
           name: "InGame",
           component: () => import("@/views/Game/LobbyView.vue"),
         },
-      ]
+      ],
     },
   ],
 });
