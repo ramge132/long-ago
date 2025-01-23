@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: 'KCC-Ganpan';
-  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/KCC-Ganpan.woff2') format('woff2');
+  font-family: "KCC-Ganpan";
+  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/KCC-Ganpan.woff2")
+    format("woff2");
   font-weight: normal;
   font-style: normal;
 }
@@ -37,13 +38,13 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 10px;  
+  width: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #E5E091; /* 스크롤바 색상 */
+  background: #e5e091; /* 스크롤바 색상 */
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.5);  /*스크롤바 뒷 배경 색상*/
+  background: rgba(0, 0, 0, 0.5); /*스크롤바 뒷 배경 색상*/
 }

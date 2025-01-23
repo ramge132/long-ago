@@ -11,11 +11,16 @@
         </Transition>
       </RouterView>
     </div>
+    <div>
+      <Transition name="fade-out">
+        <TigerAnimation />
+      </Transition>
+    </div>
   </div>
 </template>
 
 <script setup>
-
+import { TigerAnimation } from "./components";
 </script>
 
 <style>
