@@ -113,7 +113,7 @@ cleanup:
     # 불필요한 이미지 제거
     - docker image prune -f
 
-    # 특정 이미지 태그 제거
+    # 특정 이미지 태그 제거#
     - docker rmi $FE_IMAGE:$CI_COMMIT_SHA || true
     - docker rmi $FE_IMAGE:latest || true
     - docker rmi $BE_IMAGE:$CI_COMMIT_SHA || true
