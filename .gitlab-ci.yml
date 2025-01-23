@@ -8,9 +8,6 @@ stages:
   - cleanup
 
 variables:
-  # Docker 데몬에 접근하기 위한 설정
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""
 
   # Docker Hub 경로
   FE_IMAGE: "ssafyb101/my-fe"
