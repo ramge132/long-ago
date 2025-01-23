@@ -15,7 +15,7 @@ COPY build.gradle settings.gradle ./
 COPY src ./src/
 
 # Gradle 캐시를 활용하여 종속성 다운로드 및 빌드
-RUN gradle build -x test --no-daemon
+RUN gradle build -x test
 
 
 
