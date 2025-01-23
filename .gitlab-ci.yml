@@ -1,8 +1,8 @@
 
 # 파이프라인 스테이지
 stages:
-  - build_BE
   - build_FE
+  - build_BE
   - push_FE
   - push_BE
   - cleanup
@@ -22,7 +22,21 @@ variables:
 # 1. build_fe JOB 단계 #
 #######################
 
+build_FE:
+  stage: build_FE
+  image: docker:27.4.0
+  variables:
+    IMAGE_NAME: $FE_IMAGE
+    DOCKERFILE_PATH: FE/Dockerfile
+    CONTEXT: FE
+  script:
+    - echo "==========================="
+    - echo "     FRONT-END빌드 중"
+    - echo "==========================="
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
+    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
 
+  when: always
 
 #######################
 # 2. build_be JOB 단계 #
@@ -38,23 +52,6 @@ build_BE:
   script:
     - echo "==========================="
     - echo "      BACK-END빌드 중"
-    - echo "==========================="
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
-    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-
-  when: always
-
-  ##
-build_FE:
-  stage: build_FE
-  image: docker:27.4.0
-  variables:
-    IMAGE_NAME: $FE_IMAGE
-    DOCKERFILE_PATH: FE/Dockerfile
-    CONTEXT: FE
-  script:
-    - echo "==========================="
-    - echo "     FRONT-END빌드 중"
     - echo "==========================="
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
