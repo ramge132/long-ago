@@ -1,4 +1,7 @@
-# 1. 빌드
+#############
+# 1. 빌드    #
+#############
+
 FROM node:18-alpine AS build
 
 # 컨테이너 안 경로 설정
@@ -12,7 +15,10 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# 2. Nginx로 serve
+####################
+# 2. 이미지 생성 단계  #
+####################
+
 FROM nginx:alpine
 
 # 빌드된 파일을 Nginx의 기본 경로로 복사
