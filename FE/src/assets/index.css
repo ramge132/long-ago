@@ -52,11 +52,13 @@ body {
 .range-slider::-webkit-slider-thumb {
   cursor: pointer;
   position: relative;
-  scale: 120%;
+  scale: 135%;
   z-index: 30;
 }
 
-.range-slider::-webkit-slider-thumb:hover {
-  transition: 0.3s ease-in-out;
-  transform: scale(130%);
+.selectStyle {
+  background-image: url("@/assets/icons/dropdown.svg");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem top 50%;
+  background-size: 0.65rem auto;
 }

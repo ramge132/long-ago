@@ -83,7 +83,7 @@
               :class="configurable == false ? 'pointer-events-none' : ''"
             >
               <div class="col-span-4 row-span-2 flex flex-col items-center">
-                <label class="self-start">1턴 당 시간(초)</label>
+                <label class="self-start" draggable="false">1턴 당 시간(초)</label>
                 <div class="w-full flex justify-between">
                   <p v-for="n in 6" :key="n">{{ n + 9 }}</p>
                 </div>
@@ -104,14 +104,15 @@
               <div class="col-span-3 row-span-2 flex flex-col">
                 <label>플레이어 카드 개수</label>
                 <div
-                  class="flex justify-between items-center w-[50%] self-center"
+                  class="justify-center items-center w-[70%] mt-3 self-center border-2 border-black rounded-xl grid grid-cols-3 text-center text-xl overflow-hidden"
                 >
+
                   <label
                     :for="count + 'cards'"
                     v-for="(count, index) in cardCount"
                     :key="index"
-                    class="cursor-pointer"
-                    :class="count == roomConfigs.currCardCount ? 'border-2 border-black rounded-xl w-[20px] h-[20px] text-center leading-[100%]' : ''"
+                    class="cursor-pointer border-r-2 border-black last:border-none"
+                    :class="count == roomConfigs.currCardCount ? 'bg-black text-white' : ''"
                   >
                     {{ count }}
                     <input
@@ -167,7 +168,7 @@
               <div class="col-span-3 row-span-5">
                 <label class="mr-3">작화</label>
                 <select
-                  class="rounded-lg bg-slate-300 w-[70%] shadow-md pl-3"
+                  class="selectStyle rounded-lg bg-slate-300 w-[70%] shadow-md pl-3 appearance-none"
                   v-model="roomConfigs.currStyle"
                 >
                   <option value="korean">한국 전통민화</option>
