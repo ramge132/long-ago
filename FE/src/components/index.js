@@ -6,3 +6,7 @@ export { default as TigerAnimation } from "./Presets/TigerAnimation.vue";
 // Auth
 export { default as SignIn } from "./Auth/SignIn.vue";
 export { default as SignUp } from "./Auth/SignUp.vue";
+
+// Lobby
+export { default as LobbyUsers } from "./Lobby/LobbyUsers.vue";
+export { default as LobbySettings } from "./Lobby/LobbySettings.vue";
