@@ -1,12 +1,10 @@
-package com.example.b101.service;
+package com.example.b101.service.user;
 
 import com.example.b101.domain.User;
-import com.example.b101.dto.SignUpDto;
+import com.example.b101.dto.user.SignUpDto;
 import com.example.b101.repository.UserRepository;
-import com.example.b101.response.ApiResponse;
-import com.example.b101.response.ApiResponseUtil;
+import com.example.b101.common.ApiResponseUtil;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -32,7 +30,7 @@ public class UserService {
     }
 
     //닉네임으로 사용자 조회
-    public ResponseEntity<?> findByNicKname(String nickname, HttpServletRequest request) {
+    public ResponseEntity<?> findByNickname(String nickname, HttpServletRequest request) {
         if(userRepository.findByNickname(nickname).isPresent()) {
             return ApiResponseUtil.failure("이미 사용중인 닉네임입니다.",
                     HttpStatus.CONFLICT,
