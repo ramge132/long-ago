@@ -21,21 +21,21 @@
         <div
           v-if="isOpen"
           @click="toggleModal"
-          class="absolute bg-[#00000035] w-full h-full top-0 left-0 flex justify-center items-center"
+          class="absolute bg-[#00000050] w-full h-full top-0 left-0 flex justify-center items-center"
         >
           <div
             @click.stop
-            class="w-96 h-36 text-[#ffffff] font-makgeolli text-2xl rounded-md overflow-hidden flex flex-col"
+            class="w-96 h-28 text-[#ffffff] text-xl rounded-xl overflow-hidden flex flex-col"
           >
             <div
-              class="flex-1 max-w-full bg-[#00000050] overflow-auto flex items-center justify-center"
+              class="flex-1 max-w-full bg-[#00000090] overflow-auto flex items-center justify-center"
             >
               <div class="w-11/12">
                 <p>초대링크</p>
                 <div class="w-full flex">
                   <input
                     type="text"
-                    class="bg-white rounded-xl pl-3 grow text-black mr-3"
+                    class="bg-white rounded-xl pl-3 grow text-black text-sm mr-3"
                     :value="props.InviteLink"
                     disabled
                   />
