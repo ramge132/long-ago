@@ -158,13 +158,14 @@ deploy:
     # (실험)
      
     # ssh로 main-server에 연결
-    - ssh -tt -i ~/I12B101T.pem ubuntu@i12b101.p.ssafy.io
-
-    # 이미지 pull을 위한 컨테이너 off
-    - docker compose down
-
-    # 컨테이너를 만들고 있다.
-    - docker compose up -build -d
+    - ssh -tt -i ~/I12B101T.pem ubuntu@i12b101.p.ssafy.io << 'EOF'
+        # 이미지 pull을 위한 컨테이너 off
+        docker compose down
+        # 컨테이너를 만들고 있다.
+        docker compose up -d
+        # 나가기
+        exit
+      EOF
 
     - echo "===================================="
     - echo "        main-server UP!!!"
