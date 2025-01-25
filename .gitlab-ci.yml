@@ -155,6 +155,9 @@ deploy:
     - echo "       main-server DOWN..."
     - echo "===================================="
     
+
+    # SSH 클라이언트가 새로운 호스트에 접속할 때, 검증하지 않도록 함.
+    - echo "StrictHostKeyChecking=no" > /tmp/config
     # ssh로 main-server에 연결
     - ssh -tt -i ~/../key/AWS_key/I12B101T.pem ubuntu@i12b101.p.ssafy.io
 
