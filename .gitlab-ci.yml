@@ -1,162 +1,160 @@
 
 # 파이프라인 스테이지
 stages:
-  # - build_FE
-  # - build_BE
-  # - push_FE
-  # - push_BE
-  # - cleanup
+  - build_FE
+  - build_BE
+  - push_FE
+  - push_BE
+  - cleanup
   - deploy
-# # 변수
-# variables:
+# 변수
+variables:
 
-#   # Docker Hub 경로
-#   FE_IMAGE: "ssafyb101/my-fe"
-#   BE_IMAGE: "ssafyb101/my-be"
+  # Docker Hub 경로
+  FE_IMAGE: "ssafyb101/my-fe"
+  BE_IMAGE: "ssafyb101/my-be"
 
-#   # 각 스테이지의 job 실행 후, 워크스페이스 유지
-#   GIT_STRATEGY: fetch
-
-
-
-# #######################
-# # 1. build_FE JOB 단계 #
-# #######################
-
-# build_FE:
-#   stage: build_FE
-#   image: docker:27.4.0
-#   variables:
-#     IMAGE_NAME: $FE_IMAGE
-#     DOCKERFILE_PATH: FE/Dockerfile
-#     CONTEXT: FE
-#   script:
-#     - echo "==========================="
-#     - echo "     FRONT-END빌드 중"
-#     - echo "==========================="
-#     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
-#     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-#   rules:
-#   - changes:
-#       - FE/**/* 
-#     when: always
-#   - when: never
+  # 각 스테이지의 job 실행 후, 워크스페이스 유지
+  GIT_STRATEGY: fetch
 
 
-# #######################
-# # 2. build_BE JOB 단계 #
-# #######################
 
-# build_BE:
-#   stage: build_BE
-#   image: gradle:8.12.0-jdk17-alpine
-#   variables:
-#     IMAGE_NAME: $BE_IMAGE
-#     DOCKERFILE_PATH: BE/Dockerfile
-#     CONTEXT: BE
-#   script:
-#     - echo "==========================="
-#     - echo "      BACK-END빌드 중"
-#     - echo "==========================="
-#     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
-#     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-#   rules:
-#     - changes:
-#       - BE/**/* 
-#       when: always
-#     - when: never
+#######################
+# 1. build_FE JOB 단계 #
+#######################
 
-
-# ######################
-# # 3. push_FE JOB 단계 #
-# ######################
-
-# push_FE:
-#   stage: push_FE
-#   variables:
-#     IMAGE_NAME: $FE_IMAGE
-#   script:
-#     - echo "==========================="
-#     - echo "  FRONT-END 이미지 푸쉬 중"
-#     - echo "==========================="
-#     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-#     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
-#     - docker push $IMAGE_NAME:latest
-#   dependencies:
-#     - build_FE
-#   rules:
-#     - changes:
-#       - FE/**/* 
-#       when: always
-#     - when: never
+build_FE:
+  stage: build_FE
+  image: docker:27.4.0
+  variables:
+    IMAGE_NAME: $FE_IMAGE
+    DOCKERFILE_PATH: FE/Dockerfile
+    CONTEXT: FE
+  script:
+    - echo "==========================="
+    - echo "     FRONT-END빌드 중"
+    - echo "==========================="
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
+    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
+  rules:
+  - changes:
+      - FE/**/* 
+    when: always
+  - when: never
 
 
-# ######################
-# # 4. push_BE JOB 단계 #
-# ######################
+#######################
+# 2. build_BE JOB 단계 #
+#######################
 
-# push_BE:
-#   stage: push_BE
-#   variables:
-#     IMAGE_NAME: $BE_IMAGE
-#   script:
-#     - echo "==========================="
-#     - echo "  BACK-END 이미지 푸쉬 중"
-#     - echo "==========================="
-#     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-#     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
-#     - docker push $IMAGE_NAME:latest
-#   dependencies:
-#     - build_BE
-#   rules:
-#     - changes:
-#       - BE/**/* 
-#       when: always
-#     - when: never
+build_BE:
+  stage: build_BE
+  image: gradle:8.12.0-jdk17-alpine
+  variables:
+    IMAGE_NAME: $BE_IMAGE
+    DOCKERFILE_PATH: BE/Dockerfile
+    CONTEXT: BE
+  script:
+    - echo "==========================="
+    - echo "      BACK-END빌드 중"
+    - echo "==========================="
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
+    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
+  rules:
+    - changes:
+      - BE/**/* 
+      when: always
+    - when: never
 
 
-# #######################
-# # 5. cleanup JOB 단계  #
-# #######################
+######################
+# 3. push_FE JOB 단계 #
+######################
 
-# cleanup:
-#   stage: cleanup
-#   image: docker:27.4.0
-#   script:
-#     - echo "============================="
-#     - echo "   도커 이미지 및 캐시 정리 중..."
-#     - echo "============================="
+push_FE:
+  stage: push_FE
+  variables:
+    IMAGE_NAME: $FE_IMAGE
+  script:
+    - echo "==========================="
+    - echo "  FRONT-END 이미지 푸쉬 중"
+    - echo "==========================="
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
+  dependencies:
+    - build_FE
+  rules:
+    - changes:
+      - FE/**/* 
+      when: always
+    - when: never
+
+
+######################
+# 4. push_BE JOB 단계 #
+######################
+
+push_BE:
+  stage: push_BE
+  variables:
+    IMAGE_NAME: $BE_IMAGE
+  script:
+    - echo "==========================="
+    - echo "  BACK-END 이미지 푸쉬 중"
+    - echo "==========================="
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
+  dependencies:
+    - build_BE
+  rules:
+    - changes:
+      - BE/**/* 
+      when: always
+    - when: never
+
+
+#######################
+# 5. cleanup JOB 단계  #
+#######################
+
+cleanup:
+  stage: cleanup
+  image: docker:27.4.0
+  script:
+    - echo "============================="
+    - echo "   도커 이미지 및 캐시 정리 중..."
+    - echo "============================="
     
-#     # 불필요한 이미지 제거
-#     - docker image prune -f
+    # 불필요한 이미지 제거
+    - docker image prune -f
 
-#     # 특정 이미지 태그 제거
-#     - docker rmi $FE_IMAGE:$CI_COMMIT_SHA || true
-#     - docker rmi $FE_IMAGE:latest || true
-#     - docker rmi $BE_IMAGE:$CI_COMMIT_SHA || true
-#     - docker rmi $BE_IMAGE:latest || true
+    # 특정 이미지 태그 제거
+    - docker rmi $FE_IMAGE:$CI_COMMIT_SHA || true
+    - docker rmi $FE_IMAGE:latest || true
+    - docker rmi $BE_IMAGE:$CI_COMMIT_SHA || true
+    - docker rmi $BE_IMAGE:latest || true
 
-#     # 전체 프로젝트 디렉토리 삭제
-#     - cd ..
-#     - cd ..
-#     - rm -rf s12-webmobile1-sub1
+    # 전체 프로젝트 디렉토리 삭제
+    - cd ..
+    - cd ..
+    - rm -rf s12-webmobile1-sub1
 
-#   when: always
+  when: always
 
 
 ##################
 # 6. deploy 단계  #
-###################
+##################
 
 deploy:
   stage: deploy
   script:
     - echo "===================================="
-    - echo "       배포중..."
+    - echo "            배포중..."
     - echo "===================================="
     
-    # (실험)
-     
     # SSH를 통해 원격 서버에서 명령어 실행
     - |
       ssh -tt -i ~/I12B101T.pem ubuntu@i12b101.p.ssafy.io << 'EOF'
@@ -169,7 +167,7 @@ deploy:
       EOF
 
     - echo "===================================="
-    - echo "        main-server UP!!!"
+    - echo "          배포 완료!!!"
     - echo "===================================="
   
   when: always
