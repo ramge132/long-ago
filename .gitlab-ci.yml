@@ -165,7 +165,7 @@ deploy:
         - docker compose up -d
         # 나가기
         - exit
-      EOF
+      - EOF
 
     - echo "===================================="
     - echo "        main-server UP!!!"
