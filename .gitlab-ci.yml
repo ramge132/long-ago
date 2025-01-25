@@ -6,7 +6,8 @@ stages:
   - push_FE
   - push_BE
   - cleanup
-
+  - deploy
+# 변수
 variables:
 
   # Docker Hub 경로
@@ -19,7 +20,7 @@ variables:
 
 
 #######################
-# 1. build_fe JOB 단계 #
+# 1. build_FE JOB 단계 #
 #######################
 
 build_FE:
@@ -41,8 +42,9 @@ build_FE:
     when: always
   - when: never
 
+
 #######################
-# 2. build_be JOB 단계 #
+# 2. build_BE JOB 단계 #
 #######################
 
 build_BE:
@@ -64,8 +66,9 @@ build_BE:
       when: always
     - when: never
 
+
 ######################
-# 3. push_fe JOB 단계 #
+# 3. push_FE JOB 단계 #
 ######################
 
 push_FE:
@@ -88,10 +91,10 @@ push_FE:
     - when: never
 
 
+######################
+# 4. push_BE JOB 단계 #
+######################
 
-######################
-# 4. push_be JOB 단계 #
-######################
 push_BE:
   stage: push_BE
   variables:
@@ -113,7 +116,7 @@ push_BE:
 
 
 #######################
-# 5. 도커 이미지 정리  #
+# 5. cleanup JOB 단계  #
 #######################
 
 cleanup:
@@ -121,7 +124,7 @@ cleanup:
   image: docker:27.4.0
   script:
     - echo "============================="
-    - echo "  도커 이미지 및 캐시 정리 중"
+    - echo "   도커 이미지 및 캐시 정리 중..."
     - echo "============================="
     
     # 불필요한 이미지 제거
@@ -139,3 +142,43 @@ cleanup:
     - rm -rf s12-webmobile1-sub1
 
   when: always
+
+
+##################
+# 6. deploy 단계  #
+##################
+
+deploy:
+  stage: deploy
+  script:
+    - echo "===================================="
+    - echo "       main-server DOWN..."
+    - echo "===================================="
+    
+    # ssh로 main-server에 연결
+    - yes yes | ssh -i ~/../key/AWS_key/I12B101T.pem ubuntu@i12b101.p.ssafy.io
+
+    # 이미지 pull을 위한 컨테이너 off
+    - docker-compose down
+
+    # 컨테이너를 만들고 있다.
+    - docker-compose up -build -d
+
+    - echo "===================================="
+    - echo "        main-server UP!!!"
+    - echo "===================================="
+    
+  dependencies:
+    - push_FE
+    - push_BE
+  rules:
+    - changes:
+      - FE/**/*
+      - BE/**/* 
+      when: always
+    - when: never
+
+    
+
+
+
