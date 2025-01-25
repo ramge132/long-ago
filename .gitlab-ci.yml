@@ -160,11 +160,8 @@ deploy:
     # SSH를 통해 원격 서버에서 명령어 실행
     - |
       ssh -tt -i /절대/경로/I12B101T.pem ubuntu@i12b101.p.ssafy.io << 'EOF'
-        # 이미지 pull을 위한 컨테이너 off
         docker compose down
-        # 컨테이너를 만들고 있다.
-        docker compose up --build -d
-        # 나가기
+        docker compose up -d
         exit
       EOF
 
