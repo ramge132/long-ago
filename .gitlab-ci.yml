@@ -155,6 +155,7 @@ deploy:
     - echo "       배포중..."
     - echo "===================================="
     
+    
     # ssh로 main-server에 연결
     - ssh -tt ubuntu@i12b101.p.ssafy.io -p 22
 
