@@ -1,10 +1,8 @@
 
 # 파이프라인 스테이지
 stages:
-  - build_FE
-  - build_BE
-  - push_FE
-  - push_BE
+  - build
+  - push
   - cleanup
   - deploy
 # 변수
@@ -24,7 +22,7 @@ variables:
 #######################
 
 build_FE:
-  stage: build_FE
+  stage: build
   image: docker:27.4.0
   variables:
     IMAGE_NAME: $FE_IMAGE
@@ -48,7 +46,7 @@ build_FE:
 #######################
 
 build_BE:
-  stage: build_BE
+  stage: build
   image: gradle:8.12.0-jdk17-alpine
   variables:
     IMAGE_NAME: $BE_IMAGE
@@ -72,7 +70,7 @@ build_BE:
 ######################
 
 push_FE:
-  stage: push_FE
+  stage: push
   variables:
     IMAGE_NAME: $FE_IMAGE
   script:
@@ -96,7 +94,7 @@ push_FE:
 ######################
 
 push_BE:
-  stage: push_BE
+  stage: push
   variables:
     IMAGE_NAME: $BE_IMAGE
   script:
@@ -137,10 +135,7 @@ cleanup:
     - docker rmi $BE_IMAGE:latest || true
 
     # 전체 프로젝트 디렉토리 삭제
-    - cd ..
-    - cd ..
-    - rm -rf s12-webmobile1-sub1
-
+    - rm -rf /home/gitlab-runner/builds/t3_1PeW6i/0/s12-webmobile1-sub1/S12P11B101
   when: always
 
 
