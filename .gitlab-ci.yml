@@ -155,9 +155,10 @@ deploy:
     - echo "       배포중..."
     - echo "===================================="
     
-    
-    # ssh로 main-server에 연결
+    # (실험)
+    - cd ~
     - pwd
+    # ssh로 main-server에 연결
     - ssh -F /tmp/config -tt ubuntu@i12b101.p.ssafy.io -p 22
 
     # 이미지 pull을 위한 컨테이너 off
