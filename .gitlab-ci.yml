@@ -156,7 +156,7 @@ deploy:
     - echo "===================================="
     
     # ssh로 main-server에 연결
-    - ssh -tt ubuntu@ubuntu@i12b101.p.ssafy.io -p 22
+    - ssh -tt ubuntu@i12b101.p.ssafy.io -p 22
 
     # 이미지 pull을 위한 컨테이너 off
     - docker compose down
