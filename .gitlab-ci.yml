@@ -156,13 +156,13 @@ deploy:
     - echo "===================================="
     
     # ssh로 main-server에 연결
-    - yes yes | ssh -tt -i ~/../key/AWS_key/I12B101T.pem ubuntu@i12b101.p.ssafy.io
+    - ssh -tt -i ~/../key/AWS_key/I12B101T.pem ubuntu@i12b101.p.ssafy.io
 
     # 이미지 pull을 위한 컨테이너 off
-    - docker-compose down
+    - docker compose down
 
     # 컨테이너를 만들고 있다.
-    - docker-compose up -build -d
+    - docker compose up -build -d
 
     - echo "===================================="
     - echo "        main-server UP!!!"
