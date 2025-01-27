@@ -134,7 +134,9 @@
           </div>
           <div class="flex justify-center items-center" v-if="configurable">
             <button
+              type="button"
               class="border-2 w-[50%] h-[30%] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105"
+              @click="play"
             >
               <img :src="PlayIcon" alt="시작 아이콘" class="w-1/3 h-1/2 mr-2" />
               <span> 시작하기 </span>
@@ -147,8 +149,10 @@
 </template>
 <script setup>
 import { ref, computed, watch, defineProps, defineEmits } from "vue";
+import { useRouter } from "vue-router";
 import { Mode1, Mode2, InviteIcon, PlayIcon } from "@/assets";
 
+const router = useRouter();
 const minTimeValue = ref(10);
 const maxTimeValue = ref(15);
 const stepTimeValue = ref(1);
@@ -163,15 +167,15 @@ const emit = defineEmits(["roomConfiguration", "openModal"]);
 
 const props = defineProps({
   configurable: {
-    Type: Boolean,
+    type: Boolean,
     required: true,
     default: false,
   },
   connectedPeers: {
-    Type: Array,
+    type: Array,
   },
   roomConfigs: {
-    Type: Object,
+    type: Object,
   },
 });
 
@@ -202,6 +206,10 @@ const modes = ref([
     value: "pictureToText",
   },
 ]);
+
+const play = () => {
+  router.push("/game/play");
+};
 
 watch(
   () => props.roomConfigs,

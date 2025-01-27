@@ -10,3 +10,6 @@ export { default as SignUp } from "./Auth/SignUp.vue";
 // Lobby
 export { default as LobbyUsers } from "./Lobby/LobbyUsers.vue";
 export { default as LobbySettings } from "./Lobby/LobbySettings.vue";
+
+// InGame
+export { default as InGameContent } from "./InGame/InGameContent.vue";
