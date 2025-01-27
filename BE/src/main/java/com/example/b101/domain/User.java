@@ -25,7 +25,7 @@ public class User implements Serializable {
 
     @Id // PK
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // 사용자 고유 ID
+    private int id; // 사용자 고유 ID
 
     @Column(name="user_email",unique = true) //일반 회원가입 유저는 null 가능?
     private String email;

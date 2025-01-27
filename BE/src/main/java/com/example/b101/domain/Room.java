@@ -7,10 +7,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class Room implements Serializable {
 
     @Id
@@ -18,7 +19,9 @@ public class Room implements Serializable {
 
     private String name;
 
-//    private List<User> users;
+    private List<String> users; //참가자들 sessionID
+
+    private String owner; //방장 sessionID
 
     private int maxCapacity;
 

@@ -29,8 +29,8 @@ public class RedisConfig {
 
 
     @Bean
-    public RedisTemplate<String, Room> redisTemplate(LettuceConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, Room> template = new RedisTemplate<>();
+    public <T> RedisTemplate<String, T> redisTemplate(LettuceConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, T> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
 
         // JSON 직렬화 설정
@@ -39,8 +39,8 @@ public class RedisConfig {
 
         template.setKeySerializer(stringSerializer);  // Key는 문자열로 직렬화
         template.setValueSerializer(serializer);      // Value는 JSON 직렬화
-        template.setHashKeySerializer(stringSerializer);
-        template.setHashValueSerializer(serializer);
+        template.setHashKeySerializer(stringSerializer); //해시 key눈 문자열로 직렬화
+        template.setHashValueSerializer(serializer); //해시 value는 JSON 직렬화
 
         return template;
     }

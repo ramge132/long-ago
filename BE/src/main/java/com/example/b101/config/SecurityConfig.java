@@ -1,7 +1,7 @@
 package com.example.b101.config;
 
 import com.example.b101.dto.CustomUserDetails;
-import com.example.b101.response.ApiResponse;
+import com.example.b101.common.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
