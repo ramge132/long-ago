@@ -30,16 +30,23 @@ const router = createRouter({
       },
       children: [
         {
-          path: "",
+          path: "lobby",
           name: "Lobby",
           component: () => import("@/views/Game/LobbyView.vue"),
         },
         {
           path: "play",
           name: "InGame",
-          component: () => import("@/views/Game/LobbyView.vue"),
+          component: () => import("@/views/Game/InGameView.vue"),
         },
       ],
+    },
+    {
+      path: "/:pathMatch(.*)*", // 모든 정의되지 않은 경로에 매칭
+      name: "NotFound",
+      beforeEnter: (to, from, next) => {
+        next({name: "Init"});
+      }
     },
   ],
 });
