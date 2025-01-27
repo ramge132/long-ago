@@ -12,14 +12,10 @@ variables:
   FE_IMAGE: "ssafyb101/my-fe"
   BE_IMAGE: "ssafyb101/my-be"
 
-  # 각 스테이지의 job 실행 후, 워크스페이스 유지
-  GIT_STRATEGY: fetch
 
-
-
-#######################
-# 1. build_FE JOB 단계 #
-#######################
+#########################
+# 1-1. build_FE JOB 단계 #
+#########################
 
 build_FE:
   stage: build
@@ -41,9 +37,9 @@ build_FE:
   - when: never
 
 
-#######################
-# 2. build_BE JOB 단계 #
-#######################
+#########################
+# 1-2. build_BE JOB 단계 #
+#########################
 
 build_BE:
   stage: build
@@ -65,9 +61,9 @@ build_BE:
     - when: never
 
 
-######################
-# 3. push_FE JOB 단계 #
-######################
+########################
+# 2-1. push_FE JOB 단계 #
+########################
 
 push_FE:
   stage: push
@@ -89,9 +85,9 @@ push_FE:
     - when: never
 
 
-######################
-# 4. push_BE JOB 단계 #
-######################
+########################
+# 2-2. push_BE JOB 단계 #
+########################
 
 push_BE:
   stage: push
@@ -114,7 +110,7 @@ push_BE:
 
 
 #######################
-# 5. cleanup JOB 단계  #
+# 3. cleanup JOB 단계  #
 #######################
 
 cleanup:
@@ -134,13 +130,11 @@ cleanup:
     - docker rmi $BE_IMAGE:$CI_COMMIT_SHA || true
     - docker rmi $BE_IMAGE:latest || true
 
-    # 전체 프로젝트 디렉토리 삭제
-    - rm -rf /home/gitlab-runner/builds/t3_1PeW6i/0/s12-webmobile1-sub1/S12P11B101
   when: always
 
 
 ##################
-# 6. deploy 단계  #
+# 4. deploy 단계  #
 ##################
 
 deploy:
