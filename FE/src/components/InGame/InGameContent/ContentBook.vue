@@ -141,12 +141,12 @@ p {
   right: 0;
   border-radius: 0 4px 4px 0;
 }
-.book .page:nth-child(odd):hover {
+/* .book .page:nth-child(odd):hover {
   transform: rotateY(-15deg);
 }
 .book .page:nth-child(odd):hover:before {
   background: rgba(0, 0, 0, 0.03);
-}
+} */
 .book .page:nth-child(even) {
   transform: rotateY(180deg);
   transform-origin: 100% 0;
@@ -165,12 +165,12 @@ p {
 .book .page.flipped:nth-child(even) {
   transform: rotateY(0deg);
 }
-.book .page.flipped:nth-child(even):hover {
+/* .book .page.flipped:nth-child(even):hover {
   transform: rotateY(15deg);
 }
 .book .page.flipped:nth-child(even):hover:before {
   background: rgba(0, 0, 0, 0.03);
-}
+} */
 
 .book .page:nth-child(1) {
   /* background-color: #E5E091; */
