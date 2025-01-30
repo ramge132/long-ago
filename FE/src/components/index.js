@@ -13,3 +13,7 @@ export { default as LobbySettings } from "./Lobby/LobbySettings.vue";
 
 // InGame
 export { default as InGameContent } from "./InGame/InGameContent.vue";
+
+// InGameContent
+export { default as ContentTimer } from "./InGame/InGameContent/ContentTimer.vue";
+export { default as ContentBook } from "./InGame/InGameContent/ContentBook.vue";
