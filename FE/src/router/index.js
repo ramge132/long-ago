@@ -7,14 +7,7 @@ const router = createRouter({
     {
       path: "/",
       name: "Intro",
-      component: () => import("@/views/IntroView.vue"),
-      children: [
-        {
-          path: "",
-          name: "Init",
-          component: () => import("@/views/InitView.vue"),
-        },
-      ],
+      component: () => import("@/views/IntroView.vue")
     },
     {
       path: "/game",

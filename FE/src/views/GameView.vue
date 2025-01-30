@@ -1,7 +1,8 @@
 <template>
   <div class="w-full h-full">
     <RouterView v-slot="{ Component }">
-      <component
+      <Transition name="fade" mode="out-in">
+        <component
         :is="Component"
         :configurable="configurable"
         :connectedPeers="connectedPeers"
@@ -11,7 +12,8 @@
         :InviteLink="InviteLink"
         @on-room-configuration="onRoomConfiguration"
         @broadcast-message="broadcastMessage"
-      />
+        />
+      </Transition>
     </RouterView>
   </div>
 </template>
@@ -323,3 +325,15 @@ const onRoomConfiguration = (data) => {
   });
 };
 </script>
+<style>
+/* Enter 애니메이션 (슬라이드 없이 나타남) */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease-in-out; /* opacity로 부드럽게 나타남 */
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0; /* 컴포넌트가 처음에는 안 보이게 설정 */
+}
+</style>
