@@ -3,15 +3,15 @@
     <RouterView v-slot="{ Component }">
       <Transition name="fade" mode="out-in">
         <component
-        :is="Component"
-        :configurable="configurable"
-        :connectedPeers="connectedPeers"
-        v-model:roomConfigs="roomConfigs"
-        :participants="participants"
-        :receivedMessages="receivedMessages"
-        :InviteLink="InviteLink"
-        @on-room-configuration="onRoomConfiguration"
-        @broadcast-message="broadcastMessage"
+          :is="Component"
+          :configurable="configurable"
+          :connectedPeers="connectedPeers"
+          v-model:roomConfigs="roomConfigs"
+          :participants="participants"
+          :receivedMessages="receivedMessages"
+          :InviteLink="InviteLink"
+          @on-room-configuration="onRoomConfiguration"
+          @broadcast-message="broadcastMessage"
         />
       </Transition>
     </RouterView>

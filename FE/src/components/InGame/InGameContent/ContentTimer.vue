@@ -1,7 +1,9 @@
 <template>
-    <div class="absolute top-[-40px] w-20 h-20 bg-white rounded-full flex flex-col items-center justify-center">
-        <div class="text-xl mt-10 text-black">{{ restTime }}</div>
-    </div>
+  <div
+    class="absolute top-[-40px] w-20 h-20 bg-white rounded-full flex flex-col items-center justify-center"
+  >
+    <div class="text-xl mt-10 text-black">{{ restTime }}</div>
+  </div>
 </template>
 <script setup>
 import { ref, onMounted } from "vue";
@@ -21,6 +23,4 @@ onMounted(() => {
   startCountdown(); // 컴포넌트가 마운트되면 카운트다운 시작
 });
 </script>
-<style scoped>
-    
-</style>
+<style scoped></style>
