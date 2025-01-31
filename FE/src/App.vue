@@ -2,9 +2,9 @@
   <div
     class="bg-no-repeat bg-cover bg-center bg-fairytail-image w-screen h-screen flex flex-col justify-center items-center"
   >
-  <Transition name="fade">
-    <TopBar v-if="route.path === '/'" />
-  </Transition>
+    <Transition name="fade">
+      <TopBar v-if="route.path === '/'" />
+    </Transition>
     <div
       class="border-dashed border-2 border-black rounded-lg shadow-md w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] bg-[#ffffff80] flex flex-col justify-center items-center"
     >
