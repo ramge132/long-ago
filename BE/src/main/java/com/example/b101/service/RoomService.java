@@ -5,7 +5,6 @@ import com.example.b101.dto.CreateRoomDto;
 import com.example.b101.repository.RoomRepository;
 import com.example.b101.common.ApiResponseUtil;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
 @Service
 public class RoomService {
 
@@ -48,7 +46,6 @@ public class RoomService {
 
     public ResponseEntity<?> getAllRooms(HttpServletRequest request) {
         if (roomRepository.findAll().isEmpty()) {
-            log.info("room not found");
             return ApiResponseUtil.failure("생성되어 있는 방이 없습니다.",
                     HttpStatus.NOT_FOUND,
                     request.getRequestURI());
@@ -78,7 +75,6 @@ public class RoomService {
     public ResponseEntity<?> addUserToRoom(String userId, String roomId, HttpServletRequest request) {
         Room room = roomRepository.findById(roomId);
         if (room == null) {
-            log.info("room not found");
             return ApiResponseUtil.failure("잘못된 방 ID입니다.",
                     HttpStatus.NOT_FOUND,
                     request.getRequestURI());
