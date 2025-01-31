@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col justify-between">
+  <div class="flex flex-col justify-between py-2">
     <div
       class="rounded-md bg-gray-300 flex flex-col p-3 w-4/5 self-center mb-3"
     >

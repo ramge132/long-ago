@@ -10,7 +10,7 @@
             <img :src="user.image" alt="프로필" />
           </div>
           <div
-            class="absolute bg-[#aee8ff] w-[120px] h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
+            class="absolute bg-[#aee8ff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
             :class="'speech-bubble' + index"
           >
             <p></p>
@@ -92,7 +92,7 @@
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
 import { HeartIcon } from "@/assets";
-import InGameControl from "@/components/InGame/InGameControl.vue";
+import { InGameControl, InGameContent } from "@/components";
 
 const maxParticipants = 6;
 const chatTime = ref([

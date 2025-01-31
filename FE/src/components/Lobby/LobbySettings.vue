@@ -151,7 +151,6 @@
 import { ref, computed, watch, defineProps, defineEmits } from "vue";
 import { useRouter } from "vue-router";
 import { Mode1, Mode2, InviteIcon, PlayIcon } from "@/assets";
-import { useRouter } from "vue-router";
 
 const router = useRouter();
 const minTimeValue = ref(10);
