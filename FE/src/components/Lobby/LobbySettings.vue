@@ -1,7 +1,7 @@
 <template>
   <div class="col-span-2">
     <!-- 방 설정 메뉴 표시 -->
-    <form>
+    <form class="h-full">
       <div class="h-full w-full grid grid-rows-4">
         <div
           class="row-span-3 grid grid-cols-7 grid-rows-7 gap-x-8 gap-y-8 border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5"
@@ -134,7 +134,9 @@
           </div>
           <div class="flex justify-center items-center" v-if="configurable">
             <button
+              type="button"
               class="border-2 w-[50%] h-[30%] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105"
+              @click="gameStart"
             >
               <img :src="PlayIcon" alt="시작 아이콘" class="w-1/3 h-1/2 mr-2" />
               <span> 시작하기 </span>
@@ -147,8 +149,11 @@
 </template>
 <script setup>
 import { ref, computed, watch, defineProps, defineEmits } from "vue";
+import { useRouter } from "vue-router";
 import { Mode1, Mode2, InviteIcon, PlayIcon } from "@/assets";
+import { useRouter } from "vue-router";
 
+const router = useRouter();
 const minTimeValue = ref(10);
 const maxTimeValue = ref(15);
 const stepTimeValue = ref(1);
@@ -159,19 +164,23 @@ const localRoomConfigs = ref({
   currStyle: "korean",
 });
 
-const emit = defineEmits(["roomConfiguration", "openModal"]);
+const emit = defineEmits(["roomConfiguration", "openModal", "gameStart"]);
 
 const props = defineProps({
   configurable: {
-    Type: Boolean,
+    type: Boolean,
     required: true,
     default: false,
   },
   connectedPeers: {
-    Type: Array,
+    type: Array,
   },
   roomConfigs: {
-    Type: Object,
+    type: Object,
+  },
+  gameStarted: {
+    Type: Boolean,
+    default: false,
   },
 });
 
@@ -203,6 +212,10 @@ const modes = ref([
   },
 ]);
 
+const gameStart = () => {
+  emit("gameStart", true);
+};
+
 watch(
   () => props.roomConfigs,
   () => {
@@ -219,6 +232,15 @@ watch(
     }
   },
   { deep: true },
+);
+
+watch(
+  () => props.gameStarted,
+  () => {
+    if (props.gameStarted) {
+      router.push({ name: "InGame" });
+    }
+  },
 );
 </script>
 <style></style>

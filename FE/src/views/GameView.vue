@@ -1,17 +1,22 @@
 <template>
   <div class="w-full h-full">
     <RouterView v-slot="{ Component }">
-      <component
-        :is="Component"
-        :configurable="configurable"
-        :connectedPeers="connectedPeers"
-        v-model:roomConfigs="roomConfigs"
-        :participants="participants"
-        :receivedMessages="receivedMessages"
-        :InviteLink="InviteLink"
-        @on-room-configuration="onRoomConfiguration"
-        @broadcast-message="broadcastMessage"
-      />
+      <Transition name="fade" mode="out-in">
+        <component
+          :is="Component"
+          :configurable="configurable"
+          :connectedPeers="connectedPeers"
+          v-model:roomConfigs="roomConfigs"
+          :participants="participants"
+          :receivedMessages="receivedMessages"
+          :InviteLink="InviteLink"
+          :gameStarted="gameStarted"
+          @on-room-configuration="onRoomConfiguration"
+          @broadcast-message="broadcastMessage"
+          @game-start="gameStart"
+          @game-exit="gameStarted = false"
+        />
+      </Transition>
     </RouterView>
   </div>
 </template>
@@ -39,6 +44,7 @@ const roomConfigs = ref({
 const maxParticipants = 6;
 const configurable = ref(false);
 const InviteLink = ref("");
+const gameStarted = ref(false);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -142,6 +148,10 @@ const setupConnection = (conn) => {
           currMode: data.mode,
           currStyle: data.style,
         };
+        break;
+
+      case "gameStart":
+        gameStarted.value = data;
         break;
     }
   });
@@ -322,4 +332,23 @@ const onRoomConfiguration = (data) => {
     );
   });
 };
+
+const gameStart = (data) => {
+  gameStarted.value = data;
+  connectedPeers.value.forEach((peer) => {
+    sendMessage("gameStart", gameStarted.value, peer.connection);
+  });
+};
 </script>
+<style>
+/* Enter 애니메이션 (슬라이드 없이 나타남) */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease-in-out; /* opacity로 부드럽게 나타남 */
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0; /* 컴포넌트가 처음에는 안 보이게 설정 */
+}
+</style>
