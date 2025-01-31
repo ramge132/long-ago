@@ -14,7 +14,6 @@ import java.util.List;
 @AllArgsConstructor
 public class Room implements Serializable {
 
-    @Id
     private String id;
 
     private String name;

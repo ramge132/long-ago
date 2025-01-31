@@ -1,13 +1,15 @@
 package com.example.b101.domain;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 @Entity
-@Getter
-@Setter
-public class StoryCard {
+@Data
+public class StoryCard{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

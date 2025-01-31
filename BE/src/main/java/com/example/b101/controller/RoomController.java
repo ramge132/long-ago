@@ -3,19 +3,18 @@ package com.example.b101.controller;
 import com.example.b101.dto.CreateRoomDto;
 import com.example.b101.service.RoomService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
 @RestController
 @RequestMapping("/rooms")
+@AllArgsConstructor
 public class RoomController {
 
     private final RoomService roomService;
 
-    public RoomController(RoomService roomService) {
-        this.roomService = roomService;
-    }
 
     @PostMapping
     public ResponseEntity<?> createRoom(@RequestBody CreateRoomDto createRoomDto, HttpServletRequest request) {
