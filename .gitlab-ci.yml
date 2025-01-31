@@ -18,26 +18,7 @@ variables:
 # 1-1. build_FE JOB 단계 #
 #########################
 
-build_FE_main:
-  stage: build
-  image: docker:27.4.0
-  variables:
-    IMAGE_NAME: $FE_IMAGE
-    DOCKERFILE_PATH: FE/Dockerfile
-    CONTEXT: FE
-  script:
-    - echo "==========================="
-    - echo "     FRONT-END빌드 중"
-    - echo "==========================="
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
-    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-  rules:
-  - changes:
-      - FE/**/* 
-    when: always
-  - when: never
-
-build_FE_test:
+build_FE:
   stage: build
   image: docker:27.4.0
   variables:
@@ -61,26 +42,7 @@ build_FE_test:
 # 1-2. build_BE JOB 단계 #
 #########################
 
-build_BE_main:
-  stage: build
-  image: gradle:8.12.0-jdk17-alpine
-  variables:
-    IMAGE_NAME: $BE_IMAGE
-    DOCKERFILE_PATH: BE/Dockerfile
-    CONTEXT: BE
-  script:
-    - echo "==========================="
-    - echo "      BACK-END빌드 중"
-    - echo "==========================="
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
-    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-  rules:
-    - changes:
-      - BE/**/* 
-      when: always
-    - when: never
-
-build_BE_test:
+build_BE:
   stage: build
   image: gradle:8.12.0-jdk17-alpine
   variables:
