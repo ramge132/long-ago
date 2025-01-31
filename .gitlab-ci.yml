@@ -25,10 +25,21 @@ build_FE:
     IMAGE_NAME: $FE_IMAGE
     DOCKERFILE_PATH: FE/Dockerfile
     CONTEXT: FE
+    VITE_GOOGLE_CLIENT_ID: "$VITE_GOOGLE_CLIENT_ID"
+    VITE_MAIN_API_SERVER_URL: "$VITE_MAIN_API_SERVER_URL"
+    VITE_USERS: "$VITE_USERS"
+    VITE_USERS_SIGNIN: "$VITE_USERS_SIGNIN"
   script:
     - echo "==========================="
     - echo "     FRONT-END빌드 중"
     - echo "==========================="
+
+    - VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID >> FE/.env
+    - VITE_MAIN_API_SERVER_URL=$VITE_MAIN_API_SERVER_URL >> FE/.env
+    - VITE_USERS=$VITE_USERS >> FE/.env
+    - VITE_USERS_SIGNIN=$VITE_USERS_SIGNIN >> FE/.env
+    - cat FE/.env
+
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
   rules:
