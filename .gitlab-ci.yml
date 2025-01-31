@@ -5,6 +5,7 @@ stages:
   - push
   - cleanup
   - deploy
+
 # 변수
 variables:
 
@@ -17,7 +18,26 @@ variables:
 # 1-1. build_FE JOB 단계 #
 #########################
 
-build_FE:
+build_FE_main:
+  stage: build
+  image: docker:27.4.0
+  variables:
+    IMAGE_NAME: $FE_IMAGE
+    DOCKERFILE_PATH: FE/Dockerfile
+    CONTEXT: FE
+  script:
+    - echo "==========================="
+    - echo "     FRONT-END빌드 중"
+    - echo "==========================="
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
+    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
+  rules:
+  - changes:
+      - FE/**/* 
+    when: always
+  - when: never
+
+build_FE_test:
   stage: build
   image: docker:27.4.0
   variables:
@@ -41,7 +61,26 @@ build_FE:
 # 1-2. build_BE JOB 단계 #
 #########################
 
-build_BE:
+build_BE_main:
+  stage: build
+  image: gradle:8.12.0-jdk17-alpine
+  variables:
+    IMAGE_NAME: $BE_IMAGE
+    DOCKERFILE_PATH: BE/Dockerfile
+    CONTEXT: BE
+  script:
+    - echo "==========================="
+    - echo "      BACK-END빌드 중"
+    - echo "==========================="
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
+    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
+  rules:
+    - changes:
+      - BE/**/* 
+      when: always
+    - when: never
+
+build_BE_test:
   stage: build
   image: gradle:8.12.0-jdk17-alpine
   variables:
@@ -137,16 +176,16 @@ cleanup:
 # 4. deploy 단계  #
 ##################
 
-deploy:
+deploy_main:
   stage: deploy
   script:
     - echo "===================================="
-    - echo "            배포중..."
+    - echo "        main-server로 배포중..."
     - echo "===================================="
     
-    # SSH를 통해 원격 서버에서 명령어 실행
+    # SSH를 통해 main-server에서 명령어 실행
     - |
-      ssh -tt -i ~/I12B101T.pem ubuntu@i12b101.p.ssafy.io << 'EOF'
+      ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" << 'EOF'
         # 이미지 pull을 위한 컨테이너 off
         docker compose down
         # 컨테이너를 만들고 있다.
@@ -158,9 +197,30 @@ deploy:
     - echo "===================================="
     - echo "          배포 완료!!!"
     - echo "===================================="
-  
-  when: always
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+      when: always
 
+deploy_test:
+  stage: deploy
+  script:
+    - echo "===================================="
+    - echo "        test_server로 배포중..."
+    - echo "===================================="
+      
+      #  디렉토리 이동
+    - cd /home/ubuntu/
+      # 이미지 pull을 위한 컨테이너 off
+    - docker compose down
+      # 컨테이너를 만들고 있다.
+    - docker compose up --build -d
+
+    - echo "===================================="
+    - echo "          배포 완료!!!"
+    - echo "===================================="
+  rules:
+    - if: '$CI_COMMIT_REF_NAME != "main"'
+      when: always
 
     
 
