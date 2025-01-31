@@ -1,29 +1,31 @@
 <template>
   <div class="h-full grid grid-cols-2">
-    <div class="flex flex-col items-center justify-center gap-y-10">
-      <div class="relative">
-        <div class="rounded-full border border-black w-44 overflow-hidden">
-          <img :src="currentProfile" alt="프로필" />
-        </div>
-        <div
-          class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-gray-200 flex justify-center items-center cursor-pointer"
+    <div class="flex flex-col items-center justify-center gap-y-14">
+      <div class="flex items-center gap-x-5">
+        <div class="relative">
+          <div class="rounded-full border border-black w-40 h-40 overflow-hidden">
+            <img :src="currentProfile" alt="프로필" />
+          </div>
+          <div
+          class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-gray-200 transition-all duration-200 hover:bg-gray-300 hover:scale-105 flex justify-center items-center cursor-pointer"
           @click="refresh"
-        >
+          >
           <img
-            src="@/assets/icons/refresh.svg"
-            alt="새로고침"
-            class="w-[60%] h-[60%]"
+          src="@/assets/icons/refresh.svg"
+          alt="새로고침"
+          class="w-[60%] h-[60%]"
           />
         </div>
       </div>
-      <div class="flex text-xl flex-col">
+      <div class="flex text-xl flex-col w-52">
         <label for="">닉네임</label>
         <input
-          type="text"
-          class="rounded-xl border border-neutral-300 bg-neutral-100/50 px-3"
-          v-model="nickname"
+        type="text"
+        class="rounded-xl border border-neutral-300 bg-neutral-100/50 px-3"
+        v-model="nickname"
         />
       </div>
+    </div>
       <div
         @click="start"
         class="cursor-pointer transition-all duration-300 hover:scale-110"

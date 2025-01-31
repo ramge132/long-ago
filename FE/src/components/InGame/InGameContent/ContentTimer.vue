@@ -1,8 +1,8 @@
 <template>
   <div
-    class="absolute top-[-40px] w-20 h-20 bg-white rounded-full flex flex-col items-center justify-center"
+    class="absolute top-[-120px] w-52 h-48 bg-[#00000050] rounded-full flex flex-col items-center justify-center"
   >
-    <div class="text-xl mt-10 text-black">{{ restTime }}</div>
+    <div class="text-6xl mt-28 text-white">{{ restTime }}</div>
   </div>
 </template>
 <script setup>
