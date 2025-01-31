@@ -24,12 +24,9 @@ public class UserService {
         this.encoder = encoder;
     }
 
-    //이메일로 사용자 조회
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
 
-    //닉네임으로 사용자 조회
+
+    //닉네임 사용 가능 여부
     public ResponseEntity<?> findByNickname(String nickname, HttpServletRequest request) {
         if (userRepository.findByNickname(nickname).isPresent()) {
             return ApiResponseUtil.failure("이미 사용중인 닉네임입니다.",
@@ -58,6 +55,7 @@ public class UserService {
         return ApiResponseUtil.success(null, "회원가입 성공", HttpStatus.CREATED, request.getRequestURI());
     }
 
+    //이메일 중복 체크
     public boolean usedEmail(String email) {
         return userRepository.findByEmail(email).isPresent();
     }
