@@ -16,7 +16,7 @@ const router = createRouter({
       beforeEnter: (to, from, next) => {
         const userStore = useUserStore();
         if (!userStore.userData.userNickname) {
-          next({ name: "Init" });
+          next({ name: "Intro" });
         } else {
           next();
         }
@@ -38,7 +38,7 @@ const router = createRouter({
       path: "/:pathMatch(.*)*", // 모든 정의되지 않은 경로에 매칭
       name: "NotFound",
       beforeEnter: (to, from, next) => {
-        next({name: "Init"});
+        next({name: "Intro"});
       }
     },
   ],
