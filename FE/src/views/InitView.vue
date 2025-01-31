@@ -76,10 +76,10 @@
         <img
           v-if="!route.query.roomID"
           :src="gameStart"
-          alt="시작하기기"
+          alt="시작하기"
           class="h-10"
         />
-        <img v-else :src="gameJoin" alt="시작하기" class="h-10" />
+        <img v-else :src="gameJoin" alt="참여하기" class="h-10" />
       </div>
     </div>
   </div>

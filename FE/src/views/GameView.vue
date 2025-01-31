@@ -9,8 +9,11 @@
         :participants="participants"
         :receivedMessages="receivedMessages"
         :InviteLink="InviteLink"
+        :gameStarted="gameStarted"
         @on-room-configuration="onRoomConfiguration"
         @broadcast-message="broadcastMessage"
+        @game-start="gameStart"
+        @game-exit="gameStarted = false"
       />
     </RouterView>
   </div>
@@ -39,6 +42,7 @@ const roomConfigs = ref({
 const maxParticipants = 6;
 const configurable = ref(false);
 const InviteLink = ref("");
+const gameStarted = ref(false);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -142,6 +146,10 @@ const setupConnection = (conn) => {
           currMode: data.mode,
           currStyle: data.style,
         };
+        break;
+
+      case "gameStart":
+        gameStarted.value = data;
         break;
     }
   });
@@ -320,6 +328,13 @@ const onRoomConfiguration = (data) => {
       },
       peer.connection,
     );
+  });
+};
+
+const gameStart = (data) => {
+  gameStarted.value = data;
+  connectedPeers.value.forEach((peer) => {
+    sendMessage("gameStart", gameStarted.value, peer.connection);
   });
 };
 </script>
