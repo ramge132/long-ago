@@ -14,8 +14,10 @@
         :configurable="props.configurable"
         :connectedPeers="props.connectedPeers"
         :roomConfigs="props.roomConfigs"
+        :gameStarted="props.gameStarted"
         @room-configuration="onRoomConfiguration"
         @open-modal="toggleModal"
+        @game-start="gameStart"
       />
       <Transition name="fade">
         <div
@@ -81,15 +83,25 @@ const props = defineProps({
   InviteLink: {
     Type: String,
   },
+  gameStarted: {
+    Type: Boolean,
+  },
 });
 
-const emit = defineEmits(["broadcastMessage", "onRoomConfiguration"]);
+const emit = defineEmits([
+  "broadcastMessage",
+  "onRoomConfiguration",
+  "gameStart",
+]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
 };
 const onRoomConfiguration = (data) => {
   emit("onRoomConfiguration", data);
+};
+const gameStart = (data) => {
+  emit("gameStart", data);
 };
 
 const { toClipboard } = useCilpboard();
