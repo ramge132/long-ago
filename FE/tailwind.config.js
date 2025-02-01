@@ -13,6 +13,7 @@ export default {
       },
       backgroundImage: {
         "fairytail-image": "url('/src/assets/background.svg')",
+        "game-image": "url('/src/assets/backgroundGame.jpeg')",
       },
       animation: {
         shake: "shake 1s ease-in-out infinite", // 애니메이션 이름과 지속 시간
