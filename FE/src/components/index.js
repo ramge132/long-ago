@@ -16,9 +16,6 @@ export { default as InGameControl } from "./InGame/InGameControl.vue";
 export { default as InGameContent } from "./InGame/InGameContent.vue";
 export { default as InGameProgress } from "./InGame/InGameProgress.vue";
 
-// InGameContent
-export { default as ContentBook } from "./InGame/InGameContent/ContentBook.vue";
-
 // InGameProgress
 export { default as ContentTimer } from "./InGame/InGameProgress/ContentTimer.vue";
 export { default as ContentGuage } from "./InGame/InGameProgress/ContentGuage.vue";
