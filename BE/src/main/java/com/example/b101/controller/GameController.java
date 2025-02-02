@@ -21,8 +21,6 @@ import java.util.stream.IntStream;
 @AllArgsConstructor
 public class GameController{
 
-    private final CardService cardService;
-
     private final GameService gameService;
 
     @PostMapping
