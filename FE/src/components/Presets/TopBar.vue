@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-4/5 max-w-6xl min-w-[1000px] flex justify-between items-center z-10"
+    class="w-4/5 max-w-6xl min-w-[1000px] h-16 flex justify-between items-center z-10"
   >
     <img :src="Logo" alt="logo" class="w-48 p-3" />
     <div

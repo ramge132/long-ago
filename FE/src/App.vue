@@ -15,18 +15,20 @@
         </Transition>
       </RouterView>
     </div>
-    <div>
-      <Transition name="fade-out">
-        <TigerAnimation />
-      </Transition>
-    </div>
+    <Transition name="fade-out">
+      <TigerAnimation />
+    </Transition>
+
+    <Transition name="fade">
+      <FooterBar v-if="route.path === '/'" />
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { computed } from "vue";
 import { useRoute } from "vue-router";
-import { TopBar } from "@/components";
+import { TopBar, FooterBar } from "@/components";
 import { TigerAnimation } from "./components";
 
 const route = useRoute();
