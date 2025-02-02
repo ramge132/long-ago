@@ -1,3 +1,17 @@
+-- story_card 테이블 생성
+CREATE TABLE IF NOT EXISTS story_card (
+  id SERIAL PRIMARY KEY,
+  keyword VARCHAR(100),
+  attribute VARCHAR(100),
+  effect TEXT
+);
+
+-- ending_card 테이블 생성
+CREATE TABLE IF NOT EXISTS ending_card (
+  id SERIAL PRIMARY KEY,
+  content TEXT
+);
+
 TRUNCATE TABLE story_card RESTART IDENTITY CASCADE;
 TRUNCATE TABLE ending_card RESTART IDENTITY CASCADE;
 
