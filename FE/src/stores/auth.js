@@ -5,6 +5,7 @@ export const useUserStore = defineStore("userData", {
     userData: {
       userEmail: localStorage.getItem("userEmail"),
       userNickname: localStorage.getItem("userNickname"),
+      userProfile: null,
     },
   }),
   actions: {
@@ -13,6 +14,9 @@ export const useUserStore = defineStore("userData", {
     },
     setUserNickname(data) {
       this.userData.userNickname = data;
+    },
+    setUserProfile(data) {
+      this.userData.userProfile = data;
     },
     clearUserData() {
       this.userData = {

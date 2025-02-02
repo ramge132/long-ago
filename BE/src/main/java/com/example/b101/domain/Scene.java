@@ -21,7 +21,6 @@ public class Scene {
     @JoinColumn(name = "BOOK_ID", nullable = false)
     private Book book;
 
-
     private int sceneOrder;
 
     private String prompt;

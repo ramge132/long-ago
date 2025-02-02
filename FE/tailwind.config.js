@@ -7,11 +7,13 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        kcc: [""],
         hs: ["HS유지체", ...defaultTheme.fontFamily.sans],
         makgeolli: ["MAKGEOLLI", ...defaultTheme.fontFamily.sans],
       },
       backgroundImage: {
-        "fairytail-image": "url('/src/assets/background.webp')",
+        "fairytail-image": "url('/src/assets/background.svg')",
+        "game-image": "url('/src/assets/backgroundGame.jpeg')",
       },
       animation: {
         shake: "shake 1s ease-in-out infinite", // 애니메이션 이름과 지속 시간
