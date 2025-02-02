@@ -64,7 +64,6 @@ build_BE:
     - echo "==========================="
     - echo "      BACK-END빌드 중"
     - echo "==========================="
-    - cp -f BE/src/main/resources/data.sql /home/ubuntu/data.sql
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
   rules:
