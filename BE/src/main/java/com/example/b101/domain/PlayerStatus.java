@@ -7,6 +7,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Getter
+//플레이어 상태 CLASS
 public class PlayerStatus{
 
     String userId;
