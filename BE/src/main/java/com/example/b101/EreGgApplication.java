@@ -21,9 +21,7 @@ public class EreGgApplication {
         System.setProperty("DB_USERNAME", dotenv.get("DB_USERNAME"));
         System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
         System.setProperty("DB_DRIVER", dotenv.get("DB_DRIVER"));
-        System.setProperty("DB_POOL_SIZE", dotenv.get("DB_POOL_SIZE"));
         System.setProperty("REDIS_HOST", dotenv.get("REDIS_HOST"));
-        System.setProperty("REDIS_PORT", dotenv.get("REDIS_PORT"));
 
         SpringApplication.run(EreGgApplication.class, args);
     }
