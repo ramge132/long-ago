@@ -41,7 +41,7 @@
         </div>
       </template>
     </div>
-    <div class="col-span-3 row-span-2 grid grid-rows-2">
+    <div class="col-span-3 row-span-2 grid grid-rows-5">
       <InGameContent />
       <InGameControl @broadcast-message="broadcastMessage" />
     </div>
@@ -86,11 +86,8 @@
         </div>
       </template>
     </div>
-<<<<<<< HEAD
     <InGameProgress />
-=======
-    <InGameVote />
->>>>>>> FE/Vote
+    <!-- <InGameVote /> -->
   </div>
 </template>
 
