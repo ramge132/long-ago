@@ -26,7 +26,7 @@
         class="cursor-pointer transition-all duration-300 hover:scale-110"
       >
         <img
-          v-if="!route.query.roomID"
+          v-if="!gameStore.getBossId()"
           :src="gameStart"
           alt="시작하기"
           class="h-10"
@@ -113,8 +113,10 @@ import {
   Profile14,
 } from "@/assets/images/profiles"
 import { useUserStore } from "@/stores/auth";
+import { useGameStore } from "@/stores/game";
 
 const userStore = useUserStore();
+const gameStore = useGameStore();
 const router = useRouter();
 const route = useRoute();
 const nickname = ref("닉네임");
@@ -154,11 +156,9 @@ const start = () => {
   userStore.setUserNickname(nickname);
   userStore.setUserProfile(currentProfile);
   sessionStorage.setItem("userNickname", nickname.value);
-  if (route.query.roomID) {
-    router.push(`/game/lobby?roomID=${route.query.roomID}`);
-  } else {
-    router.push("/game/lobby");
-  }
+  
+
+  router.push("/game/lobby");
 };
 
 onMounted(() => {
@@ -169,10 +169,12 @@ onMounted(() => {
     // 랜덤한 Guest_XXXXX 생성
     const randomGuest = `이야기꾼_${Math.floor(10000 + Math.random() * 90000)}`;
     nickname.value = randomGuest;
+  }
 
-    // localStorage에 저장
-    // const newUserData = { ...userData, nickname: randomGuest };
-    // localStorage.setItem("userData", JSON.stringify(newUserData));
+  if (route.query.roomID) {
+    gameStore.setBossId(route.query.roomID);
+    // 쿼리 파라미터 제거
+    router.replace({ path: route.path, query: {} });
   }
 });
 

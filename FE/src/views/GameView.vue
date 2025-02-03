@@ -27,8 +27,10 @@ import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
+import { useGameStore } from "@/stores/game";
 
 const userStore = useUserStore();
+const gameStore = useGameStore();
 const route = useRoute();
 const peer = ref(null);
 const peerId = ref("");
@@ -136,15 +138,21 @@ const setupConnection = (conn) => {
 
       case "system":
         // participants 중 id가 data.id와 같은 값 삭제
-        console.log(participants.value);
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
         );
-        console.log(participants.value);
+
+        const newBossId = compressUUID(participants.value[0].id);
+
+        gameStore.setBossId(newBossId);
+
+        // 초대 링크 초기화
+        InviteLink.value = import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + newBossId;
         receivedMessages.value.push({
           sender: "시스템",
           message: `${data.nickname}님이 나가셨습니다.`,
         });
+
         // 내가 다음 방장인 경우
         if (participants.value[0].id == peerId.value) {
           configurable.value = true;
@@ -162,6 +170,19 @@ const setupConnection = (conn) => {
 
       case "gameStart":
         gameStarted.value = data;
+        break;
+
+      case "newParticipantJoined":
+        const isExisting = participants.value.some(
+          (existing) => existing.id === data.data.id,
+        );
+
+        // 존재하지 않는 참가자만 추가
+        if (!isExisting) {
+          participants.value.push(data.data);
+        } else {
+          console.log("이미 존재하는 참가자:", data.data);
+        }
         break;
     }
   });
@@ -233,7 +254,6 @@ const connectToRoom = async (roomID) => {
   });
 
   conn.on("data", (data) => {
-    console.log("데이터 들어온다", data);
     if (data.type === "currentParticipants") {
       handleExistingParticipants(data.participants);
       roomConfigs.value = data.roomConfigs;
@@ -250,7 +270,6 @@ const connectToRoom = async (roomID) => {
     // 중복 확인 후 추가
     if (!participants.value.some((p) => p.id === newParticipant.id)) {
       participants.value.push(newParticipant);
-      console.log(participants.value);
     }
   });
 };
@@ -302,20 +321,19 @@ onMounted(async () => {
     await initializePeer();
 
     // 일반 참여자인 경우
-    if (route.query.roomID) {
-      connectToRoom(route.query.roomID);
-      InviteLink.value = "http://localhost:5173/?roomID=" + route.query.roomID;
+    if (gameStore.getBossId()) {
+      connectToRoom(gameStore.getBossId());
+      InviteLink.value = import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + gameStore.getBossId();
     }
     // 방장인 경우
-    else {
+    else if (!gameStore.getBossId() || decompressUUID(gameStore.getBossId()) == peerId.value){
       participants.value.push({
         id: peerId.value,
         name: userStore.userData.userNickname,
         image: userStore.userData.userProfile
       });
       configurable.value = true;
-      InviteLink.value =
-        "http://localhost:5173/?roomID=" + compressUUID(peerId.value);
+      InviteLink.value = import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + compressUUID(peerId.value);
     }
   } catch (error) {
     console.error("Peer initialization failed:", error);
