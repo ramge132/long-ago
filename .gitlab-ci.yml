@@ -63,7 +63,6 @@ build_BE:
     DB_USERNAME: "$DB_USERNAME"
     DB_PASSWORD: "$DB_PASSWORD"
     DB_DRIVER: "$DB_DRIVER"
-    DB_POOL_SIZE: "$DB_POOL_SIZE"
     REDIS_HOST: "$REDIS_HOST"
 
   script:
@@ -75,7 +74,6 @@ build_BE:
     - echo "DB_USERNAME=$DB_USERNAME" >> BE/.env
     - echo "DB_PASSWORD=$DB_PASSWORD" >> BE/.env
     - echo "DB_DRIVER=$DB_DRIVER" >> BE/.env
-    - echo "DB_POOL_SIZE=$DB_POOL_SIZE" >> BE/.env
     - echo "REDIS_HOST=$REDIS_HOST" >> BE/.env
 
 
