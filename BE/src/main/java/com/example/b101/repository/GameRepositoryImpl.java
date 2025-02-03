@@ -31,7 +31,7 @@ public class GameRepositoryImpl implements GameRepository {
     }
 
     @Override
-    public Game findById(int id) {
+    public Game findById(String id) {
         return (Game) redisTemplate.opsForHash().get(KEY,id);
     }
 }
