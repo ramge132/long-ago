@@ -113,7 +113,9 @@ import {
   Profile14,
 } from "@/assets/images/profiles"
 import { useUserStore } from "@/stores/auth";
+import { useGameStore } from "@/stores/game";
 
+const gameStore = useGameStore();
 const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
@@ -154,11 +156,15 @@ const start = () => {
   userStore.setUserNickname(nickname);
   userStore.setUserProfile(currentProfile);
   sessionStorage.setItem("userNickname", nickname.value);
-  if (route.query.roomID) {
-    router.push(`/game/lobby?roomID=${route.query.roomID}`);
-  } else {
-    router.push("/game/lobby");
+  if(route.query.roomID){
+    gameStore.setBossId(route.query.roomID)
   }
+  console.log(gameStore.bossId);
+  // if (route.query.roomID) {
+  //   router.push(`/game/lobby?roomID=${route.query.roomID}`);
+  // } else {
+    router.push("/game/lobby");
+  // }
 };
 
 onMounted(() => {
