@@ -185,6 +185,9 @@ const props = defineProps({
   },
   InviteLink: {
     Type: String
+  },
+  peerId: {
+    Type: String
   }
 });
 
@@ -227,8 +230,7 @@ const copy = async () => {
 }
 
 const gameStart = () => {
-  console.log(props.participants);
-  if (!props.participants[0].isBoss) {
+  if (props.participants[0].id !== props.peerId) {
     toast.errorToast("방장만 게임 시작할 수 있습니다.")
   } else if (props.participants.length < 2) {
     toast.warningToast("혼자서는 진행할 수 없습니다.")

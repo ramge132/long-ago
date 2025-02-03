@@ -16,6 +16,7 @@
         :roomConfigs="props.roomConfigs"
         :gameStarted="props.gameStarted"
         :InviteLink="props.InviteLink"
+        :peerId="props.peerId"
         @room-configuration="onRoomConfiguration"
         @game-start="gameStart"
       />
@@ -50,6 +51,9 @@ const props = defineProps({
   gameStarted: {
     Type: Boolean,
   },
+  peerId: {
+    Type: String
+  }
 });
 
 const emit = defineEmits([

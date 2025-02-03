@@ -11,6 +11,7 @@
           :receivedMessages="receivedMessages"
           :InviteLink="InviteLink"
           :gameStarted="gameStarted"
+          :peerId="peerId"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
@@ -135,13 +136,19 @@ const setupConnection = (conn) => {
 
       case "system":
         // participants 중 id가 data.id와 같은 값 삭제
+        console.log(participants.value);
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
         );
+        console.log(participants.value);
         receivedMessages.value.push({
           sender: "시스템",
           message: `${data.nickname}님이 나가셨습니다.`,
         });
+        // 내가 다음 방장인 경우
+        if (participants.value[0].id == peerId.value) {
+          configurable.value = true;
+        }
         break;
 
       case "config":
@@ -218,8 +225,7 @@ const connectToRoom = async (roomID) => {
         data: {
           id: peerId.value,
           name: userStore.userData.userNickname,
-          image: userStore.userData.userProfile,
-          isBoss: false
+          image: userStore.userData.userProfile
         },
       },
       conn,
@@ -227,11 +233,24 @@ const connectToRoom = async (roomID) => {
   });
 
   conn.on("data", (data) => {
+    console.log("데이터 들어온다", data);
     if (data.type === "currentParticipants") {
       handleExistingParticipants(data.participants);
       roomConfigs.value = data.roomConfigs;
     } else if (data.type === "newParticipantJoined") {
       participants.value.push(data.data);
+    }
+
+    const newParticipant = {
+      id: peerId.value,
+      name: userStore.userData.userNickname,
+      image: userStore.userData.userProfile
+    };
+
+    // 중복 확인 후 추가
+    if (!participants.value.some((p) => p.id === newParticipant.id)) {
+      participants.value.push(newParticipant);
+      console.log(participants.value);
     }
   });
 };
@@ -253,7 +272,12 @@ const broadcastNewParticipant = (newParticipant) => {
 const initializePeer = () => {
   return new Promise((resolve, reject) => {
     try {
-      peer.value = new Peer();
+      peer.value = new Peer({
+        host: "3.39.74.250",
+        port: 80,
+        path: "/apis/signal",
+        secure: false
+      });
 
       peer.value.on("open", (id) => {
         peerId.value = id;
@@ -284,12 +308,6 @@ onMounted(async () => {
 
     // 일반 참여자인 경우
     if (route.query.roomID) {
-      participants.value.push({
-        id: peerId.value,
-        name: userStore.userData.userNickname,
-        image: userStore.userData.userProfile,
-        isBoss: false,
-      });
       connectToRoom(route.query.roomID);
       InviteLink.value = "http://localhost:5173/?roomID=" + route.query.roomID;
     }
@@ -298,8 +316,7 @@ onMounted(async () => {
       participants.value.push({
         id: peerId.value,
         name: userStore.userData.userNickname,
-        image: userStore.userData.userProfile,
-        isBoss: true,
+        image: userStore.userData.userProfile
       });
       configurable.value = true;
       InviteLink.value =
