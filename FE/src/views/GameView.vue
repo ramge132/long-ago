@@ -320,7 +320,7 @@ addEventListener("beforeunload", () => {
   });
 });
 
-const onRoomConfiguration = (data) => {
+const onRoomConfiguration = (data) => { 
   roomConfigs.value = data;
   connectedPeers.value.forEach((peer) => {
     sendMessage(
