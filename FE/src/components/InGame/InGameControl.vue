@@ -1,16 +1,6 @@
 <template>
   <div class="flex flex-col justify-between py-2">
-    <div
-      class="rounded-md bg-gray-300 flex flex-col p-3 w-4/5 self-center mb-3"
-    >
-      <label>다음 이야기</label>
-      <input
-        class="rounded-xl pl-3 border-2 border-black"
-        type="text"
-        placeholder="다음 이어질 이야기를 작성해주세요."
-      />
-    </div>
-    <div class="flex mb-3">
+    <div class="flex mb-3 grow">
       <div class="flex flex-col justify-center items-center w-[50%] mr-3">
         <p v-html="`<사용 가능 카드>`"></p>
         <div class="flex justify-between w-full">
@@ -42,40 +32,87 @@
         </div>
       </div>
     </div>
-    <div class="flex justify-center">
-      <input
-        type="text"
-        class="rounded-full bg-[#AEE8FF] drop-shadow-md w-2/3 mx-1 pl-3"
-        v-model="message"
-        @keyup.enter="send"
-      />
-      <button
-        class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1"
-        @click="send"
+    <div class="flex justify-center relative">
+      <div
+        class="rounded-full bg-[#AEE8FF] drop-shadow-md w-2/3 h-10 mx-1 flex px-3 items-center"
+        v-for="(mode, index) in chatMode"
+        :key="index"
+        :class="index == currChatModeIdx ? '' : 'hidden'"
       >
-        <img :src="SendIcon" alt="보내기" class="object-scale-down" />
-      </button>
-      <button
-        class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1"
-      >
-        <img :src="EmoticonIcon" alt="감정표현" class="object-scale-down" />
-      </button>
+        <div
+          class="flex flex-nowrap flex-col justify-center items-center relative"
+        >
+          <p
+            class="whitespace-nowrap absolute top-[-1.25rem]"
+            v-text="mode.mark"
+          ></p>
+          <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
+        </div>
+        <input
+          type="text"
+          class="pl-3 bg-transparent w-full h-full text-xl mx-2"
+          v-model="message"
+          @keyup.enter="mode.fucntion"
+          :placeholder="mode.placeholder"
+        />
+        <button
+          class="rounded-full border w-8 h-8 shrink-0 border-black p-1 flex justify-center items-center"
+          @click="mode.fucntion"
+        >
+          <img
+            :src="SendIcon"
+            alt="보내기"
+            class="object-scale-down w-3/4 h-3/4"
+          />
+        </button>
+      </div>
+      <div class="relative">
+        <button
+          class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 z-10 absolute"
+          @click="toggleEmoticon = !toggleEmoticon"
+        >
+          <img :src="EmoticonIcon" alt="감정표현" class="object-scale-down" />
+        </button>
+        <button
+          class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 absolute z-0 emoticon"
+          v-for="(emoticon, index) in emoticons"
+          :key="index"
+          :class="toggleEmoticon ? 'emoticon' + index : ''"
+          @click="sendEmoticon(emoticon.image)"
+        >
+          {{ emoticon.image }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
-import { RerollIcon, SendIcon, EmoticonIcon } from "@/assets";
+import { RerollIcon, SendIcon, EmoticonIcon, ChangeIcon } from "@/assets";
 import { useUserStore } from "@/stores/auth";
 
 const userStore = useUserStore();
-
+const toggleEmoticon = ref(false);
 const message = ref("");
+const emoticons = ref([
+  {
+    text: "laugh",
+    image: "🤣",
+  },
+  {
+    text: "angry",
+    image: "🤬",
+  },
+  {
+    text: "unamused",
+    image: "😕",
+  },
+]);
 
 const emit = defineEmits(["broadcastMessage"]);
 
-const send = () => {
+const sendChat = () => {
   if (message.value.trim()) {
     emit("broadcastMessage", {
       sender: userStore.userData.userNickname,
@@ -84,10 +121,60 @@ const send = () => {
     message.value = "";
   }
 };
+const sendprompt = () => {};
+const sendEmoticon = (data) => {
+  emit("broadcastMessage", {
+    sender: userStore.userData.userNickname,
+    message: data,
+    form: "emoticon",
+  });
+  toggleEmoticon.value = false;
+};
+
+const chatMode = ref([
+  {
+    mark: "대화",
+    fucntion: sendChat,
+    placeholder: "채팅 입력",
+  },
+  {
+    mark: "이야기",
+    fucntion: sendprompt,
+    placeholder: "다음 이어질 이야기를 작성해주세요",
+  },
+]);
+const currChatModeIdx = ref(0);
+
+window.addEventListener("keydown", (e) => {
+  if (e.ctrlKey) changeMode();
+});
+
+const changeMode = () => {
+  currChatModeIdx.value = (currChatModeIdx.value + 1) % chatMode.value.length;
+};
 </script>
 
 <style scoped>
 .reroll {
   background: linear-gradient(70deg, #fafcca 65%, #907800 35%);
+}
+.emoticon {
+  transition: all 0.3s cubic-bezier(0.25, 1.65, 0.5, 1.15);
+  opacity: 0;
+}
+.emoticon0 {
+  transform: scale(1);
+  transform: translate(-3rem, -3rem);
+  opacity: 1;
+}
+.emoticon1 {
+  transform: scale(1);
+  transform: translate(0, -3rem);
+  opacity: 1;
+}
+.emoticon2 {
+  transform: scale(1);
+  transform: translate(3rem, -3rem);
+  opacity: 1;
 }
 </style>
