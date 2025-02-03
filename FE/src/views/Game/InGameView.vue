@@ -106,13 +106,14 @@
         </div>
       </template>
     </div>
+    <InGameProgress />
   </div>
 </template>
 
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
 import { HeartIcon } from "@/assets";
-import { InGameControl, InGameContent } from "@/components";
+import { InGameControl, InGameContent, InGameProgress } from "@/components";
 
 const maxParticipants = 6;
 const chatTime = ref([

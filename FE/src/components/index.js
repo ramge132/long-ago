@@ -1,5 +1,6 @@
 // // Presets
 export { default as TopBar } from "./Presets/TopBar.vue";
+export { default as FooterBar } from "./Presets/FooterBar.vue";
 export { default as TigerAnimation } from "./Presets/TigerAnimation.vue";
 // export { default as Footer } from "./Presets/MainFooter.vue";
 
@@ -14,8 +15,8 @@ export { default as LobbySettings } from "./Lobby/LobbySettings.vue";
 // InGame
 export { default as InGameControl } from "./InGame/InGameControl.vue";
 export { default as InGameContent } from "./InGame/InGameContent.vue";
+export { default as InGameProgress } from "./InGame/InGameProgress.vue";
 
-// InGameContent
-export { default as ContentTimer } from "./InGame/InGameContent/ContentTimer.vue";
-export { default as ContentBook } from "./InGame/InGameContent/ContentBook.vue";
-export { default as ContentGuage } from "./InGame/InGameContent/ContentGuage.vue";
+// InGameProgress
+export { default as ContentTimer } from "./InGame/InGameProgress/ContentTimer.vue";
+export { default as ContentGuage } from "./InGame/InGameProgress/ContentGuage.vue";
