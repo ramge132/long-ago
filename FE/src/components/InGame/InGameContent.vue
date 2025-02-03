@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex items-center justify-center"
+    class="row-span-3 w-full h-full flex items-center justify-center"
   >
     <div class="book">
       <div class="pages" ref="pagesRef">
@@ -101,7 +101,7 @@ p {
 }
 .book .pages {
   width: 550px;
-  height: 320px;
+  height: 350px;
   position: relative;
   transform-style: preserve-3d;
   backface-visibility: hidden;
@@ -114,7 +114,7 @@ p {
   position: absolute;
   top: 0;
   width: 275px;
-  height: 320px;
+  height: 350px;
   transform-origin: 0 0;
   transition: transform 1.4s;
   backface-visibility: hidden;

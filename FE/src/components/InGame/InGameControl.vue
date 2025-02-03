@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col justify-between py-2">
+  <div class="row-span-2 flex flex-col justify-between py-2">
     <div class="flex mb-3 grow">
       <div class="flex flex-col justify-center items-center w-[50%] mr-3">
         <p v-html="`<사용 가능 카드>`"></p>
