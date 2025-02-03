@@ -147,7 +147,7 @@ const setupConnection = (conn) => {
       case "config":
         roomConfigs.value = {
           currTurnTime: data.turnTime,
-          currCardCount: data.cardCount,
+          currCardCount: data.cardCount,  
           currMode: data.mode,
           currStyle: data.style,
         };
