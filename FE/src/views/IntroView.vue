@@ -2,13 +2,9 @@
   <div class="h-full grid grid-cols-2">
     <div class="flex flex-col items-center justify-center gap-y-6">
       <div class="flex items-center relative">
+          <img :src="currentProfile" alt="프로필" class="w-52 h-52"/>
         <div
-          class="rounded-full border border-black w-52 h-52 overflow-hidden"
-        >
-          <img :src="currentProfile" alt="프로필"/>
-        </div>
-        <div
-          class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-gray-200 transition-all duration-200 hover:bg-gray-300 hover:scale-105 flex justify-center items-center cursor-pointer"
+          class="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-gray-200 transition-all duration-200 hover:bg-gray-300 hover:scale-105 flex justify-center items-center cursor-pointer"
           @click="refresh"
         >
           <img
@@ -95,17 +91,27 @@ import "swiper/css/pagination";
 import "swiper/css/scrollbar";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import {
+  gameStart,
+  gameJoin,
+  rule1,
+  rule2,
+} from "@/assets";
+import {
   Profile1,
   Profile2,
   Profile3,
   Profile4,
   Profile5,
   Profile6,
-  gameStart,
-  gameJoin,
-  rule1,
-  rule2,
-} from "@/assets";
+  Profile7,
+  Profile8,
+  Profile9,
+  Profile10,
+  Profile11,
+  Profile12,
+  Profile13,
+  Profile14,
+} from "@/assets/images/profiles"
 import { useUserStore } from "@/stores/auth";
 
 const userStore = useUserStore();
@@ -114,12 +120,20 @@ const route = useRoute();
 const nickname = ref("닉네임");
 
 const profiles = ref([
-  Profile1,
-  Profile2,
-  Profile3,
-  Profile4,
-  Profile5,
-  Profile6,
+Profile1,
+Profile2,
+Profile3,
+Profile4,
+Profile5,
+Profile6,
+Profile7,
+Profile8,
+Profile9,
+Profile10,
+Profile11,
+Profile12,
+Profile13,
+Profile14,
 ]);
 
 const currentProfile = ref(Profile1);

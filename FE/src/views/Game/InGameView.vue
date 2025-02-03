@@ -7,7 +7,7 @@
           v-if="index % 2 == 0"
         >
           <div
-            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            class="w-24 h-24"
           >
             <img :src="user.image" alt="프로필" />
           </div>
@@ -62,7 +62,7 @@
           v-if="index % 2 != 0"
         >
           <div
-            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            class="w-24 h-24"
           >
             <img :src="user.image" alt="프로필" />
           </div>
