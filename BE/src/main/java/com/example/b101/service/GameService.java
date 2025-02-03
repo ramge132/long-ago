@@ -46,6 +46,7 @@ public class GameService {
                 .gameId(UUID.randomUUID().toString())
                 .endingCardlist(endingCards)
                 .playerStatuses(playerStatuses)
+                .ttl(3600L) // 1시간(3600초) 동안 유효
                 .build();
 
         // 게임 초기 데이터 Redis에 저장
@@ -97,5 +98,34 @@ public class GameService {
         }
 
         return playerStatuses;
+    }
+
+
+    public ResponseEntity<?> delete(String gameId, HttpServletRequest request) {
+        Game game = gameRepository.findById(gameId);
+        if (game == null) {
+            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다."
+            , HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        gameRepository.delete(game);
+        return ApiResponseUtil.success(null,
+                "게임 데이터 삭제 성공",
+                HttpStatus.OK,
+                request.getRequestURI());
+    }
+
+
+    public ResponseEntity<?> findById(String gameId, HttpServletRequest request) {
+        Game game = gameRepository.findById(gameId);
+        if (game == null) {
+            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+        
+        return ApiResponseUtil.success(game,
+                "게임 데이터 불러오기 성공",
+                HttpStatus.OK,
+                request.getRequestURI());
     }
 }
