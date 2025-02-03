@@ -74,6 +74,16 @@ build_BE:
     - echo "==========================="
     - echo "      BACK-END빌드 중"
     - echo "==========================="
+
+    - echo "DB_URL=$DB_URL" >> BE/.env
+    - echo "DB_USERNAME=$DB_USERNAME" >> BE/.env
+    - echo "DB_PASSWORD=$DB_PASSWORD" >> BE/.env
+    - echo "DB_DRIVER=$DB_DRIVER" >> BE/.env
+    - echo "DB_POOL_SIZE=$DB_POOL_SIZE" >> BE/.env
+    - echo "REDIS_HOST=$REDIS_HOST" >> BE/.env
+    - echo "REDIS_PORT=$REDIS_PORT" >> BE/.env
+
+
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
   rules:
