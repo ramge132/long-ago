@@ -272,12 +272,7 @@ const broadcastNewParticipant = (newParticipant) => {
 const initializePeer = () => {
   return new Promise((resolve, reject) => {
     try {
-      peer.value = new Peer({
-        host: "3.39.74.250",
-        port: 80,
-        path: "/apis/signal",
-        secure: false
-      });
+      peer.value = new Peer();
 
       peer.value.on("open", (id) => {
         peerId.value = id;
