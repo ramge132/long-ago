@@ -116,9 +116,7 @@
         </div>
         <div class="grid grid-cols-2">
           <div
-            v-if="InviteLink"
             class="flex justify-center items-center"
-            :class="configurable == false ? 'col-span-2' : ''"
           >
             <button
               type="button"
@@ -133,7 +131,7 @@
               초대하기
             </button>
           </div>
-          <div class="flex justify-center items-center" v-if="connectedPeers.length && configurable">
+          <div class="flex justify-center items-center">
             <button
               type="button"
               class="border-2 w-[50%] h-[30%] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105"
@@ -175,7 +173,7 @@ const props = defineProps({
     required: true,
     default: false,
   },
-  connectedPeers: {
+  participants: {
     type: Array,
   },
   roomConfigs: {
@@ -229,8 +227,10 @@ const copy = async () => {
 }
 
 const gameStart = () => {
-  console.log(props.connectedPeers);
-  if (props.connectedPeers.length < 2) {
+  console.log(props.participants);
+  if (!props.participants[0].isBoss) {
+    toast.errorToast("방장만 게임 시작할 수 있습니다.")
+  } else if (props.participants.length < 2) {
     toast.warningToast("혼자서는 진행할 수 없습니다.")
   } else {
     emit("gameStart", true);

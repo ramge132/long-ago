@@ -12,7 +12,7 @@
       />
       <LobbySettings
         :configurable="props.configurable"
-        :connectedPeers="props.connectedPeers"
+        :participants="props.participants"
         :roomConfigs="props.roomConfigs"
         :gameStarted="props.gameStarted"
         :InviteLink="props.InviteLink"
