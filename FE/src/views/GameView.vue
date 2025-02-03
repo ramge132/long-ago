@@ -82,6 +82,7 @@ const broadcastMessage = (data) => {
       {
         message: data.message,
         sender: data.sender,
+        form: data.form,
       },
       peer.connection,
     );
@@ -91,6 +92,7 @@ const broadcastMessage = (data) => {
   receivedMessages.value.push({
     message: data.message,
     sender: data.sender,
+    form: data.form,
   });
 };
 
@@ -127,6 +129,7 @@ const setupConnection = (conn) => {
         receivedMessages.value.push({
           sender: data.sender,
           message: data.message,
+          form: data.form,
         });
         break;
 
@@ -144,7 +147,7 @@ const setupConnection = (conn) => {
       case "config":
         roomConfigs.value = {
           currTurnTime: data.turnTime,
-          currCardCount: data.cardCount,
+          currCardCount: data.cardCount,  
           currMode: data.mode,
           currStyle: data.style,
         };

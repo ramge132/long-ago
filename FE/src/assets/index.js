@@ -29,3 +29,4 @@ export { default as HeartIcon } from "./icons/heart.svg";
 export { default as RerollIcon } from "./icons/reroll.svg";
 export { default as EmoticonIcon } from "./icons/emoticon.svg";
 export { default as SendIcon } from "./icons/send.svg";
+export { default as ChangeIcon } from "./icons/change.svg";
