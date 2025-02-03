@@ -9,18 +9,21 @@ import com.example.b101.dto.CreateGame;
 import com.example.b101.repository.GameRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor // 생성자 자동 주입
 public class GameService {
 
     private final GameRepository gameRepository;
     private final CardService cardService;
+
 
     /**
      * 게임을 생성하고 Redis에 저장
@@ -46,6 +49,7 @@ public class GameService {
                 .gameId(UUID.randomUUID().toString())
                 .endingCardlist(endingCards)
                 .playerStatuses(playerStatuses)
+                .ttl(3600L) // 1시간(3600초) 동안 유효
                 .build();
 
         // 게임 초기 데이터 Redis에 저장
@@ -98,4 +102,67 @@ public class GameService {
 
         return playerStatuses;
     }
+
+
+    public ResponseEntity<?> delete(String gameId, HttpServletRequest request) {
+        Game game = gameRepository.findById(gameId);
+        if (game == null) {
+            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다."
+            , HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        gameRepository.delete(game);
+        return ApiResponseUtil.success(null,
+                "게임 데이터 삭제 성공",
+                HttpStatus.OK,
+                request.getRequestURI());
+    }
+
+
+    public ResponseEntity<?> findById(String gameId, HttpServletRequest request) {
+        Game game = gameRepository.findById(gameId);
+        if (game == null) {
+            log.warn("존재하지 않는 gameId : "+gameId);
+
+            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+        
+        return ApiResponseUtil.success(game,
+                "게임 데이터 불러오기 성공",
+                HttpStatus.OK,
+                request.getRequestURI());
+    }
+
+
+    public ResponseEntity<?> shuffleEndingCard(String gameId, String userId, HttpServletRequest request) {
+        Game game = gameRepository.findById(gameId);
+
+        if (game == null) {
+            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다."
+                    , HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        List<PlayerStatus> playerStatuses = game.getPlayerStatuses();
+
+        for(int i=0; i<playerStatuses.size(); i++) {
+            if(playerStatuses.get(i).getUserId().equals(userId)) {
+                playerStatuses.get(i).setEndingCard(game.getEndingCardlist().get(0));
+                game.getEndingCardlist().remove(0);
+
+                log.info(game.getEndingCardlist().toString());
+
+                gameRepository.update(game);
+
+                return ApiResponseUtil.success(playerStatuses.get(i),
+                        "EndingCard 리롤 성공",
+                        HttpStatus.OK,
+                        request.getRequestURI());
+            }
+        }
+
+        return ApiResponseUtil.failure("해당 userId는 존재하지 않습니다.",
+                HttpStatus.BAD_REQUEST, request.getRequestURI());
+    }
+
 }

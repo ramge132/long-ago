@@ -12,7 +12,6 @@ public interface GameRepository {
 
     void update(Game game);
 
-    Game findById(int id);
+    Game findById(String id);
 
-//    List<Game> findAll();
 }

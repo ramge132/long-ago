@@ -8,6 +8,7 @@ import com.example.b101.service.CardService;
 import com.example.b101.service.GameService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,5 +30,18 @@ public class GameController{
     }
 
 
+    @DeleteMapping
+    public ResponseEntity<?> deleteGame(@RequestParam String gameId, HttpServletRequest request) {
+        return gameService.delete(gameId,request);
+    }
 
+    @GetMapping
+    public ResponseEntity<?> getGame(@RequestParam String gameId, HttpServletRequest request) {
+        return gameService.findById(gameId,request);
+    }
+
+    @GetMapping("/{roomId}")
+    public ResponseEntity<?> getGameByUserId(@PathVariable String roomId, @RequestParam String userId, HttpServletRequest request) {
+        return gameService.shuffleEndingCard(roomId, userId, request);
+    }
 }
