@@ -219,6 +219,7 @@ const connectToRoom = async (roomID) => {
           id: peerId.value,
           name: userStore.userData.userNickname,
           image: userStore.userData.userProfile,
+          isBoss: false
         },
       },
       conn,

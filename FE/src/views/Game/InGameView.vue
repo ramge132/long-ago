@@ -51,7 +51,7 @@
         </div>
       </template>
     </div>
-    <div class="col-span-3 row-span-2 grid grid-rows-2">
+    <div class="col-span-3 row-span-2 grid grid-rows-5">
       <InGameContent />
       <InGameControl @broadcast-message="broadcastMessage" />
     </div>
@@ -107,13 +107,14 @@
       </template>
     </div>
     <InGameProgress />
+    <!-- <InGameVote /> -->
   </div>
 </template>
 
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
 import { HeartIcon } from "@/assets";
-import { InGameControl, InGameContent, InGameProgress } from "@/components";
+import { InGameControl, InGameContent, InGameProgress, InGameVote } from "@/components";
 
 const maxParticipants = 6;
 const chatTime = ref([

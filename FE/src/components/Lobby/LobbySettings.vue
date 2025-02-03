@@ -117,12 +117,11 @@
         <div class="grid grid-cols-2">
           <div
             class="flex justify-center items-center"
-            :class="configurable == false ? 'col-span-2' : ''"
           >
             <button
               type="button"
               class="border-2 w-[50%] h-[30%] max-w-[150px] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105"
-              @click="emit('openModal')"
+              @click="copy"
             >
               <img
                 :src="InviteIcon"
@@ -132,7 +131,7 @@
               초대하기
             </button>
           </div>
-          <div class="flex justify-center items-center" v-if="configurable">
+          <div class="flex justify-center items-center">
             <button
               type="button"
               class="border-2 w-[50%] h-[30%] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105"
@@ -150,9 +149,12 @@
 <script setup>
 import { ref, computed, watch, defineProps, defineEmits } from "vue";
 import { useRouter } from "vue-router";
+import useCilpboard from "vue-clipboard3";
+import toast from "@/functions/toast";
 import { Mode1, Mode2, InviteIcon, PlayIcon } from "@/assets";
 
 const router = useRouter();
+const { toClipboard } = useCilpboard();
 const minTimeValue = ref(10);
 const maxTimeValue = ref(15);
 const stepTimeValue = ref(1);
@@ -163,7 +165,7 @@ const localRoomConfigs = ref({
   currStyle: "korean",
 });
 
-const emit = defineEmits(["roomConfiguration", "openModal", "gameStart"]);
+const emit = defineEmits(["roomConfiguration", "gameStart"]);
 
 const props = defineProps({
   configurable: {
@@ -171,7 +173,7 @@ const props = defineProps({
     required: true,
     default: false,
   },
-  connectedPeers: {
+  participants: {
     type: Array,
   },
   roomConfigs: {
@@ -181,6 +183,9 @@ const props = defineProps({
     Type: Boolean,
     default: false,
   },
+  InviteLink: {
+    Type: String
+  }
 });
 
 const ticks = computed(() => {
@@ -211,8 +216,25 @@ const modes = ref([
   },
 ]);
 
+const copy = async () => {
+  try {
+    await toClipboard(props.InviteLink);
+    toast.successToast("클립보드에 복사되었습니다.");
+  } catch (error) {
+    toast.errorToast("복사 실패");
+    console.log(error);
+  }
+}
+
 const gameStart = () => {
-  emit("gameStart", true);
+  console.log(props.participants);
+  if (!props.participants[0].isBoss) {
+    toast.errorToast("방장만 게임 시작할 수 있습니다.")
+  } else if (props.participants.length < 2) {
+    toast.warningToast("혼자서는 진행할 수 없습니다.")
+  } else {
+    emit("gameStart", true);
+  }
 };
 
 watch(
