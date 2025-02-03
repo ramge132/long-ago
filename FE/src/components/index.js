@@ -14,6 +14,7 @@ export { default as LobbySettings } from "./Lobby/LobbySettings.vue";
 // InGame
 export { default as InGameControl } from "./InGame/InGameControl.vue";
 export { default as InGameContent } from "./InGame/InGameContent.vue";
+export { default as InGameVote } from "./InGame/InGameVote.vue";
 
 // InGameContent
 export { default as ContentTimer } from "./InGame/InGameContent/ContentTimer.vue";
