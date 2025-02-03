@@ -39,4 +39,9 @@ public class GameController{
     public ResponseEntity<?> getGame(@RequestParam String gameId, HttpServletRequest request) {
         return gameService.findById(gameId,request);
     }
+
+    @GetMapping("/{roomId}")
+    public ResponseEntity<?> getGameByUserId(@PathVariable String roomId, @RequestParam String userId, HttpServletRequest request) {
+        return gameService.shuffleEndingCard(roomId, userId, request);
+    }
 }

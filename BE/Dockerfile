@@ -14,6 +14,7 @@ COPY build.gradle settings.gradle ./
 #  소스 코드 복사
 COPY src ./src/
 
+
 # Gradle 캐시를 활용하여 종속성 다운로드 및 빌드
 RUN gradle build -x test
 
@@ -29,9 +30,13 @@ WORKDIR /BE
 # 빌드된 JAR 파일 복사
 COPY --from=build /home/gradle/BE/build/libs/*.jar app.jar
 
+# .env 복사
+COPY .env .env
+
 # 애플리케이션 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
 # 포트 노출 (Spring Boot 기본 포트)
 EXPOSE 8080
 
+#

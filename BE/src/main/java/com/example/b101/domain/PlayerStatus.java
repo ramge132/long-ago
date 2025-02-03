@@ -7,6 +7,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Getter
+@Setter
 @NoArgsConstructor
 //플레이어 상태 CLASS
 public class PlayerStatus{
@@ -20,4 +21,6 @@ public class PlayerStatus{
     int score;
 
     EndingCard endingCard;
+
+
 }

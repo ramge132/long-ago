@@ -14,5 +14,4 @@ public interface GameRepository {
 
     Game findById(String id);
 
-//    List<Game> findAll();
 }
