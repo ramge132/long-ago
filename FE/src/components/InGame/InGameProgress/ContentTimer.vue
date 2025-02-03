@@ -1,6 +1,6 @@
 <template>
   <div
-    :class="['w-14 h-14 bg-[#00000080] rounded-full flex flex-col items-center justify-center', boxShadow, timeWarningClass]"
+    :class="['w-14 h-14 bg-[#00000080] rounded-full flex flex-col items-center justify-center', timeWarningClass]"
     style="box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);"
   >
     <div class="text-xl text-white">{{ restTime }}</div>
