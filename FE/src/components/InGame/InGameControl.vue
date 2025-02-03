@@ -33,10 +33,20 @@
       </div>
     </div>
     <div class="flex justify-center relative">
-      <div class="rounded-full bg-[#AEE8FF] drop-shadow-md w-2/3 h-10 mx-1 flex px-3 items-center" v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
-        <div class="flex flex-nowrap flex-col justify-center items-center relative">
-          <p class="whitespace-nowrap absolute top-[-1.25rem]" v-text="mode.mark"></p>
-          <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5">
+      <div
+        class="rounded-full bg-[#AEE8FF] drop-shadow-md w-2/3 h-10 mx-1 flex px-3 items-center"
+        v-for="(mode, index) in chatMode"
+        :key="index"
+        :class="index == currChatModeIdx ? '' : 'hidden'"
+      >
+        <div
+          class="flex flex-nowrap flex-col justify-center items-center relative"
+        >
+          <p
+            class="whitespace-nowrap absolute top-[-1.25rem]"
+            v-text="mode.mark"
+          ></p>
+          <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
         <input
           type="text"
@@ -49,23 +59,30 @@
           class="rounded-full border w-8 h-8 shrink-0 border-black p-1 flex justify-center items-center"
           @click="mode.fucntion"
         >
-          <img :src="SendIcon" alt="보내기" class="object-scale-down w-3/4 h-3/4" />
+          <img
+            :src="SendIcon"
+            alt="보내기"
+            class="object-scale-down w-3/4 h-3/4"
+          />
         </button>
       </div>
       <div class="relative">
-          <button
-            class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 z-10 absolute"
-          @click="toggleEmoticon = !toggleEmoticon">
-            <img :src="EmoticonIcon" alt="감정표현" class="object-scale-down" />
-          </button>
-          <button
-            class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 absolute z-0 emoticon"
-            v-for="(emoticon, index) in emoticons" :key="index" :class="toggleEmoticon ? 'emoticon' + index : ''"
-            @click="sendEmoticon(emoticon.image)">
-            {{ emoticon.image }}
-          </button>
+        <button
+          class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 z-10 absolute"
+          @click="toggleEmoticon = !toggleEmoticon"
+        >
+          <img :src="EmoticonIcon" alt="감정표현" class="object-scale-down" />
+        </button>
+        <button
+          class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 absolute z-0 emoticon"
+          v-for="(emoticon, index) in emoticons"
+          :key="index"
+          :class="toggleEmoticon ? 'emoticon' + index : ''"
+          @click="sendEmoticon(emoticon.image)"
+        >
+          {{ emoticon.image }}
+        </button>
       </div>
-      
     </div>
   </div>
 </template>
@@ -79,20 +96,19 @@ const userStore = useUserStore();
 const toggleEmoticon = ref(false);
 const message = ref("");
 const emoticons = ref([
-    {
-        text: 'laugh',
-        image: '🤣',
-    },    
-    {
-        text: 'angry',
-        image: '🤬', 
-    },
-    {
-        text: 'unamused',
-        image: '😕', 
-    },
-])
-
+  {
+    text: "laugh",
+    image: "🤣",
+  },
+  {
+    text: "angry",
+    image: "🤬",
+  },
+  {
+    text: "unamused",
+    image: "😕",
+  },
+]);
 
 const emit = defineEmits(["broadcastMessage"]);
 
@@ -105,34 +121,32 @@ const sendChat = () => {
     message.value = "";
   }
 };
-const sendprompt = () => {
-
-};
+const sendprompt = () => {};
 const sendEmoticon = (data) => {
-    emit("broadcastMessage", {
-        sender: userStore.userData.userNickname,
-        message: data,
-        form: "emoticon",
-    })
-    toggleEmoticon.value = false;
-}
+  emit("broadcastMessage", {
+    sender: userStore.userData.userNickname,
+    message: data,
+    form: "emoticon",
+  });
+  toggleEmoticon.value = false;
+};
 
 const chatMode = ref([
   {
-    mark:"대화",
+    mark: "대화",
     fucntion: sendChat,
     placeholder: "채팅 입력",
   },
   {
-    mark:"이야기",
+    mark: "이야기",
     fucntion: sendprompt,
     placeholder: "다음 이어질 이야기를 작성해주세요",
   },
 ]);
 const currChatModeIdx = ref(0);
 
-window.addEventListener("keydown", e => {
-  if(e.ctrlKey) changeMode();
+window.addEventListener("keydown", (e) => {
+  if (e.ctrlKey) changeMode();
 });
 
 const changeMode = () => {
@@ -148,17 +162,17 @@ const changeMode = () => {
   transition: all 0.3s cubic-bezier(0.25, 1.65, 0.5, 1.15);
   opacity: 0;
 }
-.emoticon0{
+.emoticon0 {
   transform: scale(1);
   transform: translate(-3rem, -3rem);
   opacity: 1;
 }
-.emoticon1{
+.emoticon1 {
   transform: scale(1);
   transform: translate(0, -3rem);
   opacity: 1;
 }
-.emoticon2{
+.emoticon2 {
   transform: scale(1);
   transform: translate(3rem, -3rem);
   opacity: 1;

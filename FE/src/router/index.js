@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: "/",
       name: "Intro",
-      component: () => import("@/views/IntroView.vue")
+      component: () => import("@/views/IntroView.vue"),
     },
     {
       path: "/game",
@@ -38,8 +38,8 @@ const router = createRouter({
       path: "/:pathMatch(.*)*", // 모든 정의되지 않은 경로에 매칭
       name: "NotFound",
       beforeEnter: (to, from, next) => {
-        next({name: "Intro"});
-      }
+        next({ name: "Intro" });
+      },
     },
   ],
 });

@@ -6,7 +6,9 @@
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 == 0"
         >
-          <div class="rounded-full overflow-hidden w-24 h-24 border border-black">
+          <div
+            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+          >
             <img :src="user.image" alt="프로필" />
           </div>
           <div
@@ -41,7 +43,9 @@
           class="flex flex-col justify-center items-center"
           v-if="n % 2 == 0"
         >
-          <div class="rounded-full bg-gray-500 w-24 h-24 border border-black"></div>
+          <div
+            class="rounded-full bg-gray-500 w-24 h-24 border border-black"
+          ></div>
           <div>비어 있음</div>
           <div class="h-5"></div>
         </div>
@@ -57,7 +61,9 @@
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 != 0"
         >
-          <div class="rounded-full overflow-hidden w-24 h-24 border border-black">
+          <div
+            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+          >
             <img :src="user.image" alt="프로필" />
           </div>
           <div
@@ -92,7 +98,9 @@
           class="flex flex-col justify-center items-center"
           v-if="n % 2 != 0"
         >
-          <div class="rounded-full bg-gray-500 w-24 h-24 border border-black"></div>
+          <div
+            class="rounded-full bg-gray-500 w-24 h-24 border border-black"
+          ></div>
           <div>비어 있음</div>
           <div class="h-5"></div>
         </div>
@@ -108,12 +116,12 @@ import { InGameControl, InGameContent } from "@/components";
 
 const maxParticipants = 6;
 const chatTime = ref([
-  [,],
-  [,],
-  [,],
-  [,],
-  [,],
-  [,],
+  [undefined, undefined],
+  [undefined, undefined],
+  [undefined, undefined],
+  [undefined, undefined],
+  [undefined, undefined],
+  [undefined, undefined],
 ]);
 
 const emit = defineEmits(["broadcastMessage", "gameExit"]);
@@ -147,9 +155,12 @@ watch(
       ) {
         const select = ref();
         let type = 0;
-        if(props.receivedMessages[props.receivedMessages.length - 1].form == 'emoticon') {
-            select.value = document.querySelector(".emoticon-bubble" + index);
-            type = 1;
+        if (
+          props.receivedMessages[props.receivedMessages.length - 1].form ==
+          "emoticon"
+        ) {
+          select.value = document.querySelector(".emoticon-bubble" + index);
+          type = 1;
         } else select.value = document.querySelector(".speech-bubble" + index);
         console.log(props.receivedMessages[props.receivedMessages.length - 1]);
         select.value.firstChild.textContent =
@@ -171,5 +182,4 @@ onBeforeMount(() => {
 });
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
