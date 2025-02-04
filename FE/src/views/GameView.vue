@@ -168,6 +168,9 @@ const setupConnection = (conn) => {
         };
         break;
 
+      // 수정필요 게임 시작 트리거 내용 추가해야 함
+      // 카드 요청 보내야함
+      // gameID, userID
       case "gameStart":
         gameStarted.value = data;
         break;
@@ -369,6 +372,13 @@ const onRoomConfiguration = (data) => {
 
 const gameStart = (data) => {
   gameStarted.value = data;
+  // 방장이 방 생성요청하는 부분 들어가야 함
+  
+  
+  // 위 코드 동기로 실행
+  // 아래 데이터 변경해야 함
+  // gameID: String 데이터 추가가
+
   connectedPeers.value.forEach((peer) => {
     sendMessage("gameStart", gameStarted.value, peer.connection);
   });
