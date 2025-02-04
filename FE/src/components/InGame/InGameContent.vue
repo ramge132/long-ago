@@ -5,21 +5,29 @@
     <div class="book absolute top-0">
       <div class="pages" ref="pagesRef">
         <div
-          class="page cursor-pointer flex flex-col items-center justify-center"
+          class="page cursor-pointer flex flex-col items-center justify-center text-gray-300 text-2xl"
           :class="{ flipped: isFlipped(0) }"
           @click="handlePageClick(0)"
         >
-          hello
+          Long Ago..
         </div>
-        <div
-          v-for="(content, index) in pageContents"
+        <template
+          v-for="(content, index) in bookContent"
           :key="index"
-          class="page cursor-pointer flex flex-col items-center justify-center"
-          :class="{ flipped: isFlipped(index + 1) }"
-          @click="handlePageClick(index + 1)"
         >
-          <p>{{ content }}</p>
-        </div>
+          <div
+            class="page cursor-pointer flex flex-col items-center justify-center"
+            :class="{ flipped: isFlipped(index * 2 + 1) }"
+            @click="handlePageClick(index * 2 + 1)">
+            {{ content.content }}
+          </div>
+          <div
+            class="page cursor-pointer flex flex-col items-center justify-center"
+            :class="{ flipped: isFlipped(index * 2 + 2) }"
+            @click="handlePageClick(index * 2 + 2)">
+            {{  content.image }}
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -34,9 +42,29 @@ const audioStore = useAudioStore();
 
 // 총 페이지 수와 각 페이지의 내용을 정의합니다.
 const totalPages = 32;
-const pageContents = Array.from({ length: totalPages }, (_, i) =>
-  i === 0 ? "Open Me, please!" : `Page ${i + 1}`,
-);
+
+const bookContent = ref([
+  { content: "", image: null }  // 초기 상태
+]);
+
+const addBookContent = (newContent) => {
+  // 마지막 요소 직전에 새 콘텐츠 추가
+  const lastIndex = bookContent.value.length - 1;
+  bookContent.value.splice(lastIndex, 0, {
+    content: newContent.content || "",
+    image: newContent.image || null
+  });
+  
+  // 마지막 요소는 항상 빈 요소로 유지
+  if (bookContent.value[bookContent.value.length - 1].content !== "" || 
+      bookContent.value[bookContent.value.length - 1].image !== null) {
+    bookContent.value.push({ content: "", image: null });
+  }
+};
+
+// 사용 예시
+addBookContent({ content: "1번 글", image: "첫번째이미지" });
+addBookContent({ content: "2번 글", image: "두번째이미지" });
 
 const pagesRef = ref(null);
 const flippedPages = reactive(new Set());
@@ -46,6 +74,10 @@ const isFlipped = (pageIndex) => {
 };
 
 const handlePageClick = (pageIndex) => {
+  if (pageIndex / 2 === bookContent.value.length){
+    console.log('last page click event block');
+    return
+  }
   if (audioStore.audioData) {
     const turningEffect = new Audio(TurningPage);
     turningEffect.play();
