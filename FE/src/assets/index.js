@@ -30,3 +30,7 @@ export { default as RerollIcon } from "./icons/reroll.svg";
 export { default as EmoticonIcon } from "./icons/emoticon.svg";
 export { default as SendIcon } from "./icons/send.svg";
 export { default as ChangeIcon } from "./icons/change.svg";
+
+// musics
+export { default as LobbyMusic } from "./musics/backgroundMusic.mp3";
+export { default as TurningPage } from "./musics/turning_page_2.mp3";

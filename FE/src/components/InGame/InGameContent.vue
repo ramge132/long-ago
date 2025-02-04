@@ -2,7 +2,7 @@
   <div
     class="row-span-3 w-full h-full flex items-center justify-center"
   >
-    <div class="book">
+    <div class="book absolute top-0">
       <div class="pages" ref="pagesRef">
         <div
           class="page cursor-pointer flex flex-col items-center justify-center"
@@ -27,6 +27,10 @@
 
 <script setup>
 import { ref, onMounted, reactive } from "vue";
+import { useAudioStore } from "@/stores/audio";
+import { TurningPage } from "@/assets";
+
+const audioStore = useAudioStore();
 
 // 총 페이지 수와 각 페이지의 내용을 정의합니다.
 const totalPages = 32;
@@ -42,6 +46,10 @@ const isFlipped = (pageIndex) => {
 };
 
 const handlePageClick = (pageIndex) => {
+  if (audioStore.audioData) {
+    const turningEffect = new Audio(TurningPage);
+    turningEffect.play();
+  }
   if (pageIndex % 2 === 0) {
     // 오른쪽 페이지 클릭
     if (isFlipped(pageIndex)) {
@@ -100,8 +108,8 @@ p {
   perspective: 250vw;
 }
 .book .pages {
-  width: 550px;
-  height: 350px;
+  width: 600px;
+  height: 400px;
   position: relative;
   transform-style: preserve-3d;
   backface-visibility: hidden;
@@ -113,8 +121,8 @@ p {
   margin: 0;
   position: absolute;
   top: 0;
-  width: 275px;
-  height: 350px;
+  width: 300px;
+  height: 400px;
   transform-origin: 0 0;
   transition: transform 1.4s;
   backface-visibility: hidden;
