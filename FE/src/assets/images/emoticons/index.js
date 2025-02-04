@@ -26,6 +26,7 @@ export default {
   d_tongue: "/src/assets/images/emoticons/dynamic/tongue.webp",
   d_wink: "/src/assets/images/emoticons/dynamic/wink.webp",
   d_wrath: "/src/assets/images/emoticons/dynamic/wrath.webp",
+  d_fear: "/src/assets/images/emoticons/dynamic/fear.webp",
   s_laugh: "/src/assets/images/emoticons/static/laugh.png",
   s_asleep: "/src/assets/images/emoticons/static/asleep.png",
   s_crossed: "/src/assets/images/emoticons/static/crossed.png",
@@ -37,4 +38,5 @@ export default {
   s_tongue: "/src/assets/images/emoticons/static/tongue.png",
   s_wink: "/src/assets/images/emoticons/static/wink.png",
   s_wrath: "/src/assets/images/emoticons/static/wrath.png",
+  s_fear: "/src/assets/images/emoticons/static/fear.png",
 };

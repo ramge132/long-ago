@@ -64,7 +64,8 @@
           v-if="index % 2 != 0"
         >
           <div
-            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            class="rounded-full w-24 h-24"
+            :class="currTurn === index ? 'sun' : ''"
           >
             <img :src="props.participants[order].image" alt="프로필" />
           </div>

@@ -141,7 +141,7 @@ const setupConnection = (conn) => {
         });
         break;
 
-      case "system": {
+      case "system": 
         // participants 중 id가 data.id와 같은 값 삭제
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
@@ -164,7 +164,7 @@ const setupConnection = (conn) => {
           configurable.value = true;
         }
         break;
-      }
+      
 
       case "config":
         roomConfigs.value = {
@@ -184,7 +184,7 @@ const setupConnection = (conn) => {
         console.log(inGameOrder.value);
         break;
 
-      case "newParticipantJoined": {
+      case "newParticipantJoined": 
         const isExisting = participants.value.some(
           (existing) => existing.id === data.data.id,
         );
@@ -196,7 +196,7 @@ const setupConnection = (conn) => {
           console.log("이미 존재하는 참가자:", data.data);
         }
         break;
-      }
+      
     }
   });
 
@@ -332,17 +332,11 @@ const initializePeer = () => {
 onMounted(async () => {
   try {
     await initializePeer();
-
+    
     // 일반 참여자인 경우
-    if (route.query.roomID) {
-      participants.value.push({
-        id: peerId.value,
-        name: userStore.userData.userNickname,
-        image: userStore.userData.userProfile,
-        isBoss: false,
-      });
-      connectToRoom(route.query.roomID);
-      InviteLink.value = "http://localhost:5173/?roomID=" + route.query.roomID;
+    if (gameStore.getBossId()) {
+      connectToRoom(gameStore.getBossId());
+      InviteLink.value = import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + gameStore.getBossId();
     }
     // 방장인 경우
     else if (
@@ -393,7 +387,8 @@ const onRoomConfiguration = (data) => {
 };
 
 const gameStart = (data) => {
-  gameStarted.value = data;
+  gameStarted.value = data.gameStarted;
+  inGameOrder.value = data.order;
   connectedPeers.value.forEach((peer) => {
     sendMessage(
       "gameStart",
