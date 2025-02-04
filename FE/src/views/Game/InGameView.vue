@@ -1,7 +1,8 @@
 <template>
   <div class="w-full h-full grid grid-cols-5 grid-rows-2">
     <div class="h-full row-span-2 grid grid-rows-3">
-      <template v-for="(user, index) in props.participants" :key="user.id">
+      <!-- <template v-for="(user, index) in props.participants" :key="user.id"> -->
+      <template v-for="(order, index) in props.inGameOrder" :key="index">
         <div
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 == 0"
@@ -9,7 +10,7 @@
           <div
             class="rounded-full overflow-hidden w-24 h-24 border border-black"
           >
-            <img :src="user.image" alt="프로필" />
+            <img :src="props.participants[order].image" alt="프로필" />
           </div>
           <div
             class="absolute bg-[#aee8ff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
@@ -23,7 +24,7 @@
           >
             <p></p>
           </div>
-          <div>{{ user.name }}</div>
+          <div>{{ props.participants[order].name }}</div>
           <p></p>
           <div class="flex">
             <img :src="HeartIcon" alt="하트" />
@@ -56,7 +57,7 @@
       <InGameControl @broadcast-message="broadcastMessage" />
     </div>
     <div class="h-full row-span-2 grid grid-rows-3">
-      <template v-for="(user, index) in props.participants" :key="user.id">
+      <template v-for="(order, index) in props.inGameOrder" :key="index">
         <div
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 != 0"
@@ -64,7 +65,7 @@
           <div
             class="rounded-full overflow-hidden w-24 h-24 border border-black"
           >
-            <img :src="user.image" alt="프로필" />
+          <img :src="props.participants[order].image" alt="프로필" />
           </div>
           <div
             class="absolute bg-[#aee8ff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
@@ -78,7 +79,7 @@
           >
             <p></p>
           </div>
-          <div>{{ user.name }}</div>
+          <div>{{ props.participants[order].name }}</div>
           <p></p>
           <div class="flex">
             <img :src="HeartIcon" alt="하트" />
@@ -106,7 +107,7 @@
         </div>
       </template>
     </div>
-    <InGameProgress />
+    <InGameProgress/>
     <!-- <InGameVote /> -->
   </div>
 </template>
@@ -145,6 +146,9 @@ const props = defineProps({
   participants: {
     Type: Array,
   },
+  inGameOrder: {
+    Type: Array,
+  }
 });
 
 watch(

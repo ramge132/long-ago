@@ -233,7 +233,10 @@ const gameStart = () => {
   } else if (props.participants.length < 2) {
     toast.warningToast("혼자서는 진행할 수 없습니다.")
   } else {
-    emit("gameStart", true);
+    emit("gameStart", {
+      gameStarted: true,
+      order: Array(props.participants.length).fill().map((value, index) => index).sort(() => Math.random() - 0.5)
+    });
   }
 };
 

@@ -11,6 +11,7 @@
           :receivedMessages="receivedMessages"
           :InviteLink="InviteLink"
           :gameStarted="gameStarted"
+          :inGameOrder="inGameOrder"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
@@ -45,6 +46,7 @@ const maxParticipants = 6;
 const configurable = ref(false);
 const InviteLink = ref("");
 const gameStarted = ref(false);
+const inGameOrder = ref([]);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -154,7 +156,9 @@ const setupConnection = (conn) => {
         break;
 
       case "gameStart":
-        gameStarted.value = data;
+        gameStarted.value = data.gameStarted;
+        inGameOrder.value = data.order;
+        console.log(inGameOrder.value);
         break;
     }
   });
@@ -284,13 +288,13 @@ onMounted(async () => {
 
     // 일반 참여자인 경우
     if (route.query.roomID) {
+      connectToRoom(route.query.roomID);
       participants.value.push({
         id: peerId.value,
         name: userStore.userData.userNickname,
         image: userStore.userData.userProfile,
         isBoss: false,
       });
-      connectToRoom(route.query.roomID);
       InviteLink.value = "http://localhost:5173/?roomID=" + route.query.roomID;
     }
     // 방장인 경우
@@ -338,9 +342,13 @@ const onRoomConfiguration = (data) => {
 };
 
 const gameStart = (data) => {
-  gameStarted.value = data;
+  gameStarted.value = data.gameStarted;
+  inGameOrder.value = data.order;
   connectedPeers.value.forEach((peer) => {
-    sendMessage("gameStart", gameStarted.value, peer.connection);
+    sendMessage("gameStart", {
+      gameStarted: gameStarted.value,
+      order: inGameOrder.value,
+    }, peer.connection);
   });
 };
 </script>
