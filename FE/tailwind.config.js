@@ -26,9 +26,6 @@ export default {
           "75%": { transform: "translateX(-1px)" },
         },
       },
-      cursor: {
-        pointer: 'url("/src/assets/icons/fairy.png"), pointer',
-      },
     },
   },
   plugins: [],
