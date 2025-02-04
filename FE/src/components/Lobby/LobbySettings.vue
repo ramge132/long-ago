@@ -115,9 +115,7 @@
           </div>
         </div>
         <div class="grid grid-cols-2">
-          <div
-            class="flex justify-center items-center"
-          >
+          <div class="flex justify-center items-center">
             <button
               type="button"
               class="border-2 w-[50%] h-[30%] max-w-[150px] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105"
@@ -184,11 +182,11 @@ const props = defineProps({
     default: false,
   },
   InviteLink: {
-    Type: String
+    Type: String,
   },
   peerId: {
-    Type: String
-  }
+    Type: String,
+  },
 });
 
 const ticks = computed(() => {
@@ -227,17 +225,20 @@ const copy = async () => {
     toast.errorToast("복사 실패");
     console.log(error);
   }
-}
+};
 
 const gameStart = () => {
   if (props.participants[0].id !== props.peerId) {
-    toast.errorToast("방장만 게임 시작할 수 있습니다.")
+    toast.errorToast("방장만 게임 시작할 수 있습니다.");
   } else if (props.participants.length < 2) {
-    toast.warningToast("혼자서는 진행할 수 없습니다.")
+    toast.warningToast("혼자서는 진행할 수 없습니다.");
   } else {
     emit("gameStart", {
       gameStarted: true,
-      order: Array(props.participants.length).fill().map((value, index) => index).sort(() => Math.random() - 0.5)
+      order: Array(props.participants.length)
+        .fill()
+        .map((value, index) => index)
+        .sort(() => Math.random() - 0.5),
     });
   }
 };

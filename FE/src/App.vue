@@ -41,10 +41,10 @@ const route = useRoute();
 
 const backgroundClass = computed(() => {
   switch (route.path) {
-    case '/game/play':
-      return 'bg-game-image';
+    case "/game/play":
+      return "bg-game-image";
     default:
-      return 'bg-fairytail-image';
+      return "bg-fairytail-image";
   }
 });
 </script>

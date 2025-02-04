@@ -80,7 +80,7 @@
           :class="toggleEmoticon ? 'emoticon' + index : ''"
           @click="sendEmoticon(emoticon.d_image)"
         >
-          <img :src="emoticon.s_image" alt="이모티콘">
+          <img :src="emoticon.s_image" alt="이모티콘" />
         </button>
       </div>
     </div>

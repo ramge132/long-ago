@@ -8,7 +8,8 @@
           v-if="index % 2 == 0"
         >
           <div
-            class="rounded-full w-24 h-24" :class="currTurn === index ? 'sun' : ''"
+            class="rounded-full w-24 h-24"
+            :class="currTurn === index ? 'sun' : ''"
           >
             <img :src="props.participants[order].image" alt="프로필" />
           </div>
@@ -22,7 +23,7 @@
             class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] right-[-20px] after:absolute after:top-0 after:left-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-l-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center hidden"
             :class="'emoticon-bubble' + index"
           >
-            <img src="" alt="" class="object-scale-down w-10 h-10">
+            <img src="" alt="" class="object-scale-down w-10 h-10" />
           </div>
           <div>{{ props.participants[order].name }}</div>
           <p></p>
@@ -65,7 +66,7 @@
           <div
             class="rounded-full overflow-hidden w-24 h-24 border border-black"
           >
-          <img :src="props.participants[order].image" alt="프로필" />
+            <img :src="props.participants[order].image" alt="프로필" />
           </div>
           <div
             class="absolute bg-[#aee8ff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
@@ -77,7 +78,7 @@
             class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center hidden"
             :class="'emoticon-bubble' + index"
           >
-            <img src="" alt="" class="object-scale-down w-10 h-10">
+            <img src="" alt="" class="object-scale-down w-10 h-10" />
           </div>
           <div>{{ props.participants[order].name }}</div>
           <p></p>
@@ -107,7 +108,7 @@
         </div>
       </template>
     </div>
-    <InGameProgress @next-turn="nextTurn"/>
+    <InGameProgress @next-turn="nextTurn" />
     <!-- <InGameVote /> -->
   </div>
 </template>
@@ -115,7 +116,12 @@
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
 import { HeartIcon } from "@/assets";
-import { InGameControl, InGameContent, InGameProgress, InGameVote } from "@/components";
+import {
+  InGameControl,
+  InGameContent,
+  InGameProgress,
+  InGameVote,
+} from "@/components";
 
 const maxParticipants = 6;
 const chatTime = ref([
@@ -135,7 +141,7 @@ const broadcastMessage = (data) => {
 
 const nextTurn = () => {
   emit("nextTurn");
-}
+};
 
 const props = defineProps({
   roomConfigs: {
@@ -155,7 +161,7 @@ const props = defineProps({
   },
   currTurn: {
     Type: Number,
-  }
+  },
 });
 
 watch(
@@ -174,7 +180,8 @@ watch(
         ) {
           select.value = document.querySelector(".emoticon-bubble" + index);
           type = 1;
-          select.value.firstChild.src = props.receivedMessages[props.receivedMessages.length - 1].message;
+          select.value.firstChild.src =
+            props.receivedMessages[props.receivedMessages.length - 1].message;
         } else {
           select.value = document.querySelector(".speech-bubble" + index);
           select.value.firstChild.textContent =
@@ -199,7 +206,8 @@ onBeforeMount(() => {
 
 <style scoped>
 @keyframes corona {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 6px 2px rgba(102, 204, 255, 0.8),
       0 0 12px 6px rgba(0, 102, 255, 0.6),

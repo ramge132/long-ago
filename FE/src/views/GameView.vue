@@ -141,7 +141,7 @@ const setupConnection = (conn) => {
         });
         break;
 
-      case "system":
+      case "system": {
         // participants 중 id가 data.id와 같은 값 삭제
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
@@ -152,7 +152,8 @@ const setupConnection = (conn) => {
         gameStore.setBossId(newBossId);
 
         // 초대 링크 초기화
-        InviteLink.value = import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + newBossId;
+        InviteLink.value =
+          import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + newBossId;
         receivedMessages.value.push({
           sender: "시스템",
           message: `${data.nickname}님이 나가셨습니다.`,
@@ -163,11 +164,12 @@ const setupConnection = (conn) => {
           configurable.value = true;
         }
         break;
+      }
 
       case "config":
         roomConfigs.value = {
           currTurnTime: data.turnTime,
-          currCardCount: data.cardCount,  
+          currCardCount: data.cardCount,
           currMode: data.mode,
           currStyle: data.style,
         };
@@ -182,7 +184,7 @@ const setupConnection = (conn) => {
         console.log(inGameOrder.value);
         break;
 
-      case "newParticipantJoined":
+      case "newParticipantJoined": {
         const isExisting = participants.value.some(
           (existing) => existing.id === data.data.id,
         );
@@ -194,6 +196,7 @@ const setupConnection = (conn) => {
           console.log("이미 존재하는 참가자:", data.data);
         }
         break;
+      }
     }
   });
 
@@ -256,7 +259,7 @@ const connectToRoom = async (roomID) => {
         data: {
           id: peerId.value,
           name: userStore.userData.userNickname,
-          image: userStore.userData.userProfile
+          image: userStore.userData.userProfile,
         },
       },
       conn,
@@ -274,7 +277,7 @@ const connectToRoom = async (roomID) => {
     const newParticipant = {
       id: peerId.value,
       name: userStore.userData.userNickname,
-      image: userStore.userData.userProfile
+      image: userStore.userData.userProfile,
     };
 
     // 중복 확인 후 추가
@@ -342,14 +345,20 @@ onMounted(async () => {
       InviteLink.value = "http://localhost:5173/?roomID=" + route.query.roomID;
     }
     // 방장인 경우
-    else if (!gameStore.getBossId() || decompressUUID(gameStore.getBossId()) == peerId.value){
+    else if (
+      !gameStore.getBossId() ||
+      decompressUUID(gameStore.getBossId()) == peerId.value
+    ) {
       participants.value.push({
         id: peerId.value,
         name: userStore.userData.userNickname,
-        image: userStore.userData.userProfile
+        image: userStore.userData.userProfile,
       });
       configurable.value = true;
-      InviteLink.value = import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + compressUUID(peerId.value);
+      InviteLink.value =
+        import.meta.env.VITE_MAIN_API_SERVER_URL +
+        "?roomID=" +
+        compressUUID(peerId.value);
     }
   } catch (error) {
     console.error("Peer initialization failed:", error);
@@ -367,7 +376,7 @@ addEventListener("beforeunload", () => {
   });
 });
 
-const onRoomConfiguration = (data) => { 
+const onRoomConfiguration = (data) => {
   roomConfigs.value = data;
   connectedPeers.value.forEach((peer) => {
     sendMessage(
@@ -386,18 +395,21 @@ const onRoomConfiguration = (data) => {
 const gameStart = (data) => {
   gameStarted.value = data;
   connectedPeers.value.forEach((peer) => {
-    sendMessage("gameStart", {
-      gameStarted: gameStarted.value,
-      order: inGameOrder.value,
-    }, peer.connection);
+    sendMessage(
+      "gameStart",
+      {
+        gameStarted: gameStarted.value,
+        order: inGameOrder.value,
+      },
+      peer.connection,
+    );
   });
 };
 
 // 다음 순서 넘기기
 const nextTurn = () => {
   currTurn.value = (currTurn.value + 1) % participants.value.length;
-}
-
+};
 </script>
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
