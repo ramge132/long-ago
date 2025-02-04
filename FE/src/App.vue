@@ -9,6 +9,8 @@
     <div
       class="border-dashed border-2 border-black rounded-lg shadow-md w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] bg-[#ffffff80] backdrop-blur-sm flex flex-col justify-center items-center"
     >
+      <ToggleButton :music="LobbyMusic" />
+
       <RouterView v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -28,7 +30,8 @@
 <script setup>
 import { computed } from "vue";
 import { useRoute } from "vue-router";
-import { TopBar, FooterBar } from "@/components";
+import { TopBar, FooterBar, ToggleButton } from "@/components";
+import { LobbyMusic } from "@/assets";
 import { TigerAnimation } from "./components";
 
 const route = useRoute();

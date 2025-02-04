@@ -27,6 +27,10 @@
 
 <script setup>
 import { ref, onMounted, reactive } from "vue";
+import { useAudioStore } from "@/stores/audio";
+import { TurningPage } from "@/assets";
+
+const audioStore = useAudioStore();
 
 // 총 페이지 수와 각 페이지의 내용을 정의합니다.
 const totalPages = 32;
@@ -42,6 +46,10 @@ const isFlipped = (pageIndex) => {
 };
 
 const handlePageClick = (pageIndex) => {
+  if (audioStore.audioData) {
+    const turningEffect = new Audio(TurningPage);
+    turningEffect.play();
+  }
   if (pageIndex % 2 === 0) {
     // 오른쪽 페이지 클릭
     if (isFlipped(pageIndex)) {
