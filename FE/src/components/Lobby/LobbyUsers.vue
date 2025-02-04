@@ -2,15 +2,13 @@
   <div class="col-span-1 flex flex-col gap-y-1 h-full">
     <!-- 접속한 사용자들 표시 -->
     <div
-      v-for="user in props.participants"
+      v-for="(user, index) in props.participants"
       :key="user.id"
       class="flex items-center gap-x-3 rounded-md p-1 border-2 border-[#00000050]"
     >
-      <div class="relative flex rounded-full border border-black w-10 h-10">
-        <div class="w-full h-full rounded-full overflow-hidden">
+      <div class="relative flex w-10 h-10">
           <img :src="user.image" alt="프로필" />
-        </div>
-        <span v-if="user.isBoss" class="absolute -top-4 -left-4 text-2xl z-10"
+        <span v-if="index === 0" class="absolute -top-4 -left-4 text-2xl z-10"
           >👑</span
         >
       </div>

@@ -24,7 +24,6 @@
 
 body {
   font-family: "KCC-Ganpan", "HS유지체", "MAKGEOLLI", sans-serif;
-  cursor: url("@/assets/icons/cursor.cur"), auto; /* 기본 커서 이미지 설정 */
 }
 
 @layer utilities {

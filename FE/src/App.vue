@@ -3,12 +3,17 @@
     class="bg-no-repeat bg-cover bg-center w-screen h-screen flex flex-col justify-center items-center relative"
     :class="backgroundClass"
   >
+    <Transition name="fade-out">
+      <TigerAnimation />
+    </Transition>
     <Transition name="fade">
       <TopBar v-if="route.path === '/'" />
     </Transition>
     <div
-      class="border-dashed border-2 border-black rounded-lg shadow-md w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] bg-[#ffffff80] backdrop-blur-sm flex flex-col justify-center items-center"
+      class="rounded-lg shadow-md w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] bg-[#ffffff80] backdrop-blur-sm flex flex-col justify-center items-center"
     >
+      <ToggleButton :music="LobbyMusic" />
+
       <RouterView v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -26,10 +31,11 @@
 </template>
 
 <script setup>
+import { TigerAnimation } from "./components";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
-import { TopBar, FooterBar } from "@/components";
-import { TigerAnimation } from "./components";
+import { TopBar, FooterBar, ToggleButton } from "@/components";
+import { LobbyMusic } from "@/assets";
 
 const route = useRoute();
 
