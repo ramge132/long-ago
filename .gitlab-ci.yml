@@ -159,7 +159,7 @@ cleanup:
 
 
 ##################
-# 4. deploy 단계  #
+# 4. deploy 단계   #
 ##################
 
 deploy_main:
@@ -169,7 +169,7 @@ deploy_main:
     - echo "        main-server로 배포중..."
     - echo "===================================="
     
-    # SSH를 통해 main-server에서 명령어 실행
+    # SSH를 통해 main-server에서 명령어 실행(터미널 생성)
     - |
       ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" << 'EOF'
         # 이미지 pull을 위한 컨테이너 off
