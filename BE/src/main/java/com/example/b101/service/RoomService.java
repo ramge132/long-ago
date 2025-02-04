@@ -1,6 +1,6 @@
 package com.example.b101.service;
 
-import com.example.b101.domain.Room;
+import com.example.b101.cache.Room;
 import com.example.b101.dto.CreateRoomDto;
 import com.example.b101.repository.RoomRepository;
 import com.example.b101.common.ApiResponseUtil;
@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class RoomService {
@@ -26,7 +27,8 @@ public class RoomService {
         users.add(createRoomDto.getOwnerId());
 
 
-        Room room = new Room(createRoomDto.getId(),
+        Room room = new Room(
+                UUID.randomUUID().toString(),
                 createRoomDto.getName(),
                 users,
                 createRoomDto.getOwnerId(),

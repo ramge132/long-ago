@@ -1,8 +1,7 @@
 package com.example.b101.repository;
 
-import com.example.b101.domain.Game;
-
-import java.util.List;
+import com.example.b101.cache.Game;
+import com.example.b101.domain.PlayerStatus;
 
 public interface GameRepository {
 
@@ -12,6 +11,8 @@ public interface GameRepository {
 
     void update(Game game);
 
-    Game findById(String id);
+    Game findById(String gameId);
+
+    PlayerStatus getPlayerStatus(String gameId,String playerId);
 
 }
