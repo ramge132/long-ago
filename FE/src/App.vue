@@ -3,9 +3,9 @@
     class="bg-no-repeat bg-cover bg-center w-screen h-screen flex flex-col justify-center items-center relative"
     :class="backgroundClass"
   >
-    <Transition name="fade-out">
+    <!-- <Transition name="fade-out">
       <TigerAnimation />
-    </Transition>
+    </Transition> -->
     <Transition name="fade">
       <TopBar v-if="route.path === '/'" />
     </Transition>
@@ -20,9 +20,6 @@
         </Transition>
       </RouterView>
     </div>
-    <!-- <Transition name="fade-out">
-      <TigerAnimation />
-    </Transition> -->
 
     <Transition name="fade">
       <FooterBar v-if="route.path === '/'" />
