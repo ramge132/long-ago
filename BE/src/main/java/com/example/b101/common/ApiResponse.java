@@ -21,4 +21,5 @@ public class ApiResponse<T> {
     private T data;                  // 실제 데이터
     private String timestamp;        // 응답 시간
     private String path;             // 요청 경로
+
 }

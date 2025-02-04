@@ -1,8 +1,8 @@
 package com.example.b101.service;
 
+import com.example.b101.cache.Game;
 import com.example.b101.common.ApiResponseUtil;
 import com.example.b101.domain.EndingCard;
-import com.example.b101.domain.Game;
 import com.example.b101.domain.PlayerStatus;
 import com.example.b101.domain.StoryCard;
 import com.example.b101.dto.CreateGame;
@@ -49,14 +49,13 @@ public class GameService {
                 .gameId(UUID.randomUUID().toString())
                 .endingCardlist(endingCards)
                 .playerStatuses(playerStatuses)
-                .ttl(3600L) // 1시간(3600초) 동안 유효
                 .build();
 
         // 게임 초기 데이터 Redis에 저장
         gameRepository.save(game);
 
 
-        return ApiResponseUtil.success(game, "게임 생성", HttpStatus.CREATED, request.getRequestURI());
+        return ApiResponseUtil.success(gameRepository.getPlayerStatus(game.getGameId(),createGame.getBossId()), "게임 생성", HttpStatus.CREATED, request.getRequestURI());
     }
 
     /**
@@ -93,9 +92,7 @@ public class GameService {
             playerStatuses.add(PlayerStatus.builder()
                     .userId(userId)
                     .storyCards(playerCards)
-                    .life(4)
                     .endingCard(endingCards.get(i))
-                    .score(0)
                     .build());
 
         }
@@ -108,28 +105,12 @@ public class GameService {
         Game game = gameRepository.findById(gameId);
         if (game == null) {
             return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다."
-            , HttpStatus.BAD_REQUEST, request.getRequestURI());
+                    , HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
         gameRepository.delete(game);
         return ApiResponseUtil.success(null,
                 "게임 데이터 삭제 성공",
-                HttpStatus.OK,
-                request.getRequestURI());
-    }
-
-
-    public ResponseEntity<?> findById(String gameId, HttpServletRequest request) {
-        Game game = gameRepository.findById(gameId);
-        if (game == null) {
-            log.warn("존재하지 않는 gameId : "+gameId);
-
-            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다.",
-                    HttpStatus.BAD_REQUEST, request.getRequestURI());
-        }
-        
-        return ApiResponseUtil.success(game,
-                "게임 데이터 불러오기 성공",
                 HttpStatus.OK,
                 request.getRequestURI());
     }
@@ -165,4 +146,24 @@ public class GameService {
                 HttpStatus.BAD_REQUEST, request.getRequestURI());
     }
 
+    public ResponseEntity<?> playStatusFindById(String gameId, String userId, HttpServletRequest request) {
+        if(gameRepository.findById(gameId) == null) {
+            return ApiResponseUtil.failure("잘못된 gameId입니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+
+        PlayerStatus playerStatus = gameRepository.getPlayerStatus(gameId, userId);
+        if (playerStatus == null) {
+            return ApiResponseUtil.failure("해당 userId는 게임에 존재 하지 않습니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+
+        return ApiResponseUtil.success(playerStatus,
+                "플레이어 카드 상태 반환 성공",
+                HttpStatus.OK,
+                request.getRequestURI());
+    }
 }
+

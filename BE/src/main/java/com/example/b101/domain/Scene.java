@@ -21,10 +21,13 @@ public class Scene {
     @JoinColumn(name = "BOOK_ID", nullable = false)
     private Book book;
 
+    @Column(name = "SCENE_ORDER",nullable = false)
     private int sceneOrder;
 
+    @Column(name="PROMPT",columnDefinition = "TEXT")
     private String prompt;
 
+    @Column(name="IMAGE_URL",nullable = false,length = 1000)
     private String imageUrl;
 
     @ManyToOne

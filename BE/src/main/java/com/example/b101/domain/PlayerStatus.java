@@ -16,10 +16,6 @@ public class PlayerStatus{
 
     List<StoryCard> storyCards;
 
-    int life;
-
-    int score;
-
     EndingCard endingCard;
 
 
