@@ -1,18 +1,18 @@
 <template>
     <div
-        class="absolute left-5 top-5 flex gap-x-3 items-center text-gray-700"
+        class="absolute z-10 left-5 top-5 flex gap-x-3 items-center text-gray-700"
         :class="isInGame ? 'left-5 top-[-30px]' : 'left-5 top-5'"
         @click=""
     >
-        <span>SOUND</span>
-        <span class="text-xs" :class="audioStore.audioData ? 'text-[#00000050]' : ''">OFF</span>
+        <span class="text-xs">SOUND</span>
+        <span class="text-[10px]" :class="audioStore.audioData ? 'text-[#00000050]' : ''">OFF</span>
         <label class="switch">
             <input type="checkbox" v-model="audioStore.audioData" @change="toggleAudio">
             <div>
                 <span></span>
             </div>
         </label>
-        <span class="text-xs" :class="audioStore.audioData ? '' : 'text-[#00000050]'">ON</span>
+        <span class="text-[10px]" :class="audioStore.audioData ? '' : 'text-[#00000050]'">ON</span>
 
         <!-- 오디오 -->
         <audio ref="audioRef" :src="props.music" loop></audio>

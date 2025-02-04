@@ -2,7 +2,7 @@
   <div
     class="row-span-3 w-full h-full flex items-center justify-center"
   >
-    <div class="book">
+    <div class="book absolute top-0">
       <div class="pages" ref="pagesRef">
         <div
           class="page cursor-pointer flex flex-col items-center justify-center"
@@ -108,8 +108,8 @@ p {
   perspective: 250vw;
 }
 .book .pages {
-  width: 550px;
-  height: 350px;
+  width: 600px;
+  height: 400px;
   position: relative;
   transform-style: preserve-3d;
   backface-visibility: hidden;
@@ -121,8 +121,8 @@ p {
   margin: 0;
   position: absolute;
   top: 0;
-  width: 275px;
-  height: 350px;
+  width: 300px;
+  height: 400px;
   transform-origin: 0 0;
   transition: transform 1.4s;
   backface-visibility: hidden;
