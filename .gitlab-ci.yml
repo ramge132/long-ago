@@ -184,7 +184,7 @@ deploy_main:
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME != "main"'
+    - if: '$CI_COMMIT_REF_NAME == "main"'
       when: always
 
 deploy_test:
@@ -205,7 +205,7 @@ deploy_test:
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "main"'
+    - if: '$CI_COMMIT_REF_NAME != "main"'
       when: always
     
 
