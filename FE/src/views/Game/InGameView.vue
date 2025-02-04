@@ -19,10 +19,10 @@
             <p></p>
           </div>
           <div
-            class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] right-[-20px] after:absolute after:top-0 after:left-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-l-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center text-3xl hidden"
+            class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] right-[-20px] after:absolute after:top-0 after:left-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-l-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center hidden"
             :class="'emoticon-bubble' + index"
           >
-            <p></p>
+            <img src="" alt="" class="object-scale-down w-10 h-10">
           </div>
           <div>{{ props.participants[order].name }}</div>
           <p></p>
@@ -74,10 +74,10 @@
             <p></p>
           </div>
           <div
-            class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center text-3xl hidden"
+            class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center hidden"
             :class="'emoticon-bubble' + index"
           >
-            <p></p>
+            <img src="" alt="" class="object-scale-down w-10 h-10">
           </div>
           <div>{{ props.participants[order].name }}</div>
           <p></p>
@@ -174,15 +174,17 @@ watch(
         ) {
           select.value = document.querySelector(".emoticon-bubble" + index);
           type = 1;
-        } else select.value = document.querySelector(".speech-bubble" + index);
-        console.log(props.receivedMessages[props.receivedMessages.length - 1]);
-        select.value.firstChild.textContent =
-          props.receivedMessages[props.receivedMessages.length - 1].message;
+          select.value.firstChild.src = props.receivedMessages[props.receivedMessages.length - 1].message;
+        } else {
+          select.value = document.querySelector(".speech-bubble" + index);
+          select.value.firstChild.textContent =
+            props.receivedMessages[props.receivedMessages.length - 1].message;
+        }
         select.value.classList.remove("hidden");
         clearTimeout(chatTime.value[index][type]);
         chatTime.value[index][type] = setTimeout(() => {
           select.value.classList.add("hidden");
-        }, 2000);
+        }, 3000);
         break;
       }
     }

@@ -15,9 +15,9 @@
         </Transition>
       </RouterView>
     </div>
-    <Transition name="fade-out">
+    <!-- <Transition name="fade-out">
       <TigerAnimation />
-    </Transition>
+    </Transition> -->
 
     <Transition name="fade">
       <FooterBar v-if="route.path === '/'" />

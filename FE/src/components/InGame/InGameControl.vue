@@ -78,9 +78,9 @@
           v-for="(emoticon, index) in emoticons"
           :key="index"
           :class="toggleEmoticon ? 'emoticon' + index : ''"
-          @click="sendEmoticon(emoticon.image)"
+          @click="sendEmoticon(emoticon.d_image)"
         >
-          {{ emoticon.image }}
+          <img :src="emoticon.s_image" alt="이모티콘">
         </button>
       </div>
     </div>
@@ -91,22 +91,23 @@
 import { ref } from "vue";
 import { RerollIcon, SendIcon, EmoticonIcon, ChangeIcon } from "@/assets";
 import { useUserStore } from "@/stores/auth";
+import emoji from "@/assets/images/emoticons";
 
 const userStore = useUserStore();
 const toggleEmoticon = ref(false);
 const message = ref("");
 const emoticons = ref([
   {
-    text: "laugh",
-    image: "🤣",
+    d_image: emoji.d_laugh,
+    s_image: emoji.s_laugh,
   },
   {
-    text: "angry",
-    image: "🤬",
+    d_image: emoji.d_wrath,
+    s_image: emoji.s_wrath,
   },
   {
-    text: "unamused",
-    image: "😕",
+    d_image: emoji.d_confused,
+    s_image: emoji.s_confused,
   },
 ]);
 
