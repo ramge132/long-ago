@@ -1,17 +1,17 @@
 import { defineStore } from "pinia";
-import { useRoute } from "vue-router";
 
-const route = useRoute();
-
-export const useGameStore = defineStore("gameInfo", {
+export const useGameStore = defineStore("gameData", {
   state: () => ({
-    GameData: {
-      bossId: ""
+    gameData: {
+        bossId: ""
     },
   }),
   actions: {
     setBossId(data) {
-        this.bossId = data;
+      this.gameData.bossId = data;
+    },
+    getBossId() {
+        return this.gameData.bossId;
     }
-  },
+  }
 });
