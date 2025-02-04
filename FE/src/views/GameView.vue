@@ -12,10 +12,12 @@
           :InviteLink="InviteLink"
           :gameStarted="gameStarted"
           :inGameOrder="inGameOrder"
+          :currTurn="currTurn"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
           @game-exit="gameStarted = false"
+          @next-turn="nextTurn"
         />
       </Transition>
     </RouterView>
@@ -47,6 +49,7 @@ const configurable = ref(false);
 const InviteLink = ref("");
 const gameStarted = ref(false);
 const inGameOrder = ref([]);
+const currTurn = ref(0);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -351,6 +354,12 @@ const gameStart = (data) => {
     }, peer.connection);
   });
 };
+
+// 다음 순서 넘기기
+const nextTurn = () => {
+  currTurn.value = (currTurn.value + 1) % participants.value.length;
+}
+
 </script>
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */

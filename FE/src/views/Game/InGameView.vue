@@ -8,7 +8,7 @@
           v-if="index % 2 == 0"
         >
           <div
-            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            class="rounded-full overflow-hidden w-24 h-24 border border-black" :class="currTurn === index ? 'sun' : ''"
           >
             <img :src="props.participants[order].image" alt="프로필" />
           </div>
@@ -63,7 +63,7 @@
           v-if="index % 2 != 0"
         >
           <div
-            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            class="rounded-full overflow-hidden w-24 h-24 border border-black" :class="currTurn === index ? 'sun' : ''"
           >
           <img :src="props.participants[order].image" alt="프로필" />
           </div>
@@ -107,7 +107,7 @@
         </div>
       </template>
     </div>
-    <InGameProgress/>
+    <InGameProgress @next-turn="nextTurn"/>
     <!-- <InGameVote /> -->
   </div>
 </template>
@@ -127,11 +127,15 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-const emit = defineEmits(["broadcastMessage", "gameExit"]);
+const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn"]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
 };
+
+const nextTurn = () => {
+  emit("nextTurn");
+}
 
 const props = defineProps({
   roomConfigs: {
@@ -148,6 +152,9 @@ const props = defineProps({
   },
   inGameOrder: {
     Type: Array,
+  },
+  currTurn: {
+    Type: Number,
   }
 });
 
@@ -188,4 +195,23 @@ onBeforeMount(() => {
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+@keyframes corona {
+  0%, 100% {
+    box-shadow:
+      0 0 6px 2px rgba(102, 204, 255, 0.8),
+      0 0 12px 6px rgba(0, 102, 255, 0.6),
+      0 0 24px 12px rgba(0, 51, 204, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 8px 3px rgba(102, 204, 255, 0.9),
+      0 0 15px 8px rgba(0, 102, 255, 0.7),
+      0 0 28px 14px rgba(0, 51, 204, 0.5);
+  }
+}
+
+.sun {
+  animation: corona 2s infinite alternate ease-in-out;
+}
+</style>
