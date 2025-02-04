@@ -1,12 +1,13 @@
 package com.example.b101.dto;
 
+import lombok.Data;
 import lombok.Getter;
 
 import java.util.List;
 
-@Getter
+@Data
 public class CreateGame {
 
-    int tension;
+    String bossId;
     List<String> player;
 }

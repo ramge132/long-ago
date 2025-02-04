@@ -1,6 +1,5 @@
-package com.example.b101.config;
+package com.example.b101.cache;
 
-import com.example.b101.domain.Room;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,19 +1,23 @@
-package com.example.b101.domain;
+package com.example.b101.cache;
 
-
-import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 
 import java.io.Serializable;
 import java.util.List;
 
+@Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@RedisHash(value = "Room", timeToLive = 3600)
 public class Room implements Serializable {
 
+    @Id
     private String id;
 
     private String name;
@@ -27,6 +31,5 @@ public class Room implements Serializable {
     private String password;
 
     private String link;
-
 
 }

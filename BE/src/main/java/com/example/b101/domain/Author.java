@@ -17,11 +17,12 @@ public class Author {
 
     @ManyToOne
     @JoinColumn(name = "BOOK_ID") // Book과 다대일 관계
-    @OnDelete(action = OnDeleteAction.CASCADE)  // ✅ Book 삭제 시 Author 자동 삭제
+    @OnDelete(action = OnDeleteAction.CASCADE) //Book 삭제 시 Author 자동 삭제
     private Book book;
 
     @ManyToOne
-    @JoinColumn(name = "USER_ID",nullable = false) // User와 다대일 관계
+    @JoinColumn(name = "USER_ID") // User와 다대일 관계
+    @OnDelete(action = OnDeleteAction.CASCADE) // User 삭제 시 Author 자동 삭제
     private User user;
 
 }

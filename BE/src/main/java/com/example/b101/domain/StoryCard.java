@@ -15,6 +15,4 @@ public class StoryCard{
     private String keyword;
 
     private String attribute;
-
-    private String effect;
 }

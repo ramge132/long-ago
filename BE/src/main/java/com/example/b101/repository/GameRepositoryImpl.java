@@ -1,8 +1,11 @@
 package com.example.b101.repository;
 
-import com.example.b101.domain.Game;
+import com.example.b101.cache.Game;
+import com.example.b101.domain.PlayerStatus;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public class GameRepositoryImpl implements GameRepository {
@@ -33,5 +36,19 @@ public class GameRepositoryImpl implements GameRepository {
     @Override
     public Game findById(String id) {
         return (Game) redisTemplate.opsForHash().get(KEY,id);
+    }
+
+    public PlayerStatus getPlayerStatus(String gameId, String playerId) {
+        Game game = findById(gameId);
+
+        List<PlayerStatus> playerStatuses = game.getPlayerStatuses();
+
+        for (PlayerStatus playerStatus : playerStatuses) {
+            if(playerStatus.getUserId().equals(playerId)) {
+                return playerStatus;
+            }
+        }
+
+        return null;
     }
 }
