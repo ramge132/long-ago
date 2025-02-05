@@ -15,7 +15,6 @@ public class EreGgApplication {
 
     public static void main(String[] args) {
 
-
         SpringApplication.run(EreGgApplication.class, args);
     }
 

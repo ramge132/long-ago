@@ -173,18 +173,27 @@ deploy_main:
     - echo "===================================="
     - echo "        main-server로 배포중..."
     - echo "===================================="
+
+    - echo "DB_URL=$DB_URL_MAIN" > .env
+    - echo "DB_DRIVER=$DB_DRIVER" >> .env
+    - echo "DB_USERNAME=$DB_USERNAME" >> .env
+    - echo "DB_PASSWORD_MAIN=$DB_PASSWORD_MAIN" >> .env
     
-    # SSH를 통해 main-server에서 명령어 실행
-    # SSH로 접속 시 환경변수 직접 전달
+    #.env 파일을 main-server로 전송
+    - scp -i "$MAIN_SERVER_KEY" .env "$MAIN_SERVER_URI:/home/ubuntu/"
+
+
+    # SSH를 통해 main-server에서 명령어 실행(터미널 생성)
     - |
-      ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" "
-        export DB_URL=$DB_URL_MAIN &&
-        export DB_DRIVER=$DB_DRIVER &&
-        export DB_USERNAME=$DB_USERNAME &&
-        export DB_PASSWORD_MAIN=$DB_PASSWORD_MAIN &&
-        docker compose down &&
-        docker compose up --build -d
-      "
+      ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" << 'EOF'
+
+        # 컨테이너 off
+        docker compose down
+        # 컨테이너 on .env 참조
+        docker compose --env-file /home/ubuntu/.env up --build -d
+        # 나가기
+        exit
+      EOF
 
     - echo "===================================="
     - echo "          배포 완료!!!"
