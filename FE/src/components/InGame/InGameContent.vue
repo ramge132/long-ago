@@ -34,14 +34,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from "vue";
+import { ref, onMounted, onUnmounted, reactive, watch } from "vue";
 import { useAudioStore } from "@/stores/audio";
 import { TurningPage } from "@/assets";
 
 const audioStore = useAudioStore();
-
-// 총 페이지 수와 각 페이지의 내용을 정의합니다.
-const totalPages = 32;
 
 const bookContent = ref([
   { content: "", image: null }  // 초기 상태
@@ -62,9 +59,11 @@ const addBookContent = (newContent) => {
   }
 };
 
+// 페이지 삭제도 구현해야 함
+
 // 사용 예시
-addBookContent({ content: "1번 글", image: "첫번째이미지" });
-addBookContent({ content: "2번 글", image: "두번째이미지" });
+// addBookContent({ content: "1번 글", image: "첫번째이미지" });
+// addBookContent({ content: "2번 글", image: "두번째이미지" });
 
 const pagesRef = ref(null);
 const flippedPages = reactive(new Set());
@@ -74,6 +73,7 @@ const isFlipped = (pageIndex) => {
 };
 
 const handlePageClick = (pageIndex) => {
+  console.log(bookContent.value.length);
   if (pageIndex / 2 === bookContent.value.length){
     console.log('last page click event block');
     return
@@ -89,7 +89,7 @@ const handlePageClick = (pageIndex) => {
       flippedPages.delete(pageIndex - 1);
     } else {
       flippedPages.add(pageIndex);
-      if (pageIndex + 1 < totalPages) {
+      if (pageIndex + 1 < bookContent.value.length * 2 + 1) {
         flippedPages.add(pageIndex + 1);
       }
     }
@@ -97,7 +97,7 @@ const handlePageClick = (pageIndex) => {
     // 왼쪽 페이지 클릭
     if (isFlipped(pageIndex)) {
       flippedPages.delete(pageIndex);
-      if (pageIndex + 1 <= totalPages) {
+      if (pageIndex + 1 <= bookContent.value.length * 2 + 1) {
         flippedPages.delete(pageIndex - 1);
       }
     } else {
@@ -107,14 +107,52 @@ const handlePageClick = (pageIndex) => {
   }
 };
 
+watch(() => bookContent.value.length,
+(afterSize, beforeSize) => {
+  console.log(afterSize, beforeSize, 'size');
+  console.log(bookContent.value.length);
+  // 새로운 페이지가 추가됨
+  if (afterSize > beforeSize) {
+    for (let i of Array.from({length: afterSize - 1}, (_, index) => index * 2)) {
+      console.log(i, 'clicked')
+      // 오른쪽 페이지 클릭
+      if (!isFlipped(i)) {
+        flippedPages.add(i);
+        flippedPages.add(i + 1);
+        if (i + 1 <= bookContent.value.length * 2 + 1) {
+          console.log('test');
+        }
+      }
+    }
+    flippedPages.add()
+    // handlePageClick(index * 2 + 2)
+  }
+  // 투표를 통해 페이지가 버려짐
+  else {
+
+  }
+  bookContent.value.length
+});
+
 onMounted(() => {
   const pageElements = pagesRef.value.children;
   for (let i = 0; i < pageElements.length; i++) {
     if (i % 2 === 0) {
-      pageElements[i].style.zIndex = totalPages - i;
+      pageElements[i].style.zIndex = bookContent.value.length * 2 + 2 - i;
     }
   }
+
+  var count = 1;
+
+  setInterval(() => {
+    addBookContent({ content: `${count}번 글`, image: `${count}번째이미지` });
+    count++;
+  }, 5000);
 });
+
+// onUnmounted(() => {
+//   clearInterval(intervalId);
+// });
 </script>
 
 <style scoped>
