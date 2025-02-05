@@ -172,9 +172,16 @@ deploy_main:
     # SSH를 통해 main-server에서 명령어 실행(터미널 생성)
     - |
       ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" << 'EOF'
-        # 이미지 pull을 위한 컨테이너 off
+
+        # 환경변수 설정
+        export DB_URL=$DB_URL_MAIN
+        export DB_DRIVER=$DB_DRIVER
+        export DB_USERNAME=$DB_USERNAME
+        export DB_PASSWORD_MAIN=$DB_PASSWORD_MAIN
+
+        # 컨테이너 off
         docker compose down
-        # 컨테이너를 만들고 있다.
+        # 컨테이너 on
         docker compose up --build -d
         # 나가기
         exit
@@ -184,7 +191,7 @@ deploy_main:
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "main"'
+    - if: '$CI_COMMIT_REF_NAME != "main"'
       when: always
 
 deploy_test:
@@ -205,7 +212,7 @@ deploy_test:
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME != "main"'
+    - if: '$CI_COMMIT_REF_NAME == "main"'
       when: always
     
 
