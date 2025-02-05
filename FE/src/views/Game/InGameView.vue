@@ -115,8 +115,8 @@
 </template>
 
 <script setup>
-import { onBeforeMount, ref, watch } from "vue";
-import { HeartIcon, myTurn, currTurn, startMessage } from "@/assets";
+import { onBeforeMount, ref, watch, onMounted } from "vue";
+import { HeartIcon } from "@/assets";
 import {
   InGameControl,
   InGameContent,
@@ -200,6 +200,11 @@ watch(
   { deep: true },
 );
 
+onMounted(() => {
+  const overlay = document.querySelector(".overlay");
+
+});
+
 onBeforeMount(() => {
   emit("gameExit");
 });
@@ -224,5 +229,9 @@ onBeforeMount(() => {
 
 .sun {
   animation: corona 2s infinite alternate ease-in-out;
+}
+
+.overlay {
+  transition: all 1s ease-in-out;
 }
 </style>
