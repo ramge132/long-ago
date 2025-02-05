@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="row-span-3 w-full h-full flex items-center justify-center"
-  >
+  <div class="row-span-3 w-full h-full flex items-center justify-center">
     <div class="book absolute top-0">
       <div class="pages" ref="pagesRef">
         <div

@@ -19,18 +19,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed } from "vue";
 
 const percentage = ref(48);
 
 // 게이지 색상 계산
 const gaugeColor = computed(() => {
-  if (percentage.value <= 25) return 'bg-green-500';
-  if (percentage.value <= 50) return 'bg-yellow-500';
-  if (percentage.value <= 75) return 'bg-orange-500';
-  return 'bg-red-500';
+  if (percentage.value <= 25) return "bg-green-500";
+  if (percentage.value <= 50) return "bg-yellow-500";
+  if (percentage.value <= 75) return "bg-orange-500";
+  return "bg-red-500";
 });
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

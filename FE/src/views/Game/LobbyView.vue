@@ -52,8 +52,8 @@ const props = defineProps({
     Type: Boolean,
   },
   peerId: {
-    Type: String
-  }
+    Type: String,
+  },
 });
 
 const emit = defineEmits([
@@ -71,5 +71,4 @@ const onRoomConfiguration = (data) => {
 const gameStart = (data) => {
   emit("gameStart", data);
 };
-
 </script>

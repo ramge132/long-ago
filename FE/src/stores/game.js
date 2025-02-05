@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 export const useGameStore = defineStore("gameData", {
   state: () => ({
     gameData: {
-        bossId: ""
+      bossId: "",
     },
   }),
   actions: {
@@ -11,7 +11,7 @@ export const useGameStore = defineStore("gameData", {
       this.gameData.bossId = data;
     },
     getBossId() {
-        return this.gameData.bossId;
-    }
-  }
+      return this.gameData.bossId;
+    },
+  },
 });
