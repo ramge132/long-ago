@@ -154,9 +154,10 @@ deploy_main:
   stage: deploy
   variables:
     DB_URL_MAIN: "$DB_URL_MAIN"
-    DB_DRIVER: "$DB_DRIVER"
-    DB_USERNAME: "$DB_USERNAME"
+    DB_DRIVER_MAIN: "$DB_DRIVER"
+    DB_USERNAME_MAIN: "$DB_USERNAME"
     DB_PASSWORD_MAIN: "$DB_PASSWORD_MAIN"
+    REDIS_HOST_MAIN: "$REDIS_HOST"
   script:
     - echo "===================================="
     - echo "        main-server로 배포중..."
@@ -164,9 +165,10 @@ deploy_main:
 
     # main-server .env 파일 생성
     - echo "DB_URL_MAIN=$DB_URL_MAIN" >> .env
-    - echo "DB_DRIVER_MAIN=$DB_DRIVER" >> .env
-    - echo "DB_USERNAME_MAIN=$DB_USERNAME" >> .env
+    - echo "DB_DRIVER_MAIN=$DB_DRIVER_MAIN" >> .env
+    - echo "DB_USERNAME_MAIN=$DB_USERNAME_MAIN" >> .env
     - echo "DB_PASSWORD_MAIN=$DB_PASSWORD_MAIN" >> .env
+    - echo "REDIS_HOST_MAIN=$REDIS_HOST_MAIN" >> .env
     #.env 파일을 main-server로 전송
     - scp -i "$MAIN_SERVER_KEY" .env "$MAIN_SERVER_URI:/home/ubuntu/"
     # SSH를 통해 main-server에서 명령어 실행(터미널 생성)
@@ -191,11 +193,11 @@ deploy_main:
 deploy_test:
   stage: deploy
   variables:
-    DB_URL: "$DB_URL"
-    DB_USERNAME: "$DB_USERNAME"
-    DB_PASSWORD: "$DB_PASSWORD"
-    DB_DRIVER: "$DB_DRIVER"
-    REDIS_HOST: "$REDIS_HOST"
+    DB_URL_TEST: "$DB_URL"
+    DB_USERNAME_TEST: "$DB_USERNAME"
+    DB_PASSWORD_TEST: "$DB_PASSWORD"
+    DB_DRIVER_TEST: "$DB_DRIVER"
+    REDIS_HOST_TEST: "$REDIS_HOST"
   script:
     - echo "===================================="
     - echo "        test_server로 배포중..."
@@ -204,11 +206,11 @@ deploy_test:
     #  디렉토리 이동
     - cd /home/ubuntu/
     # test-server .env 파일 생성 
-    - echo "DB_URL_MAIN=$DB_URL" >> .env
-    - echo "DB_DRIVER_MAIN=$DB_DRIVER" >> .env
-    - echo "DB_USERNAME=$DB_USERNAME" >> .env
-    - echo "DB_PASSWORD=$DB_PASSWORD" >> .env
-    - echo "REDIS_HOST=$REDIS_HOST" >> .env
+    - echo "DB_URL_TEST=$DB_URL_TEST" >> .env
+    - echo "DB_DRIVER_TEST=$DB_DRIVER_TEST" >> .env
+    - echo "DB_USERNAME_TEST=$DB_USERNAME_TEST" >> .env
+    - echo "DB_PASSWORD_TEST=$DB_PASSWORD_TEST" >> .env
+    - echo "REDIS_HOST_TEST=$REDIS_HOST_TEST" >> .env
     # 컨테이너 off
     - docker compose down -v
     # 컨테이너 on .env 참조
