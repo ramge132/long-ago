@@ -168,9 +168,9 @@ const props = defineProps({
 watch(
   () => props.receivedMessages,
   () => {
-    for (const index in props.participants) {
+    props.inGameOrder.forEach((order, index) => {
       if (
-        props.participants[index].name ==
+        props.participants[order].name ==
         props.receivedMessages[props.receivedMessages.length - 1].sender
       ) {
         const select = ref();
@@ -193,9 +193,8 @@ watch(
         chatTime.value[index][type] = setTimeout(() => {
           select.value.classList.add("hidden");
         }, 3000);
-        break;
       }
-    }
+    });
   },
   { deep: true },
 );
@@ -229,9 +228,5 @@ onBeforeMount(() => {
 
 .sun {
   animation: corona 2s infinite alternate ease-in-out;
-}
-
-.overlay {
-  transition: all 1s ease-in-out;
 }
 </style>
