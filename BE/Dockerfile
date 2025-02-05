@@ -30,9 +30,6 @@ WORKDIR /BE
 # 빌드된 JAR 파일 복사
 COPY --from=build /home/gradle/BE/build/libs/*.jar app.jar
 
-# .env 복사
-COPY .env .env
-
 # 애플리케이션 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]
 

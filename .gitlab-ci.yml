@@ -59,23 +59,11 @@ build_BE:
     IMAGE_NAME: $BE_IMAGE
     DOCKERFILE_PATH: BE/Dockerfile
     CONTEXT: BE
-    DB_URL: "$DB_URL"
-    DB_USERNAME: "$DB_USERNAME"
-    DB_PASSWORD: "$DB_PASSWORD"
-    DB_DRIVER: "$DB_DRIVER"
-    REDIS_HOST: "$REDIS_HOST"
 
   script:
     - echo "==========================="
     - echo "      BACK-END빌드 중"
     - echo "==========================="
-
-    - echo "DB_URL=$DB_URL" >> BE/.env
-    - echo "DB_USERNAME=$DB_USERNAME" >> BE/.env
-    - echo "DB_PASSWORD=$DB_PASSWORD" >> BE/.env
-    - echo "DB_DRIVER=$DB_DRIVER" >> BE/.env
-    - echo "REDIS_HOST=$REDIS_HOST" >> BE/.env
-
 
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
@@ -174,15 +162,13 @@ deploy_main:
     - echo "        main-server로 배포중..."
     - echo "===================================="
 
-    - echo "DB_URL_MAIN=$DB_URL_MAIN" > .env
+    # main-server .env 파일 생성
+    - echo "DB_URL_MAIN=$DB_URL_MAIN" >> .env
     - echo "DB_DRIVER_MAIN=$DB_DRIVER" >> .env
     - echo "DB_USERNAME_MAIN=$DB_USERNAME" >> .env
     - echo "DB_PASSWORD_MAIN=$DB_PASSWORD_MAIN" >> .env
-    
     #.env 파일을 main-server로 전송
     - scp -i "$MAIN_SERVER_KEY" .env "$MAIN_SERVER_URI:/home/ubuntu/"
-
-
     # SSH를 통해 main-server에서 명령어 실행(터미널 생성)
     - |
       ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" << 'EOF'
@@ -199,28 +185,40 @@ deploy_main:
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME != "main"'
+    - if: '$CI_COMMIT_REF_NAME == "main"'
       when: always
 
 deploy_test:
   stage: deploy
+  variables:
+    DB_URL: "$DB_URL"
+    DB_USERNAME: "$DB_USERNAME"
+    DB_PASSWORD: "$DB_PASSWORD"
+    DB_DRIVER: "$DB_DRIVER"
+    REDIS_HOST: "$REDIS_HOST"
   script:
     - echo "===================================="
     - echo "        test_server로 배포중..."
     - echo "===================================="
-      
-      #  디렉토리 이동
+
+    #  디렉토리 이동
     - cd /home/ubuntu/
-      # 이미지 pull을 위한 컨테이너 off
+    # test-server .env 파일 생성 
+    - echo "DB_URL_MAIN=$DB_URL" >> .env
+    - echo "DB_DRIVER_MAIN=$DB_DRIVER" >> .env
+    - echo "DB_USERNAME=$DB_USERNAME" >> .env
+    - echo "DB_PASSWORD=$DB_PASSWORD" >> .env
+    - echo "REDIS_HOST=$REDIS_HOST" >> .env
+    # 컨테이너 off
     - docker compose down -v
-      # 컨테이너를 만들고 있다.
-    - docker compose up --build -d
+    # 컨테이너 on .env 참조
+    - docker compose --env-file /home/ubuntu/.env up --build -d
 
     - echo "===================================="
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "main"'
+    - if: '$CI_COMMIT_REF_NAME != "main"'
       when: always
     
 
