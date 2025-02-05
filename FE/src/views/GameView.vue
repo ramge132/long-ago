@@ -427,7 +427,6 @@ const showOverlay = (message) => {
   return new Promise((resolve) => {
     const overlay = document.querySelector(".overlay");
     if(message === 'start') {
-      console.log("start 들어오고");
       let index = -1;
       overlay.firstElementChild.src = startMessage;
       participants.value.forEach((p, i) => {
@@ -438,7 +437,6 @@ const showOverlay = (message) => {
       overlay.lastElementChild.textContent = "당신의 차례는 " + index + "번 입니다."; 
       overlay.lastElementChild.style.background = "#FF9D00";
     } else {
-      console.log("여기도 들어오는거?");
       if(participants.value[inGameOrder.value[currTurn.value]].id === peerId.value) {
         overlay.firstElementChild.src = myTurn;
         overlay.lastElementChild.textContent = "멋진 이야기를 적어주세요!";
