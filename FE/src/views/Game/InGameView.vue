@@ -116,7 +116,7 @@
 
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
-import { HeartIcon } from "@/assets";
+import { HeartIcon, myTurn, currTurn, startMessage } from "@/assets";
 import {
   InGameControl,
   InGameContent,
