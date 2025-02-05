@@ -174,23 +174,17 @@ deploy_main:
     - echo "        main-server로 배포중..."
     - echo "===================================="
     
-    # SSH를 통해 main-server에서 명령어 실행(터미널 생성)
+    # SSH를 통해 main-server에서 명령어 실행
+    # SSH로 접속 시 환경변수 직접 전달
     - |
-      ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" << 'EOF'
-
-        # 환경변수 설정
-        export DB_URL=$DB_URL_MAIN
-        export DB_DRIVER=$DB_DRIVER
-        export DB_USERNAME=$DB_USERNAME
-        export DB_PASSWORD_MAIN="$DB_PASSWORD_MAIN"
-
-        # 컨테이너 off
-        docker compose down
-        # 컨테이너 on
+      ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" "
+        export DB_URL=$DB_URL_MAIN &&
+        export DB_DRIVER=$DB_DRIVER &&
+        export DB_USERNAME=$DB_USERNAME &&
+        export DB_PASSWORD_MAIN=$DB_PASSWORD_MAIN &&
+        docker compose down &&
         docker compose up --build -d
-        # 나가기
-        exit
-      EOF
+      "
 
     - echo "===================================="
     - echo "          배포 완료!!!"
