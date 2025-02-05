@@ -164,6 +164,11 @@ cleanup:
 
 deploy_main:
   stage: deploy
+  variables:
+    DB_URL_MAIN: "$DB_URL_MAIN"
+    DB_DRIVER: "$DB_DRIVER"
+    DB_USERNAME: "$DB_USERNAME"
+    DB_PASSWORD_MAIN: "$DB_PASSWORD_MAIN"
   script:
     - echo "===================================="
     - echo "        main-server로 배포중..."
@@ -174,9 +179,9 @@ deploy_main:
       ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" << 'EOF'
 
         # 환경변수 설정
-        export DB_URL="$DB_URL_MAIN"
-        export DB_DRIVER="$DB_DRIVER"
-        export DB_USERNAME="$DB_USERNAME"
+        export DB_URL=$DB_URL_MAIN
+        export DB_DRIVER=$DB_DRIVER
+        export DB_USERNAME=$DB_USERNAME
         export DB_PASSWORD_MAIN="$DB_PASSWORD_MAIN"
 
         # 컨테이너 off
