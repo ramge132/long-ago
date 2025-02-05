@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS ending_card (
 );
 
 
+TRUNCATE TABLE story_card RESTART IDENTITY CASCADE;
+TRUNCATE TABLE ending_card RESTART IDENTITY CASCADE;
+
 INSERT INTO story_card (id, keyword, attribute, effect) VALUES
 (1, '적', '인물', '인물 카드 이후 끼어들기'),
 (2, '남편/아내', '인물', '인물 카드 이후 끼어들기'),
