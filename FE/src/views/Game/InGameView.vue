@@ -1,15 +1,17 @@
 <template>
   <div class="w-full h-full grid grid-cols-5 grid-rows-2">
     <div class="h-full row-span-2 grid grid-rows-3">
-      <template v-for="(user, index) in props.participants" :key="user.id">
+      <!-- <template v-for="(user, index) in props.participants" :key="user.id"> -->
+      <template v-for="(order, index) in props.inGameOrder" :key="index">
         <div
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 == 0"
         >
           <div
-            class="w-24 h-24"
+            class="rounded-full w-24 h-24"
+            :class="currTurn === index ? 'sun' : ''"
           >
-            <img :src="user.image" alt="프로필" />
+            <img :src="props.participants[order].image" alt="프로필" />
           </div>
           <div
             class="absolute bg-[#aee8ff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
@@ -18,12 +20,12 @@
             <p></p>
           </div>
           <div
-            class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] right-[-20px] after:absolute after:top-0 after:left-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-l-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center text-3xl hidden"
+            class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] right-[-20px] after:absolute after:top-0 after:left-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-l-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center hidden"
             :class="'emoticon-bubble' + index"
           >
-            <p></p>
+            <img src="" alt="" class="object-scale-down w-10 h-10" />
           </div>
-          <div>{{ user.name }}</div>
+          <div>{{ props.participants[order].name }}</div>
           <p></p>
           <div class="flex">
             <img :src="HeartIcon" alt="하트" />
@@ -56,15 +58,16 @@
       <InGameControl @broadcast-message="broadcastMessage" />
     </div>
     <div class="h-full row-span-2 grid grid-rows-3">
-      <template v-for="(user, index) in props.participants" :key="user.id">
+      <template v-for="(order, index) in props.inGameOrder" :key="index">
         <div
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 != 0"
         >
           <div
-            class="w-24 h-24"
+            class="rounded-full w-24 h-24"
+            :class="currTurn === index ? 'sun' : ''"
           >
-            <img :src="user.image" alt="프로필" />
+            <img :src="props.participants[order].image" alt="프로필" />
           </div>
           <div
             class="absolute bg-[#aee8ff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
@@ -73,12 +76,12 @@
             <p></p>
           </div>
           <div
-            class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center text-3xl hidden"
+            class="absolute bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center hidden"
             :class="'emoticon-bubble' + index"
           >
-            <p></p>
+            <img src="" alt="" class="object-scale-down w-10 h-10" />
           </div>
-          <div>{{ user.name }}</div>
+          <div>{{ props.participants[order].name }}</div>
           <p></p>
           <div class="flex">
             <img :src="HeartIcon" alt="하트" />
@@ -106,15 +109,20 @@
         </div>
       </template>
     </div>
-    <InGameProgress />
+    <InGameProgress @next-turn="nextTurn" />
     <!-- <InGameVote /> -->
   </div>
 </template>
 
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
-import { HeartIcon } from "@/assets";
-import { InGameControl, InGameContent, InGameProgress, InGameVote } from "@/components";
+import { HeartIcon, myTurn, currTurn, startMessage } from "@/assets";
+import {
+  InGameControl,
+  InGameContent,
+  InGameProgress,
+  InGameVote,
+} from "@/components";
 
 const maxParticipants = 6;
 const chatTime = ref([
@@ -126,10 +134,14 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-const emit = defineEmits(["broadcastMessage", "gameExit"]);
+const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn"]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
+};
+
+const nextTurn = () => {
+  emit("nextTurn");
 };
 
 const props = defineProps({
@@ -144,6 +156,12 @@ const props = defineProps({
   },
   participants: {
     Type: Array,
+  },
+  inGameOrder: {
+    Type: Array,
+  },
+  currTurn: {
+    Type: Number,
   },
 });
 
@@ -163,15 +181,18 @@ watch(
         ) {
           select.value = document.querySelector(".emoticon-bubble" + index);
           type = 1;
-        } else select.value = document.querySelector(".speech-bubble" + index);
-        console.log(props.receivedMessages[props.receivedMessages.length - 1]);
-        select.value.firstChild.textContent =
-          props.receivedMessages[props.receivedMessages.length - 1].message;
+          select.value.firstChild.src =
+            props.receivedMessages[props.receivedMessages.length - 1].message;
+        } else {
+          select.value = document.querySelector(".speech-bubble" + index);
+          select.value.firstChild.textContent =
+            props.receivedMessages[props.receivedMessages.length - 1].message;
+        }
         select.value.classList.remove("hidden");
         clearTimeout(chatTime.value[index][type]);
         chatTime.value[index][type] = setTimeout(() => {
           select.value.classList.add("hidden");
-        }, 2000);
+        }, 3000);
         break;
       }
     }
@@ -184,4 +205,24 @@ onBeforeMount(() => {
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+@keyframes corona {
+  0%,
+  100% {
+    box-shadow:
+      0 0 6px 2px rgba(102, 204, 255, 0.8),
+      0 0 12px 6px rgba(0, 102, 255, 0.6),
+      0 0 24px 12px rgba(0, 51, 204, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 8px 3px rgba(102, 204, 255, 0.9),
+      0 0 15px 8px rgba(0, 102, 255, 0.7),
+      0 0 28px 14px rgba(0, 51, 204, 0.5);
+  }
+}
+
+.sun {
+  animation: corona 2s infinite alternate ease-in-out;
+}
+</style>

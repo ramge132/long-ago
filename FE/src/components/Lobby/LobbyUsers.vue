@@ -7,7 +7,7 @@
       class="flex items-center gap-x-3 rounded-md p-1 border-2 border-[#00000050]"
     >
       <div class="relative flex w-10 h-10">
-          <img :src="user.image" alt="프로필" />
+        <img :src="user.image" alt="프로필" />
         <span v-if="index === 0" class="absolute -top-4 -left-4 text-2xl z-10"
           >👑</span
         >

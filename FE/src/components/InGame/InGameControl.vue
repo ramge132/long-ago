@@ -34,7 +34,7 @@
     </div>
     <div class="flex justify-center relative">
       <div
-        class="rounded-full bg-[#AEE8FF] drop-shadow-md w-2/3 h-10 mx-1 flex px-3 items-center"
+        class="rounded-full bg-[#ffffffdb] drop-shadow-md w-2/3 h-10 mx-1 flex px-3 items-center"
         v-for="(mode, index) in chatMode"
         :key="index"
         :class="index == currChatModeIdx ? '' : 'hidden'"
@@ -68,20 +68,23 @@
       </div>
       <div class="relative">
         <button
-          class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 z-10 absolute"
+          class="bg-[#ffffff] rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 z-10 absolute bottom-0" 
           @click="toggleEmoticon = !toggleEmoticon"
         >
-          <img :src="EmoticonIcon" alt="감정표현" class="object-scale-down" />
+          <img :src="EmoticonIcon" alt="감정표현" class="w-6" />
         </button>
-        <button
-          class="bg-gray-400 rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 absolute z-0 emoticon"
+        <div class="rounded-full w-10 bg-[#ffffffa0] mx-1 absolute bottom-2 overflow-hidden emoticon" :class="toggleEmoticon ? 'max-h-[520px]' : 'max-h-0'">
+          <button
+          class="rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md z-0"
           v-for="(emoticon, index) in emoticons"
           :key="index"
-          :class="toggleEmoticon ? 'emoticon' + index : ''"
-          @click="sendEmoticon(emoticon.image)"
-        >
-          {{ emoticon.image }}
+          @click="sendEmoticon(emoticon.d_image)"
+          >
+          <img :src="emoticon.s_image" alt="이모티콘" />
         </button>
+        <div class="w-8 h-8">
+        </div>
+        </div>
       </div>
     </div>
   </div>
@@ -91,24 +94,30 @@
 import { ref } from "vue";
 import { RerollIcon, SendIcon, EmoticonIcon, ChangeIcon } from "@/assets";
 import { useUserStore } from "@/stores/auth";
+import emoji from "@/assets/images/emoticons";
 
 const userStore = useUserStore();
 const toggleEmoticon = ref(false);
 const message = ref("");
-const emoticons = ref([
-  {
-    text: "laugh",
-    image: "🤣",
-  },
-  {
-    text: "angry",
-    image: "🤬",
-  },
-  {
-    text: "unamused",
-    image: "😕",
-  },
-]);
+const emoticons = ref(
+  [
+    "laugh",
+    "wrath",
+    "confused",
+    "asleep", 
+    "crossed",
+    "fear",
+    "expressionless",
+    "loving",
+    "sad",
+    "sunglasses",
+    "tongue",
+    "wink",
+  ].map((type) => ({
+    d_image: emoji[`d_${type}`],
+    s_image: emoji[`s_${type}`],
+  }))
+);
 
 const emit = defineEmits(["broadcastMessage"]);
 
@@ -159,22 +168,6 @@ const changeMode = () => {
   background: linear-gradient(70deg, #fafcca 65%, #907800 35%);
 }
 .emoticon {
-  transition: all 0.3s cubic-bezier(0.25, 1.65, 0.5, 1.15);
-  opacity: 0;
-}
-.emoticon0 {
-  transform: scale(1);
-  transform: translate(-3rem, -3rem);
-  opacity: 1;
-}
-.emoticon1 {
-  transform: scale(1);
-  transform: translate(0, -3rem);
-  opacity: 1;
-}
-.emoticon2 {
-  transform: scale(1);
-  transform: translate(3rem, -3rem);
-  opacity: 1;
+  transition: all 0.3s ease-in-out;
 }
 </style>

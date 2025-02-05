@@ -11,11 +11,14 @@
           :receivedMessages="receivedMessages"
           :InviteLink="InviteLink"
           :gameStarted="gameStarted"
+          :inGameOrder="inGameOrder"
+          :currTurn="currTurn"
           :peerId="peerId"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
           @game-exit="gameStarted = false"
+          @next-turn="nextTurn"
         />
       </Transition>
     </RouterView>
@@ -48,6 +51,8 @@ const maxParticipants = 6;
 const configurable = ref(false);
 const InviteLink = ref("");
 const gameStarted = ref(false);
+const inGameOrder = ref([]);
+const currTurn = ref(0);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -136,7 +141,7 @@ const setupConnection = (conn) => {
         });
         break;
 
-      case "system":
+      case "system": 
         // participants 중 id가 data.id와 같은 값 삭제
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
@@ -147,7 +152,8 @@ const setupConnection = (conn) => {
         gameStore.setBossId(newBossId);
 
         // 초대 링크 초기화
-        InviteLink.value = import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + newBossId;
+        InviteLink.value =
+          import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + newBossId;
         receivedMessages.value.push({
           sender: "시스템",
           message: `${data.nickname}님이 나가셨습니다.`,
@@ -158,11 +164,12 @@ const setupConnection = (conn) => {
           configurable.value = true;
         }
         break;
+      
 
       case "config":
         roomConfigs.value = {
           currTurnTime: data.turnTime,
-          currCardCount: data.cardCount,  
+          currCardCount: data.cardCount,
           currMode: data.mode,
           currStyle: data.style,
         };
@@ -172,10 +179,12 @@ const setupConnection = (conn) => {
       // 카드 요청 보내야함
       // gameID, userID
       case "gameStart":
-        gameStarted.value = data;
+        gameStarted.value = data.gameStarted;
+        inGameOrder.value = data.order;
+        console.log(inGameOrder.value);
         break;
 
-      case "newParticipantJoined":
+      case "newParticipantJoined": 
         const isExisting = participants.value.some(
           (existing) => existing.id === data.data.id,
         );
@@ -187,6 +196,7 @@ const setupConnection = (conn) => {
           console.log("이미 존재하는 참가자:", data.data);
         }
         break;
+      
     }
   });
 
@@ -249,7 +259,7 @@ const connectToRoom = async (roomID) => {
         data: {
           id: peerId.value,
           name: userStore.userData.userNickname,
-          image: userStore.userData.userProfile
+          image: userStore.userData.userProfile,
         },
       },
       conn,
@@ -267,7 +277,7 @@ const connectToRoom = async (roomID) => {
     const newParticipant = {
       id: peerId.value,
       name: userStore.userData.userNickname,
-      image: userStore.userData.userProfile
+      image: userStore.userData.userProfile,
     };
 
     // 중복 확인 후 추가
@@ -322,21 +332,27 @@ const initializePeer = () => {
 onMounted(async () => {
   try {
     await initializePeer();
-
+    
     // 일반 참여자인 경우
     if (gameStore.getBossId()) {
       connectToRoom(gameStore.getBossId());
       InviteLink.value = import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + gameStore.getBossId();
     }
     // 방장인 경우
-    else if (!gameStore.getBossId() || decompressUUID(gameStore.getBossId()) == peerId.value){
+    else if (
+      !gameStore.getBossId() ||
+      decompressUUID(gameStore.getBossId()) == peerId.value
+    ) {
       participants.value.push({
         id: peerId.value,
         name: userStore.userData.userNickname,
-        image: userStore.userData.userProfile
+        image: userStore.userData.userProfile,
       });
       configurable.value = true;
-      InviteLink.value = import.meta.env.VITE_MAIN_API_SERVER_URL + "?roomID=" + compressUUID(peerId.value);
+      InviteLink.value =
+        import.meta.env.VITE_MAIN_API_SERVER_URL +
+        "?roomID=" +
+        compressUUID(peerId.value);
     }
   } catch (error) {
     console.error("Peer initialization failed:", error);
@@ -371,17 +387,23 @@ const onRoomConfiguration = (data) => {
 };
 
 const gameStart = (data) => {
-  gameStarted.value = data;
-  // 방장이 방 생성요청하는 부분 들어가야 함
-  
-  
-  // 위 코드 동기로 실행
-  // 아래 데이터 변경해야 함
-  // gameID: String 데이터 추가가
-
+  gameStarted.value = data.gameStarted;
+  inGameOrder.value = data.order;
   connectedPeers.value.forEach((peer) => {
-    sendMessage("gameStart", gameStarted.value, peer.connection);
+    sendMessage(
+      "gameStart",
+      {
+        gameStarted: gameStarted.value,
+        order: inGameOrder.value,
+      },
+      peer.connection,
+    );
   });
+};
+
+// 다음 순서 넘기기
+const nextTurn = () => {
+  currTurn.value = (currTurn.value + 1) % participants.value.length;
 };
 </script>
 <style>
