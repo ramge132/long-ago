@@ -144,10 +144,15 @@ onMounted(() => {
 
   var count = 1;
 
+  handlePageClick(0);
   setInterval(() => {
-    addBookContent({ content: `${count}번 글`, image: `${count}번째이미지` });
-    count++;
-  }, 5000);
+      if (bookContent.value.length != 5) {
+        console.log(bookContent.value.length);
+        addBookContent({ content: `${count}번 글`, image: `${count}번째이미지` });
+        count++;
+        console.log(bookContent.value);
+      }
+    }, 5000);
 });
 
 // onUnmounted(() => {
