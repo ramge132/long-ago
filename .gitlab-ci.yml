@@ -174,9 +174,9 @@ deploy_main:
     - echo "        main-server로 배포중..."
     - echo "===================================="
 
-    - echo "DB_URL=$DB_URL_MAIN" > .env
-    - echo "DB_DRIVER=$DB_DRIVER" >> .env
-    - echo "DB_USERNAME=$DB_USERNAME" >> .env
+    - echo "DB_URL_MAIN=$DB_URL_MAIN" > .env
+    - echo "DB_DRIVER_MAIN=$DB_DRIVER" >> .env
+    - echo "DB_USERNAME_MAIN=$DB_USERNAME" >> .env
     - echo "DB_PASSWORD_MAIN=$DB_PASSWORD_MAIN" >> .env
     
     #.env 파일을 main-server로 전송
