@@ -174,10 +174,10 @@ deploy_main:
       ssh -tt -i "$MAIN_SERVER_KEY" "$MAIN_SERVER_URI" << 'EOF'
 
         # 환경변수 설정
-        export DB_URL=$DB_URL_MAIN
-        export DB_DRIVER=$DB_DRIVER
-        export DB_USERNAME=$DB_USERNAME
-        export DB_PASSWORD_MAIN=$DB_PASSWORD_MAIN
+        export DB_URL="$DB_URL_MAIN"
+        export DB_DRIVER="$DB_DRIVER"
+        export DB_USERNAME="$DB_USERNAME"
+        export DB_PASSWORD_MAIN="$DB_PASSWORD_MAIN"
 
         # 컨테이너 off
         docker compose down
