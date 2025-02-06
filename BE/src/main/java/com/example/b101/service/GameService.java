@@ -33,7 +33,7 @@ public class GameService {
         int playerCount = gameRequest.getPlayer().size();
 
         if (playerCount < 2) {
-            return ApiResponseUtil.failure("플레이어 수가 2명 미만입니다..",
+            return ApiResponseUtil.failure("플레이어 수가 2명 미만입니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
@@ -46,24 +46,27 @@ public class GameService {
         List<PlayerStatus> playerStatuses = assignCardsToPlayers(gameRequest, endingCards, storyCardList);
 
         // Game 객체 생성
+        String gameId = UUID.randomUUID().toString();
         Game game = Game.builder()
-                .gameId(UUID.randomUUID().toString())
+                .gameId(gameId)
                 .endingCardlist(endingCards)
                 .playerStatuses(playerStatuses)
                 .drawingStyle(gameRequest.getDrawingStyle())
                 .build();
 
-        // 게임 초기 데이터 Redis에 저장
+        // 게임 초기 데이터 Redis에 저장 (비동기 가능)
         gameRepository.save(game);
+
+
 
         GameResponse gameResponse = GameResponse.builder()
                 .gameId(game.getGameId())
-                .status(gameRepository.getPlayerStatus(game.getGameId(), gameRequest.getBossId()))
+                .status(game.getPlayerStatuses().stream().filter(player -> player.getUserId().equals(gameRequest.getBossId())).findFirst().orElse(null))
                 .build();
-
 
         return ApiResponseUtil.success(gameResponse, "게임 생성", HttpStatus.CREATED, request.getRequestURI());
     }
+
 
     /**
      * 각 플레이어에게 카드를 배정하여 PlayerStatus 생성
@@ -210,5 +213,7 @@ public class GameService {
                 HttpStatus.OK,
                 request.getRequestURI());
     }
+
+
 }
 
