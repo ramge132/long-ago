@@ -1,4 +1,3 @@
-
 # 파이프라인 스테이지
 stages:
   - build
@@ -223,6 +222,7 @@ deploy_test:
     - if: '$CI_COMMIT_REF_NAME != "main"'
       when: always
     
+
 
 
 

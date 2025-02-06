@@ -437,18 +437,16 @@ const showOverlay = (message) => {
   return new Promise((resolve) => {
     const overlay = document.querySelector(".overlay");
     if(message === 'start') {
-      overlay.firstElementChild.src = startMessage;
-
-    
+      overlay.firstElementChild.src = startImage;
       overlay.lastElementChild.textContent = "당신의 차례는 " + (myTurn.value + 1) + "번 입니다."; 
       overlay.lastElementChild.style.background = "#FF9D00";
     } else {
       if(participants.value[inGameOrder.value[currTurn.value]].id === peerId.value) {
-        overlay.firstElementChild.src = myTurn;
+        overlay.firstElementChild.src = myTurnImage;
         overlay.lastElementChild.textContent = "멋진 이야기를 적어주세요!";
         overlay.lastElementChild.style.background = "#FF83BB";
       } else {
-        overlay.firstElementChild.src = currTurns;
+        overlay.firstElementChild.src = currTurnImage;
         overlay.lastElementChild.textContent = participants.value[inGameOrder.value[currTurn.value]].name + "님의 차례";
         overlay.lastElementChild.style.background = "#00B7FF";
       }
