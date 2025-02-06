@@ -1,7 +1,7 @@
 package com.example.b101.service;
 
-import com.example.b101.domain.Room;
-import com.example.b101.dto.CreateRoomDto;
+import com.example.b101.cache.Room;
+import com.example.b101.dto.RoomRequest;
 import com.example.b101.repository.RoomRepository;
 import com.example.b101.common.ApiResponseUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class RoomService {
@@ -21,18 +22,19 @@ public class RoomService {
         this.roomRepository = roomRepository;
     }
 
-    public ResponseEntity<?> createRoom(CreateRoomDto createRoomDto, HttpServletRequest request) {
+    public ResponseEntity<?> createRoom(RoomRequest roomRequest, HttpServletRequest request) {
         List<String> users = new ArrayList<>();
-        users.add(createRoomDto.getOwnerId());
+        users.add(roomRequest.getOwnerId());
 
 
-        Room room = new Room(createRoomDto.getId(),
-                createRoomDto.getName(),
+        Room room = new Room(
+                UUID.randomUUID().toString(),
+                roomRequest.getName(),
                 users,
-                createRoomDto.getOwnerId(),
-                createRoomDto.getMaxCapacity(),
-                createRoomDto.getPassword(),
-                createRoomDto.getLink());
+                roomRequest.getOwnerId(),
+                roomRequest.getMaxCapacity(),
+                roomRequest.getPassword(),
+                roomRequest.getLink());
 
 
         roomRepository.create(room);

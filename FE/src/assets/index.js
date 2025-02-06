@@ -25,8 +25,17 @@ export { default as Mode2 } from "./images/modes/mode2.svg";
 // icons
 export { default as InviteIcon } from "./icons/invite.svg";
 export { default as PlayIcon } from "./icons/play.svg";
-export { default as CopyIcon } from "./icons/copy.svg";
 export { default as HeartIcon } from "./icons/heart.svg";
 export { default as RerollIcon } from "./icons/reroll.svg";
 export { default as EmoticonIcon } from "./icons/emoticon.svg";
 export { default as SendIcon } from "./icons/send.svg";
+export { default as ChangeIcon } from "./icons/change.svg";
+
+// musics
+export { default as LobbyMusic } from "./musics/backgroundMusic.mp3";
+export { default as TurningPage } from "./musics/turning_page_2.mp3";
+
+// inGame
+export { default as myTurnImage } from "./images/inGame/myTurn.svg";
+export { default as currTurnImage } from "./images/inGame/currTurn.svg";
+export { default as startImage } from "./images/inGame/gameStart.svg";

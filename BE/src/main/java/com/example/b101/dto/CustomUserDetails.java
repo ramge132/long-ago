@@ -1,5 +1,6 @@
 package com.example.b101.dto;
 
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -7,18 +8,15 @@ import java.util.Collection;
 
 public class CustomUserDetails implements UserDetails {
 
-    private String email;
-    private String password;
+    private final String email;
+    private final String password;
+    @Getter
     private String nickname;
 
     public CustomUserDetails(String email, String password, String nickname) {
         this.email = email;
         this.password = password;
         this.nickname = nickname;
-    }
-
-    public String getNickname() {
-        return nickname;
     }
 
     @Override

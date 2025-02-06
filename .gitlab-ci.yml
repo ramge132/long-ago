@@ -38,7 +38,7 @@ build_FE:
 
     # 환경 변수 적용 (main 브랜치인 경우 URL 변경)
     - |
-      if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
+      if [ "$CI_COMMIT_REF_NAME" != "main" ]; then
         export VITE_MAIN_API_SERVER_URL="$VITE_MAIN_API_SERVER_URL_MAIN"
       fi
 
@@ -200,7 +200,7 @@ deploy_main:
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "main"'
+    - if: '$CI_COMMIT_REF_NAME != "main"'
       when: always
 
 deploy_test:
@@ -233,7 +233,7 @@ deploy_test:
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME != "main"'
+    - if: '$CI_COMMIT_REF_NAME == "main"'
       when: always
     
 

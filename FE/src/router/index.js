@@ -7,20 +7,20 @@ const router = createRouter({
     {
       path: "/",
       name: "Intro",
-      component: () => import("@/views/IntroView.vue")
+      component: () => import("@/views/IntroView.vue"),
     },
     {
       path: "/game",
       name: "Game",
       component: () => import("@/views/GameView.vue"),
-      beforeEnter: (to, from, next) => {
-        const userStore = useUserStore();
-        if (!userStore.userData.userNickname) {
-          next({ name: "Intro" });
-        } else {
-          next();
-        }
-      },
+      // beforeEnter: (to, from, next) => {
+      //   const userStore = useUserStore();
+      //   if (!userStore.userData.userNickname) {
+      //     next({ name: "Intro" });
+      //   } else {
+      //     next();
+      //   }
+      // },
       children: [
         {
           path: "lobby",
@@ -38,8 +38,8 @@ const router = createRouter({
       path: "/:pathMatch(.*)*", // 모든 정의되지 않은 경로에 매칭
       name: "NotFound",
       beforeEnter: (to, from, next) => {
-        next({name: "Intro"});
-      }
+        next({ name: "Intro" });
+      },
     },
   ],
 });

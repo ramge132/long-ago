@@ -2,13 +2,9 @@
   <div class="h-full grid grid-cols-2">
     <div class="flex flex-col items-center justify-center gap-y-6">
       <div class="flex items-center relative">
+        <img :src="currentProfile" alt="프로필" class="w-52 h-52" />
         <div
-          class="rounded-full border border-black w-52 h-52 overflow-hidden"
-        >
-          <img :src="currentProfile" alt="프로필"/>
-        </div>
-        <div
-          class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-gray-200 transition-all duration-200 hover:bg-gray-300 hover:scale-105 flex justify-center items-center cursor-pointer"
+          class="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-gray-200 transition-all duration-200 hover:bg-gray-300 hover:scale-105 flex justify-center items-center cursor-pointer"
           @click="refresh"
         >
           <img
@@ -30,7 +26,7 @@
         class="cursor-pointer transition-all duration-300 hover:scale-110"
       >
         <img
-          v-if="!route.query.roomID"
+          v-if="!gameStore.getBossId()"
           :src="gameStart"
           alt="시작하기"
           class="h-10"
@@ -94,6 +90,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/scrollbar";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import { gameStart, gameJoin, rule1, rule2 } from "@/assets";
 import {
   Profile1,
   Profile2,
@@ -101,14 +98,20 @@ import {
   Profile4,
   Profile5,
   Profile6,
-  gameStart,
-  gameJoin,
-  rule1,
-  rule2,
-} from "@/assets";
+  Profile7,
+  Profile8,
+  Profile9,
+  Profile10,
+  Profile11,
+  Profile12,
+  Profile13,
+  Profile14,
+} from "@/assets/images/profiles";
 import { useUserStore } from "@/stores/auth";
+import { useGameStore } from "@/stores/game";
 
 const userStore = useUserStore();
+const gameStore = useGameStore();
 const router = useRouter();
 const route = useRoute();
 const nickname = ref("닉네임");
@@ -120,6 +123,14 @@ const profiles = ref([
   Profile4,
   Profile5,
   Profile6,
+  Profile7,
+  Profile8,
+  Profile9,
+  Profile10,
+  Profile11,
+  Profile12,
+  Profile13,
+  Profile14,
 ]);
 
 const currentProfile = ref(Profile1);
@@ -140,11 +151,8 @@ const start = () => {
   userStore.setUserNickname(nickname);
   userStore.setUserProfile(currentProfile);
   sessionStorage.setItem("userNickname", nickname.value);
-  if (route.query.roomID) {
-    router.push(`/game/lobby?roomID=${route.query.roomID}`);
-  } else {
-    router.push("/game/lobby");
-  }
+
+  router.push("/game/lobby");
 };
 
 onMounted(() => {
@@ -155,10 +163,12 @@ onMounted(() => {
     // 랜덤한 Guest_XXXXX 생성
     const randomGuest = `이야기꾼_${Math.floor(10000 + Math.random() * 90000)}`;
     nickname.value = randomGuest;
+  }
 
-    // localStorage에 저장
-    // const newUserData = { ...userData, nickname: randomGuest };
-    // localStorage.setItem("userData", JSON.stringify(newUserData));
+  if (route.query.roomID) {
+    gameStore.setBossId(route.query.roomID);
+    // 쿼리 파라미터 제거
+    router.replace({ path: route.path, query: {} });
   }
 });
 
