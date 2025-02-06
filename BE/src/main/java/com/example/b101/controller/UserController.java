@@ -1,6 +1,6 @@
 package com.example.b101.controller;
 
-import com.example.b101.dto.SignUpDto;
+import com.example.b101.dto.SignUpRequest;
 import com.example.b101.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -15,8 +15,8 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody SignUpDto signUpDto, HttpServletRequest request) {
-        return userService.saveUser(signUpDto, request);
+    public ResponseEntity<?> signup(@RequestBody SignUpRequest signUpRequest, HttpServletRequest request) {
+        return userService.saveUser(signUpRequest, request);
     }
 
 

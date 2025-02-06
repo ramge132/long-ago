@@ -1,7 +1,6 @@
 package com.example.b101.controller;
 
-import com.example.b101.common.ApiResponseUtil;
-import com.example.b101.dto.CreateGame;
+import com.example.b101.dto.GameRequest;
 import com.example.b101.service.GameService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -18,8 +17,8 @@ public class GameController{
     private final GameService gameService;
 
     @PostMapping
-    public ResponseEntity<?> createGame(@RequestBody CreateGame createGame, HttpServletRequest request) {
-        return gameService.save(createGame, request);
+    public ResponseEntity<?> createGame(@RequestBody GameRequest gameRequest, HttpServletRequest request) {
+        return gameService.save(gameRequest, request);
     }
 
 

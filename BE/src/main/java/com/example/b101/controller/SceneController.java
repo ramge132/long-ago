@@ -1,7 +1,6 @@
 package com.example.b101.controller;
 
-import com.example.b101.domain.Scene;
-import com.example.b101.dto.CreateSceneDto;
+import com.example.b101.dto.SceneRequest;
 import com.example.b101.service.SceneService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -16,14 +15,14 @@ public class SceneController {
     private final SceneService sceneService;
 
     @PostMapping("/storyCard")
-    public ResponseEntity<?> addSceneStoryCard(@RequestBody CreateSceneDto createSceneDto, HttpServletRequest request) {
-        return sceneService.createScene(createSceneDto, request);
+    public ResponseEntity<?> addSceneStoryCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
+        return sceneService.createScene(sceneRequest, request);
     }
 
 
     @PostMapping("/endingCard")
-    public ResponseEntity<?> addSceneEndingCard(@RequestBody CreateSceneDto createSceneDto, HttpServletRequest request) {
-        return sceneService.createScene(createSceneDto, request);
+    public ResponseEntity<?> addSceneEndingCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
+        return sceneService.createScene(sceneRequest, request);
     }
 
 

@@ -25,11 +25,13 @@ public class RedisSceneRepoImpl implements RedisSceneRepository {
         redisTemplate.opsForHash().put(KEY, hashKey, sceneRedis);
     }
 
+    //redis에 저장된 scene 정보 삭제
     @Override
     public void delete(SceneRedis sceneRedis) {
         String hashKey = String.format("%s:%s", sceneRedis.getGameId(), sceneRedis.getId());
         redisTemplate.opsForHash().delete(KEY, hashKey);
     }
+
 
     @Override
     public void deleteAllByGameId(String gameId) {
@@ -47,12 +49,7 @@ public class RedisSceneRepoImpl implements RedisSceneRepository {
         }
     }
 
-    @Override
-    public void update(SceneRedis sceneRedis) {
-        // 저장과 동일하게 구현 (HashKey가 동일하면 덮어씌움)
-        String hashKey = String.format("%s:%s", sceneRedis.getGameId(), sceneRedis.getId());
-        redisTemplate.opsForHash().put(KEY, hashKey, sceneRedis);
-    }
+
 
     @Override
     public SceneRedis findById(String id) {
