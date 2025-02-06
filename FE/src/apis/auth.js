@@ -25,9 +25,15 @@ export const postRegister = async (data) => {
 // 로그인
 export const postSignIn = async (data) => {
   try {
+    const formData = new FormData();
+    formData.append("username", data.username);
+    formData.append("password", data.password);
     const response = await apiClient.post(
       import.meta.env.VITE_USERS_SIGNIN,
-      data,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
     );
     return response;
   } catch (error) {

@@ -1,20 +1,50 @@
 <template>
   <div
-    class="bg-no-repeat bg-cover bg-center bg-fairytail-image w-screen h-screen flex flex-col justify-center items-center"
+    class="bg-no-repeat bg-cover bg-center w-screen h-screen flex flex-col justify-center items-center relative"
+    :class="backgroundClass"
   >
+    <!-- <Transition name="fade-out">
+      <TigerAnimation />
+    </Transition> -->
+    <Transition name="fade">
+      <TopBar v-if="route.path === '/'" />
+    </Transition>
     <div
-      class="relative border-dashed border-2 border-black rounded-lg shadow-md w-2/3 h-3/4 max-w-4xl max-h-[1000px] min-w-[800px] bg-[#ffffff80] flex flex-col justify-center items-center"
+      class="rounded-lg shadow-md w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] bg-[#ffffff80] backdrop-blur-sm flex flex-col justify-center items-center"
     >
+      <ToggleButton :music="LobbyMusic" />
+
       <RouterView v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
           <component :is="Component" />
         </Transition>
       </RouterView>
     </div>
+
+    <Transition name="fade">
+      <FooterBar v-if="route.path === '/'" />
+    </Transition>
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import { TigerAnimation } from "./components";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import { TopBar, FooterBar, ToggleButton } from "@/components";
+import { LobbyMusic } from "@/assets";
+
+const route = useRoute();
+
+const backgroundClass = computed(() => {
+  switch (route.path) {
+    case "/game/play":
+      return "bg-game-image";
+    default:
+      return "bg-fairytail-image";
+  }
+});
+</script>
 
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
