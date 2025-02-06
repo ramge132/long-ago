@@ -17,6 +17,7 @@ export const createGame = async (data) => {
     const response = await apiClient.post(import.meta.env.VITE_GAME, data);
     return response;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 }
@@ -30,6 +31,7 @@ export const enterGame = async (data) => {
     );
     return response;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 }
@@ -40,6 +42,7 @@ export const deleteGame = async (data) => {
     const response = await apiClient.delete(import.meta.env.VITE_GAME, data);
     return response;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 }
@@ -50,6 +53,7 @@ export const endingCardReroll = async (data) => {
     const response = await apiClient.patch(import.meta.env.VITE_GAME + import.meta.env.VITE_GAME_SHUFFLE, data);
     return response;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 }

@@ -222,10 +222,11 @@ const setupConnection = (conn) => {
             userId: peerId.value,
             gameId: gameID.value,
           })
+          console.log(response);
 
           storyCards.value = response.data.storyCards;
           endingCard.value = response.data.endingCard;
-          
+
           await showOverlay('start')
           setTimeout(async () => {
             await showOverlay('whoTurn');
@@ -456,9 +457,11 @@ const gameStart = async (data) => {
       drawingStyle: roomConfigs.value.currStyle,
     })
 
-    gameID.value = response.data.gameId;
-    storyCards.value = response.data.storyCards;
-    endingCard.value = response.data.endingCard;
+    console.log(response);
+
+    gameID.value = response.data.data.gameId;
+    // storyCards.value = response.data.data.status.storyCards;
+    // endingCard.value = response.data.data.status.endingCard;
   } catch (error) {
     console.log(error);
     return;

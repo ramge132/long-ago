@@ -1,0 +1,10 @@
+﻿구분,기능,기능 설명,FE Developer,BE Developer,AI Developer,FE 진행 상태,BE 진행 상태,AI 진행 상태,우선 순위
+인트로,메인 화면,사용자 접속 시 메인 화면 구현,홍석진,김형표,,Done,Done,No need,0순위
+사용자,로그인,소셜 로그인 기능 추가,홍석진,김형표,,Done,Done,No need,0순위
+사용자,회원가입,사용자 회원가입 기능,"홍석진, 정표 홍",김형표,,Done,Done,Not started,0순위
+게임,방 만들기,게임 참여를 위한 방 만들기 기능,정표 홍,김형표,,In progress,Not started,No need,1순위
+게임,링크를 통해 게임 방 입장,공유된 링크를 통해 게임 입장,정표 홍,,,In progress,Not started,Not started,1순위
+AI,이미지 생성 모델 학습,게임 이미지 생성을 위한 모델 학습,,,YuTaeyeong,No need,Not started,In progress,0순위
+AI,LLM 모델 학습,실시간 채팅을 프롬프트로 변환하는 모델 학습,,,동휘 김,No need,Not started,Not started,0순위
+서버,배포 환경 구성,Alpha Release를 위한 서버 인프라 구성,,Sejoong Lee,,In progress,Not started,No need,1순위
+,,,,,,Not started,Not started,Not started,
