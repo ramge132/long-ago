@@ -8,13 +8,13 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public class GameRepositoryImpl implements GameRepository {
+public class GameRepoImpl implements GameRepository {
 
     private static final String KEY = "game";
 
     private final RedisTemplate<String, Game> redisTemplate;
 
-    public GameRepositoryImpl(RedisTemplate<String, Game> redisTemplate) {
+    public GameRepoImpl(RedisTemplate<String, Game> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 

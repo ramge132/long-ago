@@ -8,6 +8,7 @@ import java.util.List;
 @Builder
 @Getter
 @Setter
+@ToString
 @NoArgsConstructor
 //플레이어 상태 CLASS
 public class PlayerStatus{

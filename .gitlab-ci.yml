@@ -70,23 +70,11 @@ build_BE:
     IMAGE_NAME: $BE_IMAGE
     DOCKERFILE_PATH: BE/Dockerfile
     CONTEXT: BE
-    DB_URL: "$DB_URL"
-    DB_USERNAME: "$DB_USERNAME"
-    DB_PASSWORD: "$DB_PASSWORD"
-    DB_DRIVER: "$DB_DRIVER"
-    REDIS_HOST: "$REDIS_HOST"
 
   script:
     - echo "==========================="
     - echo "      BACK-END빌드 중"
     - echo "==========================="
-
-    - echo "DB_URL=$DB_URL" >> BE/.env
-    - echo "DB_USERNAME=$DB_USERNAME" >> BE/.env
-    - echo "DB_PASSWORD=$DB_PASSWORD" >> BE/.env
-    - echo "DB_DRIVER=$DB_DRIVER" >> BE/.env
-    - echo "REDIS_HOST=$REDIS_HOST" >> BE/.env
-
 
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest

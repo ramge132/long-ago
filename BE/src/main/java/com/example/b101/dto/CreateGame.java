@@ -9,5 +9,6 @@ import java.util.List;
 public class CreateGame {
 
     String bossId;
+    String drawingStyle;
     List<String> player;
 }

@@ -6,6 +6,7 @@ import com.example.b101.domain.EndingCard;
 import com.example.b101.domain.PlayerStatus;
 import com.example.b101.domain.StoryCard;
 import com.example.b101.dto.CreateGame;
+import com.example.b101.dto.ResponseGame;
 import com.example.b101.repository.GameRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +32,8 @@ public class GameService {
     public ResponseEntity<?> save(CreateGame createGame, HttpServletRequest request) {
         int playerCount = createGame.getPlayer().size();
 
-        if (playerCount == 0) {
-            return ApiResponseUtil.failure("플레이어 수가 0명입니다.",
+        if (playerCount < 2) {
+            return ApiResponseUtil.failure("플레이어 수가 2명 미만입니다..",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
@@ -49,13 +50,19 @@ public class GameService {
                 .gameId(UUID.randomUUID().toString())
                 .endingCardlist(endingCards)
                 .playerStatuses(playerStatuses)
+                .drawingStyle(createGame.getDrawingStyle())
                 .build();
 
         // 게임 초기 데이터 Redis에 저장
         gameRepository.save(game);
 
+        ResponseGame gameResponse = ResponseGame.builder()
+                .gameId(game.getGameId())
+                .status(gameRepository.getPlayerStatus(game.getGameId(), createGame.getBossId()))
+                .build();
 
-        return ApiResponseUtil.success(gameRepository.getPlayerStatus(game.getGameId(),createGame.getBossId()), "게임 생성", HttpStatus.CREATED, request.getRequestURI());
+
+        return ApiResponseUtil.success(gameResponse, "게임 생성", HttpStatus.CREATED, request.getRequestURI());
     }
 
     /**
@@ -99,6 +106,7 @@ public class GameService {
 
         return playerStatuses;
     }
+
 
 
     public ResponseEntity<?> delete(String gameId, HttpServletRequest request) {
