@@ -145,8 +145,8 @@ const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
 };
 
-const nextTurn = () => {
-  emit("nextTurn");
+const nextTurn = (data) => {
+  emit("nextTurn", data);
 };
 
 const props = defineProps({
