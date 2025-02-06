@@ -16,9 +16,10 @@ import java.util.List;
 @RedisHash(value = "Game", timeToLive = 3600) //TTL 1시간 설정
 public class Game implements Serializable {
 
-    @Id  // edis에서 Key 역할을 할 필드
+    @Id  // redis에서 Key 역할을 할 필드
     private String gameId;
 
+    //게임에서 쓰이는 게임 개별 endingCardList
     private List<EndingCard> endingCardlist;
 
     private List<PlayerStatus> playerStatuses;

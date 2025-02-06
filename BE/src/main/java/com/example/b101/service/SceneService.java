@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -49,6 +50,7 @@ public class SceneService {
 
 
         //GPU 서버에 요청을 보내기 위한 객체 생성
+        //작화, 직전에 저장된 요약된 스토리, 사용자 프롬포트, 직전의 생성된 이미지 프롬포트
         GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
                 .drawingStyle(game.getDrawingStyle())
                 .userPrompt(sceneRequest.getUserPrompt())
@@ -61,6 +63,7 @@ public class SceneService {
 
             generateSceneResponse = webClient.post()  //post형식으로 webClient의 요청을 보냄.
                     .uri("/generate") //endpoint는 /generate
+                    .accept(MediaType.APPLICATION_JSON) //JSON 타입을 받겠다.
                     .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
                     .retrieve()
                     .onStatus(
@@ -99,6 +102,31 @@ public class SceneService {
         return ApiResponseUtil.success(scene,
                 "Scene 저장 완료",
                 HttpStatus.CREATED,
+                request.getRequestURI());
+    }
+
+
+
+    //해당 Game에서 생성된 모든 Scene 데이터들 가져오기(디버깅 용)
+    public ResponseEntity<?> getScenesByGameId(String gameId, HttpServletRequest request) {
+        if(gameRepository.findById(gameId) == null) {
+            return ApiResponseUtil.failure("해당 gameId를 가진 game이 없습니다.",
+                    HttpStatus.BAD_REQUEST,
+                    request.getRequestURI());
+        }
+
+
+        List<SceneRedis> sceneRedisList =  redisSceneRepository.findAllByGameId(gameId);
+
+        if(sceneRedisList.isEmpty()){
+            return ApiResponseUtil.failure("만들어진 scene이 없습니다.",
+                    HttpStatus.NO_CONTENT,
+                    request.getRequestURI());
+        }
+
+        return ApiResponseUtil.success(sceneRedisList,
+                "해당 game의 모든 scene을 가져왔습니다.",
+                HttpStatus.OK,
                 request.getRequestURI());
     }
 

@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
 @EnableJpaAuditing // JPA Auditing 활성화
-@EnableCaching //레디스 추가 설정
+@EnableCaching //레디스 캐싱 기능 활성화
 public class EreGgApplication {
 
     public static void main(String[] args) {
