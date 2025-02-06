@@ -13,6 +13,7 @@
           :gameStarted="gameStarted"
           :inGameOrder="inGameOrder"
           :currTurn="currTurn"
+          :myTurn="myTurn"
           :peerId="peerId"
           :inProgress="inProgress"
           @on-room-configuration="onRoomConfiguration"
@@ -43,24 +44,36 @@ import { myTurnImage , currTurnImage, startImage } from "@/assets";
 const userStore = useUserStore();
 const gameStore = useGameStore();
 const route = useRoute();
+// 내 피어 객체
 const peer = ref(null);
 const peerId = ref("");
+// 인코딩 된 방장 고유 ID
 const compressedId = ref("");
+// 나 포함 연결된 피어 객체들
 const connectedPeers = ref([]);
+// 채팅 메세지
 const receivedMessages = ref([]);
+// 현재 연결 된 참가자
 const participants = ref([]);
+// 게임 설정
+const configurable = ref(false);
 const roomConfigs = ref({
   currTurnTime: 10,
   currCardCount: 4,
   currMode: "textToPicture",
   currStyle: "korean",
 });
+// 최대 참가자
 const maxParticipants = 6;
-const configurable = ref(false);
+// 초대 링크
 const InviteLink = ref("");
+// 게임 시작 여부
 const gameStarted = ref(false);
+// 게임 진행 순서 참가자 인덱스 배열
 const inGameOrder = ref([]);
+// 현재 턴 인덱스
 const currTurn = ref(0);
+// 나의 턴 순서
 const myTurn = ref(null);
 const inProgress = ref(false);
 
@@ -380,6 +393,7 @@ onMounted(async () => {
   }
 });
 
+// 퇴장 관련련
 addEventListener("beforeunload", () => {
   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
   connectedPeers.value.forEach((peer) => {
@@ -391,6 +405,7 @@ addEventListener("beforeunload", () => {
   });
 });
 
+// 방 설정 관련 부분
 const onRoomConfiguration = (data) => {
   roomConfigs.value = data;
   connectedPeers.value.forEach((peer) => {
@@ -407,6 +422,12 @@ const onRoomConfiguration = (data) => {
   });
 };
 
+///////////////////////
+// 게임 진행 관련 부분 //
+// 게임 진행 관련 부분 //
+// 게임 진행 관련 부분 //
+// 게임 진행 관련 부분 //
+///////////////////////
 const gameStart = async (data) => {
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
@@ -475,8 +496,29 @@ const showOverlay = (message) => {
 }
 
 // 다음 순서 넘기기
-const nextTurn = async () => {
+const nextTurn = async (data) => {
   inProgress.value = false;
+  if (data?.prompt) {
+    // 프롬프트 제출 api 들어가야 함
+    // 시간 멈춰야 함
+
+    // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
+    const imageBlob = 'test';
+    
+    // 사람들에게 이미지 전송
+    connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage(
+          "sendImage",
+          { imageBlob: imageBlob },
+          peer.connection
+        )
+      }
+    });
+
+    // 나의 책에 프롬프트와 이미지 넣기
+    console.log(data);
+  }
   currTurn.value = (currTurn.value + 1) % participants.value.length;
   await showOverlay('whoTurn');
   inProgress.value = true;

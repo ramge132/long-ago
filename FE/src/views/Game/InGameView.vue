@@ -55,7 +55,12 @@
     </div>
     <div class="col-span-3 row-span-2 grid grid-rows-5">
       <InGameContent />
-      <InGameControl @broadcast-message="broadcastMessage" />
+      <InGameControl
+        @broadcast-message="broadcastMessage"
+        @next-turn="nextTurn"
+        :myTurn="myTurn"  
+        :currTurn="currTurn"
+      />
     </div>
     <div class="h-full row-span-2 grid grid-rows-3">
       <template v-for="(order, index) in props.inGameOrder" :key="index">
@@ -140,8 +145,8 @@ const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
 };
 
-const nextTurn = () => {
-  emit("nextTurn");
+const nextTurn = (data) => {
+  emit("nextTurn", data);
 };
 
 const props = defineProps({
@@ -165,7 +170,10 @@ const props = defineProps({
   },
   inProgress: {
     Type: Boolean,
-  }
+  },
+  myTurn: {
+    Type: Number,
+  },
 });
 
 watch(

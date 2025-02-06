@@ -41,6 +41,7 @@
       >
         <div
           class="flex flex-nowrap flex-col justify-center items-center relative"
+          @click="changeMode"
         >
           <p
             class="whitespace-nowrap absolute top-[-1.25rem]"
@@ -95,6 +96,7 @@ import { ref } from "vue";
 import { RerollIcon, SendIcon, EmoticonIcon, ChangeIcon } from "@/assets";
 import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";
+import toast from "@/functions/toast";
 
 const userStore = useUserStore();
 const toggleEmoticon = ref(false);
@@ -119,7 +121,16 @@ const emoticons = ref(
   }))
 );
 
-const emit = defineEmits(["broadcastMessage"]);
+const props = defineProps({
+  myTurn: {
+    Type: Number,
+  },
+  currTurn: {
+    Type: Number,
+  }
+});
+
+const emit = defineEmits(["broadcastMessage", "nextTurn"]);
 
 const sendChat = () => {
   if (message.value.trim()) {
@@ -130,7 +141,17 @@ const sendChat = () => {
     message.value = "";
   }
 };
-const sendprompt = () => {};
+const sendprompt = () => {
+  console.log(props.myTurn, props.currTurn);
+  if (props.myTurn !== props.currTurn) {
+    toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
+  } else {
+    emit("nextTurn", {
+      prompt: message.value
+    });
+  }
+
+};
 const sendEmoticon = (data) => {
   emit("broadcastMessage", {
     sender: userStore.userData.userNickname,
