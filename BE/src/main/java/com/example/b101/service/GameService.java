@@ -33,7 +33,7 @@ public class GameService {
         int playerCount = gameRequest.getPlayer().size();
 
         if (playerCount < 2) {
-            return ApiResponseUtil.failure("플레이어 수가 2명 미만입니다..",
+            return ApiResponseUtil.failure("플레이어 수가 2명 미만입니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
@@ -46,24 +46,42 @@ public class GameService {
         List<PlayerStatus> playerStatuses = assignCardsToPlayers(gameRequest, endingCards, storyCardList);
 
         // Game 객체 생성
+        String gameId = UUID.randomUUID().toString();
         Game game = Game.builder()
-                .gameId(UUID.randomUUID().toString())
+                .gameId(gameId)
                 .endingCardlist(endingCards)
                 .playerStatuses(playerStatuses)
                 .drawingStyle(gameRequest.getDrawingStyle())
                 .build();
 
-        // 게임 초기 데이터 Redis에 저장
+        // 게임 초기 데이터 Redis에 저장 (비동기 가능)
         gameRepository.save(game);
 
-        GameResponse gameResponse = GameResponse.builder()
-                .gameId(game.getGameId())
-                .status(gameRepository.getPlayerStatus(game.getGameId(), gameRequest.getBossId()))
-                .build();
+        // 저장 후 동기적으로 다시 조회하여 데이터 확인
+        Game savedGame = gameRepository.findById(gameId);
+        if (savedGame == null) {
+            return ApiResponseUtil.failure("게임 저장에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI());
+        }
 
+        // 안전한 플레이어 상태 조회
+        PlayerStatus bossStatus = savedGame.getPlayerStatuses()
+                .stream()
+                .filter(player -> player.getUserId().equals(gameRequest.getBossId()))
+                .findFirst()
+                .orElse(null);
+
+        if (bossStatus == null) {
+            return ApiResponseUtil.failure("Boss ID에 해당하는 플레이어를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        GameResponse gameResponse = GameResponse.builder()
+                .gameId(savedGame.getGameId())
+                .status(bossStatus)
+                .build();
 
         return ApiResponseUtil.success(gameResponse, "게임 생성", HttpStatus.CREATED, request.getRequestURI());
     }
+
 
     /**
      * 각 플레이어에게 카드를 배정하여 PlayerStatus 생성
