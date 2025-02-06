@@ -222,7 +222,6 @@ const setupConnection = (conn) => {
             userId: peerId.value,
             gameId: gameID.value,
           })
-          console.log(response);
 
           storyCards.value = response.data.storyCards;
           endingCard.value = response.data.endingCard;
@@ -452,16 +451,14 @@ const gameStart = async (data) => {
   // 게임 방 생성
   try {
     const response = await createGame({
-      bossID: peerId.value,
+      bossId: peerId.value,
       player: participants.value.map((p) => p.id),
       drawingStyle: roomConfigs.value.currStyle,
     })
 
-    console.log(response);
-
     gameID.value = response.data.data.gameId;
-    // storyCards.value = response.data.data.status.storyCards;
-    // endingCard.value = response.data.data.status.endingCard;
+    storyCards.value = response.data.data.status.storyCards;
+    endingCard.value = response.data.data.status.endingCard;
   } catch (error) {
     console.log(error);
     return;
