@@ -23,5 +23,9 @@ public class Game implements Serializable {
 
     private List<PlayerStatus> playerStatuses;
 
+    private String drawingStyle;
+
+
+
 
 }

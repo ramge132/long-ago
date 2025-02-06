@@ -19,12 +19,10 @@ import java.io.Serializable;
  */
 public class SceneRedis implements Serializable {
 
-    @Id
     private String id;
-
     private String gameId;
     private int sceneOrder;
     private String prompt;
-    private String imageUrl;
+    private byte[] image;
     private String userId;
 }

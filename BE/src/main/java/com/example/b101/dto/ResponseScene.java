@@ -5,15 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
 @AllArgsConstructor
-public class CreateSceneDto {
+@Builder
+public class ResponseScene {
 
-    String gameId;
-
-    String userId;
-
-    String promptText;
-
-    int cardId;
+    byte[] image;
+    String story;
 }

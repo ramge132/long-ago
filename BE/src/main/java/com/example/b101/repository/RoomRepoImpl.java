@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
-public class RoomRepositoryImpl implements RoomRepository {
+public class RoomRepoImpl implements RoomRepository {
 
     private static final String KEY = "Room"; // 키 값은 Room으로 고정
 
     private final RedisTemplate<String, Room> redisTemplate;
 
-    public RoomRepositoryImpl(RedisTemplate<String, Room> redisTemplate) {
+    public RoomRepoImpl(RedisTemplate<String, Room> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 

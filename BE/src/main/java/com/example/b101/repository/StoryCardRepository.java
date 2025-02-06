@@ -12,5 +12,5 @@ public interface StoryCardRepository extends JpaRepository<StoryCard, Integer> {
 
     List<StoryCard> findStoryCardsByAttribute(String attribute);
 
-
+    StoryCard findStoryCardById(int id);
 }
