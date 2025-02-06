@@ -24,7 +24,10 @@ export const createGame = async (data) => {
 // 방 입장 (방장 외 참가자들만 요청하면 됩니둥둥~~)
 export const enterGame = async (data) => {
   try {
-    const response = await apiClient.get(import.meta.env.VITE_GAME, data);
+    const params = data;
+    const response = await apiClient.get(
+      import.meta.env.VITE_GAME, {params}
+    );
     return response;
   } catch (error) {
     throw error;

@@ -40,6 +40,7 @@ import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
 import { myTurnImage , currTurnImage, startImage } from "@/assets";
+import { createGame, enterGame, deleteGame, endingCardReroll } from "@/apis/game";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -69,6 +70,8 @@ const maxParticipants = 6;
 const InviteLink = ref("");
 // 게임 시작 여부
 const gameStarted = ref(false);
+// 게임 방 ID
+const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
 const inGameOrder = ref([]);
 // 현재 턴 인덱스
@@ -76,6 +79,10 @@ const currTurn = ref(0);
 // 나의 턴 순서
 const myTurn = ref(null);
 const inProgress = ref(false);
+// 내가 가지고있는 스토리카드
+const storyCards = ref([]);
+// 내가 가지고있는 엔딩카드
+const endingCard = ref({});
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -210,6 +217,15 @@ const setupConnection = (conn) => {
       // gameID, userID
       case "gameStart":
         startReceived(data).then(async () => {
+          // 내 카드 받기
+          const response = await enterGame({
+            userId: peerId.value,
+            gameId: gameID.value,
+          })
+
+          storyCards.value = response.data.storyCards;
+          endingCard.value = response.data.endingCard;
+          
           await showOverlay('start')
           setTimeout(async () => {
             await showOverlay('whoTurn');
@@ -431,12 +447,30 @@ const onRoomConfiguration = (data) => {
 const gameStart = async (data) => {
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
+
+  // 게임 방 생성
+  try {
+    const response = await createGame({
+      bossID: peerId.value,
+      player: participants.value.map((p) => p.id),
+      drawingStyle: roomConfigs.value.currStyle,
+    })
+
+    gameID.value = response.data.gameId;
+    storyCards.value = response.data.storyCards;
+    endingCard.value = response.data.endingCard;
+  } catch (error) {
+    console.log(error);
+    return;
+  }
+
   connectedPeers.value.forEach((peer) => {
     sendMessage(
       "gameStart",
       {
         gameStarted: gameStarted.value,
         order: inGameOrder.value,
+        gameId: gameID.value,
       },
       peer.connection,
     );
@@ -457,6 +491,7 @@ const startReceived = (data) => {
   return new Promise((resolve) => {
     gameStarted.value = data.gameStarted;
     inGameOrder.value = data.order;
+    gameID.value = data.gameId;
 
     // 내 순서 몇번인지 저장
     participants.value.forEach((p, i) => {
