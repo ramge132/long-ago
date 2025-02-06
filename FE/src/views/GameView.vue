@@ -13,6 +13,7 @@
           :gameStarted="gameStarted"
           :inGameOrder="inGameOrder"
           :currTurn="currTurn"
+          :myTurn="myTurn"
           :peerId="peerId"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
