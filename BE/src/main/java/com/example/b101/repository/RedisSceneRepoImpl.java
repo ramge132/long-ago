@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 @Repository
 public class RedisSceneRepoImpl implements RedisSceneRepository {
 
-    private static final String KEY = "SCENE"; // Redis Hash Key
+    private static final String KEY = "scene"; // Redis Hash Key
 
     private final RedisTemplate<String, SceneRedis> redisTemplate;
 

@@ -6,10 +6,7 @@ import com.example.b101.service.SceneService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,8 +15,16 @@ public class SceneController {
 
     private final SceneService sceneService;
 
-    @PostMapping
-    public ResponseEntity<?> addScene(@RequestBody CreateSceneDto createSceneDto, HttpServletRequest request) {
+    @PostMapping("/storyCard")
+    public ResponseEntity<?> addSceneStoryCard(@RequestBody CreateSceneDto createSceneDto, HttpServletRequest request) {
         return sceneService.createScene(createSceneDto, request);
     }
+
+
+    @PostMapping("/endingCard")
+    public ResponseEntity<?> addSceneEndingCard(@RequestBody CreateSceneDto createSceneDto, HttpServletRequest request) {
+        return sceneService.createScene(createSceneDto, request);
+    }
+
+
 }
