@@ -36,4 +36,3 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 # 포트 노출 (Spring Boot 기본 포트)
 EXPOSE 8080
 
-#
