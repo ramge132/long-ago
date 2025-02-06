@@ -2,16 +2,16 @@
   <div class="w-full h-full grid grid-cols-5 grid-rows-2">
     <div class="h-full row-span-2 grid grid-rows-3">
       <!-- <template v-for="(user, index) in props.participants" :key="user.id"> -->
-      <template v-for="(order, index) in props.inGameOrder" :key="index">
+      <template v-for="(order, index) in props.inGameOrder" :key="order">
         <div
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 == 0"
         >
+          <img :src="props.participants[order].image" class="w-28 h-28 z-10" alt="프로필" />
           <div
-            class="rounded-full w-24 h-24"
+            class="rounded-full w-24 h-24 absolute top-10 z-0"
             :class="currTurn === index ? 'sun' : ''"
-          >
-            <img :src="props.participants[order].image" alt="프로필" />
+            >
           </div>
           <div
             class="absolute bg-[#aee8ff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
@@ -63,11 +63,11 @@
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 != 0"
         >
+          <img :src="props.participants[order].image" class="w-28 h-28 z-10" alt="프로필" />
           <div
-            class="rounded-full w-24 h-24"
+            class="rounded-full w-24 h-24 absolute top-10 z-0"
             :class="currTurn === index ? 'sun' : ''"
-          >
-            <img :src="props.participants[order].image" alt="프로필" />
+            >
           </div>
           <div
             class="absolute bg-[#aee8ff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
@@ -109,7 +109,7 @@
         </div>
       </template>
     </div>
-    <InGameProgress @next-turn="nextTurn" />
+    <InGameProgress @next-turn="nextTurn" :roomConfigs="roomConfigs" :inProgress="inProgress" />
     <!-- <InGameVote /> -->
   </div>
 </template>
@@ -163,6 +163,9 @@ const props = defineProps({
   currTurn: {
     Type: Number,
   },
+  inProgress: {
+    Type: Boolean,
+  }
 });
 
 watch(
@@ -170,6 +173,7 @@ watch(
   () => {
     props.inGameOrder.forEach((order, index) => {
       if (
+        props.receivedMessages[props.receivedMessages.length - 1].sender != '시스템' &&
         props.participants[order].name ==
         props.receivedMessages[props.receivedMessages.length - 1].sender
       ) {
@@ -209,14 +213,14 @@ onBeforeMount(() => {
   0%,
   100% {
     box-shadow:
-      0 0 6px 2px rgba(102, 204, 255, 0.8),
+      0 0 6px 3px rgba(102, 204, 255, 0.8),
       0 0 12px 6px rgba(0, 102, 255, 0.6),
       0 0 24px 12px rgba(0, 51, 204, 0.4);
   }
   50% {
     box-shadow:
-      0 0 8px 3px rgba(102, 204, 255, 0.9),
-      0 0 15px 8px rgba(0, 102, 255, 0.7),
+      0 0 8px 4px rgba(102, 204, 255, 0.9),
+      0 0 15px 12px rgba(0, 102, 255, 0.7),
       0 0 28px 14px rgba(0, 51, 204, 0.5);
   }
 }

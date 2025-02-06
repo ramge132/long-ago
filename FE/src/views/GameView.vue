@@ -14,6 +14,7 @@
           :inGameOrder="inGameOrder"
           :currTurn="currTurn"
           :peerId="peerId"
+          :inProgress="inProgress"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
@@ -61,7 +62,7 @@ const gameStarted = ref(false);
 const inGameOrder = ref([]);
 const currTurn = ref(0);
 const myTurn = ref(null);
-
+const inProgress = ref(false);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -152,6 +153,13 @@ const setupConnection = (conn) => {
 
       case "system": 
         // participants 중 id가 data.id와 같은 값 삭제
+        participants.value.forEach((p, i) => {
+          if(p.id === data.id) {
+            inGameOrder.value = inGameOrder.value.filter(
+              (order) => order !== i,
+            );
+          }
+        })
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
         );
@@ -190,8 +198,9 @@ const setupConnection = (conn) => {
       case "gameStart":
         startReceived(data).then(async () => {
           await showOverlay('start')
-          setTimeout(() => {
-            showOverlay('whoTurn');
+          setTimeout(async () => {
+            await showOverlay('whoTurn');
+            inProgress.value = true;
           }, 1000);
         });
         break;
@@ -411,9 +420,15 @@ const gameStart = async (data) => {
       peer.connection,
     );
   });
-  await showOverlay('start')
-  setTimeout(() => {
-    showOverlay('whoTurn');
+  participants.value.forEach((p, i) => {
+      if(p.id === peerId.value) {
+          myTurn.value = inGameOrder.value.indexOf(i);
+      }
+  });
+  await showOverlay('start');
+  setTimeout(async () => {
+    await showOverlay('whoTurn');
+    inProgress.value = true;
   }, 1000);
 };
 
@@ -460,9 +475,11 @@ const showOverlay = (message) => {
 }
 
 // 다음 순서 넘기기
-const nextTurn = () => {
+const nextTurn = async () => {
+  inProgress.value = false;
   currTurn.value = (currTurn.value + 1) % participants.value.length;
-  showOverlay('whoTurn');
+  await showOverlay('whoTurn');
+  inProgress.value = true;
 };
 </script>
 <style>
