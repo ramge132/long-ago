@@ -1,3 +1,4 @@
+
 # 파이프라인 스테이지
 stages:
   - build
@@ -28,21 +29,32 @@ build_FE:
     VITE_MAIN_API_SERVER_URL: "$VITE_MAIN_API_SERVER_URL"
     VITE_USERS: "$VITE_USERS"
     VITE_USERS_SIGNIN: "$VITE_USERS_SIGNIN"
+    VITE_GAME: "$VITE_GAME"
+    VITE_GAME_SHUFFLE: "$VITE_GAME_SHUFFLE"
   script:
     - echo "==========================="
     - echo "     FRONT-END빌드 중"
     - echo "==========================="
 
+    # 환경 변수 적용 (main 브랜치인 경우 URL 변경)
+    - |
+      if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
+        export VITE_MAIN_API_SERVER_URL="$VITE_MAIN_API_SERVER_URL_MAIN"
+      fi
+
+    # 환경변수 설정
     - echo "VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID" >> FE/.env
     - echo "VITE_MAIN_API_SERVER_URL=$VITE_MAIN_API_SERVER_URL" >> FE/.env
     - echo "VITE_USERS=$VITE_USERS" >> FE/.env
     - echo "VITE_USERS_SIGNIN=$VITE_USERS_SIGNIN" >> FE/.env
+    - echo "VITE_GAME=$VITE_GAME" >> FE/.env
+    - echo "VITE_GAME_SHUFFLE=$VITE_GAME_SHUFFLE" >> FE/.env
 
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
   rules:
   - changes:
-      - FE/**/* 
+      - FE/**/*
     when: always
   - when: never
 
@@ -92,7 +104,7 @@ push_FE:
     - build_FE
   rules:
     - changes:
-      - FE/**/* 
+      - FE/**/*
       when: always
     - when: never
 
@@ -222,7 +234,6 @@ deploy_test:
     - if: '$CI_COMMIT_REF_NAME != "main"'
       when: always
     
-
 
 
 
