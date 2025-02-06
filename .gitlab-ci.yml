@@ -1,4 +1,3 @@
-
 # 파이프라인 스테이지
 stages:
   - build
@@ -38,7 +37,6 @@ build_FE:
     - echo "VITE_MAIN_API_SERVER_URL=$VITE_MAIN_API_SERVER_URL" >> FE/.env
     - echo "VITE_USERS=$VITE_USERS" >> FE/.env
     - echo "VITE_USERS_SIGNIN=$VITE_USERS_SIGNIN" >> FE/.env
-    - cat FE/.env
 
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
@@ -60,10 +58,24 @@ build_BE:
     IMAGE_NAME: $BE_IMAGE
     DOCKERFILE_PATH: BE/Dockerfile
     CONTEXT: BE
+    DB_URL: "$DB_URL"
+    DB_USERNAME: "$DB_USERNAME"
+    DB_PASSWORD: "$DB_PASSWORD"
+    DB_DRIVER: "$DB_DRIVER"
+    REDIS_HOST: "$REDIS_HOST"
+
   script:
     - echo "==========================="
     - echo "      BACK-END빌드 중"
     - echo "==========================="
+
+    - echo "DB_URL=$DB_URL" >> BE/.env
+    - echo "DB_USERNAME=$DB_USERNAME" >> BE/.env
+    - echo "DB_PASSWORD=$DB_PASSWORD" >> BE/.env
+    - echo "DB_DRIVER=$DB_DRIVER" >> BE/.env
+    - echo "REDIS_HOST=$REDIS_HOST" >> BE/.env
+
+
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
   rules:
@@ -184,7 +196,7 @@ deploy_test:
       #  디렉토리 이동
     - cd /home/ubuntu/
       # 이미지 pull을 위한 컨테이너 off
-    - docker compose down
+    - docker compose down -v
       # 컨테이너를 만들고 있다.
     - docker compose up --build -d
 
@@ -194,8 +206,8 @@ deploy_test:
   rules:
     - if: '$CI_COMMIT_REF_NAME != "main"'
       when: always
-
     
+
 
 
 

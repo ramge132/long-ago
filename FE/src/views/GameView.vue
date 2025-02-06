@@ -429,7 +429,7 @@ const showOverlay = (message) => {
     const overlay = document.querySelector(".overlay");
     if(message === 'start') {
       let index = -1;
-      overlay.firstElementChild.src = startMessage;
+      overlay.firstElementChild.src = startImage;
       participants.value.forEach((p, i) => {
         if(p.id === peerId.value) {
            index = inGameOrder.value.indexOf(i) + 1;
@@ -439,11 +439,11 @@ const showOverlay = (message) => {
       overlay.lastElementChild.style.background = "#FF9D00";
     } else {
       if(participants.value[inGameOrder.value[currTurn.value]].id === peerId.value) {
-        overlay.firstElementChild.src = myTurn;
+        overlay.firstElementChild.src = myTurnImage;
         overlay.lastElementChild.textContent = "멋진 이야기를 적어주세요!";
         overlay.lastElementChild.style.background = "#FF83BB";
       } else {
-        overlay.firstElementChild.src = currTurns;
+        overlay.firstElementChild.src = currTurnImage;
         overlay.lastElementChild.textContent = participants.value[inGameOrder.value[currTurn.value]].name + "님의 차례";
         overlay.lastElementChild.style.background = "#00B7FF";
       }
