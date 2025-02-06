@@ -25,7 +25,7 @@ public class Scene {
     private int sceneOrder;
 
     @Column(name="PROMPT",columnDefinition = "TEXT")
-    private String prompt;
+    private String userPrompt;
 
     @Column(name="IMAGE_URL",nullable = false,length = 1000)
     private String imageUrl;

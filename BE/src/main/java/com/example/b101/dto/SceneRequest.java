@@ -7,13 +7,16 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor
-public class CreateSceneDto {
+//사용자가 scene을 만들 때 필요한 requestBody
+public class SceneRequest {
 
     String gameId;
 
     String userId;
 
-    String promptText;
+    String userPrompt;
 
     int cardId;
+
+    int turn;
 }

@@ -1,7 +1,7 @@
 package com.example.b101.service;
 
 import com.example.b101.domain.User;
-import com.example.b101.dto.SignUpDto;
+import com.example.b101.dto.SignUpRequest;
 import com.example.b101.repository.UserRepository;
 import com.example.b101.common.ApiResponseUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,16 +40,16 @@ public class UserService {
     }
 
     //회원가입
-    public ResponseEntity<?> saveUser(SignUpDto signUpDto, HttpServletRequest request) {
-        if (usedEmail(signUpDto.getEmail())) {
+    public ResponseEntity<?> saveUser(SignUpRequest signUpRequest, HttpServletRequest request) {
+        if (usedEmail(signUpRequest.getEmail())) {
             return ApiResponseUtil.failure("이미 사용중인 이메일입니다.",
                     HttpStatus.CONFLICT,
                     request.getRequestURI());
         }
 
         User newUser = new User();
-        newUser.setEmail(signUpDto.getEmail());
-        newUser.setPassword(encoder.encode(signUpDto.getPassword())); //비밀번호 암호화 후 저장
+        newUser.setEmail(signUpRequest.getEmail());
+        newUser.setPassword(encoder.encode(signUpRequest.getPassword())); //비밀번호 암호화 후 저장
         userRepository.save(newUser);
 
         return ApiResponseUtil.success(null, "회원가입 성공", HttpStatus.CREATED, request.getRequestURI());

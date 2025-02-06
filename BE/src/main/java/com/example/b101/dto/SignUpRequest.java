@@ -10,7 +10,7 @@ import lombok.Setter;
 
 @Data
 @Builder
-public class SignUpDto {
+public class SignUpRequest {
 
     private String email;
     private String password;

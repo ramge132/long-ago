@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.util.List;
 
 @Data
-public class CreateGame {
+public class GameRequest {
 
     String bossId;
     String drawingStyle;

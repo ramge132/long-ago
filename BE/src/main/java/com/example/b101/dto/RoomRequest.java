@@ -3,7 +3,7 @@ package com.example.b101.dto;
 import lombok.Data;
 
 @Data
-public class CreateRoomDto {
+public class RoomRequest {
 
     String name;
     int maxCapacity;

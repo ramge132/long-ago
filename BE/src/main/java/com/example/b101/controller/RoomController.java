@@ -1,6 +1,6 @@
 package com.example.b101.controller;
 
-import com.example.b101.dto.CreateRoomDto;
+import com.example.b101.dto.RoomRequest;
 import com.example.b101.service.RoomService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -17,8 +17,8 @@ public class RoomController {
 
 
     @PostMapping
-    public ResponseEntity<?> createRoom(@RequestBody CreateRoomDto createRoomDto, HttpServletRequest request) {
-        return roomService.createRoom(createRoomDto, request);
+    public ResponseEntity<?> createRoom(@RequestBody RoomRequest roomRequest, HttpServletRequest request) {
+        return roomService.createRoom(roomRequest, request);
     }
 
 

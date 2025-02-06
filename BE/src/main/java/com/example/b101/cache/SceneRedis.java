@@ -2,7 +2,6 @@ package com.example.b101.cache;
 
 import lombok.*;
 import org.springframework.data.redis.core.RedisHash;
-import org.springframework.data.annotation.Id;
 import java.io.Serializable;
 
 @Getter
@@ -19,10 +18,20 @@ import java.io.Serializable;
  */
 public class SceneRedis implements Serializable {
 
-    private String id;
-    private String gameId;
-    private int sceneOrder;
-    private String prompt;
-    private byte[] image;
-    private String userId;
+    private String id; //sceneId (같은 게임 안에서 scene들을 구분하기 위함.)
+
+    private String gameId; //이 scene을 생성한 gameId
+
+    private String userId; //scene을 생성한 userId
+
+    private int sceneOrder; //scene의 순서
+
+    private String prompt; //사용자가 생성한 프롬포트
+
+    private byte[] image; //바이너리 형태로 저장된 이미지
+
+    private String imagePrompt; //AI가 생성한 프롬포트
+
+    private String story; //요약된 스토리
+
 }
