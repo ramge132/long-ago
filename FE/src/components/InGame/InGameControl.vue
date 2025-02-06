@@ -146,9 +146,9 @@ const sendprompt = () => {
   if (props.myTurn !== props.currTurn) {
     toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
   } else {
-    // 프롬프트 제출 api
-
-    emit("nextTurn");
+    emit("nextTurn", {
+      prompt: message.value
+    });
   }
 
 };
