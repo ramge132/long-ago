@@ -32,6 +32,6 @@ public class SceneRedis implements Serializable {
 
     private String imagePrompt; //AI가 생성한 프롬포트
 
-    private String story; //요약된 스토리
+    private String storySummary; //요약된 스토리
 
 }
