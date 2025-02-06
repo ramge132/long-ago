@@ -115,7 +115,7 @@
 </template>
 
 <script setup>
-import { onBeforeMount, ref, watch, onMounted } from "vue";
+import { onBeforeMount, ref, watch } from "vue";
 import { HeartIcon } from "@/assets";
 import {
   InGameControl,
@@ -198,11 +198,6 @@ watch(
   },
   { deep: true },
 );
-
-onMounted(() => {
-  const overlay = document.querySelector(".overlay");
-
-});
 
 onBeforeMount(() => {
   emit("gameExit");
