@@ -14,18 +14,30 @@
 import { ref, onMounted, watch } from "vue";
 
 const emit = defineEmits(["nextTurn"]);
-const restTime = ref(10); // 초기 시간 설정
+const props = defineProps({
+  currTurnTime: {
+    Type: Number,
+  },
+  inProgress: {
+    Type: Boolean,
+  },
+})
+const timer = ref(null);
+const restTime = ref(0); // 초기 시간 설정
 const timeWarningClass = ref(""); // 경고 상태를 위한 클래스
+
+const initCountdown = () => {
+  restTime.value = props.currTurnTime;
+}
 
 // 타이머 시작
 const startCountdown = () => {
   // const timer = setInterval(() => {
-  setInterval(() => {
+  timer.value = setInterval(() => {
     if (restTime.value > 0) {
       restTime.value--;
     } else {
       emit("nextTurn");
-      restTime.value = 10;
       // clearInterval(timer); // 카운트다운 종료 시 타이머 중지
     }
   }, 1000); // 1초 간격으로 감소
@@ -40,9 +52,15 @@ watch(restTime, (newTime) => {
   }
 });
 
-onMounted(() => {
-  startCountdown(); // 컴포넌트가 마운트되면 카운트다운 시작
-});
+watch(() => props.inProgress, () => {
+  if(props.inProgress) {
+    startCountdown();
+  } else {
+    initCountdown();
+    clearInterval(timer.value);
+  }
+}, {immediate: true});
+
 </script>
 
 <style scoped>
