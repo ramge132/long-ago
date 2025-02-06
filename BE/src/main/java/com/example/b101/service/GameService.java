@@ -57,26 +57,11 @@ public class GameService {
         // 게임 초기 데이터 Redis에 저장 (비동기 가능)
         gameRepository.save(game);
 
-        // 저장 후 동기적으로 다시 조회하여 데이터 확인
-        Game savedGame = gameRepository.findById(gameId);
-        if (savedGame == null) {
-            return ApiResponseUtil.failure("게임 저장에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI());
-        }
 
-        // 안전한 플레이어 상태 조회
-        PlayerStatus bossStatus = savedGame.getPlayerStatuses()
-                .stream()
-                .filter(player -> player.getUserId().equals(gameRequest.getBossId()))
-                .findFirst()
-                .orElse(null);
-
-        if (bossStatus == null) {
-            return ApiResponseUtil.failure("Boss ID에 해당하는 플레이어를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
-        }
 
         GameResponse gameResponse = GameResponse.builder()
-                .gameId(savedGame.getGameId())
-                .status(bossStatus)
+                .gameId(game.getGameId())
+                .status(game.getPlayerStatuses().stream().filter(player -> player.getUserId().equals(gameRequest.getBossId())).findFirst().orElse(null))
                 .build();
 
         return ApiResponseUtil.success(gameResponse, "게임 생성", HttpStatus.CREATED, request.getRequestURI());
