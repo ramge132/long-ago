@@ -188,6 +188,8 @@ deploy_main:
 
         # 컨테이너 off
         docker compose down
+        # 기존 이미지 제거
+        docker image prune -f
         # 컨테이너 on .env 참조
         docker compose --env-file /home/ubuntu/.env up --build -d
         # 나가기
