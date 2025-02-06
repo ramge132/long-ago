@@ -14,7 +14,7 @@
 import { ref, onMounted, watch } from "vue";
 
 const emit = defineEmits(["nextTurn"]);
-const restTime = ref(5); // 초기 시간 설정
+const restTime = ref(10); // 초기 시간 설정
 const timeWarningClass = ref(""); // 경고 상태를 위한 클래스
 
 // 타이머 시작
@@ -25,7 +25,7 @@ const startCountdown = () => {
       restTime.value--;
     } else {
       emit("nextTurn");
-      restTime.value = 5;
+      restTime.value = 10;
       // clearInterval(timer); // 카운트다운 종료 시 타이머 중지
     }
   }, 1000); // 1초 간격으로 감소

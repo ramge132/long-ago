@@ -116,7 +116,7 @@
 
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
-import { HeartIcon, myTurn, currTurn, startMessage } from "@/assets";
+import { HeartIcon } from "@/assets";
 import {
   InGameControl,
   InGameContent,
@@ -168,9 +168,9 @@ const props = defineProps({
 watch(
   () => props.receivedMessages,
   () => {
-    for (const index in props.participants) {
+    props.inGameOrder.forEach((order, index) => {
       if (
-        props.participants[index].name ==
+        props.participants[order].name ==
         props.receivedMessages[props.receivedMessages.length - 1].sender
       ) {
         const select = ref();
@@ -193,9 +193,8 @@ watch(
         chatTime.value[index][type] = setTimeout(() => {
           select.value.classList.add("hidden");
         }, 3000);
-        break;
       }
-    }
+    });
   },
   { deep: true },
 );

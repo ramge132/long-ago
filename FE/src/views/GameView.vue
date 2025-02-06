@@ -22,6 +22,12 @@
         />
       </Transition>
     </RouterView>
+    <div class="overlay absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center scale-0">
+      <img :src="currTurns" alt="">
+      <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
+    </div>
+    <!-- <div class="absolute top-0 left-0 rounded-lg w-full h-full">
+    </div> -->
   </div>
 </template>
 
@@ -31,6 +37,7 @@ import { useRoute } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
+import { myTurn, currTurns, startMessage } from "@/assets";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -179,9 +186,12 @@ const setupConnection = (conn) => {
       // 카드 요청 보내야함
       // gameID, userID
       case "gameStart":
-        gameStarted.value = data.gameStarted;
-        inGameOrder.value = data.order;
-        console.log(inGameOrder.value);
+        startReceived(data).then(async () => {
+          await showOverlay('start')
+          setTimeout(() => {
+            showOverlay('whoTurn');
+          }, 1000);
+        });
         break;
 
       case "newParticipantJoined": 
@@ -386,7 +396,7 @@ const onRoomConfiguration = (data) => {
   });
 };
 
-const gameStart = (data) => {
+const gameStart = async (data) => {
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
   connectedPeers.value.forEach((peer) => {
@@ -399,11 +409,56 @@ const gameStart = (data) => {
       peer.connection,
     );
   });
+  await showOverlay('start')
+  setTimeout(() => {
+    showOverlay('whoTurn');
+  }, 1000);
 };
+
+const startReceived = (data) => {
+  return new Promise((resolve) => {
+    gameStarted.value = data.gameStarted;
+    inGameOrder.value = data.order;
+    resolve();
+  });
+}
+
+const showOverlay = (message) => {
+  return new Promise((resolve) => {
+    const overlay = document.querySelector(".overlay");
+    if(message === 'start') {
+      let index = -1;
+      overlay.firstElementChild.src = startMessage;
+      participants.value.forEach((p, i) => {
+        if(p.id === peerId.value) {
+           index = inGameOrder.value.indexOf(i) + 1;
+        }
+      });
+      overlay.lastElementChild.textContent = "당신의 차례는 " + index + "번 입니다."; 
+      overlay.lastElementChild.style.background = "#FF9D00";
+    } else {
+      if(participants.value[inGameOrder.value[currTurn.value]].id === peerId.value) {
+        overlay.firstElementChild.src = myTurn;
+        overlay.lastElementChild.textContent = "멋진 이야기를 적어주세요!";
+        overlay.lastElementChild.style.background = "#FF83BB";
+      } else {
+        overlay.firstElementChild.src = currTurns;
+        overlay.lastElementChild.textContent = participants.value[inGameOrder.value[currTurn.value]].name + "님의 차례";
+        overlay.lastElementChild.style.background = "#00B7FF";
+      }
+    }
+    overlay.classList.remove('scale-0');
+    setTimeout(() => {
+      overlay.classList.add('scale-0');
+      resolve();
+    }, 2000);
+  });
+}
 
 // 다음 순서 넘기기
 const nextTurn = () => {
   currTurn.value = (currTurn.value + 1) % participants.value.length;
+  showOverlay('whoTurn');
 };
 </script>
 <style>
@@ -416,5 +471,9 @@ const nextTurn = () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0; /* 컴포넌트가 처음에는 안 보이게 설정 */
+}
+
+.overlay {
+  transition: all 1s ease-in-out;
 }
 </style>
