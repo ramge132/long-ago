@@ -1,5 +1,5 @@
 #############
-# 1.  빌드   #
+# 1.  빌드    #
 #############
 
 # 베이스 이미지 설정
@@ -13,6 +13,7 @@ COPY build.gradle settings.gradle ./
 
 #  소스 코드 복사
 COPY src ./src/
+
 
 # Gradle 캐시를 활용하여 종속성 다운로드 및 빌드
 RUN gradle build -x test
@@ -35,3 +36,4 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 # 포트 노출 (Spring Boot 기본 포트)
 EXPOSE 8080
 
+#
