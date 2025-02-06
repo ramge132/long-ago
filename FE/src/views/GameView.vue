@@ -37,7 +37,7 @@ import { useRoute } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
-import { myTurn, currTurns, startMessage } from "@/assets";
+import { myTurnImage , currTurnImage, startImage } from "@/assets";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -60,6 +60,7 @@ const InviteLink = ref("");
 const gameStarted = ref(false);
 const inGameOrder = ref([]);
 const currTurn = ref(0);
+
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {

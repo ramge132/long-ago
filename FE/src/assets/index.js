@@ -36,6 +36,6 @@ export { default as LobbyMusic } from "./musics/backgroundMusic.mp3";
 export { default as TurningPage } from "./musics/turning_page_2.mp3";
 
 // inGame
-export { default as myTurn } from "./images/inGame/myTurn.svg";
-export { default as currTurns } from "./images/inGame/currTurn.svg";
-export { default as startMessage } from "./images/inGame/gameStart.svg";
+export { default as myTurnImage } from "./images/inGame/myTurn.svg";
+export { default as currTurnImage } from "./images/inGame/currTurn.svg";
+export { default as startImage } from "./images/inGame/gameStart.svg";
