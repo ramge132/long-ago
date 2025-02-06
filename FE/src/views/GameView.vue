@@ -60,6 +60,7 @@ const InviteLink = ref("");
 const gameStarted = ref(false);
 const inGameOrder = ref([]);
 const currTurn = ref(0);
+const myTurn = ref(null);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -419,6 +420,14 @@ const startReceived = (data) => {
   return new Promise((resolve) => {
     gameStarted.value = data.gameStarted;
     inGameOrder.value = data.order;
+
+    // 내 순서 몇번인지 저장
+    participants.value.forEach((p, i) => {
+      if(p.id === peerId.value) {
+          myTurn.value = inGameOrder.value.indexOf(i);
+      }
+    });
+
     resolve();
   });
 }
@@ -427,14 +436,10 @@ const showOverlay = (message) => {
   return new Promise((resolve) => {
     const overlay = document.querySelector(".overlay");
     if(message === 'start') {
-      let index = -1;
       overlay.firstElementChild.src = startMessage;
-      participants.value.forEach((p, i) => {
-        if(p.id === peerId.value) {
-           index = inGameOrder.value.indexOf(i) + 1;
-        }
-      });
-      overlay.lastElementChild.textContent = "당신의 차례는 " + index + "번 입니다."; 
+
+    
+      overlay.lastElementChild.textContent = "당신의 차례는 " + (myTurn.value + 1) + "번 입니다."; 
       overlay.lastElementChild.style.background = "#FF9D00";
     } else {
       if(participants.value[inGameOrder.value[currTurn.value]].id === peerId.value) {
