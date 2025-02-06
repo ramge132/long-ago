@@ -12,7 +12,6 @@ public interface RedisSceneRepository{
 
     void delete(SceneRedis sceneRedis);
 
-    void update(SceneRedis sceneRedis);
 
     SceneRedis findById(String id);
 

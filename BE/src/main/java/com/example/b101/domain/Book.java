@@ -40,5 +40,4 @@ public class Book {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-
 }
