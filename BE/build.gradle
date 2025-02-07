@@ -1,0 +1,60 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // jpa 사용
+    implementation 'org.springframework.boot:spring-boot-starter-web' //spring web 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'//redis 의존성
+    implementation 'org.projectlombok:lombok'//lombok 의존성
+
+
+
+    implementation 'org.springframework.boot:spring-boot-starter-security'//security
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux' //GPU 서버와 통신을 위한 webClient를 위한 의존성
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'io.projectreactor:reactor-test'//security
+    developmentOnly 'org.springframework.boot:spring-boot-devtools' // devtools 의존성
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'//swagger 의존성
+
+    annotationProcessor('org.projectlombok:lombok')
+    runtimeOnly 'org.postgresql:postgresql' //postgresql
+
+
+    // Spring Boot Starter Test (JUnit 5 포함)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.11.0'
+
+
+    // JUnit Jupiter (JUnit 5)
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
