@@ -8,7 +8,6 @@ stages:
 
 # 변수
 variables:
-
   # Docker Hub 경로
   FE_IMAGE: "ssafyb101/my-fe"
   BE_IMAGE: "ssafyb101/my-be"
@@ -53,8 +52,9 @@ build_FE:
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
   rules:
-  - changes:
-      - FE/**/*
+  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
+    when: always
+  - if: $CI_COMMIT_BRANCH == "CICD/test"
     when: always
   - when: never
 
@@ -79,10 +79,11 @@ build_BE:
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
   rules:
-    - changes:
-      - BE/**/* 
-      when: always
-    - when: never
+  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
+    when: always
+  - if: ($CI_COMMIT_BRANCH == "CICD/test")
+    when: always
+  - when: never
 
 
 ########################
@@ -103,10 +104,11 @@ push_FE:
   dependencies:
     - build_FE
   rules:
-    - changes:
-      - FE/**/*
-      when: always
-    - when: never
+  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
+    when: always
+  - if: $CI_COMMIT_BRANCH == "CICD/test"
+    when: always
+  - when: never
 
 
 ########################
@@ -127,10 +129,11 @@ push_BE:
   dependencies:
     - build_BE
   rules:
-    - changes:
-      - BE/**/* 
-      when: always
-    - when: never
+  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
+    when: always
+  - if: $CI_COMMIT_BRANCH == "CICD/test"
+    when: always
+  - when: never
 
 
 #######################
@@ -154,7 +157,10 @@ cleanup:
     - docker rmi $BE_IMAGE:$CI_COMMIT_SHA || true
     - docker rmi $BE_IMAGE:latest || true
 
-  when: always
+    # GitLab Runner가 사용하는 불필요한 빌드 파일 정리
+    - rm -rf /builds/* || true
+  rules:
+   - when: always
 
 
 ##################
@@ -189,7 +195,7 @@ deploy_main:
         # 컨테이너 off
         docker compose down
         # 기존 이미지 제거
-        docker image prune -f
+        docker rmi $(docker images -q)
         # 컨테이너 on .env 참조
         docker compose --env-file /home/ubuntu/.env up --build -d
         # 나가기
@@ -200,8 +206,9 @@ deploy_main:
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "main"'
+    - if: ($CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "main")
       when: always
+    - when: never
 
 deploy_test:
   stage: deploy
@@ -226,6 +233,8 @@ deploy_test:
     - echo "REDIS_HOST_TEST=$REDIS_HOST_TEST" >> .env
     # 컨테이너 off
     - docker compose down -v
+    # 기존 이미지 제거
+      docker rmi $(docker images -q)
     # 컨테이너 on .env 참조
     - docker compose --env-file /home/ubuntu/.env up --build -d
 
@@ -233,9 +242,11 @@ deploy_test:
     - echo "          배포 완료!!!"
     - echo "===================================="
   rules:
-    - if: '$CI_COMMIT_REF_NAME != "main"'
+    - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == "FE/dev" || $CI_COMMIT_REF_NAME == "BE/dev")
       when: always
-    
+    - if: $CI_COMMIT_BRANCH == "CICD/test"
+      when: always
+    - when: never
 
 
 
