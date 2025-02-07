@@ -172,17 +172,37 @@ const setupConnection = (conn) => {
         break;
 
       case "system": 
-        // participants 중 id가 data.id와 같은 값 삭제
-        participants.value.forEach((p, i) => {
-          if(p.id === data.id) {
-            inGameOrder.value = inGameOrder.value.filter(
-              (order) => order !== i,
-            );
+        let removedOrder = -1;
+        let removedIndex = -1;
+        inGameOrder.value = inGameOrder.value.filter(
+          (order, index) => {
+            if(participants.value[order].id === data.id) {
+              removedOrder = order;
+              removedIndex = index;
+            }
+            return participants.value[order].id !== data.id;
           }
-        })
+        );
+        // participants 중 id가 data.id와 같은 값 삭제
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
         );
+        console.log(participants.value);
+
+        inGameOrder.value.forEach((order, index) => {
+          if(order > removedOrder) inGameOrder.value[index] -= 1;
+        });
+        participants.value.forEach((p, i) => {
+          if(p.id === peerId.value) {
+            myTurn.value = inGameOrder.value.indexOf(i);
+          }
+        });
+        currTurn.value %= participants.value.length;
+        if(currTurn.value === removedIndex) {
+          inProgress.value = false;
+          await showOverlay('whoTurn');
+          inProgress.value = true;
+        }
 
         const newBossId = compressUUID(participants.value[0].id);
 
@@ -456,20 +476,20 @@ const gameStart = async (data) => {
   inGameOrder.value = data.order;
 
   // 게임 방 생성
-  try {
-    const response = await createGame({
-      bossId: peerId.value,
-      player: participants.value.map((p) => p.id),
-      drawingStyle: roomConfigs.value.currStyle,
-    })
+  // try {
+  //   const response = await createGame({
+  //     bossId: peerId.value,
+  //     player: participants.value.map((p) => p.id),
+  //     drawingStyle: roomConfigs.value.currStyle,
+  //   })
 
-    gameID.value = response.data.data.gameId;
-    storyCards.value = response.data.data.status.storyCards;
-    endingCard.value = response.data.data.status.endingCard;
-  } catch (error) {
-    console.log(error);
-    return;
-  }
+  //   gameID.value = response.data.data.gameId;
+  //   storyCards.value = response.data.data.status.storyCards;
+  //   endingCard.value = response.data.data.status.endingCard;
+  // } catch (error) {
+  //   console.log(error);
+  //   return;
+  // }
 
   connectedPeers.value.forEach((peer) => {
     sendMessage(

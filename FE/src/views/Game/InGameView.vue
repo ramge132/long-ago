@@ -63,7 +63,7 @@
       />
     </div>
     <div class="h-full row-span-2 grid grid-rows-3">
-      <template v-for="(order, index) in props.inGameOrder" :key="index">
+      <template v-for="(order, index) in props.inGameOrder" :key="order">
         <div
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 != 0"
