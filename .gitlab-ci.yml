@@ -54,7 +54,7 @@ build_FE:
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/dev"
+  - if: $CI_COMMIT_BRANCH == "CICD/test"
     when: always
   - when: never
 
@@ -81,7 +81,7 @@ build_BE:
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: ($CI_COMMIT_BRANCH == "CICD/dev")
+  - if: ($CI_COMMIT_BRANCH == "CICD/test")
     when: always
   - when: never
 
@@ -106,7 +106,7 @@ push_FE:
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/dev"
+  - if: $CI_COMMIT_BRANCH == "CICD/test"
     when: always
   - when: never
 
@@ -131,7 +131,7 @@ push_BE:
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/dev"
+  - if: $CI_COMMIT_BRANCH == "CICD/test"
     when: always
   - when: never
 
@@ -206,7 +206,7 @@ deploy_main:
   rules:
     - if: ($CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "main")
       when: always
-    - if: $CI_COMMIT_BRANCH == "CICD/dev"
+    - if: $CI_COMMIT_BRANCH == "CICD/test"
       when: always
     - when: never
 
@@ -242,7 +242,7 @@ deploy_test:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == "FE/dev" || $CI_COMMIT_REF_NAME == "BE/dev")
       when: always
-    - if: $CI_COMMIT_BRANCH == "CICD/dev"
+    - if: $CI_COMMIT_BRANCH == "CICD/test"
       when: always
     - when: never
 
