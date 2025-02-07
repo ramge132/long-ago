@@ -1,29 +1,41 @@
 <template>
   <div
-    class="w-4/5 max-w-6xl min-w-[1000px] h-16 flex justify-between items-center z-10"
+    class="w-4/5 max-w-6xl min-w-[1000px] h-16 flex justify-between items-center z-10 px-2"
   >
-    <img :src="Logo" alt="logo" class="w-48 p-3" />
+    <img :src="Logo" alt="logo" class="w-36 p-3" />
     <div
-      class="p-3 font-makgeolli font-semibold text-2xl flex items-center gap-x-5"
+      v-if="isLoggedIn"
+      class="p-3 font-semibold flex items-center gap-x-5 text-white text-sm"
     >
       <RouterLink
         to="#"
         class="transform transition-all duration-300 hover:scale-110 cursor-pointer"
-        ><img class="h-6" :src="TopBarHallOfFame" alt="명예의 전당"
-      /></RouterLink>
+        >베스트 셀러
+      </RouterLink>
       <RouterLink
         to="#"
         class="transform transition-all duration-300 hover:scale-110 cursor-pointer"
-        ><img class="h-6" :src="TopBarFairyTail" alt="내가 만든 동화책"
-      /></RouterLink>
-      <div
-        v-if="!isLoggedIn"
-        @click="toggleModal"
-        class="transform transition-all duration-300 hover:scale-110 cursor-pointer"
-      >
-        <img class="h-6" :src="TopBarSignIn" alt="로그인" />
+        >내 서재
+      </RouterLink>
+      <div class="transform transition-all duration-300 hover:scale-110 cursor-pointer">
+        로그아웃
       </div>
-      <div v-else>{{ userStore.userData.userEmail + " 님" }}</div>
+    </div>
+    <div
+      v-else
+      class="p-3 font-semibold flex items-center gap-x-5 text-white text-sm"
+    >
+      <RouterLink
+        to="#"
+        class="transform transition-all duration-300 hover:scale-110 cursor-pointer"
+        >베스트 셀러
+      </RouterLink>
+      <img
+        class="h-6 transform transition-all duration-300 hover:scale-110 cursor-pointer"
+        @click="toggleModal"
+        :src="MyInfo"
+        alt="로그인"
+      />
     </div>
     <Transition name="fade">
       <div
@@ -79,9 +91,7 @@
 import { ref } from "vue";
 import { useUserStore } from "@/stores/auth";
 import {
-  TopBarFairyTail,
-  TopBarHallOfFame,
-  TopBarSignIn,
+  MyInfo,
   Logo,
 } from "@/assets";
 import { SignIn, SignUp } from "@/components";

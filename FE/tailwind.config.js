@@ -7,9 +7,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        kcc: [""],
-        hs: ["HS유지체", ...defaultTheme.fontFamily.sans],
-        makgeolli: ["MAKGEOLLI", ...defaultTheme.fontFamily.sans],
+        katuri: ["katuri", ...defaultTheme.fontFamily.sans],
+        omp: ["omp", ...defaultTheme.fontFamily.sans],
       },
       backgroundImage: {
         "fairytail-image": "url('/src/assets/background.svg')",

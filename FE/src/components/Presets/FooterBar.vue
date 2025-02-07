@@ -6,7 +6,7 @@
       class="w-full h-full rounded-lg bg-[#00000080] flex items-center justify-between px-4 text-white"
     >
       <div>test</div>
-      <div>&copy; 2025. 아주 먼 옛날 All rights reserved.</div>
+      <div class="font-semibold text-xs">&copy; 2025. LONG AGO All rights reserved.</div>
     </div>
   </div>
 </template>

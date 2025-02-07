@@ -1,9 +1,9 @@
 <template>
   <div
-    class="absolute z-10 left-5 top-5 flex gap-x-3 items-center text-gray-700"
+    class="absolute z-10 left-5 top-5 flex gap-x-3 items-center text-gray-800"
     :class="isInGame ? 'left-5 top-[-30px]' : 'left-5 top-5'"
   >
-    <span class="text-xs">SOUND</span>
+    <span class="font-semibold">SOUND</span>
     <span
       class="text-[10px]"
       :class="audioStore.audioData ? 'text-[#00000050]' : ''"
