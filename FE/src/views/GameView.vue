@@ -83,6 +83,8 @@ const inProgress = ref(false);
 const storyCards = ref([]);
 // 내가 가지고있는 엔딩카드
 const endingCard = ref({});
+// 턴 오버레이 애니메이션 지연
+const overlayTimeout = ref(null);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -197,8 +199,9 @@ const setupConnection = (conn) => {
             myTurn.value = inGameOrder.value.indexOf(i);
           }
         });
+        const currTurnExited = currTurn.value === removedIndex;
         currTurn.value %= participants.value.length;
-        if(currTurn.value === removedIndex) {
+        if(currTurnExited) {
           inProgress.value = false;
           await showOverlay('whoTurn');
           inProgress.value = true;
@@ -550,7 +553,8 @@ const showOverlay = (message) => {
       }
     }
     overlay.classList.remove('scale-0');
-    setTimeout(() => {
+    if(overlayTimeout.value) clearTimeout(overlayTimeout.value);
+    overlayTimeout.value = setTimeout(() => {
       overlay.classList.add('scale-0');
       resolve();
     }, 2000);

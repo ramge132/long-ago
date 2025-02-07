@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onUnmounted, watch } from "vue";
 
 const emit = defineEmits(["nextTurn"]);
 const props = defineProps({
@@ -25,23 +25,31 @@ const props = defineProps({
 const timer = ref(null);
 const restTime = ref(0); // 초기 시간 설정
 const timeWarningClass = ref(""); // 경고 상태를 위한 클래스
+let worker = null; // Web Worker를 저장할 변수
 
 const initCountdown = () => {
   restTime.value = props.currTurnTime;
 }
 
-// 타이머 시작
+// Web Worker 초기화 및 타이머 시작
 const startCountdown = () => {
-  // const timer = setInterval(() => {
-  timer.value = setInterval(() => {
-    if (restTime.value > 0) {
-      restTime.value--;
+  // Worker가 없으면 새로 생성
+  if (!worker) {
+    worker = new Worker(new URL('@/functions/worker.js', import.meta.url));
+  }
+  // Web Worker에 초기 시간 전달
+  worker.postMessage({ initialTime: props.currTurnTime });
+
+  // Web Worker에서 메시지 받기
+  worker.onmessage = (e) => {
+    if (e.data === 'done') {
+      emit('nextTurn'); // 타이머가 종료되면 'nextTurn' 이벤트 발생
     } else {
-      emit("nextTurn");
-      // clearInterval(timer); // 카운트다운 종료 시 타이머 중지
+      restTime.value = e.data; // 남은 시간 업데이트
     }
-  }, 1000); // 1초 간격으로 감소
+  };
 };
+
 
 // restTime 값 변경을 감지하여 경고 상태 처리
 watch(restTime, (newTime) => {
@@ -57,10 +65,18 @@ watch(() => props.inProgress, () => {
     startCountdown();
   } else {
     initCountdown();
-    clearInterval(timer.value);
+    if (worker) {
+        worker.postMessage('reset'); // Web Worker에 초기화 명령 보내기
+    }
   }
 }, {immediate: true});
 
+// Web Worker 종료
+onUnmounted(() => {
+  if (worker) {
+    worker.terminate(); // 컴포넌트가 파괴될 때 Worker 종료
+  }
+});
 </script>
 
 <style scoped>
