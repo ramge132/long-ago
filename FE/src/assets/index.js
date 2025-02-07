@@ -22,6 +22,8 @@ export { default as EmoticonIcon } from "./icons/emoticon.svg";
 export { default as SendIcon } from "./icons/send.svg";
 export { default as ChangeIcon } from "./icons/change.svg";
 export { default as MyInfo } from "./icons/myinfo.svg";
+export { default as VoteUpLeftIcon } from "./icons/up_left.svg";
+export { default as VoteDownRightIcon } from "./icons/down_right.svg";
 
 // musics
 export { default as LobbyMusic } from "./musics/backgroundMusic.mp3";

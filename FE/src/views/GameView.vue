@@ -83,6 +83,8 @@ const inProgress = ref(false);
 const storyCards = ref([]);
 // 내가 가지고있는 엔딩카드
 const endingCard = ref({});
+// 턴 오버레이 애니메이션 지연
+const overlayTimeout = ref(null);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -141,7 +143,7 @@ const setupConnection = (conn) => {
     return;
   }
 
-  conn.on("data", (data) => {
+  conn.on("data", async (data) => {
     switch (data.type) {
       case "newParticipant":
         // 현재 참가자 목록 전송
@@ -172,17 +174,38 @@ const setupConnection = (conn) => {
         break;
 
       case "system": 
-        // participants 중 id가 data.id와 같은 값 삭제
-        participants.value.forEach((p, i) => {
-          if(p.id === data.id) {
-            inGameOrder.value = inGameOrder.value.filter(
-              (order) => order !== i,
-            );
+        let removedOrder = -1;
+        let removedIndex = -1;
+        inGameOrder.value = inGameOrder.value.filter(
+          (order, index) => {
+            if(participants.value[order].id === data.id) {
+              removedOrder = order;
+              removedIndex = index;
+            }
+            return participants.value[order].id !== data.id;
           }
-        })
+        );
+        // participants 중 id가 data.id와 같은 값 삭제
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
         );
+        console.log(participants.value);
+
+        inGameOrder.value.forEach((order, index) => {
+          if(order > removedOrder) inGameOrder.value[index] -= 1;
+        });
+        participants.value.forEach((p, i) => {
+          if(p.id === peerId.value) {
+            myTurn.value = inGameOrder.value.indexOf(i);
+          }
+        });
+        const currTurnExited = currTurn.value === removedIndex;
+        currTurn.value %= participants.value.length;
+        if(currTurnExited) {
+          inProgress.value = false;
+          await showOverlay('whoTurn');
+          inProgress.value = true;
+        }
 
         const newBossId = compressUUID(participants.value[0].id);
 
@@ -232,6 +255,13 @@ const setupConnection = (conn) => {
             inProgress.value = true;
           }, 1000);
         });
+        break;
+
+      case "nextTurn": 
+        inProgress.value = false;
+        currTurn.value = data.currTurn;
+        await showOverlay('whoTurn');
+        inProgress.value = true;
         break;
 
       case "newParticipantJoined": 
@@ -449,20 +479,20 @@ const gameStart = async (data) => {
   inGameOrder.value = data.order;
 
   // 게임 방 생성
-  try {
-    const response = await createGame({
-      bossId: peerId.value,
-      player: participants.value.map((p) => p.id),
-      drawingStyle: roomConfigs.value.currStyle,
-    })
+  // try {
+  //   const response = await createGame({
+  //     bossId: peerId.value,
+  //     player: participants.value.map((p) => p.id),
+  //     drawingStyle: roomConfigs.value.currStyle,
+  //   })
 
-    gameID.value = response.data.data.gameId;
-    storyCards.value = response.data.data.status.storyCards;
-    endingCard.value = response.data.data.status.endingCard;
-  } catch (error) {
-    console.log(error);
-    return;
-  }
+  //   gameID.value = response.data.data.gameId;
+  //   storyCards.value = response.data.data.status.storyCards;
+  //   endingCard.value = response.data.data.status.endingCard;
+  // } catch (error) {
+  //   console.log(error);
+  //   return;
+  // }
 
   connectedPeers.value.forEach((peer) => {
     sendMessage(
@@ -523,7 +553,8 @@ const showOverlay = (message) => {
       }
     }
     overlay.classList.remove('scale-0');
-    setTimeout(() => {
+    if(overlayTimeout.value) clearTimeout(overlayTimeout.value);
+    overlayTimeout.value = setTimeout(() => {
       overlay.classList.add('scale-0');
       resolve();
     }, 2000);
@@ -532,11 +563,12 @@ const showOverlay = (message) => {
 
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
-  inProgress.value = false;
   if (data?.prompt) {
     // 프롬프트 제출 api 들어가야 함
     // 시간 멈춰야 함
-
+    // 투표 모달 띄워야 함
+    
+    
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
     const imageBlob = 'test';
     
@@ -550,13 +582,25 @@ const nextTurn = async (data) => {
         )
       }
     });
-
+    
     // 나의 책에 프롬프트와 이미지 넣기
     console.log(data);
+  } else if(currTurn.value === myTurn.value) {
+    // 턴 종료 트리거 송신하기
+    currTurn.value = (currTurn.value + 1) % participants.value.length;
+    connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage(
+          "nextTurn",
+          { currTurn: currTurn.value },
+          peer.connection
+        )
+      }
+    });
+    inProgress.value = false;
+    await showOverlay('whoTurn');
+    inProgress.value = true;
   }
-  currTurn.value = (currTurn.value + 1) % participants.value.length;
-  await showOverlay('whoTurn');
-  inProgress.value = true;
 };
 </script>
 <style>
