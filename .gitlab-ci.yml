@@ -231,6 +231,8 @@ deploy_test:
     - echo "DB_USERNAME_TEST=$DB_USERNAME_TEST" >> .env
     - echo "DB_PASSWORD_TEST=$DB_PASSWORD_TEST" >> .env
     - echo "REDIS_HOST_TEST=$REDIS_HOST_TEST" >> .env
+    # 기존 이미지 제거
+    - docker rmi $(docker images -q)
     # 컨테이너 off
     - docker compose down -v
     # 컨테이너 on .env 참조
