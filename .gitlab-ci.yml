@@ -52,8 +52,9 @@ build_FE:
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
   rules:
-  - changes:
-      - FE/**/*
+  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
+    when: always
+  - if: $CI_COMMIT_BRANCH == "CICD/test"
     when: always
   - when: never
 
@@ -103,10 +104,11 @@ push_FE:
   dependencies:
     - build_FE
   rules:
-    - changes:
-      - FE/**/*
-      when: always
-    - when: never
+  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
+    when: always
+  - if: $CI_COMMIT_BRANCH == "CICD/test"
+    when: always
+  - when: never
 
 
 ########################
@@ -193,7 +195,7 @@ deploy_main:
         # 컨테이너 off
         docker compose down
         # 기존 이미지 제거
-        docker image prune -f
+        docker rmi $(docker images -q)
         # 컨테이너 on .env 참조
         docker compose --env-file /home/ubuntu/.env up --build -d
         # 나가기
@@ -231,6 +233,8 @@ deploy_test:
     - echo "REDIS_HOST_TEST=$REDIS_HOST_TEST" >> .env
     # 컨테이너 off
     - docker compose down -v
+    # 기존 이미지 제거
+      docker rmi $(docker images -q)
     # 컨테이너 on .env 참조
     - docker compose --env-file /home/ubuntu/.env up --build -d
 
