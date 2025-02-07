@@ -1,7 +1,6 @@
 package com.example.b101.repository;
 
 
-import com.example.b101.cache.Game;
 import com.example.b101.cache.SceneRedis;
 
 import java.util.List;
@@ -11,7 +10,6 @@ public interface RedisSceneRepository{
     void save(SceneRedis sceneRedis);
 
     void delete(SceneRedis sceneRedis);
-
 
     SceneRedis findById(String id);
 
