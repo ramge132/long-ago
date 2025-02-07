@@ -10,7 +10,7 @@
       <TopBar v-if="route.path === '/'" />
     </Transition>
     <div
-      class="rounded-lg shadow-md w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] bg-[#ffffff80] backdrop-blur-sm flex flex-col justify-center items-center"
+      class="view rounded-lg w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] bg-[#ffffff70] border-[1px] border-white backdrop-blur-[15px] flex flex-col justify-center items-center"
     >
       <ToggleButton :music="LobbyMusic" />
 
@@ -56,5 +56,9 @@ const backgroundClass = computed(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0; /* 컴포넌트가 처음에는 안 보이게 설정 */
+}
+
+.view {
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.23), inset 0 0 100px rgba(255, 255, 255, 0.23);
 }
 </style>
