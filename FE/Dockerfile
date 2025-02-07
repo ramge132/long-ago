@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 
 ################
-# 2. 이미지 생성  #
+# 2. 이미지 생성   #
 ################
 
 FROM nginx:alpine
