@@ -13,4 +13,5 @@ public interface StoryCardVariantsRepository extends JpaRepository<StoryCardVari
 
     //해당하는 카드 id들의 모든 변형어들을 가져옴.
     List<StoryCardVariants> findAllByStoryCardIdIn(List<Integer> storyCardIds);
+
 }

@@ -65,14 +65,14 @@ public class FilteringService {
         // prompt가 사용자가 낸 card의 변형어를 포함하고 있는지 확인
         boolean isOk = variants.stream().anyMatch(variant -> filteringRequest.getPrompt().contains(variant));
 
-        // prompt에 사용자가 낸 card 외에 소지하고 있는 card의 변형어들을 포함하고 있는지 확인
-        boolean isNotOk = allVariants.stream().anyMatch(variant -> !variants.contains(variant) && filteringRequest.getPrompt().contains(variant));
-
         if (!isOk) {
-            return ApiResponseUtil.failure("Prompt에 카드 키워드가 사용되지 않았습니다.",
+            return ApiResponseUtil.failure("Prompt에 키워드가 사용되지 않았습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
+
+        // prompt에 사용자가 낸 card 외에 소지하고 있는 card의 변형어들을 포함하고 있는지 확인
+        boolean isNotOk = allVariants.stream().anyMatch(variant -> !variants.contains(variant) && filteringRequest.getPrompt().contains(variant));
 
         if (isNotOk) {
             return ApiResponseUtil.failure("Prompt에 중복된 카드가 사용되었습니다.",
@@ -81,7 +81,7 @@ public class FilteringService {
         }
 
         // 성공 응답
-        return ApiResponseUtil.success(true,"Prompt가 카드 키워드가 적용되었습니다.",
+        return ApiResponseUtil.success(true,"Prompt 필터링 성공",
                 HttpStatus.OK,
                 request.getRequestURI());
     }

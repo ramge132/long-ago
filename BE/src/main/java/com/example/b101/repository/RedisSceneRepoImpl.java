@@ -77,6 +77,6 @@ public class RedisSceneRepoImpl implements RedisSceneRepository {
         return entries.entrySet().stream()
                 .filter(entry -> entry.getKey().toString().startsWith(gameId + ":"))
                 .map(entry -> (SceneRedis) entry.getValue())
-                .collect(Collectors.toList());
+                .toList();
     }
 }
