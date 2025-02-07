@@ -2,29 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "KCC-Ganpan";
-  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/KCC-Ganpan.woff2")
-    format("woff2");
-  font-weight: normal;
-  font-style: normal;
-}
 
+/* 포인트 폰트 레스기릿 */
 @font-face {
-  font-family: "HS유지체";
-  src: url("@/assets/fonts/HS유지체.ttf") format("truetype");
+  font-family: "katuri";
+  src: url("@/assets/fonts/Katuri.ttf") format("truetype");
   font-weight: 400;
 }
 
 @font-face {
-  font-family: "MAKGEOLLI";
-  src: url("@/assets/fonts/MAKGEOLLI.ttf") format("truetype");
+  font-family: "omp";
+  src: url("@/assets/fonts/One-mobile-pop.ttf") format("truetype");
   font-weight: 400;
+}
+
+ /* 기본 폰트입니둥 */
+ @font-face {
+	font-family: 'Pretendard';
+	font-weight: 900;
+	font-display: swap;
+	src: local('Pretendard Black'), url("@/assets/fonts/woff2/Pretendard-Black.woff2") format('woff2'), url("@/assets/fonts/woff/Pretendard-Black.woff") format('woff');
+}
+
+@font-face {
+	font-family: 'Pretendard';
+	font-weight: 800;
+	font-display: swap;
+	src: local('Pretendard ExtraBold'), url("@/assets/fonts/woff2/Pretendard-ExtraBold.woff2") format('woff2'), url("@/assets/fonts/woff/Pretendard-ExtraBold.woff") format('woff');
+}
+
+@font-face {
+	font-family: 'Pretendard';
+	font-weight: 700;
+	font-display: swap;
+	src: local('Pretendard Bold'), url("@/assets/fonts/woff2/Pretendard-Bold.woff2") format('woff2'), url("@/assets/fonts/woff/Pretendard-Bold.woff") format('woff');
+}
+
+@font-face {
+	font-family: 'Pretendard';
+	font-weight: 600;
+	font-display: swap;
+	src: local('Pretendard SemiBold'), url("@/assets/fonts/woff2/Pretendard-SemiBold.woff2") format('woff2'), url("@/assets/fonts/woff/Pretendard-SemiBold.woff") format('woff');
+}
+
+@font-face {
+	font-family: 'Pretendard';
+	font-weight: 500;
+	font-display: swap;
+	src: local('Pretendard Medium'), url("@/assets/fonts/woff2/Pretendard-Medium.woff2") format('woff2'), url("@/assets/fonts/woff/Pretendard-Medium.woff") format('woff');
+}
+
+@font-face {
+	font-family: 'Pretendard';
+	font-weight: 400;
+	font-display: swap;
+	src: local('Pretendard Regular'), url("@/assets/fonts/woff2/Pretendard-Regular.woff2") format('woff2'), url("@/assets/fonts/woff/Pretendard-Regular.woff") format('woff');
+}
+
+@font-face {
+	font-family: 'Pretendard';
+	font-weight: 300;
+	font-display: swap;
+	src: local('Pretendard Light'), url("@/assets/fonts/woff2/Pretendard-Light.woff2") format('woff2'), url("@/assets/fonts/woff/Pretendard-Light.woff") format('woff');
+}
+
+@font-face {
+	font-family: 'Pretendard';
+	font-weight: 200;
+	font-display: swap;
+	src: local('Pretendard ExtraLight'), url("@/assets/fonts/woff2/Pretendard-ExtraLight.woff2") format('woff2'), url("@/assets/fonts/woff/Pretendard-ExtraLight.woff") format('woff');
+}
+
+@font-face {
+	font-family: 'Pretendard';
+	font-weight: 100;
+	font-display: swap;
+	src: local('Pretendard Thin'), url("@/assets/fonts/woff2/Pretendard-Thin.woff2") format('woff2'), url("@/assets/fonts/woff/Pretendard-Thin.woff") format('woff');
 }
 
 body {
-  font-family: "KCC-Ganpan", "HS유지체", "MAKGEOLLI", sans-serif;
+  font-family: "Pretendard";
 }
+/* 기본 폰트 끝 */
 
 @layer utilities {
   .text-shadow {
