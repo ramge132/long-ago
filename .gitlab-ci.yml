@@ -233,6 +233,8 @@ deploy_test:
     - echo "REDIS_HOST_TEST=$REDIS_HOST_TEST" >> .env
     # 컨테이너 off
     - docker compose down -v
+    # 기존 이미지 제거
+      docker rmi $(docker images -q)
     # 컨테이너 on .env 참조
     - docker compose --env-file /home/ubuntu/.env up --build -d
 
