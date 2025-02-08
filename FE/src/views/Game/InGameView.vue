@@ -1,10 +1,10 @@
 <template>
   <div class="w-full h-full grid grid-cols-5 grid-rows-2">
-    <div class="h-full row-span-2 grid grid-rows-3">
+    <div class="h-full row-span-2 grid grid-rows-3 justify-start">
       <!-- <template v-for="(user, index) in props.participants" :key="user.id"> -->
       <template v-for="(order, index) in props.inGameOrder" :key="order">
         <div
-          class="flex flex-col justify-center items-center relative"
+          class="flex flex-col justify-center items-center relative ml-3"
           v-if="index % 2 == 0"
         >
           <div class="w-28 h-28 relative">
@@ -16,23 +16,23 @@
             </div>
           </div>
           <div
-            class="absolute z-40 bg-[#aee8ff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
+            class="absolute z-40 bg-[#ffffff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
             :class="'speech-bubble' + index"
           >
             <p></p>
           </div>
           <div
-            class="absolute z-40 bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] right-[-20px] after:absolute after:top-0 after:left-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-l-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center hidden"
+            class="absolute z-40 bg-[#ffffff] w-[80px] min-h-[60px] rounded-full bottom-[30px] right-[-20px] after:absolute after:top-0 after:left-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-l-0 after:mt-[-10px] after:border-b-[#ffffff] after:w-0 after:h-0 flex justify-center items-center hidden"
             :class="'emoticon-bubble' + index"
           >
             <img src="" alt="" class="object-scale-down w-10 h-10" />
           </div>
           <div>{{ props.participants[order].name }}</div>
           <p></p>
-          <div class="flex">
-            <img :src="HeartIcon" alt="하트" />
+          <div class="flex rounded-full bg-black p-1 text-white">
+            <img :src="StarIcon" alt="하트" class="w-4" />
             <div
-              class="rounded-full bg-gray-400 w-5 h-5 text-center leading-[1.25rem] ml-1"
+              class=" w-5 h-5 text-center leading-[1.25rem] ml-1"
             >
               {{ 4 }}
             </div>
@@ -44,7 +44,7 @@
         :key="n"
       >
         <div
-          class="flex flex-col justify-center items-center"
+          class="flex flex-col justify-center items-center ml-3"
           v-if="n % 2 == 0"
         >
           <div
@@ -64,12 +64,14 @@
         @next-turn="nextTurn"
         :myTurn="myTurn"  
         :currTurn="currTurn"
+        :storyCards="storyCards"
+        :endingCard="endingCard"
       />
     </div>
-    <div class="h-full row-span-2 grid grid-rows-3">
+    <div class="h-full row-span-2 grid grid-rows-3 justify-end">
       <template v-for="(order, index) in props.inGameOrder" :key="order">
         <div
-          class="flex flex-col justify-center items-center relative"
+          class="flex flex-col justify-center items-center relative mr-3"
           v-if="index % 2 != 0"
         >
         <div class="w-28 h-28 relative">
@@ -81,23 +83,23 @@
           </div>
         </div>
           <div
-            class="absolute z-40 bg-[#aee8ff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
+            class="absolute z-40 bg-[#ffffff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
             :class="'speech-bubble' + index"
           >
             <p></p>
           </div>
           <div
-            class="absolute z-40 bg-[#aee8ff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#aee8ff] after:w-0 after:h-0 flex justify-center items-center hidden"
+            class="absolute z-40 bg-[#ffffff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#ffffff] after:w-0 after:h-0 flex justify-center items-center hidden"
             :class="'emoticon-bubble' + index"
           >
             <img src="" alt="" class="object-scale-down w-10 h-10" />
           </div>
           <div>{{ props.participants[order].name }}</div>
           <p></p>
-          <div class="flex">
-            <img :src="HeartIcon" alt="하트" />
+          <div class="flex rounded-full bg-black p-1 text-white">
+            <img :src="StarIcon" alt="하트" class="w-4" />
             <div
-              class="rounded-full bg-gray-400 w-5 h-5 text-center leading-[1.25rem] ml-1"
+              class=" w-5 h-5 text-center leading-[1.25rem] ml-1"
             >
               {{ 4 }}
             </div>
@@ -109,7 +111,7 @@
         :key="n"
       >
         <div
-          class="flex flex-col justify-center items-center"
+          class="flex flex-col justify-center items-center mr-3"
           v-if="n % 2 != 0"
         >
           <div
@@ -127,7 +129,7 @@
 
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
-import { HeartIcon } from "@/assets";
+import { StarIcon } from "@/assets";
 import {
   InGameControl,
   InGameContent,
@@ -182,7 +184,13 @@ const props = defineProps({
   },
   bookContents: {
     Type: Array,
-  }
+  },
+  storyCards:{
+    Type: Array,
+  },
+  endingCard:{
+    Type: Object,
+},
 });
 
 watch(
