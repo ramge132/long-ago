@@ -17,6 +17,8 @@
           :peerId="peerId"
           :inProgress="inProgress"
           :bookContents="bookContents"
+          :storyCards="storyCards"
+          :endingCard="endingCard"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
@@ -26,7 +28,7 @@
       </Transition>
     </RouterView>
     <div class="overlay absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center scale-0">
-      <img :src="currTurns" alt="">
+      <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
     <!-- <div class="absolute top-0 left-0 rounded-lg w-full h-full">
