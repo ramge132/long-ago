@@ -13,10 +13,11 @@ export { default as Mode1 } from "./images/modes/mode1.svg";
 export { default as Mode2 } from "./images/modes/mode2.svg";
 
 // icons
+export { default as RefreshIcon } from "./icons/refresh.svg"
 export { default as StartIcon } from "./icons/start.svg";
 export { default as InviteIcon } from "./icons/invite.svg";
 export { default as PlayIcon } from "./icons/play.svg";
-export { default as HeartIcon } from "./icons/heart.svg";
+export { default as StarIcon } from "./icons/Star.svg";
 export { default as RerollIcon } from "./icons/reroll.svg";
 export { default as EmoticonIcon } from "./icons/emoticon.svg";
 export { default as SendIcon } from "./icons/send.svg";
