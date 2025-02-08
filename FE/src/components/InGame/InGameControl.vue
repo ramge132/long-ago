@@ -89,7 +89,10 @@
         </div>
         </div>
       </div>
-      <div class="w-10 h-24 bg-[#ffffffdb] rounded-full flex flex-col items-center justify-center text-center text-[10px]">
+      <div
+        class="w-10 h-24 bg-[#ffffffdb] rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer"
+        @click="cardReroll"
+      >
         <img :src="RefreshIcon" alt="" class="w-6">
         <p>결말<br>새로고침</p>
         <p class="text-xl">{{ 3 }}</p>
@@ -144,7 +147,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["broadcastMessage", "nextTurn"]);
+const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll"]);
 
 const sendChat = () => {
   if (message.value.trim()) {
@@ -195,6 +198,10 @@ window.addEventListener("keydown", (e) => {
 
 const changeMode = () => {
   currChatModeIdx.value = (currChatModeIdx.value + 1) % chatMode.value.length;
+};
+
+const cardReroll = () => {
+  emit("cardReroll");
 };
 </script>
 

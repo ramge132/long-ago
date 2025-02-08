@@ -62,6 +62,7 @@
       <InGameControl
         @broadcast-message="broadcastMessage"
         @next-turn="nextTurn"
+        @card-reroll="cardReroll"
         :myTurn="myTurn"  
         :currTurn="currTurn"
         :storyCards="storyCards"
@@ -147,7 +148,7 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn"]);
+const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll"]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
@@ -156,6 +157,10 @@ const broadcastMessage = (data) => {
 const nextTurn = (data) => {
   emit("nextTurn", data);
 };
+
+const cardReroll = () => {
+  emit("cardReroll");
+}
 
 const props = defineProps({
   roomConfigs: {

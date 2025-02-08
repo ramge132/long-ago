@@ -24,6 +24,7 @@
           @game-start="gameStart"
           @game-exit="gameStarted = false"
           @next-turn="nextTurn"
+          @card-reroll="cardReroll"
         />
       </Transition>
     </RouterView>
@@ -496,20 +497,20 @@ const gameStart = async (data) => {
   inGameOrder.value = data.order;
 
   // 게임 방 생성
-  // try {
-  //   const response = await createGame({
-  //     bossId: peerId.value,
-  //     player: participants.value.map((p) => p.id),
-  //     drawingStyle: roomConfigs.value.currStyle,
-  //   })
+  try {
+    const response = await createGame({
+      bossId: peerId.value,
+      player: participants.value.map((p) => p.id),
+      drawingStyle: roomConfigs.value.currStyle,
+    })
 
-  //   gameID.value = response.data.data.gameId;
-  //   storyCards.value = response.data.data.status.storyCards;
-  //   endingCard.value = response.data.data.status.endingCard;
-  // } catch (error) {
-  //   console.log(error);
-  //   return;
-  // }
+    gameID.value = response.data.data.gameId;
+    storyCards.value = response.data.data.status.storyCards;
+    endingCard.value = response.data.data.status.endingCard;
+  } catch (error) {
+    console.log(error);
+    // return;
+  }
 
   connectedPeers.value.forEach((peer) => {
     sendMessage(
@@ -635,6 +636,12 @@ const nextTurn = async (data) => {
     await showOverlay('whoTurn');
     inProgress.value = true;
   }
+};
+
+const cardReroll = async () => {
+  const response = await endingCardReroll();
+
+  endingCard.value = response.data.data.status.endingCard;
 };
 </script>
 <style>
