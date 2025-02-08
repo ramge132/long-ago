@@ -3,12 +3,13 @@
     <div class="book absolute top-0">
       <div class="pages" ref="pagesRef">
         <div
-          class="page cursor-pointer flex flex-col items-center justify-center text-gray-300 text-2xl"
+          class="page cursor-pointer flex flex-col items-center justify-center text-[#fee09e] text-4xl font-katuri"
           :class="{ flipped: isFlipped(0) }"
           @click="handlePageClick(0)"
+          style="text-shadow: -1px 0px #8a622a, 0px 1px #8a622a, 1px 0px #8a622a, 0px -1px #8a622a;"
           :style="{ zIndex: calculateZIndex(0) }"
+          v-html="`아주 먼<br>옛날..<br>`"
         >
-          Long Ago..
         </div>
         <template
           v-for="(content, index) in bookContents"
