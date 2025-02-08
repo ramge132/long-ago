@@ -7,11 +7,13 @@
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 == 0"
         >
-          <img :src="props.participants[order].image" class="w-28 h-28 z-10" alt="프로필" />
-          <div
-            class="rounded-full w-24 h-24 absolute top-10 z-0"
-            :class="currTurn === index ? 'sun' : ''"
-            >
+          <div class="w-28 h-28 relative">
+            <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
+            <div
+              class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 bottom-1 z-0"
+              :class="currTurn === index ? 'sun' : ''"
+              >
+            </div>
           </div>
           <div
             class="absolute z-40 bg-[#aee8ff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
@@ -54,7 +56,9 @@
       </template>
     </div>
     <div class="col-span-3 row-span-2 grid grid-rows-5">
-      <InGameContent />
+      <InGameContent
+        :bookContents="bookContents"
+      />
       <InGameControl
         @broadcast-message="broadcastMessage"
         @next-turn="nextTurn"
@@ -68,12 +72,14 @@
           class="flex flex-col justify-center items-center relative"
           v-if="index % 2 != 0"
         >
-          <img :src="props.participants[order].image" class="w-28 h-28 z-10" alt="프로필" />
+        <div class="w-28 h-28 relative">
+          <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
           <div
-            class="rounded-full w-24 h-24 absolute top-10 z-0"
+            class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 bottom-1 z-0"
             :class="currTurn === index ? 'sun' : ''"
             >
           </div>
+        </div>
           <div
             class="absolute z-40 bg-[#aee8ff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#aee8ff] after:w-0 after:h-0 pl-3 hidden"
             :class="'speech-bubble' + index"
@@ -174,6 +180,9 @@ const props = defineProps({
   myTurn: {
     Type: Number,
   },
+  bookContents: {
+    Type: Array,
+  }
 });
 
 watch(

@@ -16,6 +16,7 @@
           :myTurn="myTurn"
           :peerId="peerId"
           :inProgress="inProgress"
+          :bookContents="bookContents"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
@@ -85,6 +86,10 @@ const storyCards = ref([]);
 const endingCard = ref({});
 // 턴 오버레이 애니메이션 지연
 const overlayTimeout = ref(null);
+// 책 리스트
+const bookContents = ref([
+  { content: "", image: null }
+]);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -437,6 +442,16 @@ onMounted(async () => {
   } catch (error) {
     console.error("Peer initialization failed:", error);
   }
+
+
+  // 책 추가 테스트
+  let count = 1;
+  setInterval(() => {
+    if (bookContents.value.length != 5) {
+      addBookContent({ content: `${count}번 글`, image: `${count}번째이미지` });
+      count++;
+    }
+  }, 5000);
 });
 
 // 퇴장 관련련
@@ -561,12 +576,28 @@ const showOverlay = (message) => {
   });
 }
 
+// 책 데이터 추가
+const addBookContent = (newContent) => {
+  const lastIndex = bookContents.value.length - 1;
+  bookContents.value.splice(lastIndex, 0, {
+    content: newContent.content || "",
+    image: newContent.image || null
+  });
+  
+  if (bookContents.value[bookContents.value.length - 1].content !== "" || 
+      bookContents.value[bookContents.value.length - 1].image !== null) {
+    bookContents.value.push({ content: "", image: null });
+  }
+};
+
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
   if (data?.prompt) {
     // 프롬프트 제출 api 들어가야 함
     // 시간 멈춰야 함
     // 투표 모달 띄워야 함
+    // 프롬프트 책에 추가
+    addBookContent({ content: data.prompt, image: null });
     
     
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
@@ -583,7 +614,8 @@ const nextTurn = async (data) => {
       }
     });
     
-    // 나의 책에 프롬프트와 이미지 넣기
+    // 나의 책에 이미지 넣기
+    bookContents.value[-2].image = imageBlob;
     console.log(data);
   } else if(currTurn.value === myTurn.value) {
     // 턴 종료 트리거 송신하기
