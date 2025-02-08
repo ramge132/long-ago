@@ -12,5 +12,5 @@ public class FilteringRequest {
     private String userId;
     private String gameId;
     private int cardId;
-    private String prompt;
+    private String userPrompt;
 }

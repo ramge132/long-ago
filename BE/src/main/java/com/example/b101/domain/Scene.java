@@ -16,7 +16,6 @@ public class Scene {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-
     @ManyToOne
     @JoinColumn(name = "BOOK_ID", nullable = false)
     private Book book;
