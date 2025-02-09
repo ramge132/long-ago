@@ -81,7 +81,7 @@
       >
         <img :src="RefreshIcon" alt="" class="w-6">
         <p>결말<br>새로고침</p>
-        <p class="text-xl">{{ 3 }}</p>
+        <p class="text-xl">{{ rerollCount }}</p>
       </div>
     </div>
   </div>
@@ -98,6 +98,7 @@ import toast from "@/functions/toast";
 const userStore = useUserStore();
 const toggleEmoticon = ref(false);
 const message = ref("");
+const rerollCount = ref(3);
 const emoticons = ref(
   [
     "laugh",
@@ -186,7 +187,12 @@ const changeMode = () => {
 };
 
 const cardReroll = () => {
-  emit("cardReroll");
+  if (rerollCount.value) {
+    emit("cardReroll");
+    rerollCount.value--;
+  } else {
+    toast.errorToast("모두 사용했습니다!");
+  }
 };
 </script>
 
