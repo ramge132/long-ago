@@ -3,15 +3,13 @@ package com.example.b101.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "story_card_variants")
 @Builder
 @AllArgsConstructor
@@ -28,4 +26,8 @@ public class StoryCardVariants{
 
     @Column(nullable = false)
     private String variant;
+
+
+
+
 }

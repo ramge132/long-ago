@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@RedisHash(value = "Game", timeToLive = 3600) //TTL 1시간 설정
+@RedisHash(value = "Game")
 public class Game implements Serializable {
 
     @Id  // redis에서 Key 역할을 할 필드
