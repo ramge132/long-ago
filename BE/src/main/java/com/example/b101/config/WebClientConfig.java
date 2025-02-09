@@ -18,7 +18,7 @@ public class WebClientConfig {
         //WebClient의 응답 제한 시간을 1분으로 지정 (기본 값은 30초)
         return builder
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
-                .baseUrl("http://192.165.134.27:10769")
+                .baseUrl("http://{SERVER_HOST}:{PORT}")
                 .clientConnector(new ReactorClientHttpConnector(HttpClient.create().responseTimeout(Duration.ofMinutes(1))))
                 .build();
     }
