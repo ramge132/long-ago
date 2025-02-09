@@ -13,7 +13,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 
 import java.util.List;
 
@@ -52,15 +51,8 @@ public class CachingService {
     @Cacheable(value = "cardVariantsCache", key = "'allVariants'")
     public CachingVariants getCardVariantsAll() {
 
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-
         log.info("Fetching card variants from database");
         List<StoryCardVariants> entities = storyCardVariantsRepository.findAll();
-
-        stopWatch.stop();
-        log.info("Execution time (ms): {}", stopWatch.getTotalTimeMillis());
-
 
         return new CachingVariants(entities);
     }
