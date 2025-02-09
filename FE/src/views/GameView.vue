@@ -254,8 +254,8 @@ const setupConnection = (conn) => {
             gameId: gameID.value,
           })
 
-          storyCards.value = response.data.storyCards;
-          endingCard.value = response.data.endingCard;
+          storyCards.value = response.data.data.storyCards;
+          endingCard.value = response.data.data.endingCard;
 
           await showOverlay('start')
           setTimeout(async () => {
@@ -285,6 +285,15 @@ const setupConnection = (conn) => {
         }
         break;
       
+      case "sendPrompt":
+        console.log(data.prompt)
+        addBookContent({ content: data.prompt, image: null });
+        break;
+
+      case "sendImage":
+        console.log(bookContents.value)
+        bookContents.value[bookContents.value.length - 2].image = data.imageBlob;
+        break;
     }
   });
 
@@ -445,16 +454,6 @@ onMounted(async () => {
   } catch (error) {
     console.error("Peer initialization failed:", error);
   }
-
-
-  // 책 추가 테스트
-  let count = 1;
-  setInterval(() => {
-    if (bookContents.value.length != 5) {
-      addBookContent({ content: `${count}번 글`, image: `${count}번째이미지` });
-      count++;
-    }
-  }, 5000);
 });
 
 // 퇴장 관련련
@@ -597,12 +596,22 @@ const addBookContent = (newContent) => {
 const nextTurn = async (data) => {
   if (data?.prompt) {
     // 프롬프트 제출 api 들어가야 함
-    // 시간 멈춰야 함
-    // 투표 모달 띄워야 함
-    // 프롬프트 책에 추가
+    // 참가자들에게 프롬프트 전달
+    connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage(
+          "sendPrompt",
+          { prompt: data.prompt },
+          peer.connection
+        )
+      }
+    });
+    // 프롬프트 책에 추가 (프롬프트 검증 api)
     addBookContent({ content: data.prompt, image: null });
+
+    // 투표 모달 띄워야 함
     
-    
+    // 해당 프롬프트로 이미지 생성 요청 (api)
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
     const imageBlob = 'test';
     
@@ -618,9 +627,12 @@ const nextTurn = async (data) => {
     });
     
     // 나의 책에 이미지 넣기
-    bookContents.value[-2].image = imageBlob;
-    console.log(data);
-  } else if(currTurn.value === myTurn.value) {
+    console.log(bookContents.value[-2]);
+    bookContents.value[bookContents.value.length - 2].image = imageBlob;
+
+    // 프롬프트 입력 시간초과로 턴 넘기는 경우
+  }
+  if (currTurn.value === myTurn.value) {
     // 턴 종료 트리거 송신하기
     currTurn.value = (currTurn.value + 1) % participants.value.length;
     connectedPeers.value.forEach((peer) => {
@@ -639,9 +651,12 @@ const nextTurn = async (data) => {
 };
 
 const cardReroll = async () => {
-  const response = await endingCardReroll();
+  const response = await endingCardReroll({
+    userId: peerId.value,
+    gameId: gameID.value,
+  });
 
-  endingCard.value = response.data.data.status.endingCard;
+  endingCard.value.content = response.data.data.content;
 };
 </script>
 <style>
