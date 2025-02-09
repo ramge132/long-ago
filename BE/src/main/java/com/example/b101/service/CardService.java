@@ -16,12 +16,12 @@ import java.util.List;
 @AllArgsConstructor
 public class CardService {
 
-    private final EndingCardRepository endingCardRepository;
     private final StoryCardRepository storyCardRepository;
+    private final CachingService cachingService;
 
 
     public List<EndingCard> shuffleEndingCard() {
-        List<EndingCard> cardList = endingCardRepository.findAll();
+        List<EndingCard> cardList = cachingService.getEndingCardAll().getEndingCards();
         Collections.shuffle(cardList);
 
         return cardList;
@@ -46,7 +46,10 @@ public class CardService {
     }
 
     private List<StoryCard> fetchAndShuffleCards(String attribute,int playerCnt) {
-        List<StoryCard> cards = new ArrayList<>(storyCardRepository.findStoryCardsByAttribute(attribute));
+        List<StoryCard> cards = new ArrayList<>(cachingService.getStoryCardAll().getStoryCards()
+                .stream()
+                .filter(storyCard -> storyCard.getAttribute().equals(attribute))
+                .toList());
         Collections.shuffle(cards);
         return cards.subList(0, playerCnt);
     }

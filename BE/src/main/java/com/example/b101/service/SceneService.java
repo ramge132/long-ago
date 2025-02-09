@@ -3,7 +3,6 @@ package com.example.b101.service;
 import com.example.b101.cache.Game;
 import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
-import com.example.b101.domain.PlayerStatus;
 import com.example.b101.dto.GenerateSceneRequest;
 import com.example.b101.dto.SceneRequest;
 import com.example.b101.repository.GameRepository;
@@ -12,15 +11,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientException;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -44,16 +44,16 @@ public class SceneService {
         }
 
         //해당 게임 데이터의 저장된 플에이어 중의 userId가 없다면 fail
-        Set<String> playerUserIds = game.getPlayerStatuses()
+        boolean userExists = game.getPlayerStatuses()
                 .stream()
-                .map(PlayerStatus::getUserId)
-                .collect(Collectors.toSet());
+                .anyMatch(playerStatus -> playerStatus.getUserId().equals(sceneRequest.getUserId()));
 
-        if (!playerUserIds.contains(sceneRequest.getUserId())) {
+        if (!userExists) {
             return ApiResponseUtil.failure("해당 게임에 존재하지 않는 userId입니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
+
 
 
 
@@ -67,20 +67,20 @@ public class SceneService {
 
         // GPU 서버와 통신하여 데이터 받기
         byte[] generateImage = null;
-//        try {
-//            generateImage = webClient.post()  //post형식으로 webClient의 요청을 보냄.
-//                    .uri("/generate").accept(MediaType.IMAGE_PNG) //이미지 파일로 받는다.
-//                    .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
-//                    .retrieve()
-//                    .onStatus(HttpStatusCode::is4xxClientError, response ->
-//                            response.createException().flatMap(Mono::error))    //GPU 서버에서 422에러를 응답하면 PROMPT가 누락
-//                    .bodyToMono(byte[].class) //응답의 본문(body)만 가져옴.
-//                    .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
-//        } catch (WebClientException e) { //GPU 서버에서 에러 반환 시
-//            return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생",
-//                    HttpStatus.INTERNAL_SERVER_ERROR,
-//                    request.getRequestURI());
-//        }
+        try {
+            generateImage = webClient.post()  //post형식으로 webClient의 요청을 보냄.
+                    .uri("/generate").accept(MediaType.IMAGE_PNG) //이미지 파일로 받는다.
+                    .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is4xxClientError, response ->
+                            response.createException().flatMap(Mono::error))    //GPU 서버에서 422에러를 응답하면 PROMPT가 누락
+                    .bodyToMono(byte[].class) //응답의 본문(body)만 가져옴.
+                    .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
+        } catch (WebClientException e) { //GPU 서버에서 에러 반환 시
+            return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생",
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    request.getRequestURI());
+        }
 
         SceneRedis scene = SceneRedis.builder()
                 .id(UUID.randomUUID().toString())
@@ -136,8 +136,6 @@ public class SceneService {
                     HttpStatus.NO_CONTENT,
                     request.getRequestURI());
         }
-
-        log.info(sceneRedisList.toString());
 
         return ApiResponseUtil.success(sceneRedisList,
                 "해당 game의 모든 scene을 가져왔습니다.",

@@ -41,14 +41,6 @@ public class GameRepoImpl implements GameRepository {
     public PlayerStatus getPlayerStatus(String gameId, String playerId) {
         Game game = findById(gameId);
 
-        List<PlayerStatus> playerStatuses = game.getPlayerStatuses();
-
-        for (PlayerStatus playerStatus : playerStatuses) {
-            if(playerStatus.getUserId().equals(playerId)) {
-                return playerStatus;
-            }
-        }
-
-        return null;
+        return game.getPlayerStatuses().stream().filter(playerStatus -> playerStatus.getUserId().equals(playerId)).findFirst().orElse(null);
     }
 }

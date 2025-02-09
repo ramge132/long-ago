@@ -10,7 +10,4 @@ import java.util.List;
 @Repository
 public interface StoryCardRepository extends JpaRepository<StoryCard, Integer> {
 
-    List<StoryCard> findStoryCardsByAttribute(String attribute);
-
-    StoryCard findStoryCardById(int id);
 }
