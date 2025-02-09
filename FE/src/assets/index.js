@@ -28,6 +28,7 @@ export { default as VoteDownRightIcon } from "./icons/down_right.svg";
 
 // musics
 export { default as LobbyMusic } from "./musics/backgroundMusic.mp3";
+export { default as RankingMusic } from "./musics/ranking.mp3";
 export { default as TurningPage } from "./musics/turning_page_2.mp3";
 
 // inGame
