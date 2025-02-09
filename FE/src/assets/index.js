@@ -23,6 +23,8 @@ export { default as SendIcon } from "./icons/send.svg";
 export { default as ChangeIcon } from "./icons/change.svg";
 export { default as MyInfo } from "./icons/myinfo.svg";
 export { default as VoteUpLeftIcon } from "./icons/up_left.svg";
+export { default as VoteUpRightIcon } from "./icons/up_right.svg";
+export { default as VoteDownLeftIcon } from "./icons/down_left.svg";
 export { default as VoteDownRightIcon } from "./icons/down_right.svg";
 
 // musics
