@@ -5,23 +5,28 @@ import com.example.b101.common.ApiResponseUtil;
 import com.example.b101.domain.PlayerStatus;
 import com.example.b101.domain.StoryCard;
 import com.example.b101.domain.StoryCardVariants;
+import com.example.b101.dto.CachingVariants;
 import com.example.b101.dto.FilteringRequest;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.StoryCardVariantsRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FilteringService {
 
     private final StoryCardVariantsRepository storyCardVariantsRepository;
     private final GameRepository gameRepository;
+    private final CachingService cachingService;
 
     public ResponseEntity<?> findCardVariantsByCardId(FilteringRequest filteringRequest, HttpServletRequest request) {
         // 게임 존재 여부 확인
@@ -44,11 +49,14 @@ public class FilteringService {
                     request.getRequestURI());
         }
 
+        List<StoryCardVariants> storyCardVariantsList = cachingService.getCardVariantsAll().getStoryCardVariants();
 
         // 카드 id로 변형어 가져오기
-        List<String> variants = storyCardVariantsRepository.findByStoryCardId(filteringRequest.getCardId()).stream()
+        List<String> variants = storyCardVariantsList.stream()
+                .filter(variant -> variant.getStoryCard().getId() == filteringRequest.getCardId())
                 .map(StoryCardVariants::getVariant)
                 .toList();
+
 
         // 플레이어 상태의 모든 StoryCard id 가져오기
         List<Integer> playerStoryCardIds = playerStatus.getStoryCards().stream()
@@ -57,7 +65,8 @@ public class FilteringService {
 
 
         // 플레이어가 가진 모든 카드의 변형어들을 가져옴.
-        List<String> allVariants = storyCardVariantsRepository.findAllByStoryCardIdIn(playerStoryCardIds).stream()
+        List<String> allVariants = storyCardVariantsList.stream()
+                .filter(variant -> playerStoryCardIds.contains(variant.getStoryCard().getId()))
                 .map(StoryCardVariants::getVariant)
                 .toList();
 
@@ -85,4 +94,7 @@ public class FilteringService {
                 HttpStatus.OK,
                 request.getRequestURI());
     }
+
+
+
 }

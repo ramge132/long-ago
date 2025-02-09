@@ -22,8 +22,10 @@ public class Game implements Serializable {
     //게임에서 쓰이는 게임 개별 endingCardList
     private List<EndingCard> endingCardlist;
 
+    //플에이어들의 게임데이터 정보
     private List<PlayerStatus> playerStatuses;
 
+    //작화 스타일
     private String drawingStyle;
 
 

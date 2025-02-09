@@ -1,6 +1,7 @@
 package com.example.b101.repository;
 
 import com.example.b101.domain.StoryCardVariants;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -13,5 +14,6 @@ public interface StoryCardVariantsRepository extends JpaRepository<StoryCardVari
 
     //해당하는 카드 id들의 모든 변형어들을 가져옴.
     List<StoryCardVariants> findAllByStoryCardIdIn(List<Integer> storyCardIds);
+
 
 }

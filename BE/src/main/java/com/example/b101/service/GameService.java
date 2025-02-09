@@ -1,13 +1,16 @@
 package com.example.b101.service;
 
 import com.example.b101.cache.Game;
+import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
+import com.example.b101.domain.Book;
 import com.example.b101.domain.EndingCard;
 import com.example.b101.domain.PlayerStatus;
 import com.example.b101.domain.StoryCard;
 import com.example.b101.dto.GameRequest;
 import com.example.b101.dto.GameResponse;
 import com.example.b101.repository.GameRepository;
+import com.example.b101.repository.RedisSceneRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +27,7 @@ public class GameService {
 
     private final GameRepository gameRepository;
     private final CardService cardService;
+    private final RedisSceneRepository sceneRepository;
 
 
     /**
@@ -141,6 +145,17 @@ public class GameService {
                     , HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
+        List<SceneRedis> sceneRedisList = sceneRepository.findAllByGameId(gameId);
+
+
+
+
+
+
+
+
+        sceneRepository.deleteAllByGameId(gameId); //redis에 저장됐던 scene 데이터들 삭제
+
         //게임 데이터 삭제
         gameRepository.delete(game);
         
@@ -177,7 +192,7 @@ public class GameService {
                 //game data를 업데이트 한다.
                 gameRepository.update(game);
 
-                return ApiResponseUtil.success(playerStatus,
+                return ApiResponseUtil.success(playerStatus.getEndingCard(),
                         "EndingCard 리롤 성공",
                         HttpStatus.OK,
                         request.getRequestURI());
