@@ -33,4 +33,16 @@ public class SceneController {
         return filteringService.findCardVariantsByCardId(filteringRequest,request);
     }
 
+
+    @GetMapping
+    public ResponseEntity<?> getAllScene(@RequestParam String gameId,HttpServletRequest request) {
+        return sceneService.getScenesByGameId(gameId,request);
+    }
+
+
+    @DeleteMapping
+    public ResponseEntity<?> deleteScene(@RequestParam String gameId,HttpServletRequest request) {
+        return sceneService.deleteScene(gameId,request);
+    }
+
 }

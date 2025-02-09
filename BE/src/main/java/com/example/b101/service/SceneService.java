@@ -12,18 +12,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -65,30 +58,29 @@ public class SceneService {
 
 
         //GPU 서버에 요청을 보내기 위한 객체 생성
-        //작화, 직전에 저장된 요약된 스토리, 사용자 프롬포트, 직전의 생성된 이미지 프롬포트
         GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
-                .drawingStyle(game.getDrawingStyle()) //작화
+                .gameId(sceneRequest.getGameId()) //게임 아이디
+                .drawingStyle(game.getDrawingStyle()) //작화 스타일
                 .userPrompt(sceneRequest.getUserPrompt()) //사용자 프롬포트
                 .build();
 
 
         // GPU 서버와 통신하여 데이터 받기
-        byte[] generateImage;
-        try {
-            generateImage = webClient.post()  //post형식으로 webClient의 요청을 보냄.
-                    .uri("/generate").accept(MediaType.APPLICATION_JSON) //JSON 타입을 받겠다.
-                    .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
-                    .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, response ->
-                            response.createException().flatMap(Mono::error))
-                    .bodyToMono(byte[].class) //응답의 본문(body)만 가져옴.
-                    .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
-        } catch (WebClientResponseException e) { //GPU 서버에서 에러 반환 시
-            log.error(e.getResponseBodyAsString());
-            return ApiResponseUtil.failure("GPU 서버 통신 중 data 누락 발생",
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    request.getRequestURI());
-        }
+        byte[] generateImage = null;
+//        try {
+//            generateImage = webClient.post()  //post형식으로 webClient의 요청을 보냄.
+//                    .uri("/generate").accept(MediaType.IMAGE_PNG) //이미지 파일로 받는다.
+//                    .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
+//                    .retrieve()
+//                    .onStatus(HttpStatusCode::is4xxClientError, response ->
+//                            response.createException().flatMap(Mono::error))    //GPU 서버에서 422에러를 응답하면 PROMPT가 누락
+//                    .bodyToMono(byte[].class) //응답의 본문(body)만 가져옴.
+//                    .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
+//        } catch (WebClientException e) { //GPU 서버에서 에러 반환 시
+//            return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생",
+//                    HttpStatus.INTERNAL_SERVER_ERROR,
+//                    request.getRequestURI());
+//        }
 
         SceneRedis scene = SceneRedis.builder()
                 .id(UUID.randomUUID().toString())
@@ -102,21 +94,28 @@ public class SceneService {
         redisSceneRepository.save(scene);
 
 
-        BufferedImage bufferedImage;
-        try{
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(generateImage);
-            bufferedImage = ImageIO.read(inputStream);
-        } catch (IOException e){
-            return ApiResponseUtil.failure("이미지 전송 실패",
-                    HttpStatus.INTERNAL_SERVER_ERROR,
+
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.IMAGE_PNG) // PNG 형식으로 응답
+                .body(generateImage);
+    }
+
+
+    public ResponseEntity<?> deleteScene(String gameId, HttpServletRequest request) {
+        List<SceneRedis> scenes = redisSceneRepository.findAllByGameId(gameId);
+
+        if(scenes.isEmpty()) {
+            return ApiResponseUtil.failure("아직 저장된 scene이 없습니다.",
+                    HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
 
+        SceneRedis lastScene = scenes.get(scenes.size() - 1);
 
-        return ApiResponseUtil.success(bufferedImage,
-                "Scene 저장 완료",
-                HttpStatus.CREATED,
-                request.getRequestURI());
+        redisSceneRepository.delete(lastScene);
+
+        return ApiResponseUtil.success(lastScene,"투표 결과에 따라 삭제됨",HttpStatus.OK,request.getRequestURI());
     }
 
 
@@ -137,6 +136,8 @@ public class SceneService {
                     HttpStatus.NO_CONTENT,
                     request.getRequestURI());
         }
+
+        log.info(sceneRedisList.toString());
 
         return ApiResponseUtil.success(sceneRedisList,
                 "해당 game의 모든 scene을 가져왔습니다.",
