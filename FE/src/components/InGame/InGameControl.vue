@@ -4,34 +4,20 @@
       <div class="flex flex-col justify-center items-center w-3/4 mr-3">
         <div class="flex justify-between w-full">
           <div
-            v-for="index in 4"
-            :key="index"
-            class="relative"
-          >
-            <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
-            <div class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">비밀통로</div>
-          </div>
-          <!-- api 적용 후 아래로 변경 -->
-          <!-- <div
             v-for="(card, index) in storyCards"
             :key="index"
             class="relative"
           >
             <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
             <div class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">{{ card.keyword }}</div>
-          </div>-->
+          </div>
         </div>
       </div>
       <div class="flex flex-col flex-1 justify-center items-center">
         <div class="relative">
           <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-28">
-          <div class="endingcard w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e] text-xl">여생을 눈이 먼 채 살았습니다.</div>
-        </div>
-        <!-- api 적용 후 아래로 변경 -->
-        <!-- <div class="relative">
-          <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-28">
           <div class="endingcard w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e] text-xl">{{ endingCard.content }}</div>
-        </div> -->
+        </div>
       </div>
     </div>
     <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full">
@@ -76,7 +62,7 @@
         >
           <img :src="EmoticonIcon" alt="감정표현" class="w-6" />
         </button>
-        <div class="rounded-full w-10 bg-[#ffffffa0] mx-1 absolute bottom-2 overflow-hidden emoticon" :class="toggleEmoticon ? 'max-h-[520px]' : 'max-h-0'">
+        <div class="rounded-full w-10 bg-[#ffffffa0] absolute bottom-2 overflow-hidden emoticon" :class="toggleEmoticon ? 'max-h-[520px]' : 'max-h-0'">
           <button
           class="rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md z-0"
           v-for="(emoticon, index) in emoticons"
@@ -159,7 +145,6 @@ const sendChat = () => {
   }
 };
 const sendprompt = () => {
-  console.log(props.myTurn, props.currTurn);
   if (props.myTurn !== props.currTurn) {
     toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
   } else {

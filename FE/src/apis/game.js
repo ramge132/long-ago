@@ -52,10 +52,16 @@ export const deleteGame = async (data) => {
 export const endingCardReroll = async (data) => {
   try {
     const params = data;
-    const response = await apiClient.patch(import.meta.env.VITE_GAME + import.meta.env.VITE_GAME_SHUFFLE, {params});
+    const response = await apiClient.patch(import.meta.env.VITE_GAME + import.meta.env.VITE_GAME_SHUFFLE,
+      {},
+      { params: { gameId: data.gameId, userId: data.userId } }
+    );
     return response;
   } catch (error) {
     console.log(error);
     throw error;
   }
 }
+
+
+// 이미지 생성 부분
