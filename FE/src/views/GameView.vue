@@ -42,7 +42,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
@@ -52,6 +52,7 @@ import { createGame, enterGame, deleteGame, endingCardReroll } from "@/apis/game
 const userStore = useUserStore();
 const gameStore = useGameStore();
 const route = useRoute();
+const router = useRouter();
 // 내 피어 객체
 const peer = ref(null);
 const peerId = ref("");
@@ -263,6 +264,8 @@ const setupConnection = (conn) => {
 
           storyCards.value = response.data.data.storyCards;
           endingCard.value = response.data.data.endingCard;
+
+          router.push("/game/play");
 
           await showOverlay('start')
           setTimeout(async () => {
@@ -583,9 +586,6 @@ const onRoomConfiguration = (data) => {
 // 게임 진행 관련 부분 //
 ///////////////////////
 const gameStart = async (data) => {
-  gameStarted.value = data.gameStarted;
-  inGameOrder.value = data.order;
-
   // 게임 방 생성
   try {
     const response = await createGame({
@@ -593,7 +593,7 @@ const gameStart = async (data) => {
       player: participants.value.map((p) => p.id),
       drawingStyle: roomConfigs.value.currStyle,
     })
-
+    
     gameID.value = response.data.data.gameId;
     storyCards.value = response.data.data.status.storyCards;
     endingCard.value = response.data.data.status.endingCard;
@@ -601,6 +601,11 @@ const gameStart = async (data) => {
     console.log(error);
     // return;
   }
+  
+  gameStarted.value = data.gameStarted;
+  inGameOrder.value = data.order;
+
+  router.push("/game/play");
 
   connectedPeers.value.forEach((peer) => {
     sendMessage(

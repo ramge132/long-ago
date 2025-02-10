@@ -262,14 +262,5 @@ watch(
   },
   { deep: true },
 );
-
-watch(
-  () => props.gameStarted,
-  () => {
-    if (props.gameStarted) {
-      router.push({ name: "InGame" });
-    }
-  },
-);
 </script>
 <style></style>
