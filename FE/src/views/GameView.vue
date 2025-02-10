@@ -66,7 +66,7 @@ const participants = ref([]);
 // 게임 설정
 const configurable = ref(false);
 const roomConfigs = ref({
-  currTurnTime: 10,
+  currTurnTime: 20,
   currCardCount: 4,
   currMode: "textToPicture",
   currStyle: "korean",
@@ -272,11 +272,19 @@ const setupConnection = (conn) => {
         });
         break;
 
-      case "nextTurn": 
+      case "nextTurn":
+        if (data.imageDelete) {
+          if (bookContents.value.length === 1) {
+            bookContents.value = [{ content: "", image: null }];
+          } else {
+            bookContents.value = bookContents.value.slice(0, -1);
+          }
+        }
         inProgress.value = false;
         currTurn.value = data.currTurn;
         await showOverlay('whoTurn');
         inProgress.value = true;
+        console.log(votings.value);
         break;
 
       case "newParticipantJoined": 
@@ -297,6 +305,7 @@ const setupConnection = (conn) => {
         prompt.value = data.prompt;
         inProgress.value = false;
         addBookContent({ content: data.prompt, image: null });
+        votings.value = [];
         break;
 
       case "sendImage":
@@ -316,6 +325,49 @@ const setupConnection = (conn) => {
             if(vote.selected == 'up') upCount++;
             else downCount++;
           });
+          if(upCount < downCount && currTurn.value === myTurn.value) {
+            // 이미지 버리는 api
+            // 내 이미지 버리기
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+            } else {
+              bookContents.value = bookContents.value.slice(0, -1);
+            }
+            // 턴 종료 트리거 송신하기
+            currTurn.value = (currTurn.value + 1) % participants.value.length;
+            connectedPeers.value.forEach((peer) => {
+              if (peer.id !== peerId.value && peer.connection.open) {
+                sendMessage(
+                  "nextTurn",
+                  { 
+                    currTurn: currTurn.value,
+                    imageDelete: true,
+                  },
+                  peer.connection
+                )
+              }
+            });
+            inProgress.value = false;
+            await showOverlay('whoTurn');
+            inProgress.value = true;
+          } else if(currTurn.value === myTurn.value) {
+            // 턴 종료 트리거 송신하기
+            currTurn.value = (currTurn.value + 1) % participants.value.length;
+            connectedPeers.value.forEach((peer) => {
+              if (peer.id !== peerId.value && peer.connection.open) {
+                sendMessage(
+                  "nextTurn",
+                  { 
+                    currTurn: currTurn.value,
+                  },
+                  peer.connection
+                )
+              }
+            });
+            inProgress.value = false;
+            await showOverlay('whoTurn');
+            inProgress.value = true;
+          }
         }
         break;
     }
@@ -631,6 +683,7 @@ const nextTurn = async (data) => {
     // 투표 모달 띄워야 함
     inProgress.value = false;
     prompt.value = data.prompt;
+    votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
     
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
@@ -652,7 +705,7 @@ const nextTurn = async (data) => {
 
     // 프롬프트 입력 시간초과로 턴 넘기는 경우
   }
-  if (currTurn.value === myTurn.value) {
+  else if (currTurn.value === myTurn.value) {
     // 턴 종료 트리거 송신하기
     currTurn.value = (currTurn.value + 1) % participants.value.length;
     connectedPeers.value.forEach((peer) => {

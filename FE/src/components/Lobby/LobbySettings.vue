@@ -10,7 +10,9 @@
           <div class="col-span-4 row-span-2 flex flex-col items-center">
             <label class="self-start">1턴 당 시간(초)</label>
             <div class="w-full flex justify-between">
-              <p v-for="n in 6" :key="n">{{ n + 9 }}</p>
+              <template v-for="n in 11" :key="n">
+                <p v-if="n % 2 != 0">{{ n + 19 }}</p>
+              </template>
             </div>
             <div
               class="range-container drop-shadow-md relative w-full h-[20px] flex justify-center items-center"
@@ -153,11 +155,11 @@ import { Mode1, Mode2, InviteIcon, PlayIcon } from "@/assets";
 
 const router = useRouter();
 const { toClipboard } = useCilpboard();
-const minTimeValue = ref(10);
-const maxTimeValue = ref(15);
-const stepTimeValue = ref(1);
+const minTimeValue = ref(20);
+const maxTimeValue = ref(30);
+const stepTimeValue = ref(2);
 const localRoomConfigs = ref({
-  currTurnTime: 10,
+  currTurnTime: 20,
   currCardCount: 4,
   currMode: "textToPicture",
   currStyle: "korean",
