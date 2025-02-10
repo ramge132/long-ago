@@ -2,19 +2,15 @@ package com.example.b101.service;
 
 import com.example.b101.cache.Game;
 import com.example.b101.common.ApiResponseUtil;
-import com.example.b101.domain.BadWord;
 import com.example.b101.domain.PlayerStatus;
 import com.example.b101.domain.StoryCard;
 import com.example.b101.domain.StoryCardVariants;
-import com.example.b101.dto.CachingVariants;
 import com.example.b101.dto.FilteringRequest;
-import com.example.b101.repository.BadWordRepository;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.StoryCardVariantsRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -29,7 +25,7 @@ public class FilteringService {
     private final StoryCardVariantsRepository storyCardVariantsRepository;
     private final GameRepository gameRepository;
     private final CachingService cachingService;
-    private final BadWordRepository badWordRepository;
+//    private final BadWordRepository badWordRepository;
 
     public ResponseEntity<?> findCardVariantsByCardId(FilteringRequest filteringRequest, HttpServletRequest request) {
         // 게임 존재 여부 확인
@@ -54,9 +50,9 @@ public class FilteringService {
 
         List<StoryCardVariants> storyCardVariantsList = cachingService.getCardVariantsAll().getStoryCardVariants();
 
-        List<String> badWords = badWordRepository.findAll().stream()
-                .map(BadWord::getWord)
-                .toList();
+//        List<String> badWords = badWordRepository.findAll().stream()
+//                .map(BadWord::getWord)
+//                .toList();
 
 
         // 카드 id로 변형어 가져오기
