@@ -190,10 +190,7 @@ public class GameService {
                                 .build())
                                 .toList();
 
-        Book book = Book.builder()
-                .scenes(sceneList)
-                .imageUrl("imageUrl")
-                .build();
+
 
 
 
