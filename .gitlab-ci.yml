@@ -249,7 +249,7 @@ deploy_test:
     - echo "DB_USERNAME_TEST=$DB_USERNAME_TEST" >> .env
     - echo "DB_PASSWORD_TEST=$DB_PASSWORD_TEST" >> .env
     - echo "REDIS_HOST_TEST=$REDIS_HOST_TEST" >> .env
-    - echo "WEBCLIENT_BASE_URL"=$WEBCLIENT_BASE_URL" >> .env
+    - echo "WEBCLIENT_BASE_URL=$WEBCLIENT_BASE_URL" >> .env
     - echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env
     - echo "S3_REGION=$S3_REGION" >> .env
     - echo "S3_CREDENTIALS_ACCESS_KEY=$S3_CREDENTIALS_ACCESS_KEY" >> .env
