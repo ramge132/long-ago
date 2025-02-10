@@ -257,13 +257,13 @@ const setupConnection = (conn) => {
       case "gameStart":
         startReceived(data).then(async () => {
           // 내 카드 받기
-          const response = await enterGame({
-            userId: peerId.value,
-            gameId: gameID.value,
-          })
+          // const response = await enterGame({
+          //   userId: peerId.value,
+          //   gameId: gameID.value,
+          // })
 
-          storyCards.value = response.data.data.storyCards;
-          endingCard.value = response.data.data.endingCard;
+          // storyCards.value = response.data.data.storyCards;
+          // endingCard.value = response.data.data.endingCard;
 
           router.push("/game/play");
 
