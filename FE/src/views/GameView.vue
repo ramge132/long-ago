@@ -537,7 +537,7 @@ onMounted(async () => {
   }
 });
 
-// 퇴장 관련련
+// 퇴장 관련
 addEventListener("beforeunload", () => {
   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
   connectedPeers.value.forEach((peer) => {
