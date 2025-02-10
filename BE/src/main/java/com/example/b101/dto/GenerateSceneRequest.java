@@ -9,12 +9,17 @@ import lombok.Data;
 public class GenerateSceneRequest {
 
     //게임 아이디
-    String gameId;
+    String session_id;
 
     //작화 스타일
-    String drawingStyle;
+    int game_mode;
 
     //사용자 프롬포트
-    String userPrompt;
+    String user_sentence;
+
+    // 0 : 진행 중 -> 삽화 생성
+    // 1 : 종료 -> 표지 생성
+    // 2 : 전원 패배 -> 생성 안함
+    int status;
 
 }

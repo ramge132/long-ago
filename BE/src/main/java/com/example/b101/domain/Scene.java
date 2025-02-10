@@ -1,8 +1,7 @@
 package com.example.b101.domain;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
@@ -10,6 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 public class Scene {
 
     @Id
@@ -35,5 +35,13 @@ public class Scene {
 
     @CreatedDate
     private LocalDateTime createdAt;
+
+
+    @Builder
+    public Scene(int sceneOrder, String userPrompt, String imageUrl) {
+        this.sceneOrder = sceneOrder;
+        this.userPrompt = userPrompt;
+        this.imageUrl = imageUrl;
+    }
 
 }
