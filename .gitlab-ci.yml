@@ -50,8 +50,8 @@ build_FE:
     - echo "VITE_USERS_SIGNIN=$VITE_USERS_SIGNIN" >> FE/.env
     - echo "VITE_GAME=$VITE_GAME" >> FE/.env
     - echo "VITE_GAME_SHUFFLE=$VITE_GAME_SHUFFLE" >> FE/.env
-    - echo "$VITE_TURN_ID=$VITE_TURN_ID" >> FE/.env
-    - echo "$VITE_TURN_PW=$VITE_TURN_PW" >> FE/.env
+    - echo "VITE_TURN_ID=$VITE_TURN_ID" >> FE/.env
+    - echo "VITE_TURN_PW=$VITE_TURN_PW" >> FE/.env
 
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
