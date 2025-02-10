@@ -152,8 +152,8 @@ const sendprompt = () => {
     emit("nextTurn", {
       prompt: message.value
     });
+    message.value = "";
   }
-
 };
 const sendEmoticon = (data) => {
   emit("broadcastMessage", {

@@ -33,8 +33,15 @@
             <img :src="StarIcon" alt="하트" class="w-4" />
             <div
               class=" w-5 h-5 text-center leading-[1.25rem] ml-1"
+
             >
               {{ 4 }}
+            </div>
+          </div>
+          <div>
+            <!-- 투표 (수정) -->
+            <div class="flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 == 0">
+              <img src="" alt="" class="w-24 h-24">
             </div>
           </div>
         </div>
@@ -69,68 +76,74 @@
         :endingCard="endingCard"
       />
     </div>
-    <div class="h-full row-span-2 grid grid-rows-3 justify-end">
-      <template v-for="(order, index) in props.inGameOrder" :key="order">
-        <div
-          class="flex flex-col justify-center items-center relative mr-3"
-          v-if="index % 2 != 0"
-        >
-        <div class="w-28 h-28 relative">
-          <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
+      <div class="h-full row-span-2 grid grid-rows-3 justify-end">
+        <template v-for="(order, index) in props.inGameOrder" :key="order">
           <div
-            class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 bottom-1 z-0"
-            :class="currTurn === index ? 'sun' : ''"
-            >
-          </div>
-        </div>
-          <div
-            class="absolute z-40 bg-[#ffffff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
-            :class="'speech-bubble' + index"
+            class="flex flex-col justify-center items-center relative mr-3"
+            v-if="index % 2 != 0"
           >
-            <p></p>
-          </div>
-          <div
-            class="absolute z-40 bg-[#ffffff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#ffffff] after:w-0 after:h-0 flex justify-center items-center hidden"
-            :class="'emoticon-bubble' + index"
-          >
-            <img src="" alt="" class="object-scale-down w-10 h-10" />
-          </div>
-          <div>{{ props.participants[order].name }}</div>
-          <p></p>
-          <div class="flex rounded-full bg-black p-1 text-white">
-            <img :src="StarIcon" alt="하트" class="w-4" />
+            <div class="w-28 h-28 relative">
+              <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
+              <div
+                class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 bottom-1 z-0"
+                :class="currTurn === index ? 'sun' : ''"
+                >
+              </div>
+            </div>
             <div
-              class=" w-5 h-5 text-center leading-[1.25rem] ml-1"
+              class="absolute z-40 bg-[#ffffff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
+              :class="'speech-bubble' + index"
             >
-              {{ 4 }}
+              <p></p>
+            </div>
+            <div
+              class="absolute z-40 bg-[#ffffff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#ffffff] after:w-0 after:h-0 flex justify-center items-center hidden"
+              :class="'emoticon-bubble' + index"
+            >
+              <img src="" alt="" class="object-scale-down w-10 h-10" />
+            </div>
+            <div>{{ props.participants[order].name }}</div>
+            <p></p>
+            <div class="flex rounded-full bg-black p-1 text-white">
+              <img :src="StarIcon" alt="하트" class="w-4" />
+              <div
+                class=" w-5 h-5 text-center leading-[1.25rem] ml-1"
+              >
+                {{ 4 }}
+              </div>
+            </div>
+            <!-- 투표 (수정) -->
+            <div>
+              <div class="flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 == 0">
+                <img src="" alt="" class="w-24 h-24">
+              </div>
             </div>
           </div>
-        </div>
-      </template>
-      <template
-        v-for="n in maxParticipants - props.participants.length"
-        :key="n"
-      >
-        <div
-          class="flex flex-col justify-center items-center mr-3"
-          v-if="n % 2 != 0"
+        </template>
+        <template
+          v-for="n in maxParticipants - props.participants.length"
+          :key="n"
         >
           <div
-            class="rounded-full bg-gray-500 w-24 h-24 border border-black"
-          ></div>
-          <div>비어 있음</div>
-          <div class="h-5"></div>
-        </div>
-      </template>
-    </div>
+            class="flex flex-col justify-center items-center mr-3"
+            v-if="n % 2 != 0"
+          >
+            <div
+              class="rounded-full bg-gray-500 w-24 h-24 border border-black"
+            ></div>
+            <div>비어 있음</div>
+            <div class="h-5"></div>
+          </div>
+        </template>
+      </div>
     <InGameProgress @next-turn="nextTurn" :roomConfigs="roomConfigs" :inProgress="inProgress" />
-    <InGameVote class="z-50 hidden"/>
+    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt"/>
   </div>
 </template>
 
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
-import { StarIcon } from "@/assets";
+import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon } from "@/assets";
 import {
   InGameControl,
   InGameContent,
@@ -148,7 +161,7 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll"]);
+const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd"]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
@@ -161,6 +174,9 @@ const nextTurn = (data) => {
 const cardReroll = () => {
   emit("cardReroll");
 }
+const voteEnd = (data) => {
+  emit("voteEnd", data);
+};
 
 const props = defineProps({
   roomConfigs: {
@@ -196,6 +212,12 @@ const props = defineProps({
   endingCard:{
     Type: Object,
 },
+  prompt: {
+    Type: String,
+  },
+  votings: {
+    Type: Array,
+  }
 });
 
 watch(
@@ -227,6 +249,40 @@ watch(
         chatTime.value[index][type] = setTimeout(() => {
           select.value.classList.add("hidden");
         }, 3000);
+      }
+    });
+  },
+  { deep: true },
+);
+
+watch(
+  () => props.votings,
+  () => {
+    props.inGameOrder.forEach((order, index) => {
+      if (
+        props.participants[order].name ==
+        props.votings[props.votings.length - 1].sender
+      ) {
+        const select = ref();
+        if (
+          props.votings[props.votings.length - 1].selected ==
+          "up"
+        ) {
+          select.value = document.querySelector(".vote" + index);
+          if(index % 2 === 0) {
+            select.value.firstChild.src = VoteUpLeftIcon;
+          } else {
+            select.value.firstChild.src = VoteUpRightIcon;
+          }
+        } else {
+          select.value = document.querySelector(".vote" + index);
+          if(index % 2 === 0) {
+            select.value.firstChild.src = VoteDownLeftIcon;
+          } else {
+            select.value.firstChild.src = VoteDownRightIcon;
+          }
+        }
+        select.value.classList.remove("hidden");
       }
     });
   },

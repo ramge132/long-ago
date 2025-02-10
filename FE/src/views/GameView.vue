@@ -19,12 +19,15 @@
           :bookContents="bookContents"
           :storyCards="storyCards"
           :endingCard="endingCard"
+          :prompt="prompt"
+          :votings="votings"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
           @game-exit="gameStarted = false"
           @next-turn="nextTurn"
           @card-reroll="cardReroll"
+          @vote-end="voteEnd"
         />
       </Transition>
     </RouterView>
@@ -93,6 +96,10 @@ const overlayTimeout = ref(null);
 const bookContents = ref([
   { content: "", image: null }
 ]);
+// 내 턴에 작성한 이야기
+const prompt = ref("");
+// 투표 결과 표시
+const votings = ref([]);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -287,12 +294,29 @@ const setupConnection = (conn) => {
       
       case "sendPrompt":
         console.log(data.prompt)
+        prompt.value = data.prompt;
+        inProgress.value = false;
         addBookContent({ content: data.prompt, image: null });
         break;
 
       case "sendImage":
         console.log(bookContents.value)
         bookContents.value[bookContents.value.length - 2].image = data.imageBlob;
+        break;
+
+      case "voteResult":
+        votings.value.push({
+          sender: data.sender,
+          selected: data.selected
+        });
+        if(votings.value.length == participants.value.length) {
+          let upCount = 0;
+          let downCount = 0;
+          votings.value.forEach((vote) => {
+            if(vote.selected == 'up') upCount++;
+            else downCount++;
+          });
+        }
         break;
     }
   });
@@ -610,8 +634,19 @@ const nextTurn = async (data) => {
     addBookContent({ content: data.prompt, image: null });
 
     // 투표 모달 띄워야 함
-    
+    inProgress.value = false;
+    prompt.value = data.prompt;
+    connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage(
+          "sendPrompt",
+          { prompt: prompt.value },
+          peer.connection
+        )
+      }
+    });
     // 해당 프롬프트로 이미지 생성 요청 (api)
+    
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
     const imageBlob = 'test';
     
@@ -650,14 +685,36 @@ const nextTurn = async (data) => {
   }
 };
 
+// 결말카드 리롤 함수
 const cardReroll = async () => {
   const response = await endingCardReroll({
     userId: peerId.value,
     gameId: gameID.value,
   });
-
+  
   endingCard.value.content = response.data.data.content;
 };
+
+// 투표 종료
+const voteEnd = (data) => {
+  prompt.value = "";
+  votings.value.push({
+    sender: data.sender,
+    selected: data.selected,
+  });
+  connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage(
+          "voteResult",
+          {
+            sender: data.sender,
+            selected: data.selected,
+          },
+          peer.connection
+        )
+      }
+    })
+  };
 </script>
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
