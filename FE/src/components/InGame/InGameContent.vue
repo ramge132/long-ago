@@ -3,27 +3,31 @@
     <div class="book absolute top-0">
       <div class="pages" ref="pagesRef">
         <div
-          class="page cursor-pointer flex flex-col items-center justify-center text-gray-300 text-2xl"
+          class="page cursor-pointer flex flex-col items-center justify-center text-[#fee09e] text-4xl font-katuri"
           :class="{ flipped: isFlipped(0) }"
           @click="handlePageClick(0)"
+          style="text-shadow: -1px 0px #8a622a, 0px 1px #8a622a, 1px 0px #8a622a, 0px -1px #8a622a;"
+          :style="{ zIndex: calculateZIndex(0) }"
+          v-html="`아주 먼<br>옛날..<br>`"
         >
-          Long Ago..
         </div>
         <template
-          v-for="(content, index) in bookContent"
+          v-for="(content, index) in bookContents"
           :key="index"
         >
           <div
             class="page cursor-pointer flex flex-col items-center justify-center"
             :class="{ flipped: isFlipped(index * 2 + 1) }"
-            @click="handlePageClick(index * 2 + 1)">
+            @click="handlePageClick(index * 2 + 1)"
+            :style="{ zIndex: calculateZIndex(index * 2 + 1) }">
             {{ content.content }}
           </div>
           <div
             class="page cursor-pointer flex flex-col items-center justify-center"
             :class="{ flipped: isFlipped(index * 2 + 2) }"
-            @click="handlePageClick(index * 2 + 2)">
-            {{  content.image }}
+            @click="handlePageClick(index * 2 + 2)"
+            :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
+            {{ content.image }}
           </div>
         </template>
       </div>
@@ -32,70 +36,68 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive, watch } from "vue";
+import { ref, onMounted, reactive, watch, defineProps } from "vue";
 import { useAudioStore } from "@/stores/audio";
 import { TurningPage } from "@/assets";
 
 const audioStore = useAudioStore();
+const pagesRef = ref(null);
+const flippedPages = reactive(new Set());
 
-const bookContent = ref([
-  { content: "", image: null }  // 초기 상태
-]);
+const props = defineProps({
+  bookContents: {
+    Type: Array,
+  }
+})
 
-const addBookContent = (newContent) => {
-  // 마지막 요소 직전에 새 콘텐츠 추가
-  const lastIndex = bookContent.value.length - 1;
-  bookContent.value.splice(lastIndex, 0, {
-    content: newContent.content || "",
-    image: newContent.image || null
-  });
+const calculateZIndex = (pageIndex) => {
+  const totalPages = props.bookContents.length * 2 + 1;
   
-  // 마지막 요소는 항상 빈 요소로 유지
-  if (bookContent.value[bookContent.value.length - 1].content !== "" || 
-      bookContent.value[bookContent.value.length - 1].image !== null) {
-    bookContent.value.push({ content: "", image: null });
+  if (pageIndex % 2 === 1) {
+    return pageIndex * 2;
+  }
+  else {
+    return (totalPages - pageIndex) * 2;
   }
 };
 
-// 페이지 삭제도 구현해야 함
-
-// 사용 예시
-// addBookContent({ content: "1번 글", image: "첫번째이미지" });
-// addBookContent({ content: "2번 글", image: "두번째이미지" });
-
-const pagesRef = ref(null);
-const flippedPages = reactive(new Set());
+const updatePagesZIndex = () => {
+  if (!pagesRef.value) return;
+  
+  const pageElements = pagesRef.value.children;
+  for (let i = 0; i < pageElements.length; i++) {
+    pageElements[i].style.zIndex = calculateZIndex(i);
+  }
+};
 
 const isFlipped = (pageIndex) => {
   return flippedPages.has(pageIndex);
 };
 
 const handlePageClick = (pageIndex) => {
-  console.log(bookContent.value.length);
-  if (pageIndex / 2 === bookContent.value.length){
-    console.log('last page click event block');
-    return
+  if (pageIndex / 2 === props.bookContents.length) {
+    return;
   }
+  
   if (audioStore.audioData) {
     const turningEffect = new Audio(TurningPage);
     turningEffect.play();
   }
+  
   if (pageIndex % 2 === 0) {
-    // 오른쪽 페이지 클릭
     if (isFlipped(pageIndex)) {
       flippedPages.delete(pageIndex);
       flippedPages.delete(pageIndex - 1);
     } else {
       flippedPages.add(pageIndex);
-      if (pageIndex + 1 < bookContent.value.length * 2 + 1) {
+      if (pageIndex + 1 < props.bookContents.length * 2 + 1) {
         flippedPages.add(pageIndex + 1);
       }
     }
   } else {
-    // 왼쪽 페이지 클릭
     if (isFlipped(pageIndex)) {
       flippedPages.delete(pageIndex);
-      if (pageIndex + 1 <= bookContent.value.length * 2 + 1) {
+      if (pageIndex + 1 <= props.bookContents.length * 2 + 1) {
         flippedPages.delete(pageIndex - 1);
       }
     } else {
@@ -103,59 +105,27 @@ const handlePageClick = (pageIndex) => {
       flippedPages.add(pageIndex - 1);
     }
   }
+  
+  updatePagesZIndex();
 };
 
-watch(() => bookContent.value.length,
+watch(() => props.bookContents.length,
 (afterSize, beforeSize) => {
-  console.log(afterSize, beforeSize, 'size');
-  console.log(bookContent.value.length);
-  // 새로운 페이지가 추가됨
   if (afterSize > beforeSize) {
     for (let i of Array.from({length: afterSize - 1}, (_, index) => index * 2)) {
-      console.log(i, 'clicked')
-      // 오른쪽 페이지 클릭
       if (!isFlipped(i)) {
         flippedPages.add(i);
         flippedPages.add(i + 1);
-        if (i + 1 <= bookContent.value.length * 2 + 1) {
-          console.log('test');
-        }
       }
     }
-    flippedPages.add()
-    // handlePageClick(index * 2 + 2)
   }
-  // 투표를 통해 페이지가 버려짐
-  else {
-
-  }
-  bookContent.value.length
+  updatePagesZIndex();
 });
 
 onMounted(() => {
-  const pageElements = pagesRef.value.children;
-  for (let i = 0; i < pageElements.length; i++) {
-    if (i % 2 === 0) {
-      pageElements[i].style.zIndex = bookContent.value.length * 2 + 2 - i;
-    }
-  }
-
-  var count = 1;
-
+  updatePagesZIndex();
   handlePageClick(0);
-  setInterval(() => {
-      if (bookContent.value.length != 5) {
-        console.log(bookContent.value.length);
-        addBookContent({ content: `${count}번 글`, image: `${count}번째이미지` });
-        count++;
-        console.log(bookContent.value);
-      }
-    }, 5000);
 });
-
-// onUnmounted(() => {
-//   clearInterval(intervalId);
-// });
 </script>
 
 <style scoped>

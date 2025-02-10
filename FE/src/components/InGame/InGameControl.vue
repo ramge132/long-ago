@@ -1,40 +1,28 @@
 <template>
-  <div class="row-span-2 flex flex-col justify-between py-2">
-    <div class="flex mb-3 grow">
-      <div class="flex flex-col justify-center items-center w-[50%] mr-3">
-        <p v-html="`<사용 가능 카드>`"></p>
+  <div class="row-span-2 flex flex-col justify-between py-2 relative">
+    <div class="flex justify-center items-center grow">
+      <div class="flex flex-col justify-center items-center w-3/4 mr-3">
         <div class="flex justify-between w-full">
           <div
-            v-for="n in 4"
-            :key="n"
-            class="bg-gray-400 w-[4rem] h-[7.5rem] mx-1"
-          ></div>
+            v-for="(card, index) in storyCards"
+            :key="index"
+            class="relative"
+          >
+            <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
+            <div class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">{{ card.keyword }}</div>
+          </div>
         </div>
       </div>
-      <div class="flex flex-col justify-center items-center w-[20%]">
-        <p v-html="`<결말 카드>`"></p>
-        <div class="bg-gray-400 w-[4rem] h-[7.5rem]"></div>
-      </div>
-      <div class="flex items-center justify-center min-w-[30%]">
-        <div class="rounded-xl reroll flex p-3 w-full justify-between">
-          <div class="text-xs">
-            <p>결말 카드 바꾸기</p>
-            <div class="flex items-center justify-between">
-              <span>남은 횟수 :</span>
-              <strong class="text-xl">3</strong>
-            </div>
-          </div>
-          <img
-            :src="RerollIcon"
-            alt="리롤"
-            class="justify-self-end self-center w-6 h-6"
-          />
+      <div class="flex flex-col flex-1 justify-center items-center">
+        <div class="relative">
+          <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-28">
+          <div class="endingcard w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e] text-xl">{{ endingCard.content }}</div>
         </div>
       </div>
     </div>
-    <div class="flex justify-center relative">
+    <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full">
       <div
-        class="rounded-full bg-[#ffffffdb] drop-shadow-md w-2/3 h-10 mx-1 flex px-3 items-center"
+        class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
         v-for="(mode, index) in chatMode"
         :key="index"
         :class="index == currChatModeIdx ? '' : 'hidden'"
@@ -51,7 +39,7 @@
         </div>
         <input
           type="text"
-          class="pl-3 bg-transparent w-full h-full text-xl mx-2"
+          class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2"
           v-model="message"
           @keyup.enter="mode.fucntion"
           :placeholder="mode.placeholder"
@@ -67,14 +55,14 @@
           />
         </button>
       </div>
-      <div class="relative">
+      <div class="relative w-10 h-10">
         <button
-          class="bg-[#ffffff] rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md mx-1 z-10 absolute bottom-0" 
+          class="bg-[#ffffff] rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 absolute bottom-0" 
           @click="toggleEmoticon = !toggleEmoticon"
         >
           <img :src="EmoticonIcon" alt="감정표현" class="w-6" />
         </button>
-        <div class="rounded-full w-10 bg-[#ffffffa0] mx-1 absolute bottom-2 overflow-hidden emoticon" :class="toggleEmoticon ? 'max-h-[520px]' : 'max-h-0'">
+        <div class="rounded-full w-10 bg-[#ffffffa0] absolute bottom-2 overflow-hidden emoticon" :class="toggleEmoticon ? 'max-h-[520px]' : 'max-h-0'">
           <button
           class="rounded-full w-10 h-10 p-1 flex justify-center items-center drop-shadow-md z-0"
           v-for="(emoticon, index) in emoticons"
@@ -87,13 +75,22 @@
         </div>
         </div>
       </div>
+      <div
+        class="w-10 h-24 bg-[#ffffffdb] rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer"
+        @click="cardReroll"
+      >
+        <img :src="RefreshIcon" alt="" class="w-6">
+        <p>결말<br>새로고침</p>
+        <p class="text-xl">{{ rerollCount }}</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
-import { RerollIcon, SendIcon, EmoticonIcon, ChangeIcon } from "@/assets";
+import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon } from "@/assets";
+import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";
 import toast from "@/functions/toast";
@@ -101,6 +98,7 @@ import toast from "@/functions/toast";
 const userStore = useUserStore();
 const toggleEmoticon = ref(false);
 const message = ref("");
+const rerollCount = ref(3);
 const emoticons = ref(
   [
     "laugh",
@@ -127,10 +125,16 @@ const props = defineProps({
   },
   currTurn: {
     Type: Number,
-  }
+  },
+  storyCards: {
+    Type: Array,
+  },
+  endingCard: {
+    Type: Object,
+  },
 });
 
-const emit = defineEmits(["broadcastMessage", "nextTurn"]);
+const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll"]);
 
 const sendChat = () => {
   if (message.value.trim()) {
@@ -142,7 +146,6 @@ const sendChat = () => {
   }
 };
 const sendprompt = () => {
-  console.log(props.myTurn, props.currTurn);
   if (props.myTurn !== props.currTurn) {
     toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
   } else {
@@ -182,6 +185,15 @@ window.addEventListener("keydown", (e) => {
 const changeMode = () => {
   currChatModeIdx.value = (currChatModeIdx.value + 1) % chatMode.value.length;
 };
+
+const cardReroll = () => {
+  if (rerollCount.value) {
+    emit("cardReroll");
+    rerollCount.value--;
+  } else {
+    toast.errorToast("모두 사용했습니다!");
+  }
+};
 </script>
 
 <style scoped>
@@ -190,5 +202,11 @@ const changeMode = () => {
 }
 .emoticon {
   transition: all 0.3s ease-in-out;
+}
+.storycard {
+  text-shadow: -1px 0px #9f876a, 0px 1px #9f876a, 1px 0px #9f876a, 0px -1px #9f876a;
+}
+.endingcard {
+  text-shadow: -1px 0px #8a622a, 0px 1px #8a622a, 1px 0px #8a622a, 0px -1px #8a622a;
 }
 </style>
