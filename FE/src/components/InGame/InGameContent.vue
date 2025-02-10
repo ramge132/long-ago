@@ -112,7 +112,7 @@ const handlePageClick = (pageIndex) => {
 watch(() => props.bookContents.length,
 (afterSize, beforeSize) => {
   if (afterSize > beforeSize) {
-    for (let i of Array.from({length: afterSize - 1}, (_, index) => index * 2)) {
+    for (let i of Array.from({length: afterSize}, (_, index) => index * 2)) {
       if (!isFlipped(i)) {
         flippedPages.add(i);
         flippedPages.add(i + 1);

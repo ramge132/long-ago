@@ -301,7 +301,7 @@ const setupConnection = (conn) => {
 
       case "sendImage":
         console.log(bookContents.value)
-        bookContents.value[bookContents.value.length - 2].image = data.imageBlob;
+        bookContents.value[bookContents.value.length - 1].image = data.imageBlob;
         break;
 
       case "voteResult":
@@ -604,15 +604,10 @@ const showOverlay = (message) => {
 
 // 책 데이터 추가
 const addBookContent = (newContent) => {
-  const lastIndex = bookContents.value.length - 1;
-  bookContents.value.splice(lastIndex, 0, {
-    content: newContent.content || "",
-    image: newContent.image || null
-  });
-  
-  if (bookContents.value[bookContents.value.length - 1].content !== "" || 
-      bookContents.value[bookContents.value.length - 1].image !== null) {
-    bookContents.value.push({ content: "", image: null });
+  if (bookContents.value[0].content === "") {
+    bookContents.value[0].content = newContent.content;
+  } else {
+    bookContents.value.push(newContent);
   }
 };
 
@@ -636,15 +631,6 @@ const nextTurn = async (data) => {
     // 투표 모달 띄워야 함
     inProgress.value = false;
     prompt.value = data.prompt;
-    connectedPeers.value.forEach((peer) => {
-      if (peer.id !== peerId.value && peer.connection.open) {
-        sendMessage(
-          "sendPrompt",
-          { prompt: prompt.value },
-          peer.connection
-        )
-      }
-    });
     // 해당 프롬프트로 이미지 생성 요청 (api)
     
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
@@ -662,8 +648,7 @@ const nextTurn = async (data) => {
     });
     
     // 나의 책에 이미지 넣기
-    console.log(bookContents.value[-2]);
-    bookContents.value[bookContents.value.length - 2].image = imageBlob;
+    bookContents.value[bookContents.value.length - 1].image = imageBlob;
 
     // 프롬프트 입력 시간초과로 턴 넘기는 경우
   }
