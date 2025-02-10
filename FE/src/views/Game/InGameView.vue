@@ -256,6 +256,7 @@ watch(
   () => {
     props.inGameOrder.forEach((order, index) => {
       if (
+        props.votings.length != 0 &&
         props.participants[order].name ==
         props.votings[props.votings.length - 1].sender
       ) {
@@ -279,6 +280,9 @@ watch(
           }
         }
         select.value.classList.remove("hidden");
+        setTimeout(() => {
+          select.value.classList.add("hidden");
+        }, 2000);
       }
     });
   },

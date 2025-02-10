@@ -147,7 +147,6 @@ const handleAnimationEnd = (event) => {
   animation: bounce-reverse 0.5s;
 }
 
-
 .decrease {
   animation: decrease 10s linear forwards;
 }
