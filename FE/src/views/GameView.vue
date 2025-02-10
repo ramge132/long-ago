@@ -325,32 +325,35 @@ const setupConnection = (conn) => {
             if(vote.selected == 'up') upCount++;
             else downCount++;
           });
-          if(upCount < downCount && currTurn.value === myTurn.value) {
-            // 이미지 버리는 api
-            // 내 이미지 버리기
-            if (bookContents.value.length === 1) {
-              bookContents.value = [{ content: "", image: null }];
-            } else {
-              bookContents.value = bookContents.value.slice(0, -1);
+          
+          if(currTurn.value === myTurn.value) {
+            if (upCount < downCount) {
+              // 이미지 버리는 api
+              // 내 이미지 버리기
+              if (bookContents.value.length === 1) {
+                bookContents.value = [{ content: "", image: null }];
+              } else {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
+              // 턴 종료 트리거 송신하기
+              currTurn.value = (currTurn.value + 1) % participants.value.length;
+              connectedPeers.value.forEach((peer) => {
+                if (peer.id !== peerId.value && peer.connection.open) {
+                  sendMessage(
+                    "nextTurn",
+                    { 
+                      currTurn: currTurn.value,
+                      imageDelete: true,
+                    },
+                    peer.connection
+                  )
+                }
+              });
+              // inProgress.value = false;
+              await showOverlay('whoTurn');
+              inProgress.value = true;
             }
-            // 턴 종료 트리거 송신하기
-            currTurn.value = (currTurn.value + 1) % participants.value.length;
-            connectedPeers.value.forEach((peer) => {
-              if (peer.id !== peerId.value && peer.connection.open) {
-                sendMessage(
-                  "nextTurn",
-                  { 
-                    currTurn: currTurn.value,
-                    imageDelete: true,
-                  },
-                  peer.connection
-                )
-              }
-            });
-            inProgress.value = false;
-            await showOverlay('whoTurn');
-            inProgress.value = true;
-          } else if(currTurn.value === myTurn.value) {
+          } else {
             // 턴 종료 트리거 송신하기
             currTurn.value = (currTurn.value + 1) % participants.value.length;
             connectedPeers.value.forEach((peer) => {
@@ -364,7 +367,7 @@ const setupConnection = (conn) => {
                 )
               }
             });
-            inProgress.value = false;
+            // inProgress.value = false;
             await showOverlay('whoTurn');
             inProgress.value = true;
           }
