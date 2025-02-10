@@ -293,6 +293,14 @@ const setupConnection = (conn) => {
           sender: data.sender,
           selected: data.selected
         });
+        if(votings.value.length == participants.value.length) {
+          let upCount = 0;
+          let downCount = 0;
+          votings.value.forEach((vote) => {
+            if(vote.selected == 'up') upCount++;
+            else downCount++;
+          });
+        }
         break;
     }
   });
