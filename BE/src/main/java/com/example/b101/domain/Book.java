@@ -24,6 +24,9 @@ public class Book {
     @Column(name = "BOOK_TITLE", nullable = false)
     private String title;
 
+    @Column(name = "IMAGE_URL", nullable = false)
+    private String imageUrl;
+
     //book을 삭제하면 자동으로 자식 author도 삭제됨.
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Author> authors = new ArrayList<>();

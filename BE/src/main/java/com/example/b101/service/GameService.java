@@ -3,22 +3,27 @@ package com.example.b101.service;
 import com.example.b101.cache.Game;
 import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
-import com.example.b101.domain.Book;
-import com.example.b101.domain.EndingCard;
-import com.example.b101.domain.PlayerStatus;
-import com.example.b101.domain.StoryCard;
+import com.example.b101.domain.*;
 import com.example.b101.dto.GameRequest;
 import com.example.b101.dto.GameResponse;
+import com.example.b101.dto.GenerateSceneRequest;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
+import com.example.b101.repository.SceneRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientException;
+import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -28,6 +33,8 @@ public class GameService {
     private final GameRepository gameRepository;
     private final CardService cardService;
     private final RedisSceneRepository sceneRepository;
+    private final WebClient webClient;
+    private final SceneRepository sceneRepo;
 
 
     /**
@@ -149,20 +156,57 @@ public class GameService {
 
 
 
+        //GPU 서버에 요청을 보내기 위한 객체 생성
+        GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
+                .session_id(gameId) //게임 아이디
+                .game_mode(1) //작화 스타일
+                .user_sentence("") //사용자 프롬포트
+                .status(1) //책 표지 만들기
+                .build();
+
+
+        // GPU 서버와 통신하여 데이터 받기
+        byte[] generateImage = null;
+        try {
+            generateImage = webClient.post()  //post형식으로 webClient의 요청을 보냄.
+                    .uri("/generate").accept(MediaType.IMAGE_PNG) //이미지 파일로 받는다.
+                    .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is4xxClientError, response ->
+                            response.createException().flatMap(Mono::error))    //GPU 서버에서 422에러를 응답하면 PROMPT가 누락
+                    .bodyToMono(byte[].class) //응답의 본문(body)만 가져옴.
+                    .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
+        } catch (WebClientException e) { //GPU 서버에서 에러 반환 시
+            return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생 : "+e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    request.getRequestURI());
+        }
+
+
+        List<Scene> sceneList = sceneRedisList.stream()
+                        .map(sceneRedis -> Scene.builder()
+                                .sceneOrder(sceneRedis.getSceneOrder())
+                                .userPrompt(sceneRedis.getPrompt())
+                                .build())
+                                .toList();
+
+        Book book = Book.builder()
+                .scenes(sceneList)
+                .imageUrl("imageUrl")
+                .build();
 
 
 
-
+        sceneRepo.saveAll(sceneList);
 
         sceneRepository.deleteAllByGameId(gameId); //redis에 저장됐던 scene 데이터들 삭제
 
         //게임 데이터 삭제
         gameRepository.delete(game);
-        
-        return ApiResponseUtil.success(null,
-                "게임 데이터 삭제 성공",
-                HttpStatus.OK,
-                request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.IMAGE_PNG) // PNG 형식으로 책 표지 응답
+                .body(generateImage);
     }
 
 
