@@ -363,7 +363,7 @@ const setupConnection = (conn) => {
                   "nextTurn",
                   { 
                     currTurn: currTurn.value,
-                    imageDelete: false, 
+                    imageDelete: false,
                   },
                   peer.connection
                 )
@@ -757,62 +757,62 @@ const voteEnd = async (data) => {
         )
       }
     })
-
+    
     if(votings.value.length == participants.value.length) {
-            let upCount = 0;
-            let downCount = 0;
-            votings.value.forEach((vote) => {
-              if(vote.selected == 'up') upCount++;
-              else downCount++;
-            });
-            
-            if(currTurn.value === myTurn.value) {
-              if (upCount < downCount) {
-                // 이미지 버리는 api
-                // 내 이미지 버리기
-                if (bookContents.value.length === 1) {
-                  bookContents.value = [{ content: "", image: null }];
-                } else {
-                  bookContents.value = bookContents.value.slice(0, -1);
-                }
-                // 턴 종료 트리거 송신하기
-                currTurn.value = (currTurn.value + 1) % participants.value.length;
-                connectedPeers.value.forEach((peer) => {
-                  if (peer.id !== peerId.value && peer.connection.open) {
-                    sendMessage(
-                      "nextTurn",
-                      { 
-                        currTurn: currTurn.value,
-                        imageDelete: true,
-                      },
-                      peer.connection
-                    )
-                  }
-                });
-                // inProgress.value = false;
-                await showOverlay('whoTurn');
-                inProgress.value = true;
-              }
-            } else {
-              // 턴 종료 트리거 송신하기
-              currTurn.value = (currTurn.value + 1) % participants.value.length;
-              connectedPeers.value.forEach((peer) => {
-                if (peer.id !== peerId.value && peer.connection.open) {
-                  sendMessage(
-                    "nextTurn",
-                    { 
-                      currTurn: currTurn.value,
-                      imageDelete: false, 
-                    },
-                    peer.connection
-                  )
-                }
-              });
-              // inProgress.value = false;
-              await showOverlay('whoTurn');
-              inProgress.value = true;
-            }
+      let upCount = 0;
+      let downCount = 0;
+      votings.value.forEach((vote) => {
+        if(vote.selected == 'up') upCount++;
+        else downCount++;
+      });
+      
+      if(currTurn.value === myTurn.value) {
+        if (upCount < downCount) {
+          // 이미지 버리는 api
+          // 내 이미지 버리기
+          if (bookContents.value.length === 1) {
+            bookContents.value = [{ content: "", image: null }];
+          } else {
+            bookContents.value = bookContents.value.slice(0, -1);
           }
+          // 턴 종료 트리거 송신하기
+          currTurn.value = (currTurn.value + 1) % participants.value.length;
+          connectedPeers.value.forEach((peer) => {
+            if (peer.id !== peerId.value && peer.connection.open) {
+              sendMessage(
+                "nextTurn",
+                { 
+                  currTurn: currTurn.value,
+                  imageDelete: true,
+                },
+                peer.connection
+              )
+            }
+          });
+          // inProgress.value = false;
+          await showOverlay('whoTurn');
+          inProgress.value = true;
+        }
+      } else {
+        // 턴 종료 트리거 송신하기
+        currTurn.value = (currTurn.value + 1) % participants.value.length;
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            sendMessage(
+              "nextTurn",
+              { 
+                currTurn: currTurn.value,
+                imageDelete: false,
+              },
+              peer.connection
+            )
+          }
+        });
+        // inProgress.value = false;
+        await showOverlay('whoTurn');
+        inProgress.value = true;
+      }
+    }
   };
 </script>
 <style>
