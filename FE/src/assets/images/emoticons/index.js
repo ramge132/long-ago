@@ -1,26 +1,53 @@
+import d_laugh from "@/assets/images/emoticons/dynamic/laugh.webp";
+import d_asleep from "@/assets/images/emoticons/dynamic/asleep.webp";
+import d_crossed from "@/assets/images/emoticons/dynamic/crossed.webp";
+import d_expressionless from "@/assets/images/emoticons/dynamic/expressionless.webp";
+import d_confused from "@/assets/images/emoticons/dynamic/confused.webp";
+import d_loving from "@/assets/images/emoticons/dynamic/loving.webp";
+import d_sad from "@/assets/images/emoticons/dynamic/sad.webp";
+import d_sunglasses from "@/assets/images/emoticons/dynamic/sunglasses.webp";
+import d_tongue from "@/assets/images/emoticons/dynamic/tongue.webp";
+import d_wink from "@/assets/images/emoticons/dynamic/wink.webp";
+import d_wrath from "@/assets/images/emoticons/dynamic/wrath.webp";
+import d_fear from "@/assets/images/emoticons/dynamic/fear.webp";
+import s_laugh from "@/assets/images/emoticons/static/laugh.png";
+import s_asleep from "@/assets/images/emoticons/static/asleep.png";
+import s_crossed from "@/assets/images/emoticons/static/crossed.png";
+import s_expressionless from "@/assets/images/emoticons/static/expressionless.png";
+import s_confused from "@/assets/images/emoticons/static/confused.png";
+import s_loving from "@/assets/images/emoticons/static/loving.png";
+import s_sad from "@/assets/images/emoticons/static/sad.png";
+import s_sunglasses from "@/assets/images/emoticons/static/sunglasses.png";
+import s_tongue from "@/assets/images/emoticons/static/tongue.png";
+import s_wink from "@/assets/images/emoticons/static/wink.png";
+import s_wrath from "@/assets/images/emoticons/static/wrath.png";
+import s_fear from "@/assets/images/emoticons/static/fear.png";
+
+
+
 export default {
-  d_laugh: "/src/assets/images/emoticons/dynamic/laugh.webp",
-  d_asleep: "/src/assets/images/emoticons/dynamic/asleep.webp",
-  d_crossed: "/src/assets/images/emoticons/dynamic/crossed.webp",
-  d_expressionless: "/src/assets/images/emoticons/dynamic/expressionless.webp",
-  d_confused: "/src/assets/images/emoticons/dynamic/confused.webp",
-  d_loving: "/src/assets/images/emoticons/dynamic/loving.webp",
-  d_sad: "/src/assets/images/emoticons/dynamic/sad.webp",
-  d_sunglasses: "/src/assets/images/emoticons/dynamic/sunglasses.webp",
-  d_tongue: "/src/assets/images/emoticons/dynamic/tongue.webp",
-  d_wink: "/src/assets/images/emoticons/dynamic/wink.webp",
-  d_wrath: "/src/assets/images/emoticons/dynamic/wrath.webp",
-  d_fear: "/src/assets/images/emoticons/dynamic/fear.webp",
-  s_laugh: "/src/assets/images/emoticons/static/laugh.png",
-  s_asleep: "/src/assets/images/emoticons/static/asleep.png",
-  s_crossed: "/src/assets/images/emoticons/static/crossed.png",
-  s_expressionless: "/src/assets/images/emoticons/static/expressionless.png",
-  s_confused: "/src/assets/images/emoticons/static/confused.png",
-  s_loving: "/src/assets/images/emoticons/static/loving.png",
-  s_sad: "/src/assets/images/emoticons/static/sad.png",
-  s_sunglasses: "/src/assets/images/emoticons/static/sunglasses.png",
-  s_tongue: "/src/assets/images/emoticons/static/tongue.png",
-  s_wink: "/src/assets/images/emoticons/static/wink.png",
-  s_wrath: "/src/assets/images/emoticons/static/wrath.png",
-  s_fear: "/src/assets/images/emoticons/static/fear.png",
+  d_laugh,
+  d_asleep,
+  d_crossed,
+  d_expressionless,
+  d_confused,
+  d_loving,
+  d_sad,
+  d_sunglasses,
+  d_tongue,
+  d_wink,
+  d_wrath,
+  d_fear,
+  s_laugh,
+  s_asleep,
+  s_crossed,
+  s_expressionless,
+  s_confused,
+  s_loving,
+  s_sad,
+  s_sunglasses,
+  s_tongue,
+  s_wink,
+  s_wrath,
+  s_fear,
 };
