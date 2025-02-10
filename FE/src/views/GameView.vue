@@ -16,11 +16,14 @@
           :myTurn="myTurn"
           :peerId="peerId"
           :inProgress="inProgress"
+          :prompt="prompt"
+          :votings="votings"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
           @game-exit="gameStarted = false"
           @next-turn="nextTurn"
+          @vote-end="voteEnd"
         />
       </Transition>
     </RouterView>
@@ -85,6 +88,10 @@ const storyCards = ref([]);
 const endingCard = ref({});
 // 턴 오버레이 애니메이션 지연
 const overlayTimeout = ref(null);
+// 내 턴에 작성한 이야기
+const prompt = ref("");
+// 투표 결과 표시
+const votings = ref([]);
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -276,7 +283,25 @@ const setupConnection = (conn) => {
           console.log("이미 존재하는 참가자:", data.data);
         }
         break;
-      
+
+      case "sendPrompt":
+        prompt.value = data.prompt;
+        inProgress.value = false;
+        break;
+      case "voteResult":
+        votings.value.push({
+          sender: data.sender,
+          selected: data.selected
+        });
+        if(votings.value.length == participants.value.length) {
+          let upCount = 0;
+          let downCount = 0;
+          votings.value.forEach((vote) => {
+            if(vote.selected == 'up') upCount++;
+            else downCount++;
+          });
+        }
+        break;
     }
   });
 
@@ -567,7 +592,17 @@ const nextTurn = async (data) => {
     // 프롬프트 제출 api 들어가야 함
     // 시간 멈춰야 함
     // 투표 모달 띄워야 함
-    
+    inProgress.value = false;
+    prompt.value = data.prompt;
+    connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage(
+          "sendPrompt",
+          { prompt: prompt.value },
+          peer.connection
+        )
+      }
+    });
     
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
     const imageBlob = 'test';
@@ -601,6 +636,27 @@ const nextTurn = async (data) => {
     await showOverlay('whoTurn');
     inProgress.value = true;
   }
+};
+
+// 투표 종료
+const voteEnd = (data) => {
+  prompt.value = "";
+  votings.value.push({
+    sender: data.sender,
+    selected: data.selected,
+  });
+  connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage(
+          "voteResult",
+          {
+            sender: data.sender,
+            selected: data.selected,
+          },
+          peer.connection
+        )
+      }
+    });
 };
 </script>
 <style>
