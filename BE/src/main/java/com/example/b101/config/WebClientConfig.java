@@ -12,7 +12,7 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${base_url}")
+    @Value("${WEBCLIENT_BASE_URL}")
     private String baseUrl;
 
     @Bean
