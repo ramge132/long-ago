@@ -29,7 +29,6 @@ const userStore = useUserStore();
 const selected = ref("up");
 const countStarted = ref(false);
 const voteEnded = ref(false);
-const inVote = ref(false);
 const emit = defineEmits(['voteEnd']);
 const startCount = () => {
   countStarted.value = true;
