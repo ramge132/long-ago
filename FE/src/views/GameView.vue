@@ -490,7 +490,7 @@ const initializePeer = () => {
             { urls: "stun:stun.l.google.com:19302" }, // 예제 STUN 서버
             {
               urls: "turn:i12b101.p.ssafy.io:3478",   // 턴서버 제작완료하면 바꿔야함
-              username: import.meta.env.VITE_TURN_ID,             // docker 환경변수 참고
+              username: import.meta.env.VITE_TURN_ID,              // docker 환경변수 참고
               credential: import.meta.env.VITE_TURN_PW          // docker 환경변수 참고
             }
           ]
