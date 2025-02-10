@@ -12,8 +12,8 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-//    @Value("${WEBCLIENT_BASE_URL}")
-//    private String baseUrl;
+    @Value("${WEBCLIENT_BASE_URL}")
+    private String baseUrl;
 
     @Bean
     public WebClient webClient(WebClient.Builder builder) {
@@ -23,7 +23,7 @@ public class WebClientConfig {
         //WebClient의 응답 제한 시간을 1분으로 지정 (기본 값은 30초)
         return builder
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
-                .baseUrl("http://35.193.77.102:5367")
+                .baseUrl(baseUrl)
                 .clientConnector(new ReactorClientHttpConnector(HttpClient.create().responseTimeout(Duration.ofMinutes(1))))
                 .build();
     }
