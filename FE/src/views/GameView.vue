@@ -293,7 +293,7 @@ const setupConnection = (conn) => {
         break;
       
       case "sendPrompt":
-        console.log(data.prompt)
+        console.log(data.prompt);
         prompt.value = data.prompt;
         inProgress.value = false;
         addBookContent({ content: data.prompt, image: null });

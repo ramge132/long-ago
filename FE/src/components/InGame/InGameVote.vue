@@ -43,13 +43,12 @@ const voteEnd = () => {
   setTimeout(() => {
     voteEnded.value = true;
   }, 500);
+};
+const removeComponent = () => {
   emit('voteEnd', {
     sender: userStore.userData.userNickname,
     selected: selected.value
   });
-};
-const removeComponent = () => {
-  inVote.value = false;
 }
 const handleAnimationEnd = (event) => {
   const animName = event.animationName;
