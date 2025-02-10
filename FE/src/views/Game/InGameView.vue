@@ -133,7 +133,7 @@
         </template>
       </div>
     <InGameProgress @next-turn="nextTurn" :roomConfigs="roomConfigs" :inProgress="inProgress" />
-    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt"/>
+    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" v-if="prompt !== ''"/>
   </div>
 </template>
 
