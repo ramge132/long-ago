@@ -38,11 +38,9 @@
               {{ 4 }}
             </div>
           </div>
-          <div>
-            <!-- 투표 (수정) -->
-            <div class="flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 == 0">
-              <img src="" alt="" class="w-24 h-24">
-            </div>
+          <!-- 투표 (수정) -->
+          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 == 0">
+            <img src="" alt="" class="w-24 h-24">
           </div>
         </div>
       </template>
@@ -112,12 +110,10 @@
                 {{ 4 }}
               </div>
             </div>
-            <!-- 투표 (수정) -->
-            <div>
-              <div class="flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 == 0">
-                <img src="" alt="" class="w-24 h-24">
-              </div>
-            </div>
+          <!-- 투표 (수정) -->
+          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 != 0">
+            <img src="" alt="" class="w-24 h-24">
+          </div>
           </div>
         </template>
         <template
