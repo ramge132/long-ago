@@ -21,13 +21,13 @@ public class SceneController {
     //이야기 카드로 이미지 생성
     @PostMapping("/storyCard")
     public ResponseEntity<?> addSceneStoryCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
-        return sceneService.createScene(sceneRequest, request);
+        return sceneService.createScene(sceneRequest, request, true);
     }
 
     //엔딩 카드로 이미지 생성
     @PostMapping("/endingCard")
     public ResponseEntity<?> addSceneEndingCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
-        return sceneService.createScene(sceneRequest, request);
+        return sceneService.createScene(sceneRequest, request, false);
     }
 
     //프롬포트 필터링

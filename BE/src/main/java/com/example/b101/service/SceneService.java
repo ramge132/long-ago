@@ -32,7 +32,7 @@ public class SceneService {
 
 
 
-    public ResponseEntity<?> createScene(SceneRequest sceneRequest, HttpServletRequest request) {
+    public ResponseEntity<?> createScene(SceneRequest sceneRequest, HttpServletRequest request , boolean isStoryCard) {
         // 게임 데이터 조회 및 유효성 검사
         Game game = gameRepository.findById(sceneRequest.getGameId());
         if (game == null) {
@@ -96,7 +96,10 @@ public class SceneService {
         PlayerStatus playerStatus = gameRepository.getPlayerStatus(sceneRequest.getGameId(), sceneRequest.getUserId());
 
         //사용한 카드 삭제
-        playerStatus.getStoryCards().removeIf(storyCard -> storyCard.getId() == sceneRequest.getCardId());
+        if(isStoryCard) {
+            playerStatus.getStoryCards().removeIf(storyCard -> storyCard.getId() == sceneRequest.getCardId());
+        }
+
 
         // 이미지 바이너리 데이터를 PNG 미디어 타입으로 반환
         return ResponseEntity.status(HttpStatus.CREATED)
