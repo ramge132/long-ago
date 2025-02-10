@@ -16,6 +16,9 @@
           :myTurn="myTurn"
           :peerId="peerId"
           :inProgress="inProgress"
+          :bookContents="bookContents"
+          :storyCards="storyCards"
+          :endingCard="endingCard"
           :prompt="prompt"
           :votings="votings"
           @on-room-configuration="onRoomConfiguration"
@@ -23,12 +26,13 @@
           @game-start="gameStart"
           @game-exit="gameStarted = false"
           @next-turn="nextTurn"
+          @card-reroll="cardReroll"
           @vote-end="voteEnd"
         />
       </Transition>
     </RouterView>
     <div class="overlay absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center scale-0">
-      <img :src="currTurns" alt="">
+      <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
     <!-- <div class="absolute top-0 left-0 rounded-lg w-full h-full">
@@ -88,6 +92,10 @@ const storyCards = ref([]);
 const endingCard = ref({});
 // 턴 오버레이 애니메이션 지연
 const overlayTimeout = ref(null);
+// 책 리스트
+const bookContents = ref([
+  { content: "", image: null }
+]);
 // 내 턴에 작성한 이야기
 const prompt = ref("");
 // 투표 결과 표시
@@ -253,8 +261,8 @@ const setupConnection = (conn) => {
             gameId: gameID.value,
           })
 
-          storyCards.value = response.data.storyCards;
-          endingCard.value = response.data.endingCard;
+          storyCards.value = response.data.data.storyCards;
+          endingCard.value = response.data.data.endingCard;
 
           await showOverlay('start')
           setTimeout(async () => {
@@ -283,11 +291,19 @@ const setupConnection = (conn) => {
           console.log("이미 존재하는 참가자:", data.data);
         }
         break;
-
+      
       case "sendPrompt":
+        console.log(data.prompt)
         prompt.value = data.prompt;
         inProgress.value = false;
+        addBookContent({ content: data.prompt, image: null });
         break;
+
+      case "sendImage":
+        console.log(bookContents.value)
+        bookContents.value[bookContents.value.length - 2].image = data.imageBlob;
+        break;
+
       case "voteResult":
         votings.value.push({
           sender: data.sender,
@@ -504,20 +520,20 @@ const gameStart = async (data) => {
   inGameOrder.value = data.order;
 
   // 게임 방 생성
-  // try {
-  //   const response = await createGame({
-  //     bossId: peerId.value,
-  //     player: participants.value.map((p) => p.id),
-  //     drawingStyle: roomConfigs.value.currStyle,
-  //   })
+  try {
+    const response = await createGame({
+      bossId: peerId.value,
+      player: participants.value.map((p) => p.id),
+      drawingStyle: roomConfigs.value.currStyle,
+    })
 
-  //   gameID.value = response.data.data.gameId;
-  //   storyCards.value = response.data.data.status.storyCards;
-  //   endingCard.value = response.data.data.status.endingCard;
-  // } catch (error) {
-  //   console.log(error);
-  //   return;
-  // }
+    gameID.value = response.data.data.gameId;
+    storyCards.value = response.data.data.status.storyCards;
+    endingCard.value = response.data.data.status.endingCard;
+  } catch (error) {
+    console.log(error);
+    // return;
+  }
 
   connectedPeers.value.forEach((peer) => {
     sendMessage(
@@ -586,11 +602,37 @@ const showOverlay = (message) => {
   });
 }
 
+// 책 데이터 추가
+const addBookContent = (newContent) => {
+  const lastIndex = bookContents.value.length - 1;
+  bookContents.value.splice(lastIndex, 0, {
+    content: newContent.content || "",
+    image: newContent.image || null
+  });
+  
+  if (bookContents.value[bookContents.value.length - 1].content !== "" || 
+      bookContents.value[bookContents.value.length - 1].image !== null) {
+    bookContents.value.push({ content: "", image: null });
+  }
+};
+
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
   if (data?.prompt) {
     // 프롬프트 제출 api 들어가야 함
-    // 시간 멈춰야 함
+    // 참가자들에게 프롬프트 전달
+    connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage(
+          "sendPrompt",
+          { prompt: data.prompt },
+          peer.connection
+        )
+      }
+    });
+    // 프롬프트 책에 추가 (프롬프트 검증 api)
+    addBookContent({ content: data.prompt, image: null });
+
     // 투표 모달 띄워야 함
     inProgress.value = false;
     prompt.value = data.prompt;
@@ -603,6 +645,7 @@ const nextTurn = async (data) => {
         )
       }
     });
+    // 해당 프롬프트로 이미지 생성 요청 (api)
     
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
     const imageBlob = 'test';
@@ -618,9 +661,13 @@ const nextTurn = async (data) => {
       }
     });
     
-    // 나의 책에 프롬프트와 이미지 넣기
-    console.log(data);
-  } else if(currTurn.value === myTurn.value) {
+    // 나의 책에 이미지 넣기
+    console.log(bookContents.value[-2]);
+    bookContents.value[bookContents.value.length - 2].image = imageBlob;
+
+    // 프롬프트 입력 시간초과로 턴 넘기는 경우
+  }
+  if (currTurn.value === myTurn.value) {
     // 턴 종료 트리거 송신하기
     currTurn.value = (currTurn.value + 1) % participants.value.length;
     connectedPeers.value.forEach((peer) => {
@@ -636,6 +683,16 @@ const nextTurn = async (data) => {
     await showOverlay('whoTurn');
     inProgress.value = true;
   }
+};
+
+// 결말카드 리롤 함수
+const cardReroll = async () => {
+  const response = await endingCardReroll({
+    userId: peerId.value,
+    gameId: gameID.value,
+  });
+  
+  endingCard.value.content = response.data.data.content;
 };
 
 // 투표 종료
@@ -656,8 +713,8 @@ const voteEnd = (data) => {
           peer.connection
         )
       }
-    });
-};
+    })
+  };
 </script>
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
