@@ -481,7 +481,18 @@ const broadcastNewParticipant = (newParticipant) => {
 const initializePeer = () => {
   return new Promise((resolve, reject) => {
     try {
-      peer.value = new Peer();
+      peer.value = new Peer({
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" }, // 예제 STUN 서버
+            {
+              urls: "turn:your.turn.server:3478",   // 턴서버 제작완료하면 바꿔야함
+              username: "yourUsername",             // docker 환경변수 참고
+              credential: "yourCredential"          // docker 환경변수 참고
+            }
+          ]
+        }
+      });
 
       peer.value.on("open", (id) => {
         peerId.value = id;
