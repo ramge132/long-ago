@@ -133,7 +133,7 @@
         </template>
       </div>
     <InGameProgress @next-turn="nextTurn" :roomConfigs="roomConfigs" :inProgress="inProgress" />
-    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" v-if="prompt !== ''"/>
+    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" v-if="prompt !== ''"/>
   </div>
 </template>
 
@@ -213,6 +213,9 @@ const props = defineProps({
   },
   votings: {
     Type: Array,
+  },
+  usedCard: {
+    Type: Object,
   }
 });
 

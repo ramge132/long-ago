@@ -6,7 +6,7 @@
       <div class="meter orange w-full h-14">
         <span class="w-full rounded-full" :class="countStarted ? 'decrease' : ''" @animationend="voteEnd"></span>
       </div>
-      <p class="text-6xl font-katuri">이 이야기를 추가할까요?</p>
+      <p class="text-6xl font-katuri">이 이야기를 추가할까요?</p> 
       <div class="border-2 border-black w-full rounded-md flex justify-center items-center h-32">
         <p>{{ prompt }}</p>
       </div>
@@ -36,6 +36,9 @@ const startCount = () => {
 const props = defineProps({
   prompt: {
     Type: String,
+  },
+  usedCard: {
+    Type: Object,
   },
 })
 const voteEnd = () => {
