@@ -7,7 +7,7 @@ import com.example.b101.domain.StoryCard;
 import com.example.b101.domain.StoryCardVariants;
 import com.example.b101.dto.FilteringRequest;
 import com.example.b101.repository.GameRepository;
-import com.example.b101.repository.StoryCardVariantsRepository;
+import com.vane.badwordfiltering.BadWordFiltering;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,10 +22,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FilteringService {
 
-    private final StoryCardVariantsRepository storyCardVariantsRepository;
     private final GameRepository gameRepository;
     private final CachingService cachingService;
-//    private final BadWordRepository badWordRepository;
+    private final BadWordFiltering badWordFiltering = new BadWordFiltering();
 
     public ResponseEntity<?> findCardVariantsByCardId(FilteringRequest filteringRequest, HttpServletRequest request) {
         // 게임 존재 여부 확인
@@ -50,17 +49,6 @@ public class FilteringService {
 
         List<StoryCardVariants> storyCardVariantsList = cachingService.getCardVariantsAll().getStoryCardVariants();
 
-//        List<String> badWords = badWordRepository.findAll().stream()
-//                .map(BadWord::getWord)
-//                .toList();
-
-
-        // 카드 id로 변형어 가져오기
-        List<String> variants = storyCardVariantsList.stream()
-                .filter(variant -> variant.getStoryCard().getId() == filteringRequest.getCardId())
-                .map(StoryCardVariants::getVariant)
-                .toList();
-
 
         // 플레이어 상태의 모든 StoryCard id 가져오기
         List<Integer> playerStoryCardIds = playerStatus.getStoryCards().stream()
@@ -74,32 +62,33 @@ public class FilteringService {
                 .map(StoryCardVariants::getVariant)
                 .toList();
 
+        log.info(allVariants.toString());
 
-        // prompt가 사용자가 낸 card의 변형어를 포함하고 있는지 확인
-        boolean isOk = variants.stream().anyMatch(variant -> filteringRequest.getUserPrompt().contains(variant));
 
-//        boolean isBadWord = badWords.stream().anyMatch(badWord -> filteringRequest.getUserPrompt().contains(badWord));
-//
-//        if(isBadWord) {
-//            return ApiResponseUtil.failure("Prompt에 욕설이 포함돼있습니다.",
-//                    HttpStatus.BAD_REQUEST,
-//                    request.getRequestURI());
-//        }
+        boolean isBadWord = badWordFiltering.blankCheck(filteringRequest.getUserPrompt());
 
-        if (!isOk) {
-            return ApiResponseUtil.failure("Prompt에 선택한 카드가 사용되지 않았습니다..",
+        String changeStr = badWordFiltering.change(filteringRequest.getUserPrompt(),new String[] {"*", " ", ".", ",", "-", "_", "+", "=", "~", "!", "@", "#", "$", "%", "^", "&", "(", ")", "[", "]", "{", "}",
+                "|", "/", ":", ";", "'", "<", ">", "?", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
+
+
+        if(isBadWord || changeStr.contains("*")) {
+            return ApiResponseUtil.failure("Prompt에 욕설이 사용되었습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
 
-        // prompt에 사용자가 낸 card 외에 소지하고 있는 card의 변형어들을 포함하고 있는지 확인
-        boolean isNotOk = allVariants.stream().anyMatch(variant -> !variants.contains(variant) && filteringRequest.getUserPrompt().contains(variant));
 
-        if (isNotOk) {
+        // prompt에 사용자가 낸 card 외에 소지하고 있는 card의 변형어들을 포함하고 있는지 확인
+        long keywordCnt = allVariants.stream()
+                .filter(variant -> filteringRequest.getUserPrompt().contains(variant))
+                .count();
+
+        if (keywordCnt > 1) {
             return ApiResponseUtil.failure("Prompt에 중복된 카드가 사용되었습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
+
 
         // 성공 응답
         return ApiResponseUtil.success(true,"Prompt 필터링 성공",
