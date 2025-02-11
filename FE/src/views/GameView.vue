@@ -112,7 +112,6 @@ const votings = ref([]);
 
 // 긴장감 퍼센트
 const percentage = computed(() => {
-  console.log(bookContents.value.length , participants.value.length)
   if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
     return 0
   } else {
@@ -328,7 +327,6 @@ const setupConnection = (conn) => {
         break;
       
       case "sendPrompt":
-        console.log(data.prompt);
         prompt.value = data.prompt;
         usedCard.value = data.usedCard;
         inProgress.value = false;
@@ -337,16 +335,15 @@ const setupConnection = (conn) => {
         break;
 
       case "sendImage":
-        console.log(bookContents.value)
         bookContents.value[bookContents.value.length - 1].image = data.imageBlob;
         break;
 
       case "voteResult":
-        console.log(votings.value.length);
         votings.value.push({
           sender: data.sender,
           selected: data.selected
         });
+
         if(votings.value.length == participants.value.length) {
           let upCount = 0;
           let downCount = 0;
@@ -388,19 +385,25 @@ const setupConnection = (conn) => {
             } else {
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-              currentPlayer.score += 2;
+              if (usedCard.value.isEnding) {
+                currentPlayer.score += 5;
+              } else {
+                currentPlayer.score += 2;
+              }
               
               // 턴 종료 트리거 송신하기
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
-              connectedPeers.value.forEach((peer) => {
+              connectedPeers.value.forEach(async (peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   if (usedCard.value.isEnding) {
-                    sendMessage(
-                      "gameEnd"
-                    )
+                    console.log("게임 종료 송신!");
+                    // 게임 종료 송신
+                    sendMessage("gameEnd",{}, peer.connection);
                     // 수정 중 //
+                    router.push('/game/rank');
                   } else {
+                    console.log("다음 턴 송신!");
                     sendMessage(
                       "nextTurn",
                       { 
@@ -409,12 +412,12 @@ const setupConnection = (conn) => {
                       },
                       peer.connection
                     )
+                    // inProgress.value = false;
+                    await showOverlay('whoTurn');
+                    inProgress.value = true;
                   }
                 }
               });
-              // inProgress.value = false;
-              await showOverlay('whoTurn');
-              inProgress.value = true;
             }
           } else {
             if (upCount < downCount) {
@@ -424,11 +427,19 @@ const setupConnection = (conn) => {
             } else {
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-              currentPlayer.score += 2;
-              // 결말 로직 추가 + 3 추가
+              if (usedCard.value.isEnding) {
+                currentPlayer.score += 5;
+              } else {
+                currentPlayer.score += 2;
+              }
             }
           }
         }
+        break;
+
+      case "gameEnd":
+        console.log('게임 종료');
+        router.push("/game/rank");
         break;
     }
   });
@@ -920,20 +931,32 @@ const voteEnd = async (data) => {
       } else {
         // 투표 가결 시 점수 +2
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-        currentPlayer.score += 2;
+        if (usedCard.value.isEnding) {
+          currentPlayer.score += 5;
+        } else {
+          currentPlayer.score += 2;
+        }
 
         // 턴 종료 트리거 송신하기
         currTurn.value = (currTurn.value + 1) % participants.value.length;
+        // condition에서 다음 턴 or 게임 종료
         connectedPeers.value.forEach((peer) => {
           if (peer.id !== peerId.value && peer.connection.open) {
-            sendMessage(
-              "nextTurn",
-              { 
-                currTurn: currTurn.value,
-                imageDelete: false,
-              },
-              peer.connection
-            )
+            if (usedCard.value.isEnding) {
+              // 게임 종료 송신
+              sendMessage("gameEnd");
+              // 수정 중 //
+              router.push('/game/rank');
+            } else {
+              sendMessage(
+                "nextTurn",
+                { 
+                  currTurn: currTurn.value,
+                  imageDelete: false,
+                },
+                peer.connection
+              )
+            }
           }
         });
         // inProgress.value = false;
@@ -948,7 +971,11 @@ const voteEnd = async (data) => {
       } else {
         // 투표 가결 시 점수 +2
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-        currentPlayer.score += 2;
+        if (usedCard.value.isEnding) {
+          currentPlayer.score += 5;
+        } else {
+          currentPlayer.score += 2;
+        }
       }
     }
   }
