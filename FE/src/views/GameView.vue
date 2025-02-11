@@ -52,6 +52,7 @@ import { useGameStore } from "@/stores/game";
 import { myTurnImage, currTurnImage, startImage } from "@/assets";
 import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering, createImage, voteResultSend } from "@/apis/game";
 import toast from "@/functions/toast";
+import testImage from "@/assets/test.png";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -808,16 +809,21 @@ const nextTurn = async (data) => {
     prompt.value = data.prompt;
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
-    const responseImage = await createImage({
-      gameId: gameID.value,
-      userId: peerId.value,
-      userPrompt: data.prompt,
-      turn: totalTurn.value,
-    });
+    try {
+      const responseImage = await createImage({
+        gameId: gameID.value,
+        userId: peerId.value,
+        userPrompt: data.prompt,
+        turn: totalTurn.value,
+      });
+    } catch(error) {
+    
+    }
 
         // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-        const imageBlob = responseImage.data;
-
+        // const imageBlob = responseImage.data;
+        const imageBlob = testImage;
+        
     // 사람들에게 이미지 전송
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
@@ -967,14 +973,28 @@ const voteEnd = async (data) => {
         // inProgress.value = false;
         await showOverlay('whoTurn');
         inProgress.value = true;
-        
+
         // 투표 결과 전송 api
-        const response = await voteResultSend({
-          gameId: gameID.value,
-          userId: peerId.value,
-          isAccepted: isAccepted,
-          cardId: usedCard.value.id,
-        });
+        try {
+          const response = await voteResultSend({
+            gameId: gameID.value,
+            userId: peerId.value,
+            isAccepted: isAccepted,
+            cardId: usedCard.value.id,
+          });
+  
+          if(response.status === 200) {
+            // 이미지 쓰레기통에 넣기
+          }
+        } catch(error) {
+          if(error.response.status === 409) {
+            storyCards.value.forEach((card, index) => {
+              if(card.id === usedCard.value.id) {
+                storyCards.value.splice(index, 1);
+              }
+            });
+          }
+        }
       }
     } else {
       if (upCount < downCount) {
