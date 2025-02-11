@@ -14,9 +14,12 @@
         </div>
       </div>
       <div class="flex flex-col flex-1 justify-center items-center">
-        <div class="relative">
+        <div
+          class="relative endingcard cursor-pointer"
+          @click="sendEndingCard"
+        >
           <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-28">
-          <div class="endingcard w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e] text-xl">{{ endingCard.content }}</div>
+          <div class="endingcard-text w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e] text-xl">{{ endingCard.content }}</div>
         </div>
       </div>
     </div>
@@ -163,6 +166,16 @@ const sendEmoticon = (data) => {
   });
   toggleEmoticon.value = false;
 };
+const sendEndingCard = () => {
+  if (props.myTurn !== props.currTurn) {
+    toast.errorToast("자신의 턴에만 결말카드를 제출할 수 있습니다!");
+  } else {
+    emit("nextTurn", {
+      prompt: props.endingCard.content,
+      isEnding: true,
+    });
+  }
+}
 
 const chatMode = ref([
   {
@@ -206,7 +219,21 @@ const cardReroll = () => {
 .storycard {
   text-shadow: -1px 0px #9f876a, 0px 1px #9f876a, 1px 0px #9f876a, 0px -1px #9f876a;
 }
-.endingcard {
+.endingcard-text {
   text-shadow: -1px 0px #8a622a, 0px 1px #8a622a, 1px 0px #8a622a, 0px -1px #8a622a;
+}
+
+@keyframes swing {
+  0% { transform: rotate(-2deg); }
+  100% { transform: rotate(2deg); }
+}
+
+.endingcard {
+  transition: transform 0.2s ease-in-out;
+  transform-origin: bottom center;
+}
+
+.endingcard:hover {
+  animation: swing 0.5s ease-in-out infinite alternate;
 }
 </style>
