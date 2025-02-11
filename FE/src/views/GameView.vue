@@ -42,7 +42,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
@@ -52,6 +52,7 @@ import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering } 
 const userStore = useUserStore();
 const gameStore = useGameStore();
 const route = useRoute();
+const router = useRouter();
 // 내 피어 객체
 const peer = ref(null);
 const peerId = ref("");
@@ -263,6 +264,8 @@ const setupConnection = (conn) => {
 
           storyCards.value = response.data.data.storyCards;
           endingCard.value = response.data.data.endingCard;
+
+          router.push("/game/play");
 
           await showOverlay('start')
           setTimeout(async () => {
@@ -482,7 +485,18 @@ const broadcastNewParticipant = (newParticipant) => {
 const initializePeer = () => {
   return new Promise((resolve, reject) => {
     try {
-      peer.value = new Peer();
+      peer.value = new Peer({
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" }, // 예제 STUN 서버
+            {
+              urls: "turn:i12b101.p.ssafy.io:3478",   // 턴서버 제작완료하면 바꿔야함
+              username: import.meta.env.VITE_TURN_ID,              // docker 환경변수 참고
+              credential: import.meta.env.VITE_TURN_PW          // docker 환경변수 참고
+            }
+          ]
+        }
+      });
 
       peer.value.on("open", (id) => {
         peerId.value = id;
@@ -573,9 +587,6 @@ const onRoomConfiguration = (data) => {
 // 게임 진행 관련 부분 //
 ///////////////////////
 const gameStart = async (data) => {
-  gameStarted.value = data.gameStarted;
-  inGameOrder.value = data.order;
-
   // 게임 방 생성
   try {
     const response = await createGame({
@@ -583,7 +594,7 @@ const gameStart = async (data) => {
       player: participants.value.map((p) => p.id),
       drawingStyle: roomConfigs.value.currStyle,
     })
-
+    
     gameID.value = response.data.data.gameId;
     storyCards.value = response.data.data.status.storyCards;
     endingCard.value = response.data.data.status.endingCard;
@@ -591,6 +602,11 @@ const gameStart = async (data) => {
     console.log(error);
     // return;
   }
+  
+  gameStarted.value = data.gameStarted;
+  inGameOrder.value = data.order;
+
+  router.push("/game/play");
 
   connectedPeers.value.forEach((peer) => {
     sendMessage(
