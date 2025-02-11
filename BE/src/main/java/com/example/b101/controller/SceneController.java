@@ -1,5 +1,6 @@
 package com.example.b101.controller;
 
+import com.example.b101.dto.DeleteSceneRequest;
 import com.example.b101.dto.FilteringRequest;
 import com.example.b101.dto.SceneRequest;
 import com.example.b101.service.FilteringService;
@@ -19,15 +20,9 @@ public class SceneController {
 
     
     //이야기 카드로 이미지 생성
-    @PostMapping("/storyCard")
+    @PostMapping
     public ResponseEntity<?> addSceneStoryCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
-        return sceneService.createScene(sceneRequest, request, true);
-    }
-
-    //엔딩 카드로 이미지 생성
-    @PostMapping("/endingCard")
-    public ResponseEntity<?> addSceneEndingCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
-        return sceneService.createScene(sceneRequest, request, false);
+        return sceneService.createScene(sceneRequest, request);
     }
 
     //프롬포트 필터링
@@ -43,9 +38,9 @@ public class SceneController {
     }
 
     //투표 반대 시 scene 데이터 삭제
-    @DeleteMapping
-    public ResponseEntity<?> deleteScene(@RequestParam String gameId,HttpServletRequest request) {
-        return sceneService.deleteScene(gameId,request);
+    @PostMapping("/vote")
+    public ResponseEntity<?> deleteScene(@RequestBody DeleteSceneRequest deleteSceneRequest, HttpServletRequest request) {
+        return sceneService.deleteScene(deleteSceneRequest,request);
     }
 
 }

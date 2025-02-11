@@ -9,6 +9,6 @@ import java.util.List;
 public class GameRequest {
 
     String bossId;
-    String drawingStyle;
+    int drawingStyle;
     List<String> player;
 }
