@@ -32,6 +32,11 @@ const router = createRouter({
           name: "InGame",
           component: () => import("@/views/Game/InGameView.vue"),
         },
+        {
+          path: "rank",
+          name: "Rank",
+          component: () => import("@/views/Game/GameRanking.vue"),
+        },
       ],
     },
     {
