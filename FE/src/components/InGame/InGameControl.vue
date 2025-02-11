@@ -19,7 +19,7 @@
           <div class="endingcard w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e] text-xl">{{ endingCard.content }}</div>
         </div>
       </div>
-    </div>
+    </div>  
     <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full">
       <div
         class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
@@ -43,6 +43,7 @@
           v-model="message"
           @keyup.enter="mode.fucntion"
           :placeholder="mode.placeholder"
+          :ref="(el) => (chatRefs[index] = el)"
         />
         <button
           class="rounded-full border w-8 h-8 shrink-0 border-black p-1 flex justify-center items-center"
@@ -88,7 +89,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, watch, nextTick } from "vue";
 import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon } from "@/assets";
 import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
@@ -98,6 +99,7 @@ import toast from "@/functions/toast";
 const userStore = useUserStore();
 const toggleEmoticon = ref(false);
 const message = ref("");
+const chatRefs = ref([]);
 const rerollCount = ref(3);
 const emoticons = ref(
   [
@@ -153,6 +155,7 @@ const sendprompt = () => {
       prompt: message.value
     });
     message.value = "";
+    chatRefs.value[currChatModeIdx.value].blur();
   }
 };
 const sendEmoticon = (data) => {
@@ -194,6 +197,19 @@ const cardReroll = () => {
     toast.errorToast("모두 사용했습니다!");
   }
 };
+
+watch(currChatModeIdx, async (newIndex, oldIndex) => {
+  // 기존 input blur()
+  if (chatRefs.value[oldIndex]) {
+    chatRefs.value[oldIndex].blur();
+  }
+
+  // DOM 업데이트 후 focus() 실행
+  await nextTick(); // display: none → block 변경 후 실행 보장
+  if (chatRefs.value[newIndex]) {
+    chatRefs.value[newIndex].focus();
+  }
+});
 </script>
 
 <style scoped>
