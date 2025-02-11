@@ -111,7 +111,6 @@ const handlePageClick = (pageIndex) => {
 
 watch(() => props.bookContents.length,
 (afterSize, beforeSize) => {
-  console.log("책 길이", props.bookContents.length);
   if (afterSize > beforeSize) {
     for (let i of Array.from({length: afterSize}, (_, index) => index * 2)) {
       if (!isFlipped(i)) {
