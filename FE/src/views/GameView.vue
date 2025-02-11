@@ -47,7 +47,7 @@ import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
 import { myTurnImage , currTurnImage, startImage } from "@/assets";
-import { createGame, enterGame, deleteGame, endingCardReroll } from "@/apis/game";
+import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering } from "@/apis/game";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -668,10 +668,29 @@ const addBookContent = (newContent) => {
   }
 };
 
+// 프롬프트 제출 api
+const promptFiltering = () => {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const response = await promptFiltering({
+            userId: peerId.value,
+            gameId: gameID.value,
+            userPrompt: data.prompt,
+          });
+          resolve(response.data);
+        } catch(error) {
+          console.log(error);
+          reject();
+        }
+      });
+    }
+
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
   if (data?.prompt) {
     // 프롬프트 제출 api 들어가야 함
+    
+
     // 참가자들에게 프롬프트 전달
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
