@@ -1,5 +1,6 @@
 package com.example.b101.controller;
 
+import com.example.b101.dto.DeleteGameRequest;
 import com.example.b101.dto.GameRequest;
 import com.example.b101.service.GameService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,8 +25,8 @@ public class GameController{
 
     //게임 삭제
     @DeleteMapping
-    public ResponseEntity<?> deleteGame(@RequestParam String gameId, HttpServletRequest request) {
-        return gameService.delete(gameId,request);
+    public ResponseEntity<?> deleteGame(@RequestBody DeleteGameRequest deleteGameRequest, HttpServletRequest request) {
+        return gameService.delete(deleteGameRequest,request);
     }
 
     //엔딩 카드 리롤
