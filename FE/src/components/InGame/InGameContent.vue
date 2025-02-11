@@ -27,7 +27,7 @@
             :class="{ flipped: isFlipped(index * 2 + 2) }"
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
-            {{ content.image }}
+            <img :src="content.image" alt="이야기 이미지" v-if="content.image">
           </div>
         </template>
       </div>
