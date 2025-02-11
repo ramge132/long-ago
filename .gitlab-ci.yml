@@ -11,7 +11,9 @@ variables:
   # Docker Hub 경로
   FE_IMAGE: "ssafyb101/my-fe"
   BE_IMAGE: "ssafyb101/my-be"
-
+  # Docker Hub main 경로
+  FE_IMAGE_MAIN: "ssafyb101main/my-fe"
+  BE_IMAGE_MAIN: "ssafyb101main/my-be"
 
 #########################
 # 1-1. build_FE JOB 단계 #
@@ -58,7 +60,7 @@ build_FE:
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/test"
+  - if: ($CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main")
     when: always
   - when: never
 
@@ -85,7 +87,7 @@ build_BE:
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: ($CI_COMMIT_BRANCH == "CICD/test")
+  - if: ($CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main")
     when: always
   - when: never
 
@@ -94,7 +96,28 @@ build_BE:
 # 2-1. push_FE JOB 단계 #
 ########################
 
-push_FE:
+
+push_FE_main:
+  stage: push
+  variables:
+    IMAGE_NAME: $FE_IMAGE_MAIN
+  script:
+    - echo "==========================="
+    - echo "  FRONT-END 이미지 푸쉬 중"
+    - echo "==========================="
+    - echo "$DOCKERHUB_PASSWORD_MAIN" | docker login -u "$DOCKERHUB_USERNAME_MAIN" --password-stdin
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
+  dependencies:
+    - build_FE
+  rules:
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
+    when: always
+  - if: $CI_COMMIT_BRANCH == "CICD/main"
+    when: always
+  - when: never
+
+push_FE_test:
   stage: push
   variables:
     IMAGE_NAME: $FE_IMAGE
@@ -108,7 +131,7 @@ push_FE:
   dependencies:
     - build_FE
   rules:
-  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "FE/dev"
     when: always
   - if: $CI_COMMIT_BRANCH == "CICD/test"
     when: always
@@ -119,7 +142,27 @@ push_FE:
 # 2-2. push_BE JOB 단계 #
 ########################
 
-push_BE:
+push_BE_main:
+  stage: push
+  variables:
+    IMAGE_NAME: $BE_IMAGE_MAIN
+  script:
+    - echo "==========================="
+    - echo "  BACK-END 이미지 푸쉬 중"
+    - echo "==========================="
+    - echo "$DOCKERHUB_PASSWORD_MAIN" | docker login -u "$DOCKERHUB_USERNAME_MAIN" --password-stdin
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
+  dependencies:
+    - build_BE
+  rules:
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
+    when: always
+  - if: $CI_COMMIT_BRANCH == "CICD/main"
+    when: always
+  - when: never
+
+push_BE_test:
   stage: push
   variables:
     IMAGE_NAME: $BE_IMAGE
@@ -133,7 +176,7 @@ push_BE:
   dependencies:
     - build_BE
   rules:
-  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "BE/dev"
     when: always
   - if: $CI_COMMIT_BRANCH == "CICD/test"
     when: always
@@ -222,8 +265,13 @@ deploy_main:
     - echo "===================================="
     - echo "          배포 완료!!!"
     - echo "===================================="
+  dependencies:
+    - push_FE_main
+    - push_BE_main
   rules:
     - if: ($CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "main")
+      when: always
+    - if: $CI_COMMIT_BRANCH == "CICD/main"
       when: always
     - when: never
 
@@ -269,6 +317,9 @@ deploy_test:
     - echo "===================================="
     - echo "          배포 완료!!!"
     - echo "===================================="
+  dependencies:
+    - push_FE_test
+    - push_BE_test
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == "FE/dev" || $CI_COMMIT_REF_NAME == "BE/dev")
       when: always
