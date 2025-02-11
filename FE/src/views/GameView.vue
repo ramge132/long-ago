@@ -21,6 +21,7 @@
           :endingCard="endingCard"
           :prompt="prompt"
           :votings="votings"
+          :percentage="percentage"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
@@ -41,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
@@ -101,6 +102,16 @@ const bookContents = ref([
 const prompt = ref("");
 // 투표 결과 표시
 const votings = ref([]);
+
+// 긴장감 퍼센트
+const percentage = computed(() => {
+  console.log(bookContents.value.length , participants.value.length)
+  if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
+    return 0
+  } else {
+    return Math.round((bookContents.value.length / (participants.value.length * 3)) * 100)
+  }
+});
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {

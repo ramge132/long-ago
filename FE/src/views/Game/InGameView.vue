@@ -134,7 +134,12 @@
           </div>
         </template>
       </div>
-    <InGameProgress @next-turn="nextTurn" :roomConfigs="roomConfigs" :inProgress="inProgress" />
+    <InGameProgress
+      @next-turn="nextTurn"
+      :roomConfigs="roomConfigs"
+      :inProgress="inProgress"
+      :percentage="percentage"
+    />
     <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" v-if="prompt !== ''"/>
   </div>
 </template>
@@ -215,7 +220,10 @@ const props = defineProps({
   },
   votings: {
     Type: Array,
-  }
+  },
+  percentage: {
+    Type: Number,
+  },
 });
 
 watch(
