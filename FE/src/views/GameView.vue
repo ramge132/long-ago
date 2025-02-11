@@ -389,19 +389,27 @@ const setupConnection = (conn) => {
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               currentPlayer.score += 2;
-
+              
               // 턴 종료 트리거 송신하기
               currTurn.value = (currTurn.value + 1) % participants.value.length;
+              // condition에서 다음 턴 or 게임 종료
               connectedPeers.value.forEach((peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
-                  sendMessage(
-                    "nextTurn",
-                    { 
-                      currTurn: currTurn.value,
-                      imageDelete: false,
-                    },
-                    peer.connection
-                  )
+                  if (usedCard.value.isEnding) {
+                    sendMessage(
+                      "gameEnd"
+                    )
+                    // 수정 중 //
+                  } else {
+                    sendMessage(
+                      "nextTurn",
+                      { 
+                        currTurn: currTurn.value,
+                        imageDelete: false,
+                      },
+                      peer.connection
+                    )
+                  }
                 }
               });
               // inProgress.value = false;
@@ -417,6 +425,7 @@ const setupConnection = (conn) => {
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               currentPlayer.score += 2;
+              // 결말 로직 추가 + 3 추가
             }
           }
         }
@@ -732,24 +741,40 @@ const addBookContent = (newContent) => {
 
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
+  // 프롬프트 제출인 경우
   if (data?.prompt) {
-    // 프롬프트 제출 api 들어가야 함
-    try {
-      const filteredPrompt = await promptFiltering({
-        userId: peerId.value,
-        gameId: gameID.value,
-        userPrompt: data.prompt,
-      });
-      if(filteredPrompt.status === 200) {
+    const isEnding = data.isEnding ? true : false;
+    // 스토리 카드 제출인 경우
+    if (!isEnding) {
+      try {
+        const filteredPrompt = await promptFiltering({
+          userId: peerId.value,
+          gameId: gameID.value,
+          userPrompt: data.prompt,
+        })
         
-        // 프롬프트에 사용한 카드
         storyCards.value.forEach((card) => {
           if(card.id == filteredPrompt.data) {
             usedCard.value.text = card.keyword;
           } 
         })
+      } catch (error) {
+        console.log(error);
+        toast.errorToast(error.response.data.message);
+        return;
+      }
+    }
+    // 결말 카드 제출인 경우
+    else {
+      if (percentage.value < 35) {
+        toast.errorToast("긴장감이 충분히 오르지 않았습니다!");
+        return;
+      }
+      usedCard.value.text = endingCard.value.content;
+      usedCard.value.isEnding = isEnding;
+    }
 
-        // 참가자들에게 프롬프트 전달
+    // 연결된 피어들에게 프롬프트 제출
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
@@ -758,17 +783,17 @@ const nextTurn = async (data) => {
             prompt: data.prompt,
             usedCard: {
               text: usedCard.value.text,
-              isEnding: false,
+              isEnding: isEnding,
             },
           },
           peer.connection
         )
       }
     });
-    // 프롬프트 책에 추가 (프롬프트 검증 api)
+        
     addBookContent({ content: data.prompt, image: null });
 
-      // 투표 모달 띄우기
+    // 투표 모달 띄우기
     inProgress.value = false;
     prompt.value = data.prompt;
     votings.value = [];
@@ -796,17 +821,8 @@ const nextTurn = async (data) => {
     
     // 나의 책에 이미지 넣기
     bookContents.value[bookContents.value.length - 1].image = imageBlob;
-
-      }
-    } catch(error) {
-      console.log(error);
-      if(error.response.data.path == "/scene/filtering") {
-        toast.errorToast(error.response.data.message);
-      }
-    }
-
-    // 프롬프트 입력 시간초과로 턴 넘기는 경우
   }
+  // 프롬프트 입력 시간초과로 턴 넘기는 경우
   else if (currTurn.value === myTurn.value) {
     // 타임아웃 점수 -1
     const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
@@ -851,92 +867,92 @@ const voteEnd = async (data) => {
     selected: data.selected,
   });
   connectedPeers.value.forEach((peer) => {
-      if (peer.id !== peerId.value && peer.connection.open) {
-        sendMessage(
-          "voteResult",
-          {
-            sender: data.sender,
-            selected: data.selected,
-          },
-          peer.connection
-        )
-      }
-    })
+    if (peer.id !== peerId.value && peer.connection.open) {
+      sendMessage(
+        "voteResult",
+        {
+          sender: data.sender,
+          selected: data.selected,
+        },
+        peer.connection
+      )
+    }
+  })
+  
+  if(votings.value.length == participants.value.length) {
+    let upCount = 0;
+    let downCount = 0;
+    votings.value.forEach((vote) => {
+      if(vote.selected == 'up') upCount++;
+      else downCount++;
+    });
     
-    if(votings.value.length == participants.value.length) {
-      let upCount = 0;
-      let downCount = 0;
-      votings.value.forEach((vote) => {
-        if(vote.selected == 'up') upCount++;
-        else downCount++;
-      });
-      
-      if(currTurn.value === myTurn.value) {
-        if (upCount < downCount) {
-          // 이미지 버리는 api
-          // 내 이미지 버리기
-          if (bookContents.value.length === 1) {
-            bookContents.value = [{ content: "", image: null }];
-          } else {
-            bookContents.value = bookContents.value.slice(0, -1);
+    if(currTurn.value === myTurn.value) {
+      if (upCount < downCount) {
+        // 이미지 버리는 api
+        // 내 이미지 버리기
+        if (bookContents.value.length === 1) {
+          bookContents.value = [{ content: "", image: null }];
+        } else {
+          bookContents.value = bookContents.value.slice(0, -1);
+        }
+        // 현재 턴 사람 점수 -1
+        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        currentPlayer.score -= 1;
+        // 턴 종료 트리거 송신하기
+        currTurn.value = (currTurn.value + 1) % participants.value.length;
+        totalTurn.value++;
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            sendMessage(
+              "nextTurn",
+              { 
+                currTurn: currTurn.value,
+                imageDelete: true,
+              },
+              peer.connection
+            )
           }
-          // 현재 턴 사람 점수 -1
-          const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-          currentPlayer.score -= 1;
-          // 턴 종료 트리거 송신하기
-          currTurn.value = (currTurn.value + 1) % participants.value.length;
-          totalTurn.value++;
-          connectedPeers.value.forEach((peer) => {
-            if (peer.id !== peerId.value && peer.connection.open) {
-              sendMessage(
-                "nextTurn",
-                { 
-                  currTurn: currTurn.value,
-                  imageDelete: true,
-                },
-                peer.connection
-              )
-            }
-          });
-          // inProgress.value = false;
-          await showOverlay('whoTurn');
-          inProgress.value = true;
-        } else {
-          // 투표 가결 시 점수 +2
-          const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-          currentPlayer.score += 2;
-
-          // 턴 종료 트리거 송신하기
-          currTurn.value = (currTurn.value + 1) % participants.value.length;
-          connectedPeers.value.forEach((peer) => {
-            if (peer.id !== peerId.value && peer.connection.open) {
-              sendMessage(
-                "nextTurn",
-                { 
-                  currTurn: currTurn.value,
-                  imageDelete: false,
-                },
-                peer.connection
-              )
-            }
-          });
-          // inProgress.value = false;
-          await showOverlay('whoTurn');
-          inProgress.value = true;
-        }
+        });
+        // inProgress.value = false;
+        await showOverlay('whoTurn');
+        inProgress.value = true;
       } else {
-        if (upCount < downCount) {
-          // 현재 턴 사람 점수 -1
-          const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-          currentPlayer.score -= 1;
-        } else {
-          // 투표 가결 시 점수 +2
-          const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-          currentPlayer.score += 2;
-        }
+        // 투표 가결 시 점수 +2
+        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        currentPlayer.score += 2;
+
+        // 턴 종료 트리거 송신하기
+        currTurn.value = (currTurn.value + 1) % participants.value.length;
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            sendMessage(
+              "nextTurn",
+              { 
+                currTurn: currTurn.value,
+                imageDelete: false,
+              },
+              peer.connection
+            )
+          }
+        });
+        // inProgress.value = false;
+        await showOverlay('whoTurn');
+        inProgress.value = true;
+      }
+    } else {
+      if (upCount < downCount) {
+        // 현재 턴 사람 점수 -1
+        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        currentPlayer.score -= 1;
+      } else {
+        // 투표 가결 시 점수 +2
+        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        currentPlayer.score += 2;
       }
     }
-  };
+  }
+};
 </script>
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
