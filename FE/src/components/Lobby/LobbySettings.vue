@@ -36,45 +36,6 @@
               </div>
             </div>
           </div>
-          <div class="col-span-3 row-span-2 flex flex-col">
-            <label>플레이어 카드 개수</label>
-            <div
-              class="justify-center items-center w-[70%] mt-3 self-center border-2 border-black rounded-xl grid grid-cols-3 text-center text-xl overflow-hidden"
-            >
-              <label
-                :for="count + 'cards'"
-                v-for="(count, index) in cardCount"
-                :key="index"
-                class="cursor-pointer border-r-2 border-black last:border-none"
-                :class="
-                  count == roomConfigs.currCardCount
-                    ? 'bg-black text-white'
-                    : ''
-                "
-              >
-                {{ count }}
-                <input
-                  type="radio"
-                  class="hidden"
-                  :id="count + 'cards'"
-                  name="card"
-                  :value="count"
-                  v-model="localRoomConfigs.currCardCount"
-                  v-if="count == cardCount[0]"
-                  checked
-                />
-                <input
-                  type="radio"
-                  class="hidden"
-                  :id="count + 'cards'"
-                  name="card"
-                  :value="count"
-                  v-model="localRoomConfigs.currCardCount"
-                  v-if="count != cardCount[0]"
-                />
-              </label>
-            </div>
-          </div>
           <div class="col-span-4 row-span-5">
             <label class="mb-2 block">게임 모드</label>
             <div class="grid grid-cols-2 gap-x-3 h-2/3">
@@ -102,18 +63,6 @@
                 />
               </label>
             </div>
-          </div>
-          <div class="col-span-3 row-span-5">
-            <label class="mr-3">작화</label>
-            <select
-              class="rounded-lg bg-slate-300 w-[70%] shadow-md pl-3"
-              v-model="localRoomConfigs.currStyle"
-            >
-              <option value="korean">한국 전통민화</option>
-              <option value="occident">서양 회화</option>
-              <option value="japan">일본 우키요에</option>
-              <option value="egypt">이집트 벽화</option>
-            </select>
           </div>
         </div>
         <div class="grid grid-cols-2">
@@ -160,9 +109,7 @@ const maxTimeValue = ref(30);
 const stepTimeValue = ref(2);
 const localRoomConfigs = ref({
   currTurnTime: 20,
-  currCardCount: 4,
-  currMode: "textToPicture",
-  currStyle: "korean",
+  currMode: 1,
 });
 
 const emit = defineEmits(["roomConfiguration", "gameStart"]);
@@ -200,22 +147,20 @@ const ticks = computed(() => {
   return positions;
 });
 
-// 플레이어 카드 개수
-const cardCount = ref([4, 5, 6]);
+// // 플레이어 카드 개수
+// const cardCount = ref([4, 5, 6]);
 
 // 게임 모드
 const modes = ref([
   {
     icon: Mode1,
-    text: `문장을 입력하여 그림을 그립니다.
-    <br>재밌는 이야기를 적어주세요!`,
-    value: "textToPicture",
+    text: "기본 모드",
+    value: 1,
   },
   {
     icon: Mode2,
-    text: `그림을 그려 이야기를 만듭니다.
-    <br>그림 실력을 뽐내보세요!`,
-    value: "pictureToText",
+    text: "클레이 모드",
+    value: 2,
   },
 ]);
 

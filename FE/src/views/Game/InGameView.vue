@@ -140,7 +140,7 @@
       :inProgress="inProgress"
       :percentage="percentage"
     />
-    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" v-if="prompt !== ''"/>
+    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" v-if="prompt !== ''"/>
   </div>
 </template>
 
@@ -223,6 +223,9 @@ const props = defineProps({
   },
   percentage: {
     Type: Number,
+  },
+  usedCard: {
+    Type: Object,
   },
 });
 

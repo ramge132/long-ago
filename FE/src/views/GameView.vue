@@ -22,6 +22,7 @@
           :prompt="prompt"
           :votings="votings"
           :percentage="percentage"
+          :usedCard="usedCard"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
@@ -48,7 +49,8 @@ import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
 import { myTurnImage , currTurnImage, startImage } from "@/assets";
-import { createGame, enterGame, deleteGame, endingCardReroll } from "@/apis/game";
+import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering, createImage } from "@/apis/game";
+import toast from "@/functions/toast";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -69,9 +71,7 @@ const participants = ref([]);
 const configurable = ref(false);
 const roomConfigs = ref({
   currTurnTime: 20,
-  currCardCount: 4,
-  currMode: "textToPicture",
-  currStyle: "korean",
+  currMode: 1,
 });
 // 최대 참가자
 const maxParticipants = 6;
@@ -85,6 +85,8 @@ const gameID = ref("");
 const inGameOrder = ref([]);
 // 현재 턴 인덱스
 const currTurn = ref(0);
+// 누적 턴
+const totalTurn = ref(0);
 // 나의 턴 순서
 const myTurn = ref(null);
 const inProgress = ref(false);
@@ -100,6 +102,11 @@ const bookContents = ref([
 ]);
 // 내 턴에 작성한 이야기
 const prompt = ref("");
+// 이번 턴에 사용된 카드
+const usedCard = ref({
+  text: "",
+  isEnding: false
+});
 // 투표 결과 표시
 const votings = ref([]);
 
@@ -323,6 +330,7 @@ const setupConnection = (conn) => {
       case "sendPrompt":
         console.log(data.prompt);
         prompt.value = data.prompt;
+        usedCard.value = data.usedCard;
         inProgress.value = false;
         addBookContent({ content: data.prompt, image: null });
         votings.value = [];
@@ -334,6 +342,7 @@ const setupConnection = (conn) => {
         break;
 
       case "voteResult":
+        console.log(votings.value.length);
         votings.value.push({
           sender: data.sender,
           selected: data.selected
@@ -360,6 +369,7 @@ const setupConnection = (conn) => {
               currentPlayer.score -= 1;
               // 턴 종료 트리거 송신하기
               currTurn.value = (currTurn.value + 1) % participants.value.length;
+              totalTurn.value++;
               connectedPeers.value.forEach((peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   sendMessage(
@@ -587,7 +597,7 @@ onMounted(async () => {
   }
 });
 
-// 퇴장 관련련
+// 퇴장 관련
 addEventListener("beforeunload", () => {
   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
   connectedPeers.value.forEach((peer) => {
@@ -628,9 +638,8 @@ const gameStart = async (data) => {
     const response = await createGame({
       bossId: peerId.value,
       player: participants.value.map((p) => p.id),
-      drawingStyle: roomConfigs.value.currStyle,
+      drawingStyle: roomConfigs.value.currMode,
     })
-    
     gameID.value = response.data.data.gameId;
     storyCards.value = response.data.data.status.storyCards;
     endingCard.value = response.data.data.status.endingCard;
@@ -720,16 +729,38 @@ const addBookContent = (newContent) => {
   }
 };
 
+
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
   if (data?.prompt) {
     // 프롬프트 제출 api 들어가야 함
-    // 참가자들에게 프롬프트 전달
+    try {
+      const filteredPrompt = await promptFiltering({
+        userId: peerId.value,
+        gameId: gameID.value,
+        userPrompt: data.prompt,
+      });
+      if(filteredPrompt.status === 200) {
+        
+        // 프롬프트에 사용한 카드
+        storyCards.value.forEach((card) => {
+          if(card.id == filteredPrompt.data) {
+            usedCard.value.text = card.keyword;
+          } 
+        })
+
+        // 참가자들에게 프롬프트 전달
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
           "sendPrompt",
-          { prompt: data.prompt },
+          { 
+            prompt: data.prompt,
+            usedCard: {
+              text: usedCard.value.text,
+              isEnding: false,
+            },
+          },
           peer.connection
         )
       }
@@ -737,15 +768,21 @@ const nextTurn = async (data) => {
     // 프롬프트 책에 추가 (프롬프트 검증 api)
     addBookContent({ content: data.prompt, image: null });
 
-    // 투표 모달 띄워야 함
+      // 투표 모달 띄우기
     inProgress.value = false;
     prompt.value = data.prompt;
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
-    
+    const responseImage = await createImage({
+      gameId: gameID.value,
+      userId: peerId.value,
+      userPrompt: data.prompt,
+      turn: totalTurn.value,
+    });
+
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-    const imageBlob = 'test';
-    
+    const imageBlob = responseImage.data;
+
     // 사람들에게 이미지 전송
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
@@ -760,6 +797,14 @@ const nextTurn = async (data) => {
     // 나의 책에 이미지 넣기
     bookContents.value[bookContents.value.length - 1].image = imageBlob;
 
+      }
+    } catch(error) {
+      console.log(error);
+      if(error.response.data.path == "/scene/filtering") {
+        toast.errorToast(error.response.data.message);
+      }
+    }
+
     // 프롬프트 입력 시간초과로 턴 넘기는 경우
   }
   else if (currTurn.value === myTurn.value) {
@@ -769,6 +814,7 @@ const nextTurn = async (data) => {
 
     // 턴 종료 트리거 송신하기
     currTurn.value = (currTurn.value + 1) % participants.value.length;
+    totalTurn.value++;
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
@@ -839,6 +885,7 @@ const voteEnd = async (data) => {
           currentPlayer.score -= 1;
           // 턴 종료 트리거 송신하기
           currTurn.value = (currTurn.value + 1) % participants.value.length;
+          totalTurn.value++;
           connectedPeers.value.forEach((peer) => {
             if (peer.id !== peerId.value && peer.connection.open) {
               sendMessage(
