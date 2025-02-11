@@ -16,18 +16,20 @@ import java.util.List;
 @AllArgsConstructor
 public class CardService {
 
-    private final EndingCardRepository endingCardRepository;
     private final StoryCardRepository storyCardRepository;
+    private final CachingService cachingService;
 
 
+    //결말 카드 셔플
     public List<EndingCard> shuffleEndingCard() {
-        List<EndingCard> cardList = endingCardRepository.findAll();
+        List<EndingCard> cardList = cachingService.getEndingCardAll().getEndingCards();
         Collections.shuffle(cardList);
 
         return cardList;
     }
 
 
+    //이야기 카드 셔플
     public List<List<StoryCard>> shuffleStoryCard(int playerCnt) {
         List<List<StoryCard>> shuffledCards = new ArrayList<>();
 
@@ -45,8 +47,13 @@ public class CardService {
         return shuffledCards;
     }
 
+
+    //카테고리별 카드리스트를 플레이어 수 만큼만 가져옴.
     private List<StoryCard> fetchAndShuffleCards(String attribute,int playerCnt) {
-        List<StoryCard> cards = new ArrayList<>(storyCardRepository.findStoryCardsByAttribute(attribute));
+        List<StoryCard> cards = new ArrayList<>(cachingService.getStoryCardAll().getStoryCards()
+                .stream()
+                .filter(storyCard -> storyCard.getAttribute().equals(attribute))
+                .toList());
         Collections.shuffle(cards);
         return cards.subList(0, playerCnt);
     }

@@ -1,8 +1,7 @@
 package com.example.b101.domain;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -11,8 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Setter
-@Getter
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class Book {
 
@@ -22,6 +23,9 @@ public class Book {
 
     @Column(name = "BOOK_TITLE", nullable = false)
     private String title;
+
+    @Column(name = "IMAGE_URL", nullable = false)
+    private String imageUrl;
 
     //book을 삭제하면 자동으로 자식 author도 삭제됨.
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)

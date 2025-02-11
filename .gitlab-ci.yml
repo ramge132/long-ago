@@ -30,6 +30,8 @@ build_FE:
     VITE_USERS_SIGNIN: "$VITE_USERS_SIGNIN"
     VITE_GAME: "$VITE_GAME"
     VITE_GAME_SHUFFLE: "$VITE_GAME_SHUFFLE"
+    VITE_TURN_ID: "$VITE_TURN_ID"
+    VITE_TURN_PW: "$VITE_TURN_PW"
   script:
     - echo "==========================="
     - echo "     FRONT-END빌드 중"
@@ -48,13 +50,15 @@ build_FE:
     - echo "VITE_USERS_SIGNIN=$VITE_USERS_SIGNIN" >> FE/.env
     - echo "VITE_GAME=$VITE_GAME" >> FE/.env
     - echo "VITE_GAME_SHUFFLE=$VITE_GAME_SHUFFLE" >> FE/.env
+    - echo "VITE_TURN_ID=$VITE_TURN_ID" >> FE/.env
+    - echo "VITE_TURN_PW=$VITE_TURN_PW" >> FE/.env
 
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/test"
+  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
     when: always
   - when: never
 
@@ -81,7 +85,7 @@ build_BE:
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: ($CI_COMMIT_BRANCH == "CICD/test")
+  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
     when: always
   - when: never
 
@@ -106,7 +110,7 @@ push_FE:
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/test"
+  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
     when: always
   - when: never
 
@@ -131,7 +135,7 @@ push_BE:
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/test"
+  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
     when: always
   - when: never
 
@@ -175,6 +179,12 @@ deploy_main:
     DB_USERNAME_MAIN: "$DB_USERNAME"
     DB_PASSWORD_MAIN: "$DB_PASSWORD_MAIN"
     REDIS_HOST_MAIN: "$REDIS_HOST"
+    WEBCLIENT_BASE_URL: "$WEBCLIENT_BASE_URL"
+    S3_BUCKET_NAME: "$S3_BUCKET_NAME"
+    S3_REGION: "$S3_REGION"
+    S3_CREDENTIALS_ACCESS_KEY: "$S3_CREDENTIALS_ACCESS_KEY"
+    S3_CREDENTIALS_SECRET_KEY: "$S3_CREDENTIALS_SECRET_KEY"
+
   script:
     - echo "===================================="
     - echo "        main-server로 배포중..."
@@ -186,6 +196,13 @@ deploy_main:
     - echo "DB_USERNAME_MAIN=$DB_USERNAME_MAIN" >> .env
     - echo "DB_PASSWORD_MAIN=$DB_PASSWORD_MAIN" >> .env
     - echo "REDIS_HOST_MAIN=$REDIS_HOST_MAIN" >> .env
+    - echo "WEBCLIENT_BASE_URL=$WEBCLIENT_BASE_URL" >> .env
+    - echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env
+    - echo "S3_REGION=$S3_REGION" >> .env
+    - echo "S3_CREDENTIALS_ACCESS_KEY=$S3_CREDENTIALS_ACCESS_KEY" >> .env
+    - echo "S3_CREDENTIALS_SECRET_KEY=$S3_CREDENTIALS_SECRET_KEY" >> .env
+
+    
     #.env 파일을 main-server로 전송
     - scp -i "$MAIN_SERVER_KEY" .env "$MAIN_SERVER_URI:/home/ubuntu/"
     # SSH를 통해 main-server에서 명령어 실행(터미널 생성)
@@ -218,6 +235,11 @@ deploy_test:
     DB_PASSWORD_TEST: "$DB_PASSWORD"
     DB_DRIVER_TEST: "$DB_DRIVER"
     REDIS_HOST_TEST: "$REDIS_HOST"
+    WEBCLIENT_BASE_URL: "$WEBCLIENT_BASE_URL"
+    S3_BUCKET_NAME: "$S3_BUCKET_NAME"
+    S3_REGION: "$S3_REGION"
+    S3_CREDENTIALS_ACCESS_KEY: "$S3_CREDENTIALS_ACCESS_KEY"
+    S3_CREDENTIALS_SECRET_KEY: "$S3_CREDENTIALS_SECRET_KEY"
   script:
     - echo "===================================="
     - echo "        test_server로 배포중..."
@@ -231,10 +253,16 @@ deploy_test:
     - echo "DB_USERNAME_TEST=$DB_USERNAME_TEST" >> .env
     - echo "DB_PASSWORD_TEST=$DB_PASSWORD_TEST" >> .env
     - echo "REDIS_HOST_TEST=$REDIS_HOST_TEST" >> .env
+    - echo "WEBCLIENT_BASE_URL=$WEBCLIENT_BASE_URL" >> .env
+    - echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env
+    - echo "S3_REGION=$S3_REGION" >> .env
+    - echo "S3_CREDENTIALS_ACCESS_KEY=$S3_CREDENTIALS_ACCESS_KEY" >> .env
+    - echo "S3_CREDENTIALS_SECRET_KEY=$S3_CREDENTIALS_SECRET_KEY" >> .env
+
     # 컨테이너 off
     - docker compose down -v
     # 기존 이미지 제거
-      docker rmi $(docker images -q)
+    - docker rmi $(docker images -q)
     # 컨테이너 on .env 참조
     - docker compose --env-file /home/ubuntu/.env up --build -d
 
@@ -244,7 +272,7 @@ deploy_test:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == "FE/dev" || $CI_COMMIT_REF_NAME == "BE/dev")
       when: always
-    - if: $CI_COMMIT_BRANCH == "CICD/test"
+    - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
       when: always
     - when: never
 
