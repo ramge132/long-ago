@@ -29,7 +29,6 @@ const props = defineProps({
 
 // 게이지 색상 계산
 const gaugeColor = computed(() => {
-  console.log(props.percentage);
   if (props.percentage <= 25) return "bg-green-500";
   if (props.percentage <= 50) return "bg-yellow-500";
   if (props.percentage <= 75) return "bg-orange-500";

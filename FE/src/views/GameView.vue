@@ -293,7 +293,6 @@ const setupConnection = (conn) => {
         break;
 
       case "nextTurn":
-        console.log(data);
         if (data.imageDelete === true) {
           if (bookContents.value.length === 1) {
             bookContents.value = [{ content: "", image: null }];
@@ -310,7 +309,6 @@ const setupConnection = (conn) => {
         currTurn.value = data.currTurn;
         await showOverlay('whoTurn');
         inProgress.value = true;
-        console.log(votings.value);
         break;
 
       case "newParticipantJoined": 
@@ -397,13 +395,11 @@ const setupConnection = (conn) => {
               connectedPeers.value.forEach(async (peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   if (usedCard.value.isEnding) {
-                    console.log("게임 종료 송신!");
                     // 게임 종료 송신
                     sendMessage("gameEnd",{}, peer.connection);
                     // 수정 중 //
                     router.push('/game/rank');
                   } else {
-                    console.log("다음 턴 송신!");
                     sendMessage(
                       "nextTurn",
                       { 
@@ -438,7 +434,6 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
-        console.log('게임 종료');
         router.push("/game/rank");
         break;
     }
