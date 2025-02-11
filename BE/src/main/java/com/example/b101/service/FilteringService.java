@@ -83,15 +83,33 @@ public class FilteringService {
                 .filter(variant -> filteringRequest.getUserPrompt().contains(variant))
                 .count();
 
+
+
         if (keywordCnt > 1) {
             return ApiResponseUtil.failure("Prompt에 중복된 카드가 사용되었습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
+        else if(keywordCnt < 1) {
+            return ApiResponseUtil.failure("Prompt에 소유한 카드가 사용되지 않았습니다.",
+                    HttpStatus.BAD_REQUEST,
+                    request.getRequestURI());
+        }
+
+        String usedKeyword = allVariants.stream()
+                .filter(variant -> filteringRequest.getUserPrompt().contains(variant))
+                .findFirst()
+                .orElse(null);
+
+        int userCardId = storyCardVariantsList.stream()
+                .filter(storyCardVariants -> storyCardVariants.getVariant().equals(usedKeyword))
+                .map(storyCardVariants -> storyCardVariants.getStoryCard().getId())
+                .findFirst()
+                .orElse(-1);
 
 
         // 성공 응답
-        return ApiResponseUtil.success(true,"Prompt 필터링 성공",
+        return ApiResponseUtil.success(userCardId,"Prompt 필터링 성공",
                 HttpStatus.OK,
                 request.getRequestURI());
     }

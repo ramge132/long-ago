@@ -7,6 +7,7 @@ import com.example.b101.domain.*;
 import com.example.b101.dto.GameRequest;
 import com.example.b101.dto.GameResponse;
 import com.example.b101.dto.GenerateSceneRequest;
+import com.example.b101.repository.BookRepository;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
 import com.example.b101.repository.SceneRepository;
@@ -34,7 +35,7 @@ public class GameService {
     private final CardService cardService;
     private final RedisSceneRepository sceneRepository;
     private final WebClient webClient;
-    private final SceneRepository sceneRepo;
+    private final BookRepository bookRepository;
 
 
     /**
@@ -166,7 +167,7 @@ public class GameService {
 
 
         // GPU 서버와 통신하여 데이터 받기
-        byte[] generateImage = null;
+        byte[] generateImage;
         try {
             generateImage = webClient.post()  //post형식으로 webClient의 요청을 보냄.
                     .uri("/generate").accept(MediaType.IMAGE_PNG) //이미지 파일로 받는다.
@@ -182,21 +183,26 @@ public class GameService {
                     request.getRequestURI());
         }
 
+        Book book = Book.builder()
+                .likeCnt(0)
+                .viewCnt(0)
+                .build();
+
 
         List<Scene> sceneList = sceneRedisList.stream()
                         .map(sceneRedis -> Scene.builder()
                                 .sceneOrder(sceneRedis.getSceneOrder())
+                                .book(book)
                                 .userPrompt(sceneRedis.getPrompt())
                                 .build())
-                                .toList();
+                        .toList();
 
+        book.setScenes(sceneList);
 
+        bookRepository.save(book);
 
-
-
-        sceneRepo.saveAll(sceneList);
-
-        sceneRepository.deleteAllByGameId(gameId); //redis에 저장됐던 scene 데이터들 삭제
+        //redis에 저장됐던 scene 데이터들 삭제
+        sceneRepository.deleteAllByGameId(gameId);
 
         //게임 데이터 삭제
         gameRepository.delete(game);

@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class Scene {
 
@@ -35,13 +37,5 @@ public class Scene {
 
     @CreatedDate
     private LocalDateTime createdAt;
-
-
-    @Builder
-    public Scene(int sceneOrder, String userPrompt, String imageUrl) {
-        this.sceneOrder = sceneOrder;
-        this.userPrompt = userPrompt;
-        this.imageUrl = imageUrl;
-    }
 
 }
