@@ -30,12 +30,13 @@
           <div>{{ props.participants[order].name }}</div>
           <p></p>
           <div class="flex rounded-full bg-black p-1 text-white">
-            <img :src="StarIcon" alt="하트" class="w-4" />
+            <img :src="StarIcon" alt="별" class="w-4" />
             <div
               class=" w-5 h-5 text-center leading-[1.25rem] ml-1"
 
             >
-              {{ 4 }}
+              <!-- {{ 4 }} -->
+              {{ props.participants[order].score }}
             </div>
           </div>
           <!-- 투표 (수정) -->
@@ -103,11 +104,12 @@
             <div>{{ props.participants[order].name }}</div>
             <p></p>
             <div class="flex rounded-full bg-black p-1 text-white">
-              <img :src="StarIcon" alt="하트" class="w-4" />
+              <img :src="StarIcon" alt="별" class="w-4" />
               <div
                 class=" w-5 h-5 text-center leading-[1.25rem] ml-1"
               >
-                {{ 4 }}
+                <!-- {{ 4 }} -->
+                {{ props.participants[order].score }}
               </div>
             </div>
           <!-- 투표 (수정) -->
