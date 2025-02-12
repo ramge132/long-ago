@@ -113,7 +113,7 @@ push_FE:
     - |
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         export IMAGE_NAME="$IMAGE_FE_MAIN"
-        export DOCKERHUB_ID="$DOCKERHUB_USERVANME_MAIN"
+        export DOCKERHUB_ID="$DOCKERHUB_USERNAME_MAIN"
         export DOCKERHUB_PW="$DOCKERHUB_PASSWORD_MAIN"
       fi
 
@@ -151,7 +151,7 @@ push_BE:
     - |
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         export IMAGE_NAME="$IMAGE_BE_MAIN"
-        export DOCKERHUB_ID="$DOCKERHUB_USERVANME_MAIN"
+        export DOCKERHUB_ID="$DOCKERHUB_USERNAME_MAIN"
         export DOCKERHUB_PW="$DOCKERHUB_PASSWORD_MAIN"
       fi    
 
