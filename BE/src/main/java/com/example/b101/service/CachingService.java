@@ -48,6 +48,7 @@ public class CachingService {
     }
 
 
+    //캐시 데이터
     @Cacheable(value = "cardVariantsCache", key = "'allVariants'")
     public CachingVariants getCardVariantsAll() {
 
