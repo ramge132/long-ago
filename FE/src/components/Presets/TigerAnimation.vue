@@ -30,7 +30,7 @@ import { ref, onMounted } from "vue";
 const isVisible = ref(true);
 
 onMounted(() => {
-  // 5초 후에 애니메이션을 적용하며 서서히 사라짐
+  // 5초 후에 애니메이션을 적용하며 서서히 사라짐짐
   setTimeout(() => {
     isVisible.value = false;
   }, 4000);
