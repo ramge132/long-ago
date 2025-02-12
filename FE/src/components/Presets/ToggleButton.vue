@@ -26,25 +26,18 @@
     >
 
     <!-- 오디오 -->
-    <audio ref="audioRef" :src="props.music" loop></audio>
+    <audio ref="audioRef" :src="route.path === '/game/rank' ? RankingMusic : LobbyMusic" loop></audio>
   </div>
 </template>
 
 <script setup>
-import { ref, defineProps, watch } from "vue";
+import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useAudioStore } from "@/stores/audio";
+import { LobbyMusic, RankingMusic } from "@/assets";
 
 const audioStore = useAudioStore();
 const route = useRoute();
-
-// props로 음악 파일 경로를 받아옴
-const props = defineProps({
-  music: {
-    type: String,
-    required: true,
-  },
-});
 
 // 오디오 상태 관리
 const isInGame = ref(false);
@@ -64,7 +57,7 @@ const toggleAudio = () => {
 watch(
   () => route.path,
   () => {
-    if (route.path === "/game/play") {
+    if (route.path === "/game/play" || route.path === "/game/rank") {
       isInGame.value = true;
     } else {
       isInGame.value = false;

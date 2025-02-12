@@ -39,7 +39,8 @@ export const enterGame = async (data) => {
 // 방 삭제 (방장만 게임 종료 시 삭제하면 됩니둥둥둥~)
 export const deleteGame = async (data) => {
   try {
-    const response = await apiClient.delete(import.meta.env.VITE_GAME, data);
+    const params = data;
+    const response = await apiClient.delete(import.meta.env.VITE_GAME, {params});
     return response;
   } catch (error) {
     console.log(error);
@@ -50,10 +51,51 @@ export const deleteGame = async (data) => {
 // 엔딩카드 리롤하는 겁니둥둥둥둥둥둥
 export const endingCardReroll = async (data) => {
   try {
-    const response = await apiClient.patch(import.meta.env.VITE_GAME + import.meta.env.VITE_GAME_SHUFFLE, data);
+    const response = await apiClient.patch(import.meta.env.VITE_GAME + import.meta.env.VITE_GAME_SHUFFLE,
+      {},
+      { params: { gameId: data.gameId, userId: data.userId } }
+    );
     return response;
   } catch (error) {
     console.log(error);
     throw error;
   }
 }
+
+
+// 프롬프트 필터링
+export const promptFiltering = async (data) => {
+  try {
+    const response = await apiClient.post(import.meta.env.VITE_SCENE + import.meta.env.VITE_SCENE_FILTERING, data);
+    return response;
+  } catch(error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+
+// 이미지 생성 부분
+export const createImage = async (data) => {
+  try {
+    const response = await apiClient.post(import.meta.env.VITE_SCENE, data);
+    return response;
+  } catch(error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+// 투표 결과 반대 시 이미지 삭제
+export const deleteImage = async (data) => {
+  try {
+    const response = await apiClient.delete(import.meta.env.VITE_SCENE, 
+      {},
+      { params: { gameId: data.gameId } }
+    );
+    return response;
+  } catch(error) {
+    console.log(error);
+    throw error;
+  }
+} 
