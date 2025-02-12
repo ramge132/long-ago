@@ -315,7 +315,8 @@ const setupConnection = (conn) => {
         break;
 
       case "sendImage":
-        bookContents.value[bookContents.value.length - 1].image = data.imageBlob;
+        const imageBlob = URL.createObjectURL(data.imageBlob);
+        bookContents.value[bookContents.value.length - 1].image = imageBlob;
         break;
 
       case "voteResult":
@@ -803,7 +804,7 @@ const nextTurn = async (data) => {
         if (peer.id !== peerId.value && peer.connection.open) {
           sendMessage(
             "sendImage",
-            { imageBlob: imageBlob },
+            { imageBlob: responseImage.data },
             peer.connection
           )
         }
