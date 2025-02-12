@@ -6,6 +6,7 @@ stages:
   - cleanup
   - deploy
 
+
 #########################
 # 1-1. build_FE JOB 단계 #
 #########################
@@ -38,6 +39,12 @@ build_FE:
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         export VITE_MAIN_API_SERVER_URL="$VITE_MAIN_API_SERVER_URL_MAIN"
         export IMAGE_NAME="$IMAGE_FE_MAIN"
+      fi
+    # 기존 이미지와 태그 중복 방지
+    - |
+      if [ "$CI_COMMIT_BRANCH" != "main" ] && [ "$(docker images -q)" ]; then
+        docker compose -v down
+        docker rmi $(docker images -q)
       fi
 
     # 환경변수 설정
@@ -87,6 +94,13 @@ build_BE:
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         export IMAGE_NAME="$IMAGE_BE_MAIN"
       fi
+    
+    # 기존 이미지와 태그 중복 방지
+    - |
+      if [ "$CI_COMMIT_BRANCH" != "main" ] && [ "$(docker images -q)" ]; then
+        docker compose -v down
+        docker rmi $(docker images -q)
+      fi    
 
     # 이미지 빌드
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
@@ -309,9 +323,6 @@ deploy_test:
     - echo "S3_REGION=$S3_REGION" >> .env
     - echo "S3_CREDENTIALS_ACCESS_KEY=$S3_CREDENTIALS_ACCESS_KEY" >> .env
     - echo "S3_CREDENTIALS_SECRET_KEY=$S3_CREDENTIALS_SECRET_KEY" >> .env
-
-    # 컨테이너 off
-    - docker compose down -v
 
     # 컨테이너 on .env 참조
     - docker compose --env-file /home/ubuntu/.env up --build -d
