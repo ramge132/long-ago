@@ -214,6 +214,29 @@ public class GameService {
                     .body(generateImage);
         }
 
+
+        //GPU 서버에 요청을 보내기 위한 객체 생성
+        GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
+                .session_id(deleteGameRequest.getGameId()) //게임 아이디
+                .game_mode(1) //작화 스타일
+                .user_sentence("") //사용자 프롬포트
+                .status(2) //전원 패배로 끝남.
+                .build();
+
+
+        try {
+            webClient.post()  //post형식으로 webClient의 요청을 보냄.
+                    .uri("/generate").accept(MediaType.APPLICATION_JSON) //json으로 응답받음.
+                    .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
+                    .retrieve()
+                    .bodyToMono(String.class) //응답의 본문(body)만 가져옴.
+                    .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
+        } catch (WebClientException e) { //GPU 서버에서 에러 반환 시
+            return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생 : ",
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    request.getRequestURI());
+        }
+
         //redis에 저장됐던 scene 데이터들 삭제
         sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());
 
@@ -221,7 +244,7 @@ public class GameService {
         gameRepository.delete(game);
 
         return ApiResponseUtil.success(null,
-                "비정상종료로 인한 게임 데이터 삭제 성공",
+                "게임 데이터 삭제 성공",
                 HttpStatus.OK,
                 request.getRequestURI());
 
