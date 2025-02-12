@@ -2,38 +2,18 @@
   <div class="w-full h-full">
     <RouterView v-slot="{ Component }">
       <Transition name="fade" mode="out-in">
-        <component
-          :is="Component"
-          :configurable="configurable"
-          :connectedPeers="connectedPeers"
-          v-model:roomConfigs="roomConfigs"
-          :participants="participants"
-          :receivedMessages="receivedMessages"
-          :InviteLink="InviteLink"
-          :gameStarted="gameStarted"
-          :inGameOrder="inGameOrder"
-          :currTurn="currTurn"
-          :myTurn="myTurn"
-          :peerId="peerId"
-          :inProgress="inProgress"
-          :bookContents="bookContents"
-          :storyCards="storyCards"
-          :endingCard="endingCard"
-          :prompt="prompt"
-          :votings="votings"
-          :percentage="percentage"
-          :usedCard="usedCard"
-          @on-room-configuration="onRoomConfiguration"
-          @broadcast-message="broadcastMessage"
-          @game-start="gameStart"
-          @game-exit="gameStarted = false"
-          @next-turn="nextTurn"
-          @card-reroll="cardReroll"
-          @vote-end="voteEnd"
-        />
+        <component :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
+          v-model:roomConfigs="roomConfigs" :participants="participants" :receivedMessages="receivedMessages"
+          :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn"
+          :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents"
+          :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
+          :usedCard="usedCard" @on-room-configuration="onRoomConfiguration" @broadcast-message="broadcastMessage"
+          @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn" @card-reroll="cardReroll"
+          @vote-end="voteEnd" />
       </Transition>
     </RouterView>
-    <div class="overlay absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center scale-0">
+    <div
+      class="overlay absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center scale-0">
       <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
@@ -48,9 +28,10 @@ import { useRoute, useRouter } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
-import { myTurnImage , currTurnImage, startImage } from "@/assets";
-import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering, createImage } from "@/apis/game";
+import { myTurnImage, currTurnImage, startImage } from "@/assets";
+import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering, createImage, voteResultSend } from "@/apis/game";
 import toast from "@/functions/toast";
+import testImage from "@/assets/test.png";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -104,7 +85,8 @@ const bookContents = ref([
 const prompt = ref("");
 // 이번 턴에 사용된 카드
 const usedCard = ref({
-  text: "",
+  id: 0,
+  keyword: "",
   isEnding: false
 });
 // 투표 결과 표시
@@ -206,12 +188,12 @@ const setupConnection = (conn) => {
         });
         break;
 
-      case "system": 
+      case "system":
         let removedOrder = -1;
         let removedIndex = -1;
         inGameOrder.value = inGameOrder.value.filter(
           (order, index) => {
-            if(participants.value[order].id === data.id) {
+            if (participants.value[order].id === data.id) {
               removedOrder = order;
               removedIndex = index;
             }
@@ -225,16 +207,16 @@ const setupConnection = (conn) => {
         console.log(participants.value);
 
         inGameOrder.value.forEach((order, index) => {
-          if(order > removedOrder) inGameOrder.value[index] -= 1;
+          if (order > removedOrder) inGameOrder.value[index] -= 1;
         });
         participants.value.forEach((p, i) => {
-          if(p.id === peerId.value) {
+          if (p.id === peerId.value) {
             myTurn.value = inGameOrder.value.indexOf(i);
           }
         });
         const currTurnExited = currTurn.value === removedIndex;
         currTurn.value %= participants.value.length;
-        if(currTurnExited) {
+        if (currTurnExited) {
           inProgress.value = false;
           await showOverlay('whoTurn');
           inProgress.value = true;
@@ -257,7 +239,7 @@ const setupConnection = (conn) => {
           configurable.value = true;
         }
         break;
-      
+
 
       case "config":
         roomConfigs.value = {
@@ -311,7 +293,7 @@ const setupConnection = (conn) => {
         inProgress.value = true;
         break;
 
-      case "newParticipantJoined": 
+      case "newParticipantJoined":
         const isExisting = participants.value.some(
           (existing) => existing.id === data.data.id,
         );
@@ -323,10 +305,10 @@ const setupConnection = (conn) => {
           console.log("이미 존재하는 참가자:", data.data);
         }
         break;
-      
+
       case "sendPrompt":
-        prompt.value = data.prompt;
         usedCard.value = data.usedCard;
+        prompt.value = data.prompt;
         inProgress.value = false;
         addBookContent({ content: data.prompt, image: null });
         votings.value = [];
@@ -342,15 +324,15 @@ const setupConnection = (conn) => {
           selected: data.selected
         });
 
-        if(votings.value.length == participants.value.length) {
+        if (votings.value.length == participants.value.length) {
           let upCount = 0;
           let downCount = 0;
           votings.value.forEach((vote) => {
-            if(vote.selected == 'up') upCount++;
+            if (vote.selected == 'up') upCount++;
             else downCount++;
           });
-          
-          if(currTurn.value === myTurn.value) {
+
+          if (currTurn.value === myTurn.value) {
             if (upCount < downCount) {
               // 이미지 버리는 api
               // 내 이미지 버리기
@@ -369,7 +351,7 @@ const setupConnection = (conn) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   sendMessage(
                     "nextTurn",
-                    { 
+                    {
                       currTurn: currTurn.value,
                       imageDelete: true,
                     },
@@ -388,7 +370,7 @@ const setupConnection = (conn) => {
               } else {
                 currentPlayer.score += 2;
               }
-              
+
               // 턴 종료 트리거 송신하기
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
@@ -396,13 +378,13 @@ const setupConnection = (conn) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   if (usedCard.value.isEnding) {
                     // 게임 종료 송신
-                    sendMessage("gameEnd",{}, peer.connection);
+                    sendMessage("gameEnd", {}, peer.connection);
                     // 수정 중 //
                     router.push('/game/rank');
                   } else {
                     sendMessage(
                       "nextTurn",
-                      { 
+                      {
                         currTurn: currTurn.value,
                         imageDelete: false,
                       },
@@ -584,7 +566,7 @@ const initializePeer = () => {
 onMounted(async () => {
   try {
     await initializePeer();
-    
+
     // 일반 참여자인 경우
     if (gameStore.getBossId()) {
       connectToRoom(gameStore.getBossId());
@@ -662,7 +644,7 @@ const gameStart = async (data) => {
     console.log(error);
     // return;
   }
-  
+
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
 
@@ -680,9 +662,9 @@ const gameStart = async (data) => {
     );
   });
   participants.value.forEach((p, i) => {
-      if(p.id === peerId.value) {
-          myTurn.value = inGameOrder.value.indexOf(i);
-      }
+    if (p.id === peerId.value) {
+      myTurn.value = inGameOrder.value.indexOf(i);
+    }
   });
   await showOverlay('start');
   setTimeout(async () => {
@@ -699,8 +681,8 @@ const startReceived = (data) => {
 
     // 내 순서 몇번인지 저장
     participants.value.forEach((p, i) => {
-      if(p.id === peerId.value) {
-          myTurn.value = inGameOrder.value.indexOf(i);
+      if (p.id === peerId.value) {
+        myTurn.value = inGameOrder.value.indexOf(i);
       }
     });
 
@@ -711,12 +693,12 @@ const startReceived = (data) => {
 const showOverlay = (message) => {
   return new Promise((resolve) => {
     const overlay = document.querySelector(".overlay");
-    if(message === 'start') {
+    if (message === 'start') {
       overlay.firstElementChild.src = startImage;
-      overlay.lastElementChild.textContent = "당신의 차례는 " + (myTurn.value + 1) + "번 입니다."; 
+      overlay.lastElementChild.textContent = "당신의 차례는 " + (myTurn.value + 1) + "번 입니다.";
       overlay.lastElementChild.style.background = "#FF9D00";
     } else {
-      if(participants.value[inGameOrder.value[currTurn.value]].id === peerId.value) {
+      if (participants.value[inGameOrder.value[currTurn.value]].id === peerId.value) {
         overlay.firstElementChild.src = myTurnImage;
         overlay.lastElementChild.textContent = "멋진 이야기를 적어주세요!";
         overlay.lastElementChild.style.background = "#FF83BB";
@@ -727,7 +709,7 @@ const showOverlay = (message) => {
       }
     }
     overlay.classList.remove('scale-0');
-    if(overlayTimeout.value) clearTimeout(overlayTimeout.value);
+    if (overlayTimeout.value) clearTimeout(overlayTimeout.value);
     overlayTimeout.value = setTimeout(() => {
       overlay.classList.add('scale-0');
       resolve();
@@ -758,11 +740,12 @@ const nextTurn = async (data) => {
           gameId: gameID.value,
           userPrompt: data.prompt,
         })
-        
+
+        usedCard.value.id = filteredPrompt.data.data;
         storyCards.value.forEach((card) => {
-          if(card.id == filteredPrompt.data) {
-            usedCard.value.text = card.keyword;
-          } 
+          if (card.id == filteredPrompt.data.data) {
+            usedCard.value.keyword = card.keyword;
+          }
         })
       } catch (error) {
         console.log(error);
@@ -785,10 +768,11 @@ const nextTurn = async (data) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
           "sendPrompt",
-          { 
+          {
             prompt: data.prompt,
             usedCard: {
-              text: usedCard.value.text,
+              id: usedCard.value.id,
+              keyword: usedCard.value.keyword,
               isEnding: isEnding,
             },
           },
@@ -796,7 +780,7 @@ const nextTurn = async (data) => {
         )
       }
     });
-        
+
     addBookContent({ content: data.prompt, image: null });
 
     // 투표 모달 띄우기
@@ -804,29 +788,33 @@ const nextTurn = async (data) => {
     prompt.value = data.prompt;
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
-    const responseImage = await createImage({
-      gameId: gameID.value,
-      userId: peerId.value,
-      userPrompt: data.prompt,
-      turn: totalTurn.value,
-    });
+    try {
+      const responseImage = await createImage({
+        gameId: gameID.value,
+        userId: peerId.value,
+        userPrompt: data.prompt,
+        turn: totalTurn.value,
+      });
+      // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
+      const imageBlob = responseImage.data;
+      // const imageBlob = testImage;
 
-    // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-    const imageBlob = responseImage.data;
+      // 사람들에게 이미지 전송
+      connectedPeers.value.forEach((peer) => {
+        if (peer.id !== peerId.value && peer.connection.open) {
+          sendMessage(
+            "sendImage",
+            { imageBlob: imageBlob },
+            peer.connection
+          )
+        }
+      });
 
-    // 사람들에게 이미지 전송
-    connectedPeers.value.forEach((peer) => {
-      if (peer.id !== peerId.value && peer.connection.open) {
-        sendMessage(
-          "sendImage",
-          { imageBlob: imageBlob },
-          peer.connection
-        )
-      }
-    });
-    
-    // 나의 책에 이미지 넣기
-    bookContents.value[bookContents.value.length - 1].image = imageBlob;
+      // 나의 책에 이미지 넣기
+      bookContents.value[bookContents.value.length - 1].image = imageBlob;
+    } catch (error) {
+      console.log(error);
+    }
   }
   // 프롬프트 입력 시간초과로 턴 넘기는 경우
   else if (currTurn.value === myTurn.value) {
@@ -861,7 +849,7 @@ const cardReroll = async () => {
     userId: peerId.value,
     gameId: gameID.value,
   });
-  
+
   endingCard.value.content = response.data.data.content;
 };
 
@@ -884,18 +872,21 @@ const voteEnd = async (data) => {
       )
     }
   })
-  
-  if(votings.value.length == participants.value.length) {
+
+  if (votings.value.length == participants.value.length) {
     let upCount = 0;
     let downCount = 0;
     votings.value.forEach((vote) => {
-      if(vote.selected == 'up') upCount++;
+      if (vote.selected == 'up') upCount++;
       else downCount++;
     });
-    
-    if(currTurn.value === myTurn.value) {
+
+    if (currTurn.value === myTurn.value) {
+      let isAccepted;
       if (upCount < downCount) {
         // 이미지 버리는 api
+        isAccepted = false;
+
         // 내 이미지 버리기
         if (bookContents.value.length === 1) {
           bookContents.value = [{ content: "", image: null }];
@@ -912,7 +903,7 @@ const voteEnd = async (data) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             sendMessage(
               "nextTurn",
-              { 
+              {
                 currTurn: currTurn.value,
                 imageDelete: true,
               },
@@ -923,7 +914,10 @@ const voteEnd = async (data) => {
         // inProgress.value = false;
         await showOverlay('whoTurn');
         inProgress.value = true;
-      } else {
+      }
+      else {
+        isAccepted = true;
+
         // 투표 가결 시 점수 +2
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
         if (usedCard.value.isEnding) {
@@ -945,7 +939,7 @@ const voteEnd = async (data) => {
             } else {
               sendMessage(
                 "nextTurn",
-                { 
+                {
                   currTurn: currTurn.value,
                   imageDelete: false,
                 },
@@ -957,6 +951,28 @@ const voteEnd = async (data) => {
         // inProgress.value = false;
         await showOverlay('whoTurn');
         inProgress.value = true;
+
+        // 투표 결과 전송 api
+        try {
+          const response = await voteResultSend({
+            gameId: gameID.value,
+            userId: peerId.value,
+            isAccepted: isAccepted,
+            cardId: usedCard.value.id,
+          });
+
+          if (response.status === 200) {
+            // 이미지 쓰레기통에 넣기
+          }
+        } catch (error) {
+          if (error.response.status === 409) {
+            storyCards.value.forEach((card, index) => {
+              if (card.id === usedCard.value.id) {
+                storyCards.value.splice(index, 1);
+              }
+            });
+          }
+        }
       }
     } else {
       if (upCount < downCount) {
@@ -972,6 +988,7 @@ const voteEnd = async (data) => {
           currentPlayer.score += 2;
         }
       }
+
     }
   }
 };
@@ -980,12 +997,14 @@ const voteEnd = async (data) => {
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease-in-out; /* opacity로 부드럽게 나타남 */
+  transition: opacity 0.3s ease-in-out;
+  /* opacity로 부드럽게 나타남 */
 }
 
 .fade-enter-from,
 .fade-leave-to {
-  opacity: 0; /* 컴포넌트가 처음에는 안 보이게 설정 */
+  opacity: 0;
+  /* 컴포넌트가 처음에는 안 보이게 설정 */
 }
 
 .overlay {
