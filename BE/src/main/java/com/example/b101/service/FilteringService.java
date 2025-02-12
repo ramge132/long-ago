@@ -30,6 +30,7 @@ public class FilteringService {
         // 게임 존재 여부 확인
         Game game = gameRepository.findById(filteringRequest.getGameId());
         if (game == null) {
+            log.error("Game not found");
             return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
@@ -42,18 +43,28 @@ public class FilteringService {
                 .orElse(null);
 
         if (playerStatus == null) {
+            log.error("Player not found");
             return ApiResponseUtil.failure("해당 userId는 게임에 존재하지 않습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
 
+
         List<StoryCardVariants> storyCardVariantsList = cachingService.getCardVariantsAll().getStoryCardVariants();
+
+        if (storyCardVariantsList == null) {
+            log.warn("유사어들을 불러오지 못함.");
+        }
 
 
         // 플레이어 상태의 모든 StoryCard id 가져오기
         List<Integer> playerStoryCardIds = playerStatus.getStoryCards().stream()
                 .map(StoryCard::getId)
                 .toList();
+
+        if (playerStoryCardIds == null) {
+            log.warn("플레이어가 가진 카드 id를 가져오지 못함.");
+        }
 
 
         // 플레이어가 가진 모든 카드의 변형어들을 가져옴.
@@ -62,7 +73,7 @@ public class FilteringService {
                 .map(StoryCardVariants::getVariant)
                 .toList();
 
-        log.info(allVariants.toString());
+        log.info("플레이어가 가진 모든 카드의 변형어들을 가져옴"+allVariants.toString());
 
 
         boolean isBadWord = badWordFiltering.blankCheck(filteringRequest.getUserPrompt());
@@ -72,6 +83,7 @@ public class FilteringService {
 
 
         if(isBadWord || changeStr.contains("*")) {
+            log.info(changeStr);
             return ApiResponseUtil.failure("Prompt에 욕설이 사용되었습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
@@ -86,11 +98,13 @@ public class FilteringService {
 
 
         if (keywordCnt > 1) {
+            log.error("중복카드 사용");
             return ApiResponseUtil.failure("Prompt에 중복된 카드가 사용되었습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
         else if(keywordCnt < 1) {
+            log.error("카드 사용 안됨.");
             return ApiResponseUtil.failure("Prompt에 소유한 카드가 사용되지 않았습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
@@ -108,6 +122,7 @@ public class FilteringService {
                 .orElse(-1);
 
 
+        log.info("사용자가 사용한 카드 id : "+userCardId);
         // 성공 응답
         return ApiResponseUtil.success(userCardId,"Prompt 필터링 성공",
                 HttpStatus.OK,

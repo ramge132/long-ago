@@ -52,6 +52,7 @@ public class SceneService {
                     request.getRequestURI());
         }
 
+
         // GPU 서버 요청을 위한 객체 생성
         GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
                 .session_id(sceneRequest.getGameId())            // 게임 아이디 (세션 식별자)
@@ -60,9 +61,12 @@ public class SceneService {
                 .status(0)                       // 진행 상태 (0: 진행 중)
                 .build();
 
+        log.info(generateSceneRequest.toString()+"GPU 서버로 보낼 객체 생성");
+
         // GPU 서버와 통신하여 이미지 바이너리 데이터 수신
         byte[] generateImage;
         try {
+            log.info("이미지 서버에 요청 보냄.");
             generateImage = webClient.post()
                     .uri("/generate")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -92,6 +96,7 @@ public class SceneService {
                 .sceneOrder(sceneRequest.getTurn())
                 .userId(sceneRequest.getUserId())
                 .build();
+
 
         redisSceneRepository.save(scene);
 
