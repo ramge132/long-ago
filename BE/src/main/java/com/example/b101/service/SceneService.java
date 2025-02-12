@@ -4,6 +4,8 @@ import com.example.b101.cache.Game;
 import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
 import com.example.b101.domain.PlayerStatus;
+import com.example.b101.domain.StoryCard;
+import com.example.b101.dto.DeleteSceneRequest;
 import com.example.b101.dto.GenerateSceneRequest;
 import com.example.b101.dto.SceneRequest;
 import com.example.b101.repository.GameRepository;
@@ -12,22 +14,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.function.client.WebClientException;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -38,63 +32,63 @@ public class SceneService {
     private final GameRepository gameRepository;
     private final WebClient webClient;
 
+
+
     public ResponseEntity<?> createScene(SceneRequest sceneRequest, HttpServletRequest request) {
-
-        //gameId를 통해 게임 데이터 조회
+        // 게임 데이터 조회 및 유효성 검사
         Game game = gameRepository.findById(sceneRequest.getGameId());
-
-        //게임 데이터가 없다면 fail
         if (game == null) {
             return ApiResponseUtil.failure("존재하지 않는 gameId입니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
 
-        //해당 게임 데이터의 저장된 플에이어 중의 userId가 없다면 fail
-        Set<String> playerUserIds = game.getPlayerStatuses()
+        boolean userExists = game.getPlayerStatuses()
                 .stream()
-                .map(PlayerStatus::getUserId)
-                .collect(Collectors.toSet());
-
-        if (!playerUserIds.contains(sceneRequest.getUserId())) {
+                .anyMatch(playerStatus -> playerStatus.getUserId().equals(sceneRequest.getUserId()));
+        if (!userExists) {
             return ApiResponseUtil.failure("해당 게임에 존재하지 않는 userId입니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
 
-
-
-        //GPU 서버에 요청을 보내기 위한 객체 생성
-        //작화, 직전에 저장된 요약된 스토리, 사용자 프롬포트, 직전의 생성된 이미지 프롬포트
+        // GPU 서버 요청을 위한 객체 생성
         GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
-                .drawingStyle(game.getDrawingStyle()) //작화
-                .userPrompt(sceneRequest.getUserPrompt()) //사용자 프롬포트
+                .session_id(sceneRequest.getGameId())            // 게임 아이디 (세션 식별자)
+                .game_mode(game.getDrawingStyle())                    // 작화 스타일 (예: 1: 기본 모드)
+                .user_sentence(sceneRequest.getUserPrompt()) // 사용자 프롬프트
+                .status(0)                       // 진행 상태 (0: 진행 중)
                 .build();
 
-
-        // GPU 서버와 통신하여 데이터 받기
+        // GPU 서버와 통신하여 이미지 바이너리 데이터 수신
         byte[] generateImage;
         try {
-            generateImage = webClient.post()  //post형식으로 webClient의 요청을 보냄.
-                    .uri("/generate").accept(MediaType.APPLICATION_JSON) //JSON 타입을 받겠다.
-                    .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
+            generateImage = webClient.post()
+                    .uri("/generate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.IMAGE_PNG)
+                    .bodyValue(generateSceneRequest)
                     .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, response ->
-                            response.createException().flatMap(Mono::error))
-                    .bodyToMono(byte[].class) //응답의 본문(body)만 가져옴.
-                    .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
-        } catch (WebClientResponseException e) { //GPU 서버에서 에러 반환 시
-            log.error(e.getResponseBodyAsString());
-            return ApiResponseUtil.failure("GPU 서버 통신 중 data 누락 발생",
+                    .bodyToMono(byte[].class)
+                    .block();
+        } catch (WebClientException e) {
+            return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생",
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     request.getRequestURI());
         }
 
+        if (generateImage == null || generateImage.length == 0) {
+            return ApiResponseUtil.failure("이미지 받기 실패",
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    request.getRequestURI());
+        }
+
+        // Redis 등 저장소에 이미지 데이터와 함께 Scene 정보 저장
         SceneRedis scene = SceneRedis.builder()
                 .id(UUID.randomUUID().toString())
                 .gameId(sceneRequest.getGameId())
                 .prompt(sceneRequest.getUserPrompt())
-                .image(generateImage) // 바이너리 이미지 저장
+                .image(generateImage)  // 바이너리 이미지 데이터 저장
                 .sceneOrder(sceneRequest.getTurn())
                 .userId(sceneRequest.getUserId())
                 .build();
@@ -102,42 +96,53 @@ public class SceneService {
         redisSceneRepository.save(scene);
 
 
-        BufferedImage bufferedImage;
-        try{
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(generateImage);
-            bufferedImage = ImageIO.read(inputStream);
-        } catch (IOException e){
-            return ApiResponseUtil.failure("이미지 전송 실패",
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    request.getRequestURI());
-        }
-
-
-        return ApiResponseUtil.success(bufferedImage,
-                "Scene 저장 완료",
-                HttpStatus.CREATED,
-                request.getRequestURI());
+        // 이미지 바이너리 데이터를 PNG 미디어 타입으로 반환
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.IMAGE_PNG)
+                .body(generateImage);
     }
 
 
+    public ResponseEntity<?> deleteScene(DeleteSceneRequest deleteSceneRequest, HttpServletRequest request) {
 
-    //해당 Game에서 생성된 모든 Scene 데이터들 가져오기(디버깅 용)
+        List<SceneRedis> scenes = redisSceneRepository.findAllByGameId(deleteSceneRequest.getGameId());
+        if(scenes.isEmpty()) {
+            return ApiResponseUtil.failure("아직 저장된 scene이 없습니다.",
+                    HttpStatus.BAD_REQUEST,
+                    request.getRequestURI());
+        }
+
+        if(!deleteSceneRequest.isAccepted()){
+
+            //사용한 카드 삭제해야함
+            PlayerStatus playerStatus = gameRepository.getPlayerStatus(deleteSceneRequest.getGameId(), deleteSceneRequest.getUserId());
+
+            StoryCard storyCard = playerStatus.getStoryCards().stream().filter(storyCard1 -> storyCard1.getId() == deleteSceneRequest.getCardId()).findFirst().orElse(null);
+
+            playerStatus.getStoryCards().remove(storyCard);
+
+            //sceene 데이터 삭제
+            SceneRedis lastScene = scenes.get(scenes.size() - 1);
+            redisSceneRepository.delete(lastScene);
+            return ApiResponseUtil.success(lastScene, "투표 결과에 따라 삭제됨", HttpStatus.OK, request.getRequestURI());
+        }
+
+        return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
+
+    }
+
     public ResponseEntity<?> getScenesByGameId(String gameId, HttpServletRequest request) {
         if(gameRepository.findById(gameId) == null) {
             return ApiResponseUtil.failure("해당 gameId를 가진 game이 없습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
-
-
-        List<SceneRedis> sceneRedisList =  redisSceneRepository.findAllByGameId(gameId);
-
+        List<SceneRedis> sceneRedisList = redisSceneRepository.findAllByGameId(gameId);
         if(sceneRedisList.isEmpty()){
             return ApiResponseUtil.failure("만들어진 scene이 없습니다.",
                     HttpStatus.NO_CONTENT,
                     request.getRequestURI());
         }
-
         return ApiResponseUtil.success(sceneRedisList,
                 "해당 game의 모든 scene을 가져왔습니다.",
                 HttpStatus.OK,
