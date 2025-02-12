@@ -153,6 +153,31 @@ const broadcastMessage = (data) => {
 
 // 새로운 연결 설정
 const setupConnection = (conn) => {
+  // ICE 연결 상태 모니터링
+  const peerConnection = conn.peerConnection;
+  if (peerConnection) {
+    peerConnection.oniceconnectionstatechange = () => {
+      const state = peerConnection.iceConnectionState;
+      console.log(`ICE 연결 상태: ${state}`);
+      
+      if (state === 'failed' || state === 'disconnected') {
+        console.warn(`피어 ${conn.peer}와의 ICE 연결 실패`);
+        handleReconnection(conn.peer);
+      }
+    };
+  }
+
+  // 하트비트 시작
+  let heartbeatInterval = setInterval(() => {
+    if (conn.open) {
+      console.log(conn.peer, "하트비트 송신")
+      sendMessage("heartbeat", { timestamp: Date.now() }, conn);
+    } else {
+      clearInterval(heartbeatInterval);
+    }
+  }, 5000);
+
+  
   if (participants.value.length >= maxParticipants) {
     conn.close();
     return;
@@ -420,6 +445,15 @@ const setupConnection = (conn) => {
       case "gameEnd":
         router.push("/game/rank");
         break;
+
+      case "heartbeat":
+        sendMessage("heartbeat_back", { timestamp: data.timestamp }, conn);
+        break;
+
+      case "heartbeat_back":
+        console.log(conn.peer, "하트비트 응답 받음");
+        conn.lastHeartbeat = Date.now();
+        break;
     }
   });
 
@@ -429,6 +463,8 @@ const setupConnection = (conn) => {
       (p) => p.id !== conn.peer,
     );
     participants.value = participants.value.filter((p) => p.id !== conn.peer);
+
+    clearInterval(heartbeatInterval);
 
     
     console.warn(`⚠️ ${conn.peer} 연결 종료됨. 재연결 시도 중...`);
@@ -481,43 +517,52 @@ const connectToRoom = async (roomID) => {
   const bossID = decompressUUID(roomID);
   const conn = peer.value.connect(bossID);
 
-  console.log(conn);
-  conn.on("open", () => {
-    setupConnection(conn);
-    sendMessage(
-      "newParticipant",
-      {
-        data: {
-          id: peerId.value,
-          name: userStore.userData.userNickname,
-          image: userStore.userData.userProfile,
-          score: 10
+  const attemptConnection = () => {
+    conn.on("open", () => {
+      setupConnection(conn);
+      sendMessage(
+        "newParticipant",
+        {
+          data: {
+            id: peerId.value,
+            name: userStore.userData.userNickname,
+            image: userStore.userData.userProfile,
+            score: 10
+          },
         },
-      },
-      conn,
-    );
-  });
+        conn,
+      );
+    });
 
-  conn.on("data", (data) => {
-    if (data.type === "currentParticipants") {
-      handleExistingParticipants(data.participants);
-      roomConfigs.value = data.roomConfigs;
-    } else if (data.type === "newParticipantJoined") {
-      participants.value.push(data.data);
-    }
+    conn.on("data", (data) => {
+      if (data.type === "currentParticipants") {
+        handleExistingParticipants(data.participants);
+        roomConfigs.value = data.roomConfigs;
+      } else if (data.type === "newParticipantJoined") {
+        participants.value.push(data.data);
+      }
 
-    const newParticipant = {
-      id: peerId.value,
-      name: userStore.userData.userNickname,
-      image: userStore.userData.userProfile,
-      score: 10,
-    };
+      const newParticipant = {
+        id: peerId.value,
+        name: userStore.userData.userNickname,
+        image: userStore.userData.userProfile,
+        score: 10,
+      };
 
-    // 중복 확인 후 추가
-    if (!participants.value.some((p) => p.id === newParticipant.id)) {
-      participants.value.push(newParticipant);
-    }
-  });
+      // 중복 확인 후 추가
+      if (!participants.value.some((p) => p.id === newParticipant.id)) {
+        participants.value.push(newParticipant);
+      }
+    });
+  };
+
+  try {
+    attemptConnection();
+  } catch (error) {
+    console.error("연결 오류:", error);
+    toast.errorToast("연결 오류가 발생했습니다. 다시 시도해주세요.");
+    throw error;
+  }
 };
 
 // 새 참가자 정보 브로드캐스트
@@ -573,18 +618,18 @@ const initializePeer = () => {
 };
 
 // 피어들 연결상태 3초마다 확인
-const checkPeerConnections = () => {
-  console.log(connectedPeers.value);
-  connectedPeers.value = connectedPeers.value.filter((peer) => {
-    if (!peer.connection.open) {
-      console.warn(`⚠️ 연결 끊김: ${peer.id}. 제거합니다.`);
-      return false; // 연결이 끊어진 피어는 제거
-    }
-    return true;
-  });
+// const checkPeerConnections = () => {
+//   console.log(connectedPeers.value);
+//   connectedPeers.value = connectedPeers.value.filter((peer) => {
+//     if (!peer.connection.open) {
+//       console.warn(`⚠️ 연결 끊김: ${peer.id}. 제거합니다.`);
+//       return false; // 연결이 끊어진 피어는 제거
+//     }
+//     return true;
+//   });
 
-  setTimeout(checkPeerConnections, 3000); // 3초마다 체크
-};
+//   setTimeout(checkPeerConnections, 3000); // 3초마다 체크
+// };
 
 
 // 컴포넌트 마운트
@@ -618,7 +663,7 @@ onMounted(async () => {
     console.error("Peer initialization failed:", error);
   }
 
-  checkPeerConnections();
+  // checkPeerConnections();
 });
 
 // // 퇴장 관련
