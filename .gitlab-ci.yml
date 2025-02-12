@@ -102,6 +102,8 @@ push_FE:
   stage: push
   variables:
     IMAGE_NAME: "$IMAGE_FE"
+    DOCKERHUB_ID: "$DOCKERHUB_USERNAME"
+    DOCKERHUB_PW: "$DOCKERHUB_PASSWORD"
   script:
     - echo "==========================="
     - echo "  FRONT-END 이미지 푸쉬 중"
@@ -111,10 +113,12 @@ push_FE:
     - |
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         export IMAGE_NAME="$IMAGE_FE_MAIN"
+        export DOCKERHUB_ID="$DOCKERHUB_USERVANME_MAIN"
+        export DOCKERHUB_PW="$DOCKERHUB_PASSWORD_MAIN"
       fi
 
     # DockerHub로 이미지 PUSH
-    - echo "$DOCKERHUB_PASSWORD_MAIN" | docker login -u "$DOCKERHUB_USERNAME_MAIN" --password-stdin
+    - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
     
@@ -136,6 +140,8 @@ push_BE:
   stage: push
   variables:
     IMAGE_NAME: "$IMAGE_BE"
+    DOCKERHUB_ID: "$DOCKERHUB_USERNAME"
+    DOCKERHUB_PW: "$DOCKERHUB_PASSWORD"
   script:
     - echo "==========================="
     - echo "  BACK-END 이미지 푸쉬 중"
@@ -145,10 +151,12 @@ push_BE:
     - |
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         export IMAGE_NAME="$IMAGE_BE_MAIN"
+        export DOCKERHUB_ID="$DOCKERHUB_USERVANME_MAIN"
+        export DOCKERHUB_PW="$DOCKERHUB_PASSWORD_MAIN"
       fi    
 
     # DockerHub로 이미지 PUSH
-    - echo "$DOCKERHUB_PASSWORD_MAIN" | docker login -u "$DOCKERHUB_USERNAME_MAIN" --password-stdin
+    - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
 
