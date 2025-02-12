@@ -49,6 +49,11 @@
           <div class="w-8 h-8">
           </div>
         </div>
+        <!-- <button
+            class="bg-[#ffffff] rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 absolute bottom-[137%]"
+            @click="openTrashcan">
+            <img :src="TrashIcon" alt="쓰레기통" class="w-6" />
+          </button> -->
       </div>
       <div
         class="w-10 h-24 bg-[#ffffffdb] rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer"
@@ -57,7 +62,6 @@
         <p>결말<br>새로고침</p>
         <p class="text-xl">{{ rerollCount }}</p>
       </div>
-      <div class="cursor-pointer" @click="openTrashcan">쓰레기통</div>
 
       <!-- <div class="paper z-50 flex justify-center items-center">
         <div class="bg-effect rounded-lg overflow-hidden w-4/5 h-4/5">
@@ -80,7 +84,7 @@
 
 <script setup>
 import { ref, watch, nextTick } from "vue";
-import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon } from "@/assets";
+import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon } from "@/assets";
 import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";

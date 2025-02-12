@@ -27,13 +27,14 @@
             :class="{ flipped: isFlipped(index * 2 + 2) }"
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
-            <div class="bg-effect w-3/4 h-3/4 rounded-lg overflow-hidden">
+            <div class="bg-effect scale-[85%] rounded-lg overflow-hidden" v-if="content.image">
               <img :src="content.image" alt="이야기 이미지" class="w-full h-full">
             </div>
           </div>
         </template>
       </div>
     </div>
+    
   </div>
 </template>
 

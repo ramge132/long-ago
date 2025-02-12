@@ -2,35 +2,14 @@
   <div class="w-full h-full">
     <RouterView v-slot="{ Component }">
       <Transition name="fade" mode="out-in">
-        <component
-          :is="Component"
-          :configurable="configurable"
-          :connectedPeers="connectedPeers"
-          v-model:roomConfigs="roomConfigs"
-          :participants="participants"
-          :receivedMessages="receivedMessages"
-          :InviteLink="InviteLink"
-          :gameStarted="gameStarted"
-          :inGameOrder="inGameOrder"
-          :currTurn="currTurn"
-          :myTurn="myTurn"
-          :peerId="peerId"
-          :inProgress="inProgress"
-          :bookContents="bookContents"
-          :storyCards="storyCards"
-          :endingCard="endingCard"
-          :prompt="prompt"
-          :votings="votings"
-          :percentage="percentage"
-          :usedCard="usedCard"
-          @on-room-configuration="onRoomConfiguration"
-          @broadcast-message="broadcastMessage"
-          @game-start="gameStart"
-          @game-exit="gameStarted = false"
-          @next-turn="nextTurn"
-          @card-reroll="cardReroll"
-          @vote-end="voteEnd"
-        />
+        <component :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
+          v-model:roomConfigs="roomConfigs" :participants="participants" :receivedMessages="receivedMessages"
+          :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn"
+          :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents"
+          :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
+          :usedCard="usedCard" @on-room-configuration="onRoomConfiguration" @broadcast-message="broadcastMessage"
+          @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn" @card-reroll="cardReroll"
+          @vote-end="voteEnd" />
       </Transition>
     </RouterView>
     <div
@@ -345,7 +324,7 @@ const setupConnection = (conn) => {
           selected: data.selected
         });
 
-        if(votings.value.length == participants.value.length) {
+        if (votings.value.length == participants.value.length) {
           let upCount = 0;
           let downCount = 0;
           votings.value.forEach((vote) => {
@@ -391,7 +370,7 @@ const setupConnection = (conn) => {
               } else {
                 currentPlayer.score += 2;
               }
-              
+
               // 턴 종료 트리거 송신하기
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
@@ -399,13 +378,13 @@ const setupConnection = (conn) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   if (usedCard.value.isEnding) {
                     // 게임 종료 송신
-                    sendMessage("gameEnd",{}, peer.connection);
+                    sendMessage("gameEnd", {}, peer.connection);
                     // 수정 중 //
                     router.push('/game/rank');
                   } else {
                     sendMessage(
                       "nextTurn",
-                      { 
+                      {
                         currTurn: currTurn.value,
                         imageDelete: false,
                       },
@@ -761,7 +740,7 @@ const nextTurn = async (data) => {
           gameId: gameID.value,
           userPrompt: data.prompt,
         })
-        
+
         usedCard.value.id = filteredPrompt.data.data;
         storyCards.value.forEach((card) => {
           if (card.id == filteredPrompt.data.data) {
@@ -789,7 +768,7 @@ const nextTurn = async (data) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
           "sendPrompt",
-          { 
+          {
             prompt: data.prompt,
             usedCard: {
               id: usedCard.value.id,
@@ -801,7 +780,7 @@ const nextTurn = async (data) => {
         )
       }
     });
-        
+
     addBookContent({ content: data.prompt, image: null });
 
     // 투표 모달 띄우기
@@ -816,27 +795,26 @@ const nextTurn = async (data) => {
         userPrompt: data.prompt,
         turn: totalTurn.value,
       });
-    } catch(error) {
-    
-    }
+      // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
+      const imageBlob = responseImage.data;
+      // const imageBlob = testImage;
 
-        // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-        // const imageBlob = responseImage.data;
-        const imageBlob = testImage;
-        
-    // 사람들에게 이미지 전송
-    connectedPeers.value.forEach((peer) => {
-      if (peer.id !== peerId.value && peer.connection.open) {
-        sendMessage(
-          "sendImage",
-          { imageBlob: imageBlob },
-          peer.connection
-        )
-      }
-    });
-    
-    // 나의 책에 이미지 넣기
-    bookContents.value[bookContents.value.length - 1].image = imageBlob;
+      // 사람들에게 이미지 전송
+      connectedPeers.value.forEach((peer) => {
+        if (peer.id !== peerId.value && peer.connection.open) {
+          sendMessage(
+            "sendImage",
+            { imageBlob: imageBlob },
+            peer.connection
+          )
+        }
+      });
+
+      // 나의 책에 이미지 넣기
+      bookContents.value[bookContents.value.length - 1].image = imageBlob;
+    } catch (error) {
+      console.log(error);
+    }
   }
   // 프롬프트 입력 시간초과로 턴 넘기는 경우
   else if (currTurn.value === myTurn.value) {
@@ -961,7 +939,7 @@ const voteEnd = async (data) => {
             } else {
               sendMessage(
                 "nextTurn",
-                { 
+                {
                   currTurn: currTurn.value,
                   imageDelete: false,
                 },
@@ -982,14 +960,14 @@ const voteEnd = async (data) => {
             isAccepted: isAccepted,
             cardId: usedCard.value.id,
           });
-  
-          if(response.status === 200) {
+
+          if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
           }
-        } catch(error) {
-          if(error.response.status === 409) {
+        } catch (error) {
+          if (error.response.status === 409) {
             storyCards.value.forEach((card, index) => {
-              if(card.id === usedCard.value.id) {
+              if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
               }
             });
