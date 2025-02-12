@@ -23,7 +23,7 @@
       <p class="font-omp text-xl mb-2">사용한 카드</p>
       <div class="relative">
         <img :src="usedCard.isEnding ? CardImage.endingCardBack : CardImage.storyCardBack" alt="스토리카드" class="w-28">
-        <div class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">{{ props.usedCard.keyword }}</div>
+        <div class="w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri" :class="usedCard.isEnding ? 'endingcard text-[#fee09e] text-xl' : 'storycard text-[#eadfcd] text-3xl'">{{ props.usedCard.keyword }}</div>
       </div>
     </div>
   </div>
