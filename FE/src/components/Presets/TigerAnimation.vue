@@ -15,7 +15,7 @@
     <!-- 순차적으로 등장하는 텍스트 -->
     <div
       id="tiger-text"
-      class="tiger-text flex gap-2 mt-5 text-white font-makgeolli text-6xl"
+      class="tiger-text flex gap-2 mt-5 text-black font-katuri text-6xl"
     >
       <span class="word" style="animation-delay: 0s">아주</span>
       <span class="word" style="animation-delay: 1s">먼</span>
@@ -30,7 +30,7 @@ import { ref, onMounted } from "vue";
 const isVisible = ref(true);
 
 onMounted(() => {
-  // 5초 후에 애니메이션을 적용하며 서서히 사라짐
+  // 5초 후에 애니메이션을 적용하며 서서히 사라짐짐
   setTimeout(() => {
     isVisible.value = false;
   }, 4000);

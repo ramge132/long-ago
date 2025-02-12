@@ -6,12 +6,6 @@ stages:
   - cleanup
   - deploy
 
-# 변수
-variables:
-  # Docker Hub 경로
-  FE_IMAGE: "ssafyb101/my-fe"
-  BE_IMAGE: "ssafyb101/my-be"
-
 
 #########################
 # 1-1. build_FE JOB 단계 #
@@ -21,7 +15,7 @@ build_FE:
   stage: build
   image: docker:27.4.0
   variables:
-    IMAGE_NAME: $FE_IMAGE
+    IMAGE_NAME: "$IMAGE_FE"
     DOCKERFILE_PATH: FE/Dockerfile
     CONTEXT: FE
     VITE_GOOGLE_CLIENT_ID: "$VITE_GOOGLE_CLIENT_ID"
@@ -30,15 +24,27 @@ build_FE:
     VITE_USERS_SIGNIN: "$VITE_USERS_SIGNIN"
     VITE_GAME: "$VITE_GAME"
     VITE_GAME_SHUFFLE: "$VITE_GAME_SHUFFLE"
+    VITE_TURN_ID: "$VITE_TURN_ID"
+    VITE_TURN_PW: "$VITE_TURN_PW"
+    VITE_SCENE: "$VITE_SCENE"
+    VITE_SCENE_FILTERING: "$VITE_SCENE_FILTERING"
+    VITE_SCENE_VOTE: "$VITE_SCENE_VOTE"
   script:
     - echo "==========================="
     - echo "     FRONT-END빌드 중"
     - echo "==========================="
 
-    # 환경 변수 적용 (main 브랜치인 경우 URL 변경)
+    # 환경 변수 적용 (main 브랜치인 경우 URL & DockerHub 변경)
     - |
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         export VITE_MAIN_API_SERVER_URL="$VITE_MAIN_API_SERVER_URL_MAIN"
+        export IMAGE_NAME="$IMAGE_FE_MAIN"
+      else
+        # main이 아닌 브랜치일 경우, Docker 이미지가 존재하면 이미지 삭제
+        if [ -n "$(docker images -q)" ]; then
+          docker compose -f /home/ubuntu/docker-compose.yml down
+          docker rmi $(docker images -q)
+        fi
       fi
 
     # 환경변수 설정
@@ -48,13 +54,20 @@ build_FE:
     - echo "VITE_USERS_SIGNIN=$VITE_USERS_SIGNIN" >> FE/.env
     - echo "VITE_GAME=$VITE_GAME" >> FE/.env
     - echo "VITE_GAME_SHUFFLE=$VITE_GAME_SHUFFLE" >> FE/.env
+    - echo "VITE_TURN_ID=$VITE_TURN_ID" >> FE/.env
+    - echo "VITE_TURN_PW=$VITE_TURN_PW" >> FE/.env
+    - echo "VITE_SCENE=$VITE_SCENE" >> FE/.env
+    - echo "VITE_SCENE_FILTERING=$VITE_SCENE_FILTERING" >> FE/.env
+    - echo "VITE_SCENE_VOTE=$VITE_SCENE_VOTE" >> FE/.env
 
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
+    # 이미지 빌드
+    - docker build --no-cache -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
+
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
+  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main"
     when: always
   - when: never
 
@@ -67,7 +80,7 @@ build_BE:
   stage: build
   image: gradle:8.12.0-jdk17-alpine
   variables:
-    IMAGE_NAME: $BE_IMAGE
+    IMAGE_NAME: "$IMAGE_BE"
     DOCKERFILE_PATH: BE/Dockerfile
     CONTEXT: BE
 
@@ -76,12 +89,26 @@ build_BE:
     - echo "      BACK-END빌드 중"
     - echo "==========================="
 
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
+    # 환경 변수 적용 (main 브랜치인 경우 DockerHub 변경)
+    - |
+      if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
+        export IMAGE_NAME="$IMAGE_BE_MAIN"
+      else
+        # main이 아닌 브랜치일 경우, Docker 이미지가 존재하면 이미지 삭제
+        if [ -n "$(docker images -q)" ]; then
+          docker compose -f /home/ubuntu/docker-compose.yml down
+          docker rmi $(docker images -q)
+        fi
+      fi
+
+    # 이미지 빌드
+    - docker build --no-cache -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
+
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
+  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main"
     when: always
   - when: never
 
@@ -93,20 +120,33 @@ build_BE:
 push_FE:
   stage: push
   variables:
-    IMAGE_NAME: $FE_IMAGE
+    IMAGE_NAME: "$IMAGE_FE"
+    DOCKERHUB_ID: "$DOCKERHUB_USERNAME"
+    DOCKERHUB_PW: "$DOCKERHUB_PASSWORD"
   script:
     - echo "==========================="
     - echo "  FRONT-END 이미지 푸쉬 중"
     - echo "==========================="
-    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+    # 환경 변수 적용 (main 브랜치인 경우 DockerHub 변경)
+    - |
+      if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
+        export IMAGE_NAME="$IMAGE_FE_MAIN"
+        export DOCKERHUB_ID="$DOCKERHUB_USERNAME_MAIN"
+        export DOCKERHUB_PW="$DOCKERHUB_PASSWORD_MAIN"
+      fi
+
+    # DockerHub로 이미지 PUSH
+    - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
+    
   dependencies:
     - build_FE
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
+  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main"
     when: always
   - when: never
 
@@ -118,20 +158,33 @@ push_FE:
 push_BE:
   stage: push
   variables:
-    IMAGE_NAME: $BE_IMAGE
+    IMAGE_NAME: "$IMAGE_BE"
+    DOCKERHUB_ID: "$DOCKERHUB_USERNAME"
+    DOCKERHUB_PW: "$DOCKERHUB_PASSWORD"
   script:
     - echo "==========================="
     - echo "  BACK-END 이미지 푸쉬 중"
     - echo "==========================="
-    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+    # 환경 변수 적용 (main 브랜치인 경우 DockerHub 변경)
+    - |
+      if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
+        export IMAGE_NAME="$IMAGE_BE_MAIN"
+        export DOCKERHUB_ID="$DOCKERHUB_USERNAME_MAIN"
+        export DOCKERHUB_PW="$DOCKERHUB_PASSWORD_MAIN"
+      fi    
+
+    # DockerHub로 이미지 PUSH
+    - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
+
   dependencies:
     - build_BE
   rules:
   - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
     when: always
-  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
+  - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main"
     when: always
   - when: never
 
@@ -143,6 +196,9 @@ push_BE:
 cleanup:
   stage: cleanup
   image: docker:27.4.0
+  variables:
+    FE_IMAGE_NAME: "$IMAGE_FE"
+    BE_IMAGE_NAME: "$IMAGE_BE"
   script:
     - echo "============================="
     - echo "   도커 이미지 및 캐시 정리 중..."
@@ -151,11 +207,18 @@ cleanup:
     # 불필요한 이미지 제거
     - docker image prune -f
 
+    # 환경 변수 적용 (main 브랜치인 경우 DockerHub 변경)
+    - |
+      if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
+        export FE_IMAGE_NAME="$IMAGE_FE_MAIN"
+        export BE_IMAGE_NAME="$IMAGE_BE_MAIN"
+      fi        
+
     # 특정 이미지 태그 제거
-    - docker rmi $FE_IMAGE:$CI_COMMIT_SHA || true
-    - docker rmi $FE_IMAGE:latest || true
-    - docker rmi $BE_IMAGE:$CI_COMMIT_SHA || true
-    - docker rmi $BE_IMAGE:latest || true
+    - docker rmi $FE_IMAGE_NAME:$CI_COMMIT_SHA || true
+    - docker rmi $FE_IMAGE_NAME:latest || true
+    - docker rmi $BE_IMAGE_NAME:$CI_COMMIT_SHA || true
+    - docker rmi $BE_IMAGE_NAME:latest || true
 
     # GitLab Runner가 사용하는 불필요한 빌드 파일 정리
     - rm -rf /builds/* || true
@@ -218,8 +281,13 @@ deploy_main:
     - echo "===================================="
     - echo "          배포 완료!!!"
     - echo "===================================="
+  dependencies:
+    - push_FE
+    - push_BE
   rules:
-    - if: ($CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "main")
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "main"
+      when: always
+    - if: $CI_COMMIT_BRANCH == "CICD/main"
       when: always
     - when: never
 
@@ -255,20 +323,19 @@ deploy_test:
     - echo "S3_CREDENTIALS_ACCESS_KEY=$S3_CREDENTIALS_ACCESS_KEY" >> .env
     - echo "S3_CREDENTIALS_SECRET_KEY=$S3_CREDENTIALS_SECRET_KEY" >> .env
 
-    # 컨테이너 off
-    - docker compose down -v
-    # 기존 이미지 제거
-    - docker rmi $(docker images -q)
     # 컨테이너 on .env 참조
     - docker compose --env-file /home/ubuntu/.env up --build -d
 
     - echo "===================================="
     - echo "          배포 완료!!!"
     - echo "===================================="
+  dependencies:
+    - push_FE
+    - push_BE
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == "FE/dev" || $CI_COMMIT_REF_NAME == "BE/dev")
       when: always
-    - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/dev"
+    - if: $CI_COMMIT_BRANCH == "CICD/test"
       when: always
     - when: never
 

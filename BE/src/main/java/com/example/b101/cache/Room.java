@@ -14,7 +14,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@RedisHash(value = "Room", timeToLive = 3600)
+@RedisHash(value = "Room")
 public class Room implements Serializable {
 
     @Id

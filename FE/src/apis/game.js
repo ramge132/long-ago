@@ -78,7 +78,7 @@ export const promptFiltering = async (data) => {
 // 이미지 생성 부분
 export const createImage = async (data) => {
   try {
-    const response = await apiClient.post(import.meta.env.VITE_SCENE + import.meta.env.VITE_SCENE_STORYCARD, data);
+    const response = await apiClient.post(import.meta.env.VITE_SCENE, data, { responseType: "blob", });
     return response;
   } catch(error) {
     console.log(error);
@@ -87,12 +87,9 @@ export const createImage = async (data) => {
 }
 
 // 투표 결과 반대 시 이미지 삭제
-export const deleteImage = async (data) => {
+export const voteResultSend = async (data) => {
   try {
-    const response = await apiClient.delete(import.meta.env.VITE_SCENE, 
-      {},
-      { params: { gameId: data.gameId } }
-    );
+    const response = await apiClient.post(import.meta.env.VITE_SCENE + import.meta.env.VITE_SCENE_VOTE, data);
     return response;
   } catch(error) {
     console.log(error);

@@ -30,12 +30,13 @@
           <div>{{ props.participants[order].name }}</div>
           <p></p>
           <div class="flex rounded-full bg-black p-1 text-white">
-            <img :src="StarIcon" alt="하트" class="w-4" />
+            <img :src="StarIcon" alt="별" class="w-4" />
             <div
               class=" w-5 h-5 text-center leading-[1.25rem] ml-1"
 
             >
-              {{ 4 }}
+              <!-- {{ 4 }} -->
+              {{ props.participants[order].score }}
             </div>
           </div>
           <!-- 투표 (수정) -->
@@ -103,11 +104,12 @@
             <div>{{ props.participants[order].name }}</div>
             <p></p>
             <div class="flex rounded-full bg-black p-1 text-white">
-              <img :src="StarIcon" alt="하트" class="w-4" />
+              <img :src="StarIcon" alt="별" class="w-4" />
               <div
                 class=" w-5 h-5 text-center leading-[1.25rem] ml-1"
               >
-                {{ 4 }}
+                <!-- {{ 4 }} -->
+                {{ props.participants[order].score }}
               </div>
             </div>
           <!-- 투표 (수정) -->
@@ -132,8 +134,32 @@
           </div>
         </template>
       </div>
-    <InGameProgress @next-turn="nextTurn" :roomConfigs="roomConfigs" :inProgress="inProgress" />
-    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" v-if="prompt !== ''"/>
+    <InGameProgress
+      @next-turn="nextTurn"
+      :roomConfigs="roomConfigs"
+      :inProgress="inProgress"
+      :percentage="percentage"
+    />
+    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" v-if="prompt !== ''"/>
+    <!-- <Transition name="fade">
+      <div
+        v-if="modal.isOpen"
+        @click="toggleModal"
+        class="absolute bg-[#00000050] w-full h-full top-0 left-0 flex justify-center items-center"
+      >
+        <div
+          @click.stop
+          class="w-72 h-72 text-[#ffffff] font-makgeolli text-2xl rounded-md overflow-hidden flex flex-col"
+        >
+
+          <div
+            class="flex-1 max-w-full bg-[#00000090] overflow-auto flex items-center justify-center"
+          >
+
+          </div>
+        </div>
+      </div>
+    </Transition> -->
   </div>
 </template>
 
@@ -145,6 +171,7 @@ import {
   InGameContent,
   InGameProgress,
   InGameVote,
+  InGameTrash,
 } from "@/components";
 
 const maxParticipants = 6;
@@ -213,7 +240,13 @@ const props = defineProps({
   },
   votings: {
     Type: Array,
-  }
+  },
+  percentage: {
+    Type: Number,
+  },
+  usedCard: {
+    Type: Object,
+  },
 });
 
 watch(

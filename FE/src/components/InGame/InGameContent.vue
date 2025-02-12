@@ -27,11 +27,14 @@
             :class="{ flipped: isFlipped(index * 2 + 2) }"
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
-            {{ content.image }}
+            <div class="bg-effect scale-[85%] rounded-lg overflow-hidden" v-if="content.image">
+              <img :src="content.image" alt="이야기 이미지" class="w-full h-full">
+            </div>
           </div>
         </template>
       </div>
     </div>
+    
   </div>
 </template>
 
@@ -111,7 +114,6 @@ const handlePageClick = (pageIndex) => {
 
 watch(() => props.bookContents.length,
 (afterSize, beforeSize) => {
-  console.log("책 길이", props.bookContents.length);
   if (afterSize > beforeSize) {
     for (let i of Array.from({length: afterSize}, (_, index) => index * 2)) {
       if (!isFlipped(i)) {
@@ -232,5 +234,25 @@ p {
 /* 페이지 테두리 효과 */
 .book .page {
   border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.bg-effect {
+    display: inline-block;
+    position: relative;
+}
+.bg-effect:after {
+    position: absolute;
+    display: block;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: 
+      inset 0 0 30px #C9B29C /* 배경과 같은 색 */,
+      inset 0 0 30px #C9B29C,
+      inset 0 0 30px #C9B29C,
+      inset 0 0 30px #C9B29C;
+    
 }
 </style>
