@@ -439,7 +439,6 @@ const setupConnection = (conn) => {
             // 이미지 쓰레기통에 넣기
           }
         } catch (error) {
-          console.log(error);
           if (error.response.status === 409) {
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
@@ -448,7 +447,6 @@ const setupConnection = (conn) => {
             });
           }
         }
-        console.log(storyCards.value);
           } else {
             if (upCount < downCount) {
               // 현재 턴 사람 점수 -1
@@ -1092,7 +1090,6 @@ const voteEnd = async (data) => {
           }
         } catch (error) {
           if (error.response.status === 409) {
-            console.log(error);
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
@@ -1100,7 +1097,6 @@ const voteEnd = async (data) => {
             });
           }
         }
-        console.log(storyCards.value);
     } else {
       if (upCount < downCount) {
         // 현재 턴 사람 점수 -1
