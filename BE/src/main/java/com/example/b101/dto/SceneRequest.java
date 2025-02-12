@@ -16,7 +16,5 @@ public class SceneRequest {
 
     String userPrompt;
 
-    int cardId;
-
     int turn;
 }
