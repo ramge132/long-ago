@@ -78,7 +78,7 @@ export const promptFiltering = async (data) => {
 // 이미지 생성 부분
 export const createImage = async (data) => {
   try {
-    const response = await apiClient.post(import.meta.env.VITE_SCENE, data);
+    const response = await apiClient.post(import.meta.env.VITE_SCENE, data, { responseType: "blob", });
     return response;
   } catch(error) {
     console.log(error);
