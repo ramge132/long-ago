@@ -23,7 +23,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
@@ -860,6 +860,9 @@ const voteEnd = async (data) => {
     sender: data.sender,
     selected: data.selected,
   });
+  // 이미지 들어올 때까지 대기
+
+  const sendVoteResult = async () => {
   connectedPeers.value.forEach((peer) => {
     if (peer.id !== peerId.value && peer.connection.open) {
       sendMessage(
@@ -991,6 +994,19 @@ const voteEnd = async (data) => {
 
     }
   }
+}
+
+const lastContent = bookContents.value[bookContents.value.length - 1];
+
+watch(
+  () => lastContent.image,
+  (newImage) => {
+    if (newImage !== null) {
+      sendVoteResult();
+    }
+  },
+  { immediate: true }
+);
 };
 </script>
 <style>
