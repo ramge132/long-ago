@@ -20,6 +20,7 @@ export { default as PlayIcon } from "./icons/play.svg";
 export { default as StarIcon } from "./icons/star.svg";
 export { default as RerollIcon } from "./icons/reroll.svg";
 export { default as EmoticonIcon } from "./icons/emoticon.svg";
+export { default as TrashIcon } from "./icons/trash.svg";
 export { default as SendIcon } from "./icons/send.svg";
 export { default as ChangeIcon } from "./icons/change.svg";
 export { default as MyInfo } from "./icons/myinfo.svg";
