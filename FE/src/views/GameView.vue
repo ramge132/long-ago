@@ -240,7 +240,7 @@ const setupConnection = (conn) => {
         });
         const currTurnExited = currTurn.value === removedIndex;
         currTurn.value %= participants.value.length;
-        if (currTurnExited) {
+        if (currTurnExited && gameStarted.value) {
           inProgress.value = false;
           await showOverlay('whoTurn');
           inProgress.value = true;
@@ -405,8 +405,9 @@ const setupConnection = (conn) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   if (usedCard.value.isEnding) {
                     // 게임 종료 송신
+                    gameStarted.value = false;
                     sendMessage("gameEnd", {}, peer.connection);
-                    // 수정 중 //
+                    // 랭킹 페이지 이동
                     router.push('/game/rank');
                   } else {
                     sendMessage(
@@ -443,6 +444,7 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
+        gameStarted.value = false;
         router.push("/game/rank");
         break;
 
@@ -1035,8 +1037,9 @@ const voteEnd = async (data) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             if (usedCard.value.isEnding) {
               // 게임 종료 송신
+              gameStarted.value = false;
               sendMessage("gameEnd",{}, peer.connection);
-              // 수정 중 //
+              // 랭킹 페이지 이동
               router.push('/game/rank');
             } else {
               sendMessage(
@@ -1090,7 +1093,6 @@ const voteEnd = async (data) => {
           currentPlayer.score += 2;
         }
       }
-
     }
   }
 }
@@ -1110,6 +1112,37 @@ watch(
   sendVoteResult();
 }
 };
+
+const gameEnd = (status) => {
+  // 비정상 종료인 경우 (긴장감 100 초과)
+  if (!status) {
+    // 책 비우기
+    bookContents.value = [];
+    // 방장인 경우 게임실패 송신
+    // if (participants.value[0].id == peerId.value) {
+    //   // 비정상 종료 api 들어가야함
+    // }
+  }
+  // 게임 시작 상태 초기화
+  gameStarted.value = false;
+  // 메세지 초기화
+  receivedMessages.value = [];
+  // 턴 초기화
+  currTurn.value = 0;
+  totalTurn.value = 0;
+
+  router.push("/game/rank");
+};
+
+// 긴장감이 100 이상 진행 된 경우 전체 탈락
+watch(
+  () => percentage.value,
+  (percent) => {
+    if (percent > 100) {
+      gameEnd(false);
+    }
+  }
+)
 </script>
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
