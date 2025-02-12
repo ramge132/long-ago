@@ -13,14 +13,14 @@ const router = createRouter({
       path: "/game",
       name: "Game",
       component: () => import("@/views/GameView.vue"),
-      // beforeEnter: (to, from, next) => {
-      //   const userStore = useUserStore();
-      //   if (!userStore.userData.userNickname) {
-      //     next({ name: "Intro" });
-      //   } else {
-      //     next();
-      //   }
-      // },
+      beforeEnter: (to, from, next) => {
+        const userStore = useUserStore();
+        if (!userStore.userData.userNickname) {
+          next({ name: "Intro" });
+        } else {
+          next();
+        }
+      },
       children: [
         {
           path: "lobby",

@@ -15,7 +15,7 @@
     <!-- 순차적으로 등장하는 텍스트 -->
     <div
       id="tiger-text"
-      class="tiger-text flex gap-2 mt-5 text-white font-makgeolli text-6xl"
+      class="tiger-text flex gap-2 mt-5 text-black font-katuri text-6xl"
     >
       <span class="word" style="animation-delay: 0s">아주</span>
       <span class="word" style="animation-delay: 1s">먼</span>
