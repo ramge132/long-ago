@@ -16,16 +16,25 @@
           :myTurn="myTurn"
           :peerId="peerId"
           :inProgress="inProgress"
+          :bookContents="bookContents"
+          :storyCards="storyCards"
+          :endingCard="endingCard"
+          :prompt="prompt"
+          :votings="votings"
+          :percentage="percentage"
+          :usedCard="usedCard"
           @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage"
           @game-start="gameStart"
           @game-exit="gameStarted = false"
           @next-turn="nextTurn"
+          @card-reroll="cardReroll"
+          @vote-end="voteEnd"
         />
       </Transition>
     </RouterView>
     <div class="overlay absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center scale-0">
-      <img :src="currTurns" alt="">
+      <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
     <!-- <div class="absolute top-0 left-0 rounded-lg w-full h-full">
@@ -34,17 +43,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
 import { myTurnImage , currTurnImage, startImage } from "@/assets";
-import { createGame, enterGame, deleteGame, endingCardReroll } from "@/apis/game";
+import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering, createImage } from "@/apis/game";
+import toast from "@/functions/toast";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
 const route = useRoute();
+const router = useRouter();
 // 내 피어 객체
 const peer = ref(null);
 const peerId = ref("");
@@ -59,10 +70,8 @@ const participants = ref([]);
 // 게임 설정
 const configurable = ref(false);
 const roomConfigs = ref({
-  currTurnTime: 10,
-  currCardCount: 4,
-  currMode: "textToPicture",
-  currStyle: "korean",
+  currTurnTime: 20,
+  currMode: 1,
 });
 // 최대 참가자
 const maxParticipants = 6;
@@ -76,6 +85,8 @@ const gameID = ref("");
 const inGameOrder = ref([]);
 // 현재 턴 인덱스
 const currTurn = ref(0);
+// 누적 턴
+const totalTurn = ref(0);
 // 나의 턴 순서
 const myTurn = ref(null);
 const inProgress = ref(false);
@@ -85,6 +96,28 @@ const storyCards = ref([]);
 const endingCard = ref({});
 // 턴 오버레이 애니메이션 지연
 const overlayTimeout = ref(null);
+// 책 리스트
+const bookContents = ref([
+  { content: "", image: null }
+]);
+// 내 턴에 작성한 이야기
+const prompt = ref("");
+// 이번 턴에 사용된 카드
+const usedCard = ref({
+  text: "",
+  isEnding: false
+});
+// 투표 결과 표시
+const votings = ref([]);
+
+// 긴장감 퍼센트
+const percentage = computed(() => {
+  if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
+    return 0
+  } else {
+    return Math.round((bookContents.value.length / (participants.value.length * 3)) * 100)
+  }
+});
 
 // UUID 압축/해제 함수
 function compressUUID(uuidStr) {
@@ -246,8 +279,10 @@ const setupConnection = (conn) => {
             gameId: gameID.value,
           })
 
-          storyCards.value = response.data.storyCards;
-          endingCard.value = response.data.endingCard;
+          storyCards.value = response.data.data.storyCards;
+          endingCard.value = response.data.data.endingCard;
+
+          router.push("/game/play");
 
           await showOverlay('start')
           setTimeout(async () => {
@@ -257,7 +292,19 @@ const setupConnection = (conn) => {
         });
         break;
 
-      case "nextTurn": 
+      case "nextTurn":
+        if (data.imageDelete === true) {
+          if (bookContents.value.length === 1) {
+            bookContents.value = [{ content: "", image: null }];
+          } else {
+            bookContents.value = bookContents.value.slice(0, -1);
+          }
+        }
+        if (data.isTimeout) {
+          // 타임아웃 점수 -1
+          const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+          currentPlayer.score -= 1;
+        }
         inProgress.value = false;
         currTurn.value = data.currTurn;
         await showOverlay('whoTurn');
@@ -277,6 +324,118 @@ const setupConnection = (conn) => {
         }
         break;
       
+      case "sendPrompt":
+        prompt.value = data.prompt;
+        usedCard.value = data.usedCard;
+        inProgress.value = false;
+        addBookContent({ content: data.prompt, image: null });
+        votings.value = [];
+        break;
+
+      case "sendImage":
+        bookContents.value[bookContents.value.length - 1].image = data.imageBlob;
+        break;
+
+      case "voteResult":
+        votings.value.push({
+          sender: data.sender,
+          selected: data.selected
+        });
+
+        if(votings.value.length == participants.value.length) {
+          let upCount = 0;
+          let downCount = 0;
+          votings.value.forEach((vote) => {
+            if(vote.selected == 'up') upCount++;
+            else downCount++;
+          });
+          
+          if(currTurn.value === myTurn.value) {
+            if (upCount < downCount) {
+              // 이미지 버리는 api
+              // 내 이미지 버리기
+              if (bookContents.value.length === 1) {
+                bookContents.value = [{ content: "", image: null }];
+              } else {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
+              // 현재 턴 사람 점수 -1
+              const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+              currentPlayer.score -= 1;
+              // 턴 종료 트리거 송신하기
+              currTurn.value = (currTurn.value + 1) % participants.value.length;
+              totalTurn.value++;
+              connectedPeers.value.forEach((peer) => {
+                if (peer.id !== peerId.value && peer.connection.open) {
+                  sendMessage(
+                    "nextTurn",
+                    { 
+                      currTurn: currTurn.value,
+                      imageDelete: true,
+                    },
+                    peer.connection
+                  )
+                }
+              });
+              // inProgress.value = false;
+              await showOverlay('whoTurn');
+              inProgress.value = true;
+            } else {
+              // 투표 가결 시 점수 +2
+              const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+              if (usedCard.value.isEnding) {
+                currentPlayer.score += 5;
+              } else {
+                currentPlayer.score += 2;
+              }
+              
+              // 턴 종료 트리거 송신하기
+              currTurn.value = (currTurn.value + 1) % participants.value.length;
+              // condition에서 다음 턴 or 게임 종료
+              connectedPeers.value.forEach(async (peer) => {
+                if (peer.id !== peerId.value && peer.connection.open) {
+                  if (usedCard.value.isEnding) {
+                    // 게임 종료 송신
+                    sendMessage("gameEnd",{}, peer.connection);
+                    // 수정 중 //
+                    router.push('/game/rank');
+                  } else {
+                    sendMessage(
+                      "nextTurn",
+                      { 
+                        currTurn: currTurn.value,
+                        imageDelete: false,
+                      },
+                      peer.connection
+                    )
+                    // inProgress.value = false;
+                    await showOverlay('whoTurn');
+                    inProgress.value = true;
+                  }
+                }
+              });
+            }
+          } else {
+            if (upCount < downCount) {
+              // 현재 턴 사람 점수 -1
+              const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+              currentPlayer.score -= 1;
+            } else {
+              // 투표 가결 시 점수 +2
+              const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+              if (usedCard.value.isEnding) {
+                currentPlayer.score += 5;
+              } else {
+                currentPlayer.score += 2;
+              }
+            }
+          }
+        }
+        break;
+
+      case "gameEnd":
+        router.push("/game/rank");
+        break;
     }
   });
 
@@ -340,6 +499,7 @@ const connectToRoom = async (roomID) => {
           id: peerId.value,
           name: userStore.userData.userNickname,
           image: userStore.userData.userProfile,
+          score: 10
         },
       },
       conn,
@@ -358,6 +518,7 @@ const connectToRoom = async (roomID) => {
       id: peerId.value,
       name: userStore.userData.userNickname,
       image: userStore.userData.userProfile,
+      score: 10,
     };
 
     // 중복 확인 후 추가
@@ -384,7 +545,18 @@ const broadcastNewParticipant = (newParticipant) => {
 const initializePeer = () => {
   return new Promise((resolve, reject) => {
     try {
-      peer.value = new Peer();
+      peer.value = new Peer({
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" }, // 예제 STUN 서버
+            {
+              urls: "turn:i12b101.p.ssafy.io:3478",   // 턴서버 제작완료하면 바꿔야함
+              username: import.meta.env.VITE_TURN_ID,              // docker 환경변수 참고
+              credential: import.meta.env.VITE_TURN_PW          // docker 환경변수 참고
+            }
+          ]
+        }
+      });
 
       peer.value.on("open", (id) => {
         peerId.value = id;
@@ -427,6 +599,7 @@ onMounted(async () => {
         id: peerId.value,
         name: userStore.userData.userNickname,
         image: userStore.userData.userProfile,
+        score: 10
       });
       configurable.value = true;
       InviteLink.value =
@@ -439,7 +612,7 @@ onMounted(async () => {
   }
 });
 
-// 퇴장 관련련
+// 퇴장 관련
 addEventListener("beforeunload", () => {
   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
   connectedPeers.value.forEach((peer) => {
@@ -475,24 +648,25 @@ const onRoomConfiguration = (data) => {
 // 게임 진행 관련 부분 //
 ///////////////////////
 const gameStart = async (data) => {
+  // 게임 방 생성
+  try {
+    const response = await createGame({
+      bossId: peerId.value,
+      player: participants.value.map((p) => p.id),
+      drawingStyle: roomConfigs.value.currMode,
+    })
+    gameID.value = response.data.data.gameId;
+    storyCards.value = response.data.data.status.storyCards;
+    endingCard.value = response.data.data.status.endingCard;
+  } catch (error) {
+    console.log(error);
+    // return;
+  }
+  
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
 
-  // 게임 방 생성
-  // try {
-  //   const response = await createGame({
-  //     bossId: peerId.value,
-  //     player: participants.value.map((p) => p.id),
-  //     drawingStyle: roomConfigs.value.currStyle,
-  //   })
-
-  //   gameID.value = response.data.data.gameId;
-  //   storyCards.value = response.data.data.status.storyCards;
-  //   endingCard.value = response.data.data.status.endingCard;
-  // } catch (error) {
-  //   console.log(error);
-  //   return;
-  // }
+  router.push("/game/play");
 
   connectedPeers.value.forEach((peer) => {
     sendMessage(
@@ -561,17 +735,85 @@ const showOverlay = (message) => {
   });
 }
 
+// 책 데이터 추가
+const addBookContent = (newContent) => {
+  if (bookContents.value[0].content === "") {
+    bookContents.value[0].content = newContent.content;
+  } else {
+    bookContents.value.push(newContent);
+  }
+};
+
+
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
+  // 프롬프트 제출인 경우
   if (data?.prompt) {
-    // 프롬프트 제출 api 들어가야 함
-    // 시간 멈춰야 함
-    // 투표 모달 띄워야 함
-    
-    
+    const isEnding = data.isEnding ? true : false;
+    // 스토리 카드 제출인 경우
+    if (!isEnding) {
+      try {
+        const filteredPrompt = await promptFiltering({
+          userId: peerId.value,
+          gameId: gameID.value,
+          userPrompt: data.prompt,
+        })
+        
+        storyCards.value.forEach((card) => {
+          if(card.id == filteredPrompt.data) {
+            usedCard.value.text = card.keyword;
+          } 
+        })
+      } catch (error) {
+        console.log(error);
+        toast.errorToast(error.response.data.message);
+        return;
+      }
+    }
+    // 결말 카드 제출인 경우
+    else {
+      if (percentage.value < 35) {
+        toast.errorToast("긴장감이 충분히 오르지 않았습니다!");
+        return;
+      }
+      usedCard.value.text = endingCard.value.content;
+      usedCard.value.isEnding = isEnding;
+    }
+
+    // 연결된 피어들에게 프롬프트 제출
+    connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage(
+          "sendPrompt",
+          { 
+            prompt: data.prompt,
+            usedCard: {
+              text: usedCard.value.text,
+              isEnding: isEnding,
+            },
+          },
+          peer.connection
+        )
+      }
+    });
+        
+    addBookContent({ content: data.prompt, image: null });
+
+    // 투표 모달 띄우기
+    inProgress.value = false;
+    prompt.value = data.prompt;
+    votings.value = [];
+    // 해당 프롬프트로 이미지 생성 요청 (api)
+    const responseImage = await createImage({
+      gameId: gameID.value,
+      userId: peerId.value,
+      userPrompt: data.prompt,
+      turn: totalTurn.value,
+    });
+
     // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-    const imageBlob = 'test';
-    
+    const imageBlob = responseImage.data;
+
     // 사람들에게 이미지 전송
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
@@ -583,16 +825,26 @@ const nextTurn = async (data) => {
       }
     });
     
-    // 나의 책에 프롬프트와 이미지 넣기
-    console.log(data);
-  } else if(currTurn.value === myTurn.value) {
+    // 나의 책에 이미지 넣기
+    bookContents.value[bookContents.value.length - 1].image = imageBlob;
+  }
+  // 프롬프트 입력 시간초과로 턴 넘기는 경우
+  else if (currTurn.value === myTurn.value) {
+    // 타임아웃 점수 -1
+    const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+    currentPlayer.score -= 1;
+
     // 턴 종료 트리거 송신하기
     currTurn.value = (currTurn.value + 1) % participants.value.length;
+    totalTurn.value++;
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
           "nextTurn",
-          { currTurn: currTurn.value },
+          {
+            currTurn: currTurn.value,
+            isTimeout: true,
+          },
           peer.connection
         )
       }
@@ -600,6 +852,127 @@ const nextTurn = async (data) => {
     inProgress.value = false;
     await showOverlay('whoTurn');
     inProgress.value = true;
+  }
+};
+
+// 결말카드 리롤 함수
+const cardReroll = async () => {
+  const response = await endingCardReroll({
+    userId: peerId.value,
+    gameId: gameID.value,
+  });
+  
+  endingCard.value.content = response.data.data.content;
+};
+
+// 투표 종료
+const voteEnd = async (data) => {
+  prompt.value = "";
+  votings.value.push({
+    sender: data.sender,
+    selected: data.selected,
+  });
+  connectedPeers.value.forEach((peer) => {
+    if (peer.id !== peerId.value && peer.connection.open) {
+      sendMessage(
+        "voteResult",
+        {
+          sender: data.sender,
+          selected: data.selected,
+        },
+        peer.connection
+      )
+    }
+  })
+  
+  if(votings.value.length == participants.value.length) {
+    let upCount = 0;
+    let downCount = 0;
+    votings.value.forEach((vote) => {
+      if(vote.selected == 'up') upCount++;
+      else downCount++;
+    });
+    
+    if(currTurn.value === myTurn.value) {
+      if (upCount < downCount) {
+        // 이미지 버리는 api
+        // 내 이미지 버리기
+        if (bookContents.value.length === 1) {
+          bookContents.value = [{ content: "", image: null }];
+        } else {
+          bookContents.value = bookContents.value.slice(0, -1);
+        }
+        // 현재 턴 사람 점수 -1
+        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        currentPlayer.score -= 1;
+        // 턴 종료 트리거 송신하기
+        currTurn.value = (currTurn.value + 1) % participants.value.length;
+        totalTurn.value++;
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            sendMessage(
+              "nextTurn",
+              { 
+                currTurn: currTurn.value,
+                imageDelete: true,
+              },
+              peer.connection
+            )
+          }
+        });
+        // inProgress.value = false;
+        await showOverlay('whoTurn');
+        inProgress.value = true;
+      } else {
+        // 투표 가결 시 점수 +2
+        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        if (usedCard.value.isEnding) {
+          currentPlayer.score += 5;
+        } else {
+          currentPlayer.score += 2;
+        }
+
+        // 턴 종료 트리거 송신하기
+        currTurn.value = (currTurn.value + 1) % participants.value.length;
+        // condition에서 다음 턴 or 게임 종료
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            if (usedCard.value.isEnding) {
+              // 게임 종료 송신
+              sendMessage("gameEnd");
+              // 수정 중 //
+              router.push('/game/rank');
+            } else {
+              sendMessage(
+                "nextTurn",
+                { 
+                  currTurn: currTurn.value,
+                  imageDelete: false,
+                },
+                peer.connection
+              )
+            }
+          }
+        });
+        // inProgress.value = false;
+        await showOverlay('whoTurn');
+        inProgress.value = true;
+      }
+    } else {
+      if (upCount < downCount) {
+        // 현재 턴 사람 점수 -1
+        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        currentPlayer.score -= 1;
+      } else {
+        // 투표 가결 시 점수 +2
+        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        if (usedCard.value.isEnding) {
+          currentPlayer.score += 5;
+        } else {
+          currentPlayer.score += 2;
+        }
+      }
+    }
   }
 };
 </script>
