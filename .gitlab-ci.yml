@@ -6,6 +6,7 @@ stages:
   - cleanup
   - deploy
 
+
 #########################
 # 1-1. build_FE JOB 단계 #
 #########################
@@ -24,7 +25,10 @@ build_FE:
     VITE_GAME: "$VITE_GAME"
     VITE_GAME_SHUFFLE: "$VITE_GAME_SHUFFLE"
     VITE_TURN_ID: "$VITE_TURN_ID"
-    VITE_TURN_PW: "$VITE_TURN_PW" 
+    VITE_TURN_PW: "$VITE_TURN_PW"
+    VITE_SCENE: "$VITE_SCENE"
+    VITE_SCENE_FILTERING: "$VITE_SCENE_FILTERING"
+    VITE_SCENE_VOTE: "$VITE_SCENE_VOTE"
   script:
     - echo "==========================="
     - echo "     FRONT-END빌드 중"
@@ -35,6 +39,12 @@ build_FE:
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         export VITE_MAIN_API_SERVER_URL="$VITE_MAIN_API_SERVER_URL_MAIN"
         export IMAGE_NAME="$IMAGE_FE_MAIN"
+      else
+        # main이 아닌 브랜치일 경우, Docker 이미지가 존재하면 이미지 삭제
+        if [ -n "$(docker images -q)" ]; then
+          docker compose -f /home/ubuntu/docker-compose.yml down
+          docker rmi $(docker images -q)
+        fi
       fi
 
     # 환경변수 설정
@@ -46,6 +56,9 @@ build_FE:
     - echo "VITE_GAME_SHUFFLE=$VITE_GAME_SHUFFLE" >> FE/.env
     - echo "VITE_TURN_ID=$VITE_TURN_ID" >> FE/.env
     - echo "VITE_TURN_PW=$VITE_TURN_PW" >> FE/.env
+    - echo "VITE_SCENE=$VITE_SCENE" >> FE/.env
+    - echo "VITE_SCENE_FILTERING=$VITE_SCENE_FILTERING" >> FE/.env
+    - echo "VITE_SCENE_VOTE=$VITE_SCENE_VOTE" >> FE/.env
 
     # 이미지 빌드
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
@@ -80,6 +93,12 @@ build_BE:
     - |
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         export IMAGE_NAME="$IMAGE_BE_MAIN"
+      else
+        # main이 아닌 브랜치일 경우, Docker 이미지가 존재하면 이미지 삭제
+        if [ -n "$(docker images -q)" ]; then
+          docker compose -f /home/ubuntu/docker-compose.yml down
+          docker rmi $(docker images -q)
+        fi
       fi
 
     # 이미지 빌드
@@ -303,9 +322,6 @@ deploy_test:
     - echo "S3_REGION=$S3_REGION" >> .env
     - echo "S3_CREDENTIALS_ACCESS_KEY=$S3_CREDENTIALS_ACCESS_KEY" >> .env
     - echo "S3_CREDENTIALS_SECRET_KEY=$S3_CREDENTIALS_SECRET_KEY" >> .env
-
-    # 컨테이너 off
-    - docker compose down -v
 
     # 컨테이너 on .env 참조
     - docker compose --env-file /home/ubuntu/.env up --build -d
