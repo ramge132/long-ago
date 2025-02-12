@@ -12,11 +12,13 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-//    @Value("${WEBCLIENT.BASE.URL}")
-    private String baseUrl = "http://115.124.123.240:18444";
+    @Value("${WEBCLIENT.BASE.URL:http://localhost:8080}")
+    private String baseUrl;
 
     @Bean
     public WebClient webClient(WebClient.Builder builder) {
+
+        System.out.println(baseUrl);
 
 
         //WebClient 객체를 빌드하는데 요청 하나의 버퍼 크기를 최대 2MB로 지정.
