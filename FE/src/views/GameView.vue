@@ -222,7 +222,6 @@ const setupConnection = (conn) => {
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
         );
-        console.log(participants.value);
 
         inGameOrder.value.forEach((order, index) => {
           if(order > removedOrder) inGameOrder.value[index] -= 1;
@@ -445,6 +444,13 @@ const setupConnection = (conn) => {
       (p) => p.id !== conn.peer,
     );
     participants.value = participants.value.filter((p) => p.id !== conn.peer);
+
+    
+    console.warn(`⚠️ ${conn.peer} 연결 종료됨. 재연결 시도 중...`);
+    setTimeout(() => {
+      connectToRoom(conn.peer);
+    }, 3000);
+
   });
 
   connectedPeers.value.push({
@@ -580,6 +586,21 @@ const initializePeer = () => {
   });
 };
 
+// 피어들 연결상태 3초마다 확인
+const checkPeerConnections = () => {
+  console.log(connectedPeers.value);
+  connectedPeers.value = connectedPeers.value.filter((peer) => {
+    if (!peer.connection.open) {
+      console.warn(`⚠️ 연결 끊김: ${peer.id}. 제거합니다.`);
+      return false; // 연결이 끊어진 피어는 제거
+    }
+    return true;
+  });
+
+  setTimeout(checkPeerConnections, 3000); // 3초마다 체크
+};
+
+
 // 컴포넌트 마운트
 onMounted(async () => {
   try {
@@ -610,7 +631,21 @@ onMounted(async () => {
   } catch (error) {
     console.error("Peer initialization failed:", error);
   }
+
+  checkPeerConnections();
 });
+
+// // 퇴장 관련
+// addEventListener("beforeunload", () => {
+//   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
+//   connectedPeers.value.forEach((peer) => {
+//     sendMessage(
+//       "system",
+//       { id: peerId.value, nickname: userStore.userData.userNickname },
+//       peer.connection,
+//     );
+//   });
+// });
 
 // 퇴장 관련
 addEventListener("beforeunload", () => {
@@ -619,9 +654,19 @@ addEventListener("beforeunload", () => {
     sendMessage(
       "system",
       { id: peerId.value, nickname: userStore.userData.userNickname },
-      peer.connection,
+      peer.connection
     );
+
+    // 연결 종료 신호 보내기
+    if (peer.connection.open) {
+      peer.connection.close();  // 연결 종료
+    }
   });
+
+  // 자신도 연결 종료
+  if (peer.value) {
+    peer.value.destroy();  // 자신의 Peer 객체 종료
+  }
 });
 
 // 방 설정 관련 부분
