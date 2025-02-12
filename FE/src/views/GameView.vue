@@ -939,7 +939,7 @@ const voteEnd = async (data) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             if (usedCard.value.isEnding) {
               // 게임 종료 송신
-              sendMessage("gameEnd");
+              sendMessage("gameEnd",{}, peer.connection);
               // 수정 중 //
               router.push('/game/rank');
             } else {
