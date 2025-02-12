@@ -42,6 +42,7 @@ build_FE:
       else
         # main이 아닌 브랜치일 경우, Docker 이미지가 존재하면 이미지 삭제
         if [ -n "$(docker images -q)" ]; then
+          docker compose -f /home/ubuntu/docker-compose.yml down
           docker rmi $(docker images -q)
         fi
       fi
@@ -95,6 +96,7 @@ build_BE:
       else
         # main이 아닌 브랜치일 경우, Docker 이미지가 존재하면 이미지 삭제
         if [ -n "$(docker images -q)" ]; then
+          docker compose -f /home/ubuntu/docker-compose.yml down
           docker rmi $(docker images -q)
         fi
       fi
