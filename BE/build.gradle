@@ -46,7 +46,7 @@ dependencies {
     // Spring Boot Starter Test (JUnit 5 포함)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-    testImplementation 'com.squareup.okhttp3:mockwebserver:4.11.0'
+    implementation 'io.github.vaneproject:badwordfiltering:1.0.0' //욕설필터 라이브러리
 
 
     // JUnit Jupiter (JUnit 5)

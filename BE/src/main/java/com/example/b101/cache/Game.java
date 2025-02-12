@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@RedisHash(value = "Game", timeToLive = 3600) //TTL 1시간 설정
+@RedisHash(value = "Game")
 public class Game implements Serializable {
 
     @Id  // redis에서 Key 역할을 할 필드
@@ -22,9 +22,13 @@ public class Game implements Serializable {
     //게임에서 쓰이는 게임 개별 endingCardList
     private List<EndingCard> endingCardlist;
 
+    //플에이어들의 게임데이터 정보
     private List<PlayerStatus> playerStatuses;
 
-    private String drawingStyle;
+    //작화 스타일
+    //1번이 기본모드
+    //2번이 클레이모드
+    private int drawingStyle;
 
 
 

@@ -796,9 +796,8 @@ const nextTurn = async (data) => {
         turn: totalTurn.value,
       });
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-      const imageBlob = responseImage.data;
-      // const imageBlob = testImage;
-
+      const imageBlob = URL.createObjectURL(responseImage.data);
+      
       // 사람들에게 이미지 전송
       connectedPeers.value.forEach((peer) => {
         if (peer.id !== peerId.value && peer.connection.open) {
@@ -809,12 +808,13 @@ const nextTurn = async (data) => {
           )
         }
       });
-
+      
       // 나의 책에 이미지 넣기
       bookContents.value[bookContents.value.length - 1].image = imageBlob;
     } catch (error) {
       console.log(error);
     }
+    // const imageBlob = testImage;
   }
   // 프롬프트 입력 시간초과로 턴 넘기는 경우
   else if (currTurn.value === myTurn.value) {
