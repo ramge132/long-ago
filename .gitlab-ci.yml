@@ -42,7 +42,7 @@ build_FE:
       fi
     # 기존 이미지와 태그 중복 방지
     - |
-      if [ "$CI_COMMIT_BRANCH" != "main" ] && [ "$(docker images -q)" ]; then
+      if [ "$CI_COMMIT_REF_NAME" != "main" ] && [ "$(docker images -q)" ]; then
         docker compose -v down
         docker rmi $(docker images -q)
       fi
@@ -97,7 +97,7 @@ build_BE:
     
     # 기존 이미지와 태그 중복 방지
     - |
-      if [ "$CI_COMMIT_BRANCH" != "main" ] && [ "$(docker images -q)" ]; then
+      if [ "$CI_COMMIT_REF_NAME" != "main" ] && [ "$(docker images -q)" ]; then
         docker compose -v down
         docker rmi $(docker images -q)
       fi    
