@@ -315,7 +315,10 @@ const setupConnection = (conn) => {
         break;
 
       case "sendImage":
-        bookContents.value[bookContents.value.length - 1].image = data.imageBlob;
+        const receivedArrayBuffer = data.imageBlob;
+        const receivedBlob = new Blob([receivedArrayBuffer]);
+        const imageBlob = URL.createObjectURL(receivedBlob);
+        bookContents.value[bookContents.value.length - 1].image = imageBlob;
         break;
 
       case "voteResult":
@@ -472,6 +475,7 @@ const connectToRoom = async (roomID) => {
   const bossID = decompressUUID(roomID);
   const conn = peer.value.connect(bossID);
 
+  console.log(conn);
   conn.on("open", () => {
     setupConnection(conn);
     sendMessage(
@@ -796,14 +800,18 @@ const nextTurn = async (data) => {
         turn: totalTurn.value,
       });
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
+      console.log(responseImage.data);
       const imageBlob = URL.createObjectURL(responseImage.data);
+
+      // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
+      const arrayBuffer = await responseImage.data.arrayBuffer();
       
       // 사람들에게 이미지 전송
       connectedPeers.value.forEach((peer) => {
         if (peer.id !== peerId.value && peer.connection.open) {
           sendMessage(
             "sendImage",
-            { imageBlob: imageBlob },
+            { imageBlob: arrayBuffer },
             peer.connection
           )
         }
@@ -874,9 +882,10 @@ const voteEnd = async (data) => {
         peer.connection
       )
     }
-  })
+  });
 
   if (votings.value.length == participants.value.length) {
+    console.log("count start");
     let upCount = 0;
     let downCount = 0;
     votings.value.forEach((vote) => {
@@ -954,21 +963,21 @@ const voteEnd = async (data) => {
         // inProgress.value = false;
         await showOverlay('whoTurn');
         inProgress.value = true;
-
-        // 투표 결과 전송 api
-        try {
+      }
+      // 투표 결과 전송 api
+      try {
           const response = await voteResultSend({
             gameId: gameID.value,
             userId: peerId.value,
             isAccepted: isAccepted,
             cardId: usedCard.value.id,
           });
-
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
           }
         } catch (error) {
           if (error.response.status === 409) {
+            console.log(error);
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
@@ -976,7 +985,7 @@ const voteEnd = async (data) => {
             });
           }
         }
-      }
+        console.log(storyCards.value);
     } else {
       if (upCount < downCount) {
         // 현재 턴 사람 점수 -1
@@ -995,7 +1004,7 @@ const voteEnd = async (data) => {
     }
   }
 }
-
+if (currTurn.value === myTurn.value) {
 const lastContent = bookContents.value[bookContents.value.length - 1];
 
 watch(
@@ -1007,6 +1016,9 @@ watch(
   },
   { immediate: true }
 );
+} else {
+  sendVoteResult();
+}
 };
 </script>
 <style>
