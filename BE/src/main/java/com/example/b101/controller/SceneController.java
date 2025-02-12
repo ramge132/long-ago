@@ -7,9 +7,11 @@ import com.example.b101.service.FilteringService;
 import com.example.b101.service.SceneService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/scene")
@@ -28,7 +30,9 @@ public class SceneController {
     //프롬포트 필터링
     @PostMapping("/filtering")
     public ResponseEntity<?> filterPrompt(@RequestBody FilteringRequest filteringRequest, HttpServletRequest request) {
+        log.info("필터링 요청옴");
         return filteringService.findCardVariantsByCardId(filteringRequest,request);
+
     }
 
     //게임에서 생성된 모든 scene 데이터 조회
