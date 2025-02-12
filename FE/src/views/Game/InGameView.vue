@@ -141,6 +141,25 @@
       :percentage="percentage"
     />
     <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" v-if="prompt !== ''"/>
+    <!-- <Transition name="fade">
+      <div
+        v-if="modal.isOpen"
+        @click="toggleModal"
+        class="absolute bg-[#00000050] w-full h-full top-0 left-0 flex justify-center items-center"
+      >
+        <div
+          @click.stop
+          class="w-72 h-72 text-[#ffffff] font-makgeolli text-2xl rounded-md overflow-hidden flex flex-col"
+        >
+
+          <div
+            class="flex-1 max-w-full bg-[#00000090] overflow-auto flex items-center justify-center"
+          >
+
+          </div>
+        </div>
+      </div>
+    </Transition> -->
   </div>
 </template>
 
@@ -152,6 +171,7 @@ import {
   InGameContent,
   InGameProgress,
   InGameVote,
+  InGameTrash,
 } from "@/components";
 
 const maxParticipants = 6;
