@@ -6,6 +6,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Repository
 public class GameRepoImpl implements GameRepository {
@@ -21,6 +22,9 @@ public class GameRepoImpl implements GameRepository {
     @Override
     public void save(Game game) {
         redisTemplate.opsForHash().put(KEY, game.getGameId(), game);
+
+        // Key에 TTL 설정
+        redisTemplate.expire(KEY, 1, TimeUnit.HOURS);
     }
 
     @Override
@@ -41,14 +45,6 @@ public class GameRepoImpl implements GameRepository {
     public PlayerStatus getPlayerStatus(String gameId, String playerId) {
         Game game = findById(gameId);
 
-        List<PlayerStatus> playerStatuses = game.getPlayerStatuses();
-
-        for (PlayerStatus playerStatus : playerStatuses) {
-            if(playerStatus.getUserId().equals(playerId)) {
-                return playerStatus;
-            }
-        }
-
-        return null;
+        return game.getPlayerStatuses().stream().filter(playerStatus -> playerStatus.getUserId().equals(playerId)).findFirst().orElse(null);
     }
 }

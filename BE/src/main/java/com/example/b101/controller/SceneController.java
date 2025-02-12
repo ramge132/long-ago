@@ -1,5 +1,6 @@
 package com.example.b101.controller;
 
+import com.example.b101.dto.DeleteSceneRequest;
 import com.example.b101.dto.FilteringRequest;
 import com.example.b101.dto.SceneRequest;
 import com.example.b101.service.FilteringService;
@@ -17,20 +18,29 @@ public class SceneController {
     private final SceneService sceneService;
     private final FilteringService filteringService;
 
-    @PostMapping("/storyCard")
+    
+    //이야기 카드로 이미지 생성
+    @PostMapping
     public ResponseEntity<?> addSceneStoryCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
         return sceneService.createScene(sceneRequest, request);
     }
 
-
-    @PostMapping("/endingCard")
-    public ResponseEntity<?> addSceneEndingCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
-        return sceneService.createScene(sceneRequest, request);
-    }
-
+    //프롬포트 필터링
     @PostMapping("/filtering")
     public ResponseEntity<?> filterPrompt(@RequestBody FilteringRequest filteringRequest, HttpServletRequest request) {
         return filteringService.findCardVariantsByCardId(filteringRequest,request);
+    }
+
+    //게임에서 생성된 모든 scene 데이터 조회
+    @GetMapping
+    public ResponseEntity<?> getAllScene(@RequestParam String gameId,HttpServletRequest request) {
+        return sceneService.getScenesByGameId(gameId,request);
+    }
+
+    //투표 반대 시 scene 데이터 삭제
+    @PostMapping("/vote")
+    public ResponseEntity<?> deleteScene(@RequestBody DeleteSceneRequest deleteSceneRequest, HttpServletRequest request) {
+        return sceneService.deleteScene(deleteSceneRequest,request);
     }
 
 }
