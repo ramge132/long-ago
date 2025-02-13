@@ -240,7 +240,7 @@ const setupConnection = (conn) => {
         });
         const currTurnExited = currTurn.value === removedIndex;
         currTurn.value %= participants.value.length;
-        if (currTurnExited) {
+        if (currTurnExited && gameStarted.value) {
           inProgress.value = false;
           await showOverlay('whoTurn');
           inProgress.value = true;
@@ -408,8 +408,9 @@ const setupConnection = (conn) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   if (usedCard.value.isEnding) {
                     // 게임 종료 송신
+                    gameStarted.value = false;
                     sendMessage("gameEnd", {}, peer.connection);
-                    // 수정 중 //
+                    // 랭킹 페이지 이동
                     router.push('/game/rank');
                   } else {
                     sendMessage(
@@ -466,6 +467,7 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
+        gameStarted.value = false;
         router.push("/game/rank");
         break;
 
@@ -505,6 +507,9 @@ const setupConnection = (conn) => {
 
 // 기존 참가자들과 연결
 const handleExistingParticipants = (existingParticipants) => {
+  const MAX_RETRIES = 5; // 최대 재시도 횟수
+  const RETRY_DELAY = 2000; // 재시도 간격 (ms)
+
   // 참가자 목록 업데이트
   existingParticipants.forEach((newParticipant) => {
     // 이미 존재하는 참가자인지 확인
@@ -521,16 +526,43 @@ const handleExistingParticipants = (existingParticipants) => {
   });
 
   // 각 참가자와 연결
-  existingParticipants.forEach(async (participant) => {
+  existingParticipants.forEach((participant) => {
     if (
       participant.id !== peerId.value &&
       !connectedPeers.value.some((p) => p.id === participant.id)
     ) {
-      const conn = peer.value.connect(participant.id);
+      // 재시도 횟수를 추적할 객체 생성
+      let retries = 0;
 
-      conn.on("open", () => {
-        setupConnection(conn);
-      });
+      const tryConnecting = () => {
+        const conn = peer.value.connect(participant.id);
+
+        conn.on("open", () => {
+          setupConnection(conn);
+        });
+
+        // 연결이 실패했을 때 재시도
+        conn.on("error", (error) => {
+          console.error(participant.id, "와 연결 오류:", error);
+
+          if (retries < MAX_RETRIES) {
+            retries++; // 재시도 횟수 증가
+            console.log(`${participant.id} 연결 재시도 중... (${retries}/${MAX_RETRIES})`);
+
+            // 일정 시간 후 재시도
+            setTimeout(() => {
+              console.log(`재시도 ${retries}번째: ${participant.id}`);
+              tryConnecting(); // 재시도 호출
+            }, RETRY_DELAY);
+          } else {
+            toast.errorToast(`${participant.id}와 연결에 실패했습니다. 최대 재시도 횟수 초과`);
+            console.error(`${participant.id}와 연결에 실패했습니다. 최대 재시도 횟수를 초과하였습니다.`);
+          }
+        });
+      };
+
+      // 처음 연결 시도
+      tryConnecting();
     }
   });
 };
@@ -539,6 +571,9 @@ const handleExistingParticipants = (existingParticipants) => {
 const connectToRoom = async (roomID) => {
   const bossID = decompressUUID(roomID);
   const conn = peer.value.connect(bossID);
+
+  const MAX_RETRIES = 5; // 최대 재시도 횟수
+  const RETRY_DELAY = 2000; // 재시도 간격 (ms) 
 
   const attemptConnection = () => {
     conn.on("open", () => {
@@ -577,6 +612,19 @@ const connectToRoom = async (roomID) => {
         participants.value.push(newParticipant);
       }
     });
+
+    // 연결이 실패했을 때 재시도
+    conn.on("error", (error) => {
+      console.error("연결 오류:", error);
+
+      if (retries < MAX_RETRIES) {
+        console.log(`재시도 중... (${retries + 1}/${MAX_RETRIES})`);
+        setTimeout(() => attemptConnection(retries + 1), RETRY_DELAY); // 일정 시간 후 재시도
+      } else {
+        toast.errorToast("최대 재시도 횟수를 초과했습니다. 연결에 실패했습니다.");
+        console.error("최대 재시도 횟수를 초과하여 연결에 실패했습니다.");
+      }
+    })
   };
 
   try {
@@ -1058,8 +1106,9 @@ const voteEnd = async (data) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             if (usedCard.value.isEnding) {
               // 게임 종료 송신
+              gameStarted.value = false;
               sendMessage("gameEnd",{}, peer.connection);
-              // 수정 중 //
+              // 랭킹 페이지 이동
               router.push('/game/rank');
             } else {
               sendMessage(
@@ -1111,7 +1160,6 @@ const voteEnd = async (data) => {
           currentPlayer.score += 2;
         }
       }
-
     }
   }
 }
@@ -1131,6 +1179,37 @@ watch(
   sendVoteResult();
 }
 };
+
+const gameEnd = (status) => {
+  // 비정상 종료인 경우 (긴장감 100 초과)
+  if (!status) {
+    // 책 비우기
+    bookContents.value = [];
+    // 방장인 경우 게임실패 송신
+    // if (participants.value[0].id == peerId.value) {
+    //   // 비정상 종료 api 들어가야함
+    // }
+  }
+  // 게임 시작 상태 초기화
+  gameStarted.value = false;
+  // 메세지 초기화
+  receivedMessages.value = [];
+  // 턴 초기화
+  currTurn.value = 0;
+  totalTurn.value = 0;
+
+  router.push("/game/rank");
+};
+
+// 긴장감이 100 이상 진행 된 경우 전체 탈락
+watch(
+  () => percentage.value,
+  (percent) => {
+    if (percent > 100) {
+      gameEnd(false);
+    }
+  }
+)
 </script>
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */
