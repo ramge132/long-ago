@@ -7,9 +7,9 @@
           :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
-          :usedCard="usedCard" @on-room-configuration="onRoomConfiguration" @broadcast-message="broadcastMessage"
-          @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn" @card-reroll="cardReroll"
-          @vote-end="voteEnd" />
+          :usedCard="usedCard" :isForceStopped="isForceStopped" @on-room-configuration="onRoomConfiguration"
+          @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
+          @card-reroll="cardReroll" @vote-end="voteEnd" />
       </Transition>
     </RouterView>
     <div
@@ -60,6 +60,8 @@ const maxParticipants = 6;
 const InviteLink = ref("");
 // 게임 시작 여부
 const gameStarted = ref(false);
+// 게임 정상 종료 : "champ" 비정상 종료 : "fail" 디폴트 : null
+const isForceStopped = ref(null);
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -91,6 +93,15 @@ const usedCard = ref({
 });
 // 투표 결과 표시
 const votings = ref([]);
+
+// 게임 종료 애니메이션
+watch(isForceStopped, (newValue) => {
+  if (newValue !== null) {
+    setTimeout(() => {
+      isForceStopped.value = null;
+    }, 6000);
+  }
+});
 
 // 긴장감 퍼센트
 const percentage = computed(() => {
@@ -280,13 +291,13 @@ const setupConnection = (conn) => {
       case "gameStart":
         startReceived(data).then(async () => {
           // 내 카드 받기
-          // const response = await enterGame({
-          //   userId: peerId.value,
-          //   gameId: gameID.value,
-          // });
+          const response = await enterGame({
+            userId: peerId.value,
+            gameId: gameID.value,
+          });
 
-          // storyCards.value = response.data.data.storyCards;
-          // endingCard.value = response.data.data.endingCard;
+          storyCards.value = response.data.data.storyCards;
+          endingCard.value = response.data.data.endingCard;
 
           router.push("/game/play");
 
@@ -1181,15 +1192,6 @@ watch(
 };
 
 const gameEnd = (status) => {
-  // 비정상 종료인 경우 (긴장감 100 초과)
-  if (!status) {
-    // 책 비우기
-    bookContents.value = [];
-    // 방장인 경우 게임실패 송신
-    // if (participants.value[0].id == peerId.value) {
-    //   // 비정상 종료 api 들어가야함
-    // }
-  }
   // 게임 시작 상태 초기화
   gameStarted.value = false;
   // 메세지 초기화
@@ -1197,8 +1199,21 @@ const gameEnd = (status) => {
   // 턴 초기화
   currTurn.value = 0;
   totalTurn.value = 0;
-
-  router.push("/game/rank");
+  
+  // 비정상 종료인 경우 (긴장감 100 초과)
+  if (!status) {
+    // 책 비우기
+    // 방장인 경우 게임실패 송신
+    // if (participants.value[0].id == peerId.value) {
+    //   // 비정상 종료 api 들어가야함
+    // }
+    // 전체 실패 쇼 오버레이
+    isForceStopped.value = "fail";
+  } else {
+    // 정상 종료인 경우
+    // 우승자 쇼 오버레이
+    isForceStopped.value = "champ";
+  }
 };
 
 // 긴장감이 100 이상 진행 된 경우 전체 탈락

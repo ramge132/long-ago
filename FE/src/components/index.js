@@ -18,6 +18,7 @@ export { default as InGameContent } from "./InGame/InGameContent.vue";
 export { default as InGameProgress } from "./InGame/InGameProgress.vue";
 export { default as InGameVote } from "./InGame/InGameVote.vue";
 export { default as InGameTrash } from "./InGame/InGameTrash.vue";
+export { default as InGameEnding } from "./InGame/InGameEnding.vue";
 
 // InGameProgress
 export { default as ContentTimer } from "./InGame/InGameProgress/ContentTimer.vue";

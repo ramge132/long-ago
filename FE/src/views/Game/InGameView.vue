@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full grid grid-cols-5 grid-rows-2">
+  <div class="w-full h-full grid grid-cols-5 grid-rows-2 relative">
     <div class="h-full row-span-2 grid grid-rows-3 justify-start">
       <!-- <template v-for="(user, index) in props.participants" :key="user.id"> -->
       <template v-for="(order, index) in props.inGameOrder" :key="order">
@@ -160,6 +160,7 @@
         </div>
       </div>
     </Transition> -->
+    <InGameEnding v-if="props.isForceStopped" :isForceStopped="isForceStopped" :participants="participants" />
   </div>
 </template>
 
@@ -172,6 +173,7 @@ import {
   InGameProgress,
   InGameVote,
   InGameTrash,
+  InGameEnding,
 } from "@/components";
 
 const maxParticipants = 6;
@@ -246,6 +248,9 @@ const props = defineProps({
   },
   usedCard: {
     Type: Object,
+  },
+  isForceStopped: {
+    Type: String,
   },
 });
 
