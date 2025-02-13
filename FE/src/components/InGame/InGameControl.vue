@@ -2,14 +2,14 @@
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
     <div class="flex justify-center items-center grow">
       <div class="flex flex-col justify-center items-center w-3/4 mr-3">
-        <div class="flex justify-between w-full">
-          <div v-for="(card, index) in storyCards" :key="index" class="relative">
-            <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
-            <div
-              class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">
-              {{ card.keyword }}</div>
-          </div>
-        </div>
+          <transition-group name="list" tag="div" class="flex justify-center w-full" :class="'card' + storyCards.length">
+            <div v-for="(card) in storyCards" :key="card.id" class="relative">
+              <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
+              <div
+                class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">
+                {{ card.keyword }}</div>
+            </div>
+          </transition-group>
       </div>
       <div class="flex flex-col flex-1 justify-center items-center">
         <div class="relative endingcard cursor-pointer" @click="sendEndingCard">
@@ -292,6 +292,49 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
     inset 0 0 30px #C9B29C,
     inset 0 0 30px #C9B29C,
     inset 0 0 30px #C9B29C;
+}
 
+.card4 > :nth-child(1){
+  transform: rotate(-10deg) translateY(10px);
+}
+
+.card4 > :nth-child(2){
+  transform: rotate(-3deg) translateX(-10px);
+}
+.card4 > :nth-child(3){
+  transform: rotate(3deg) translateX(-20px);
+}
+.card4 > :nth-child(4){
+  transform: rotate(10deg) translateX(-30px) translateY(15px);
+}
+
+.card3 > :nth-child(1){
+  transform: rotate(-3deg);
+}
+.card3 > :nth-child(3){
+  transform: rotate(3deg);
+}
+
+.card2 > :nth-child(1){
+  transform: rotate(-2deg);
+}
+.card2 > :nth-child(2){
+  transform: rotate(2deg);
+}
+
+/* 전체 애니메이션 */
+.list-leave-active {
+  transition: all 1s ease;
+}
+
+/* 요소가 나갈 때 사라지고 나머지 요소들이 위로 올라감 */
+.list-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+/* 나머지 요소들, 삭제된 후 자동으로 나머지들이 '밸런스' 잡히도록 */
+.list-leave-from {
+  transform: translateY(0);
 }
 </style>
