@@ -1174,11 +1174,11 @@ const voteEnd = async (data) => {
 if (currTurn.value === myTurn.value) {
 const lastContent = bookContents.value[bookContents.value.length - 1];
 
+sendVoteResult();
 watch(
   () => lastContent.image,
   (newImage) => {
     if (newImage !== null) {
-      sendVoteResult();
     }
   },
   { immediate: true }

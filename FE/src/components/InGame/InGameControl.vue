@@ -2,8 +2,8 @@
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
     <div class="flex justify-center items-center grow">
       <div class="flex flex-col justify-center items-center w-3/4 mr-3">
-          <transition-group name="list" tag="div" class="flex justify-center w-full" :class="'card' + storyCards.length">
-            <div v-for="(card) in storyCards" :key="card.id" class="relative">
+          <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="'card' + storyCards.length" @before-leave="setLeaveStyle"> 
+            <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
               <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
               <div
                 class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">
@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from "vue";
+import { ref, watch, nextTick, onMounted } from "vue";
 import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon } from "@/assets";
 import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
@@ -203,6 +203,14 @@ const cardReroll = () => {
   }
 };
 
+const setLeaveStyle = (el) => {
+  const computedStyle = window.getComputedStyle(el);
+  const transform = computedStyle.transform; // 현재 transform 값을 가져옴
+  el.style.transition = "all 1s ease";
+  el.style.transform = `${transform} translateY(-50px)`; // 원래 transform 유지 + 추가 애니메이션
+  el.style.opacity = "0";
+};
+
 watch(currChatModeIdx, async (newIndex, oldIndex) => {
   // 기존 input blur()
   if (chatRefs.value[oldIndex]) {
@@ -214,6 +222,21 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
   if (chatRefs.value[newIndex]) {
     chatRefs.value[newIndex].focus();
   }
+});
+
+onMounted(() => {
+  nextTick(() => {
+    document.querySelectorAll(".handCard").forEach((el, index, arr) => {
+    el.addEventListener("mouseenter", () => {
+      arr.forEach((item, i) => item.style.zIndex = i); // 초기화
+      el.style.zIndex = arr.length; // hover된 요소를 가장 위로
+    });
+    el.addEventListener("mouseleave", () => {
+    el.style.zIndex = index; // 원래 z-index로 복원
+  });
+  });
+
+  });
 });
 </script>
 
@@ -325,12 +348,6 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
 /* 전체 애니메이션 */
 .list-leave-active {
   transition: all 1s ease;
-}
-
-/* 요소가 나갈 때 사라지고 나머지 요소들이 위로 올라감 */
-.list-leave-to {
-  transform: translateY(-10px);
-  opacity: 0;
 }
 
 /* 나머지 요소들, 삭제된 후 자동으로 나머지들이 '밸런스' 잡히도록 */
