@@ -153,6 +153,31 @@ const broadcastMessage = (data) => {
 
 // 새로운 연결 설정
 const setupConnection = (conn) => {
+  // ICE 연결 상태 모니터링
+  const peerConnection = conn.peerConnection;
+  if (peerConnection) {
+    peerConnection.oniceconnectionstatechange = () => {
+      const state = peerConnection.iceConnectionState;
+      console.log(`ICE 연결 상태: ${state}`);
+      
+      if (state === 'failed' || state === 'disconnected') {
+        console.warn(`피어 ${conn.peer}와의 ICE 연결 실패`);
+        handleReconnection(conn.peer);
+      }
+    };
+  }
+
+  // 하트비트 시작
+  let heartbeatInterval = setInterval(() => {
+    if (conn.open) {
+      console.log(conn.peer, "하트비트 송신")
+      sendMessage("heartbeat", { timestamp: Date.now() }, conn);
+    } else {
+      clearInterval(heartbeatInterval);
+    }
+  }, 5000);
+
+  
   if (participants.value.length >= maxParticipants) {
     conn.close();
     return;
@@ -204,7 +229,6 @@ const setupConnection = (conn) => {
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
         );
-        console.log(participants.value);
 
         inGameOrder.value.forEach((order, index) => {
           if (order > removedOrder) inGameOrder.value[index] -= 1;
@@ -256,13 +280,13 @@ const setupConnection = (conn) => {
       case "gameStart":
         startReceived(data).then(async () => {
           // 내 카드 받기
-          const response = await enterGame({
-            userId: peerId.value,
-            gameId: gameID.value,
-          })
+          // const response = await enterGame({
+          //   userId: peerId.value,
+          //   gameId: gameID.value,
+          // });
 
-          storyCards.value = response.data.data.storyCards;
-          endingCard.value = response.data.data.endingCard;
+          // storyCards.value = response.data.data.storyCards;
+          // endingCard.value = response.data.data.endingCard;
 
           router.push("/game/play");
 
@@ -336,7 +360,9 @@ const setupConnection = (conn) => {
           });
 
           if (currTurn.value === myTurn.value) {
+            let isAccepted;
             if (upCount < downCount) {
+              isAccepted = false;
               // 이미지 버리는 api
               // 내 이미지 버리기
               if (bookContents.value.length === 1) {
@@ -366,6 +392,7 @@ const setupConnection = (conn) => {
               await showOverlay('whoTurn');
               inProgress.value = true;
             } else {
+              isAccepted = true;
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               if (usedCard.value.isEnding) {
@@ -400,6 +427,26 @@ const setupConnection = (conn) => {
                 }
               });
             }
+            // 투표 결과 전송 api
+      try {
+          const response = await voteResultSend({
+            gameId: gameID.value,
+            userId: peerId.value,
+            isAccepted: isAccepted,
+            cardId: usedCard.value.id,
+          });
+          if (response.status === 200) {
+            // 이미지 쓰레기통에 넣기
+          }
+        } catch (error) {
+          if (error.response.status === 409) {
+            storyCards.value.forEach((card, index) => {
+              if (card.id === usedCard.value.id) {
+                storyCards.value.splice(index, 1);
+              }
+            });
+          }
+        }
           } else {
             if (upCount < downCount) {
               // 현재 턴 사람 점수 -1
@@ -421,6 +468,15 @@ const setupConnection = (conn) => {
       case "gameEnd":
         router.push("/game/rank");
         break;
+
+      case "heartbeat":
+        sendMessage("heartbeat_back", { timestamp: data.timestamp }, conn);
+        break;
+
+      case "heartbeat_back":
+        console.log(conn.peer, "하트비트 응답 받음");
+        conn.lastHeartbeat = Date.now();
+        break;
     }
   });
 
@@ -430,6 +486,15 @@ const setupConnection = (conn) => {
       (p) => p.id !== conn.peer,
     );
     participants.value = participants.value.filter((p) => p.id !== conn.peer);
+
+    clearInterval(heartbeatInterval);
+
+    
+    console.warn(`⚠️ ${conn.peer} 연결 종료됨. 재연결 시도 중...`);
+    setTimeout(() => {
+      connectToRoom(conn.peer);
+    }, 3000);
+
   });
 
   connectedPeers.value.push({
@@ -475,43 +540,52 @@ const connectToRoom = async (roomID) => {
   const bossID = decompressUUID(roomID);
   const conn = peer.value.connect(bossID);
 
-  console.log(conn);
-  conn.on("open", () => {
-    setupConnection(conn);
-    sendMessage(
-      "newParticipant",
-      {
-        data: {
-          id: peerId.value,
-          name: userStore.userData.userNickname,
-          image: userStore.userData.userProfile,
-          score: 10
+  const attemptConnection = () => {
+    conn.on("open", () => {
+      setupConnection(conn);
+      sendMessage(
+        "newParticipant",
+        {
+          data: {
+            id: peerId.value,
+            name: userStore.userData.userNickname,
+            image: userStore.userData.userProfile,
+            score: 10
+          },
         },
-      },
-      conn,
-    );
-  });
+        conn,
+      );
+    });
 
-  conn.on("data", (data) => {
-    if (data.type === "currentParticipants") {
-      handleExistingParticipants(data.participants);
-      roomConfigs.value = data.roomConfigs;
-    } else if (data.type === "newParticipantJoined") {
-      participants.value.push(data.data);
-    }
+    conn.on("data", (data) => {
+      if (data.type === "currentParticipants") {
+        handleExistingParticipants(data.participants);
+        roomConfigs.value = data.roomConfigs;
+      } else if (data.type === "newParticipantJoined") {
+        participants.value.push(data.data);
+      }
 
-    const newParticipant = {
-      id: peerId.value,
-      name: userStore.userData.userNickname,
-      image: userStore.userData.userProfile,
-      score: 10,
-    };
+      const newParticipant = {
+        id: peerId.value,
+        name: userStore.userData.userNickname,
+        image: userStore.userData.userProfile,
+        score: 10,
+      };
 
-    // 중복 확인 후 추가
-    if (!participants.value.some((p) => p.id === newParticipant.id)) {
-      participants.value.push(newParticipant);
-    }
-  });
+      // 중복 확인 후 추가
+      if (!participants.value.some((p) => p.id === newParticipant.id)) {
+        participants.value.push(newParticipant);
+      }
+    });
+  };
+
+  try {
+    attemptConnection();
+  } catch (error) {
+    console.error("연결 오류:", error);
+    toast.errorToast("연결 오류가 발생했습니다. 다시 시도해주세요.");
+    throw error;
+  }
 };
 
 // 새 참가자 정보 브로드캐스트
@@ -566,6 +640,21 @@ const initializePeer = () => {
   });
 };
 
+// 피어들 연결상태 3초마다 확인
+// const checkPeerConnections = () => {
+//   console.log(connectedPeers.value);
+//   connectedPeers.value = connectedPeers.value.filter((peer) => {
+//     if (!peer.connection.open) {
+//       console.warn(`⚠️ 연결 끊김: ${peer.id}. 제거합니다.`);
+//       return false; // 연결이 끊어진 피어는 제거
+//     }
+//     return true;
+//   });
+
+//   setTimeout(checkPeerConnections, 3000); // 3초마다 체크
+// };
+
+
 // 컴포넌트 마운트
 onMounted(async () => {
   try {
@@ -596,7 +685,21 @@ onMounted(async () => {
   } catch (error) {
     console.error("Peer initialization failed:", error);
   }
+
+  // checkPeerConnections();
 });
+
+// // 퇴장 관련
+// addEventListener("beforeunload", () => {
+//   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
+//   connectedPeers.value.forEach((peer) => {
+//     sendMessage(
+//       "system",
+//       { id: peerId.value, nickname: userStore.userData.userNickname },
+//       peer.connection,
+//     );
+//   });
+// });
 
 // 퇴장 관련
 addEventListener("beforeunload", () => {
@@ -605,9 +708,19 @@ addEventListener("beforeunload", () => {
     sendMessage(
       "system",
       { id: peerId.value, nickname: userStore.userData.userNickname },
-      peer.connection,
+      peer.connection
     );
+
+    // 연결 종료 신호 보내기
+    if (peer.connection.open) {
+      peer.connection.close();  // 연결 종료
+    }
   });
+
+  // 자신도 연결 종료
+  if (peer.value) {
+    peer.value.destroy();  // 자신의 Peer 객체 종료
+  }
 });
 
 // 방 설정 관련 부분
@@ -763,7 +876,7 @@ const nextTurn = async (data) => {
         toast.errorToast("긴장감이 충분히 오르지 않았습니다!");
         return;
       }
-      usedCard.value.text = endingCard.value.content;
+      usedCard.value.keyword = data.prompt;
       usedCard.value.isEnding = isEnding;
     }
 
@@ -977,7 +1090,6 @@ const voteEnd = async (data) => {
           }
         } catch (error) {
           if (error.response.status === 409) {
-            console.log(error);
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
@@ -985,7 +1097,6 @@ const voteEnd = async (data) => {
             });
           }
         }
-        console.log(storyCards.value);
     } else {
       if (upCount < downCount) {
         // 현재 턴 사람 점수 -1
