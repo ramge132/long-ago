@@ -280,13 +280,13 @@ const setupConnection = (conn) => {
       case "gameStart":
         startReceived(data).then(async () => {
           // 내 카드 받기
-          const response = await enterGame({
-            userId: peerId.value,
-            gameId: gameID.value,
-          })
+          // const response = await enterGame({
+          //   userId: peerId.value,
+          //   gameId: gameID.value,
+          // });
 
-          storyCards.value = response.data.data.storyCards;
-          endingCard.value = response.data.data.endingCard;
+          // storyCards.value = response.data.data.storyCards;
+          // endingCard.value = response.data.data.endingCard;
 
           router.push("/game/play");
 
@@ -360,7 +360,9 @@ const setupConnection = (conn) => {
           });
 
           if (currTurn.value === myTurn.value) {
+            let isAccepted;
             if (upCount < downCount) {
+              isAccepted = false;
               // 이미지 버리는 api
               // 내 이미지 버리기
               if (bookContents.value.length === 1) {
@@ -390,6 +392,7 @@ const setupConnection = (conn) => {
               await showOverlay('whoTurn');
               inProgress.value = true;
             } else {
+              isAccepted = true;
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               if (usedCard.value.isEnding) {
@@ -425,6 +428,26 @@ const setupConnection = (conn) => {
                 }
               });
             }
+            // 투표 결과 전송 api
+      try {
+          const response = await voteResultSend({
+            gameId: gameID.value,
+            userId: peerId.value,
+            isAccepted: isAccepted,
+            cardId: usedCard.value.id,
+          });
+          if (response.status === 200) {
+            // 이미지 쓰레기통에 넣기
+          }
+        } catch (error) {
+          if (error.response.status === 409) {
+            storyCards.value.forEach((card, index) => {
+              if (card.id === usedCard.value.id) {
+                storyCards.value.splice(index, 1);
+              }
+            });
+          }
+        }
           } else {
             if (upCount < downCount) {
               // 현재 턴 사람 점수 -1
@@ -901,7 +924,7 @@ const nextTurn = async (data) => {
         toast.errorToast("긴장감이 충분히 오르지 않았습니다!");
         return;
       }
-      usedCard.value.text = endingCard.value.content;
+      usedCard.value.keyword = data.prompt;
       usedCard.value.isEnding = isEnding;
     }
 
@@ -1116,7 +1139,6 @@ const voteEnd = async (data) => {
           }
         } catch (error) {
           if (error.response.status === 409) {
-            console.log(error);
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
@@ -1124,7 +1146,6 @@ const voteEnd = async (data) => {
             });
           }
         }
-        console.log(storyCards.value);
     } else {
       if (upCount < downCount) {
         // 현재 턴 사람 점수 -1
