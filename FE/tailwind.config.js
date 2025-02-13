@@ -9,6 +9,7 @@ export default {
       fontFamily: {
         katuri: ["katuri", ...defaultTheme.fontFamily.sans],
         omp: ["omp", ...defaultTheme.fontFamily.sans],
+        story: ["story", ...defaultTheme.fontFamily.sans],
       },
       backgroundImage: {
         "fairytail-image": "url('/src/assets/background.svg')",

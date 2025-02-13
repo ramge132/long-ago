@@ -16,6 +16,12 @@
   font-weight: 400;
 }
 
+@font-face {
+  font-family: "story";
+  src: url("@/assets/fonts/story.ttf") format("truetype");
+  font-weight: 400;
+}
+
  /* 기본 폰트입니둥 */
  @font-face {
 	font-family: 'Pretendard';
