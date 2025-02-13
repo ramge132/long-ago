@@ -16,7 +16,7 @@
           :key="index"
         >
           <div
-            class="page cursor-pointer flex flex-col items-center justify-center"
+            class="page cursor-pointer flex flex-col font-story text-4xl p-14 break-keep items-center justify-center"
             :class="{ flipped: isFlipped(index * 2 + 1) }"
             @click="handlePageClick(index * 2 + 1)"
             :style="{ zIndex: calculateZIndex(index * 2 + 1) }">
