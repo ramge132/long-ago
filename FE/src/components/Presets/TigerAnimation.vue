@@ -2,24 +2,28 @@
   <div
     v-show="isVisible"
     id="tiger-animation"
-    class="fixed inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#f4b28bee] z-50"
+    class="fixed inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#0000008c] z-50"
     :class="{ 'fade-out': !isVisible }"
   >
     <img
       id="tiger"
-      src="@/assets/tiger.gif"
+      src="@/assets/ink.gif"
       alt="Tiger"
-      class="tiger-gif w-48 h-auto"
+      class="w-full h-auto fixed"
     />
 
     <!-- 순차적으로 등장하는 텍스트 -->
     <div
       id="tiger-text"
-      class="tiger-text flex gap-2 mt-5 text-black font-katuri text-6xl"
+      class="tiger-text flex gap-2 mt-5 p-1 text-black font-logoFont text-6xl absolute -translate-x-[5%] translate-y-[150%] overflow-hidden"
     >
-      <span class="word" style="animation-delay: 0s">아주</span>
-      <span class="word" style="animation-delay: 1s">먼</span>
-      <span class="word" style="animation-delay: 2s">옛날</span>
+      <span class="word" style="animation-delay: 0.6s" :class="swing ? 'swing' : ''">L</span>
+      <span class="word" style="animation-delay: 0.7s" :class="swing ? 'swing' : ''">O</span>
+      <span class="word" style="animation-delay: 0.8s" :class="swing ? 'swing' : ''">N</span>
+      <span class="word" style="animation-delay: 0.9s" :class="swing ? 'swing' : ''">G&nbsp</span>
+      <span class="word" style="animation-delay: 1s" :class="swing ? 'swing' : ''">A</span>
+      <span class="word" style="animation-delay: 1.1s" :class="swing ? 'swing' : ''">G</span>
+      <span class="word" style="animation-delay: 1.2s" :class="swing ? 'swing' : ''" @animationend="startSwing">O</span>
     </div>
   </div>
 </template>
@@ -28,6 +32,11 @@
 import { ref, onMounted } from "vue";
 
 const isVisible = ref(true);
+const swing = ref(false);
+
+const startSwing = () => {
+  swing.value = true;
+}
 
 onMounted(() => { 
   // 5초 후에 애니메이션을 적용하며 서서히 사라짐 
@@ -39,18 +48,41 @@ onMounted(() => {
 
 <style scoped>
 /* 텍스트 애니메이션 */
-.word {
-  @apply opacity-0 transform translate-y-5;
-  animation: text-fade 1s ease-out forwards;
+.word { 
+  @apply transform translate-y-80;
+  color: white;
+  text-shadow: 2px 2px 1px rgb(241, 163, 230);
+  animation: text-fade 0.3s forwards;
+}
+
+.swing {
+  transform: translateY(0);
+  animation: swing 0.5s infinite;
+}
+
+@keyframes swing {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
 }
 
 @keyframes text-fade {
   from {
-    opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(80px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }

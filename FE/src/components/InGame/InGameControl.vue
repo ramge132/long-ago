@@ -188,7 +188,10 @@ const chatMode = ref([
 const currChatModeIdx = ref(0);
 
 window.addEventListener("keydown", (e) => {
-  if (e.ctrlKey) changeMode();
+  if (e.key === "Tab"){
+    changeMode();
+    e.preventDefault();
+  }
 });
 
 const changeMode = () => {
@@ -246,6 +249,10 @@ onMounted(() => {
 
   });
 });
+
+onkeydown = () => {
+  chatRefs.value[currChatModeIdx.value].focus();
+};
 </script>
 
 <style scoped>
