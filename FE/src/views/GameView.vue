@@ -17,9 +17,11 @@
       <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
-    <div v-if="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
-      <img src="@/assets/loading.gif" alt="" class="w-full h-full">
-    </div>
+    <Transition name="fade">
+      <div v-if="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
+        <img src="@/assets/loading.gif" alt="" class="w-full h-full">
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -293,6 +295,9 @@ const setupConnection = (conn) => {
       // 카드 요청 보내야함
       // gameID, userID
       case "gameStart":
+        // 로딩 애니메이션 활성화
+        isLoading.value = true;
+
         startReceived(data).then(async () => {
           // 내 카드 받기
           const response = await enterGame({
@@ -303,13 +308,19 @@ const setupConnection = (conn) => {
           storyCards.value = response.data.data.storyCards;
           endingCard.value = response.data.data.endingCard;
 
-          router.push("/game/play");
-
-          await showOverlay('start')
           setTimeout(async () => {
-            await showOverlay('whoTurn');
-            inProgress.value = true;
-          }, 1000);
+            await router.push("/game/play");
+            // 로딩 애니메이션 비활성화
+            isLoading.value = false;
+            
+            showOverlay('start').then(() => {
+              setTimeout(() => {
+                showOverlay('whoTurn').then(() => {
+                  inProgress.value = true;
+                });
+              }, 1000);
+            });
+          }, 3000);
         });
         break;
 
@@ -839,11 +850,7 @@ const gameStart = async (data) => {
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
 
-  // 로딩 애니메이션 비활성화
-  isLoading.value = false;
-  // 인게임 페이지로 이동
-  router.push("/game/play");
-
+  
   connectedPeers.value.forEach((peer) => {
     sendMessage(
       "gameStart",
@@ -860,11 +867,19 @@ const gameStart = async (data) => {
       myTurn.value = inGameOrder.value.indexOf(i);
     }
   });
-  await showOverlay('start');
   setTimeout(async () => {
-    await showOverlay('whoTurn');
-    inProgress.value = true;
-  }, 1000);
+    await router.push("/game/play");
+    // 로딩 애니메이션 비활성화
+    isLoading.value = false;
+    
+    showOverlay('start').then(() => {
+      setTimeout(() => {
+        showOverlay('whoTurn').then(() => {
+          inProgress.value = true;
+        });
+      }, 1000);
+    });
+  }, 3000);
 };
 
 const startReceived = (data) => {
