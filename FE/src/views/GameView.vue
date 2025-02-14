@@ -712,6 +712,12 @@ const initializePeer = () => {
         setupConnection(conn);
       });
 
+      // 연결이 끊어졌을 때 다시 연결 유지 시도
+      peer.value.on("disconnected", () => {
+        console.log("Peer 연결이 끊어짐. 다시 연결 시도...");
+        peer.value.reconnect();
+      });
+
       peer.value.on("error", (err) => {
         console.error("Peer error:", err);
         reject(err);
@@ -1222,7 +1228,7 @@ const voteEnd = async (data) => {
 // }
 };
 
-const gameEnd = (status) => {
+const gameEnd = async (status) => {
   // 게임 시작 상태 초기화
   gameStarted.value = false;
   // 메세지 초기화
@@ -1235,13 +1241,24 @@ const gameEnd = (status) => {
   if (!status) {
     // 책 비우기
     // 방장인 경우 게임실패 송신
-    // if (participants.value[0].id == peerId.value) {
-    //   // 비정상 종료 api 들어가야함
-    // }
+    if (participants.value[0].id == peerId.value) {
+      // 비정상 종료 api 들어가야함
+      const response = await deleteGame({
+        gameId: gameID.value,
+        isForceStopped: true
+      })
+    }
     // 전체 실패 쇼 오버레이
     isForceStopped.value = "fail";
   } else {
     // 정상 종료인 경우
+    if (participants.value[0].id == peerId.value) {
+      // 비정상 종료 api 들어가야함
+      const response = await deleteGame({
+        gameId: gameID.value,
+        isForceStopped: false
+      })
+    }
     // 우승자 쇼 오버레이
     isForceStopped.value = "champ";
   }
