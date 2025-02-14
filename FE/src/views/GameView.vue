@@ -441,7 +441,7 @@ const setupConnection = (conn) => {
             // 이미지 쓰레기통에 넣기
           }
         } catch (error) {
-          if (error.response.status === 400) {
+          if (error.response.status === 409) {
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
@@ -1146,7 +1146,7 @@ const voteEnd = async (data) => {
             // 이미지 쓰레기통에 넣기
           }
         } catch (error) {
-          if (error.response.status === 400) {
+          if (error.response.status === 409) {
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
@@ -1174,11 +1174,11 @@ const voteEnd = async (data) => {
 if (currTurn.value === myTurn.value) {
 const lastContent = bookContents.value[bookContents.value.length - 1];
 
-sendVoteResult();
 watch(
   () => lastContent.image,
   (newImage) => {
     if (newImage !== null) {
+      sendVoteResult();
     }
   },
   { immediate: true }
