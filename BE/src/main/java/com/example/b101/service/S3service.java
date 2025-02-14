@@ -7,6 +7,8 @@ import com.example.b101.repository.RedisSceneRepository;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class S3service {
 
+    private static final Logger log = LoggerFactory.getLogger(S3service.class);
     private final S3Presigner s3Presigner;
     private final S3Client s3Client;
     private final AwsConfig awsConfig;
@@ -134,6 +137,11 @@ public class S3service {
                     .build();
 
             byte[] fileBytes = s3Client.getObject(getObjectRequest).readAllBytes();
+
+            log.info(awsConfig.getBucketName());
+            log.info(awsConfig.getRegion());
+            log.info(awsConfig.getAccessKey());
+            log.info(awsConfig.getSecretKey());
 
             return ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"" + objectKey + "\"")
