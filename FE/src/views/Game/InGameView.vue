@@ -75,6 +75,7 @@
         :currTurn="currTurn"
         :storyCards="storyCards"
         :endingCard="endingCard"
+        :gameStarted="gameStarted"
       />
     </div>
       <div class="h-full row-span-2 grid grid-rows-3 justify-end">
@@ -257,6 +258,9 @@ const props = defineProps({
   isForceStopped: {
     Type: String,
   },
+  gameStarted: {
+    Type: Boolean,
+  }
 });
 
 watch(

@@ -1,6 +1,6 @@
 <template>
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
-    <div class="flex justify-center items-center grow">
+    <div class="flex justify-center items-center grow" :class="gameStarted ? '' : ''">
       <div class="flex flex-col justify-center items-center w-3/4 mr-3">
           <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass"> 
             <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
@@ -128,6 +128,9 @@ const props = defineProps({
   endingCard: {
     Type: Object,
   },
+  gameStarted: {
+    Type: Boolean,
+  }
 });
 
 const dynamicClass = ref(`card${props.storyCards.length}`);
