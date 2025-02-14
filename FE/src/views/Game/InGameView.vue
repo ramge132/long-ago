@@ -54,8 +54,10 @@
           v-if="n % 2 == 0"
         >
           <div
-            class="rounded-full bg-gray-500 w-24 h-24 border border-black"
-          ></div>
+            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+          >
+            <img :src="Profile.default_profile" alt="">
+          </div>
           <div>비어 있음</div>
           <div class="h-5"></div>
         </div>
@@ -127,8 +129,10 @@
             v-if="n % 2 != 0"
           >
             <div
-              class="rounded-full bg-gray-500 w-24 h-24 border border-black"
-            ></div>
+              class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            >
+              <img :src="Profile.default_profile" alt="">
+            </div>
             <div>비어 있음</div>
             <div class="h-5"></div>
           </div>
@@ -167,6 +171,7 @@
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
 import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon } from "@/assets";
+import Profile from "@/assets/images/profiles";
 import {
   InGameControl,
   InGameContent,
