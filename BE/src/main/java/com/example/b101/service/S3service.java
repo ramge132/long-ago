@@ -142,6 +142,7 @@ public class S3service {
             log.info(awsConfig.getRegion());
             log.info(awsConfig.getAccessKey());
             log.info(awsConfig.getSecretKey());
+            log.info("내 로그 여기있어요!!!!");
 
             return ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"" + objectKey + "\"")
