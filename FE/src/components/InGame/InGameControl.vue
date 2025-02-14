@@ -2,7 +2,7 @@
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
     <div class="flex justify-center items-center grow">
       <div class="flex flex-col justify-center items-center w-3/4 mr-3">
-          <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="'card' + storyCards.length" @before-leave="setLeaveStyle"> 
+          <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass"> 
             <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
               <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
               <div
@@ -20,7 +20,7 @@
         </div>
       </div>
     </div>
-    <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full">
+    <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30]">
       <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
         v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
         <div class="flex flex-nowrap flex-col justify-center items-center relative" @click="changeMode">
@@ -131,6 +131,8 @@ const props = defineProps({
   },
 });
 
+const dynamicClass = ref(`card${props.storyCards.length}`);
+
 const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll"]);
 
 const sendChat = () => {
@@ -209,6 +211,13 @@ const setLeaveStyle = (el) => {
   el.style.transition = "all 1s ease";
   el.style.transform = `${transform} translateY(-50px)`; // 원래 transform 유지 + 추가 애니메이션
   el.style.opacity = "0";
+};
+
+// transition 끝난 후 class 업데이트
+const updateClass = () => {
+  nextTick(() => {
+    dynamicClass.value = `card${props.storyCards.length}`;
+  });
 };
 
 watch(currChatModeIdx, async (newIndex, oldIndex) => {
@@ -318,7 +327,7 @@ onMounted(() => {
 }
 
 .card4 > :nth-child(1){
-  transform: rotate(-10deg) translateY(10px);
+  transform: rotate(-10deg) translateY(13px);
 }
 
 .card4 > :nth-child(2){
@@ -332,26 +341,20 @@ onMounted(() => {
 }
 
 .card3 > :nth-child(1){
-  transform: rotate(-3deg);
+  transform: rotate(-3deg) translateY(3px) translateX(10px);
+}
+.card3 > :nth-child(2){
+  transform: rotate(0);
 }
 .card3 > :nth-child(3){
-  transform: rotate(3deg);
+  transform: rotate(3deg) translateY(3px) translateX(-10px);
 }
 
 .card2 > :nth-child(1){
   transform: rotate(-2deg);
 }
 .card2 > :nth-child(2){
-  transform: rotate(2deg);
+  transform: rotate(2deg) translateX(-10px);
 }
 
-/* 전체 애니메이션 */
-.list-leave-active {
-  transition: all 1s ease;
-}
-
-/* 나머지 요소들, 삭제된 후 자동으로 나머지들이 '밸런스' 잡히도록 */
-.list-leave-from {
-  transform: translateY(0);
-}
 </style>
