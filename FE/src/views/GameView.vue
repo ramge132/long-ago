@@ -17,8 +17,9 @@
       <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
-    <!-- <div class="absolute top-0 left-0 rounded-lg w-full h-full">
-    </div> -->
+    <div v-if="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
+      <img src="@/assets/loading.gif" alt="" class="w-full h-full">
+    </div>
   </div>
 </template>
 
@@ -62,6 +63,8 @@ const InviteLink = ref("");
 const gameStarted = ref(false);
 // 게임 정상 종료 : "champ" 비정상 종료 : "fail" 디폴트 : null
 const isForceStopped = ref(null);
+// 로딩 애니메이션 보이는 여부
+const isLoading = ref(false);
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -816,6 +819,8 @@ const onRoomConfiguration = (data) => {
 // 게임 진행 관련 부분 //
 ///////////////////////
 const gameStart = async (data) => {
+  // 로딩 애니메이션 활성화
+  isLoading.value = true;
   // 게임 방 생성
   try {
     const response = await createGame({
@@ -834,6 +839,9 @@ const gameStart = async (data) => {
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
 
+  // 로딩 애니메이션 비활성화
+  isLoading.value = false;
+  // 인게임 페이지로 이동
   router.push("/game/play");
 
   connectedPeers.value.forEach((peer) => {
