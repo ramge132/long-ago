@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -134,7 +135,7 @@ public class S3service {
             log.info(awsConfig.getBucketName());
             log.info(awsConfig.getRegion());
             log.info(awsConfig.getAccessKey());
-            log.info(awsConfig.getSecretKey()); 
+            log.info(awsConfig.getSecretKey());
             log.info(objectKey);
             log.info("내 로그 여기있어 요!!!!");
             // S3 업로드 객체 생성
@@ -145,10 +146,11 @@ public class S3service {
 
             byte[] fileBytes = s3Client.getObject(getObjectRequest).readAllBytes();
 
-
+            // 파일 확장자에 따라 Content-Type 자동 설정
+            MediaType contentType = MediaType.IMAGE_JPEG;
 
             return ResponseEntity.ok()
-                    .header("Content-Disposition", "attachment; filename=\"" + objectKey + "\"")
+                    .contentType(contentType)
                     .body(fileBytes);
 
         } catch (NoSuchKeyException e) {
