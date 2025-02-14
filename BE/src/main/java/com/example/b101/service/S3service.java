@@ -130,6 +130,13 @@ public class S3service {
     //////////////////////
     public ResponseEntity<?> downloadFromS3(String objectKey, HttpServletRequest request) {
         try {
+
+            log.info(awsConfig.getBucketName());
+            log.info(awsConfig.getRegion());
+            log.info(awsConfig.getAccessKey());
+            log.info(awsConfig.getSecretKey());
+            log.info(objectKey);
+            log.info("내 로그 여기있어요!!!!");
             // S3 업로드 객체 생성
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                     .bucket(awsConfig.getBucketName())
@@ -138,11 +145,7 @@ public class S3service {
 
             byte[] fileBytes = s3Client.getObject(getObjectRequest).readAllBytes();
 
-            log.info(awsConfig.getBucketName());
-            log.info(awsConfig.getRegion());
-            log.info(awsConfig.getAccessKey());
-            log.info(awsConfig.getSecretKey());
-            log.info("내 로그 여기있어요!!!!");
+
 
             return ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"" + objectKey + "\"")
