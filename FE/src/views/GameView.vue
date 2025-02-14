@@ -969,7 +969,6 @@ const nextTurn = async (data) => {
         turn: totalTurn.value,
       });
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-      console.log(responseImage.data);
       const imageBlob = URL.createObjectURL(responseImage.data);
 
       // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
@@ -1054,7 +1053,6 @@ const voteEnd = async (data) => {
   });
 
   if (votings.value.length == participants.value.length) {
-    console.log("count start");
     let upCount = 0;
     let downCount = 0;
     votings.value.forEach((vote) => {
