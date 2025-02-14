@@ -7,9 +7,9 @@
           :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
-          :usedCard="usedCard" @on-room-configuration="onRoomConfiguration" @broadcast-message="broadcastMessage"
-          @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn" @card-reroll="cardReroll"
-          @vote-end="voteEnd" />
+          :usedCard="usedCard" :isForceStopped="isForceStopped" @on-room-configuration="onRoomConfiguration"
+          @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
+          @card-reroll="cardReroll" @vote-end="voteEnd" />
       </Transition>
     </RouterView>
     <div
@@ -60,6 +60,8 @@ const maxParticipants = 6;
 const InviteLink = ref("");
 // 게임 시작 여부
 const gameStarted = ref(false);
+// 게임 정상 종료 : "champ" 비정상 종료 : "fail" 디폴트 : null
+const isForceStopped = ref(null);
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -91,6 +93,15 @@ const usedCard = ref({
 });
 // 투표 결과 표시
 const votings = ref([]);
+
+// 게임 종료 애니메이션
+watch(isForceStopped, (newValue) => {
+  if (newValue !== null) {
+    setTimeout(() => {
+      isForceStopped.value = null;
+    }, 6000);
+  }
+});
 
 // 긴장감 퍼센트
 const percentage = computed(() => {
@@ -412,7 +423,8 @@ const setupConnection = (conn) => {
                     gameStarted.value = false;
                     sendMessage("gameEnd", {}, peer.connection);
                     // 랭킹 페이지 이동
-                    router.push('/game/rank');
+                    gameEnd(true);
+                    // router.push('/game/rank');
                   } else {
                     sendMessage(
                       "nextTurn",
@@ -469,7 +481,8 @@ const setupConnection = (conn) => {
 
       case "gameEnd":
         gameStarted.value = false;
-        router.push("/game/rank");
+        gameEnd(true);
+        // router.push("/game/rank");
         break;
 
       case "heartbeat":
@@ -1115,7 +1128,8 @@ const voteEnd = async (data) => {
               gameStarted.value = false;
               sendMessage("gameEnd",{}, peer.connection);
               // 랭킹 페이지 이동
-              router.push('/game/rank');
+              gameEnd(true);
+              // router.push('/game/rank');
             } else {
               sendMessage(
                 "nextTurn",
@@ -1169,42 +1183,46 @@ const voteEnd = async (data) => {
     }
   }
 }
-if (currTurn.value === myTurn.value) {
-const lastContent = bookContents.value[bookContents.value.length - 1];
+// if (currTurn.value === myTurn.value) {
+// const lastContent = bookContents.value[bookContents.value.length - 1];
 
-watch(
-  () => lastContent.image,
-  (newImage) => {
-    if (newImage !== null) {
-      sendVoteResult();
-    }
-  },
-  { immediate: true }
-);
-} else {
+// watch(
+//   () => lastContent.image,
+//   (newImage) => {
+//     if (newImage !== null) {
+//       sendVoteResult();
+//     }
+//   },
+//   { immediate: true }
+// );
+// } else {
   sendVoteResult();
-}
+// }
 };
 
 const gameEnd = (status) => {
+  // 게임 시작 상태 초기화
+  gameStarted.value = false;
+  // 메세지 초기화
+  // receivedMessages.value = [];
+  // 턴 초기화
+  currTurn.value = 0;
+  totalTurn.value = 0;
+  
   // 비정상 종료인 경우 (긴장감 100 초과)
   if (!status) {
     // 책 비우기
-    bookContents.value = [];
     // 방장인 경우 게임실패 송신
     // if (participants.value[0].id == peerId.value) {
     //   // 비정상 종료 api 들어가야함
     // }
+    // 전체 실패 쇼 오버레이
+    isForceStopped.value = "fail";
+  } else {
+    // 정상 종료인 경우
+    // 우승자 쇼 오버레이
+    isForceStopped.value = "champ";
   }
-  // 게임 시작 상태 초기화
-  gameStarted.value = false;
-  // 메세지 초기화
-  receivedMessages.value = [];
-  // 턴 초기화
-  currTurn.value = 0;
-  totalTurn.value = 0;
-
-  router.push("/game/rank");
 };
 
 // 긴장감이 100 이상 진행 된 경우 전체 탈락

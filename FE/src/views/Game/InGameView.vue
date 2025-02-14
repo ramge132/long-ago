@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full grid grid-cols-5 grid-rows-2">
+  <div class="w-full h-full grid grid-cols-5 grid-rows-2 relative">
     <div class="h-full row-span-2 grid grid-rows-3 justify-start">
       <!-- <template v-for="(user, index) in props.participants" :key="user.id"> -->
       <template v-for="(order, index) in props.inGameOrder" :key="order">
@@ -54,8 +54,10 @@
           v-if="n % 2 == 0"
         >
           <div
-            class="rounded-full bg-gray-500 w-24 h-24 border border-black"
-          ></div>
+            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+          >
+            <img :src="Profile.default_profile" alt="">
+          </div>
           <div>비어 있음</div>
           <div class="h-5"></div>
         </div>
@@ -127,8 +129,10 @@
             v-if="n % 2 != 0"
           >
             <div
-              class="rounded-full bg-gray-500 w-24 h-24 border border-black"
-            ></div>
+              class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            >
+              <img :src="Profile.default_profile" alt="">
+            </div>
             <div>비어 있음</div>
             <div class="h-5"></div>
           </div>
@@ -160,18 +164,21 @@
         </div>
       </div>
     </Transition> -->
+    <InGameEnding v-if="props.isForceStopped" :isForceStopped="isForceStopped" :participants="participants" />
   </div>
 </template>
 
 <script setup>
 import { onBeforeMount, ref, watch } from "vue";
 import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon } from "@/assets";
+import Profile from "@/assets/images/profiles";
 import {
   InGameControl,
   InGameContent,
   InGameProgress,
   InGameVote,
   InGameTrash,
+  InGameEnding,
 } from "@/components";
 
 const maxParticipants = 6;
@@ -246,6 +253,9 @@ const props = defineProps({
   },
   usedCard: {
     Type: Object,
+  },
+  isForceStopped: {
+    Type: String,
   },
 });
 

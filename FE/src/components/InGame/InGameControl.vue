@@ -23,20 +23,20 @@
     <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30]">
       <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
         v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
-        <div class="flex flex-nowrap flex-col justify-center items-center relative" @click="changeMode">
+        <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer" @click="changeMode">
           <p class="whitespace-nowrap absolute top-[-1.25rem]" v-text="mode.mark"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
         <input type="text" class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2" v-model="message"
           @keyup.enter="mode.fucntion" :placeholder="mode.placeholder" :ref="(el) => (chatRefs[index] = el)" />
-        <button class="rounded-full border w-8 h-8 shrink-0 border-black p-1 flex justify-center items-center"
+        <button class="rounded-full w-8 h-8 shrink-0 p-1 flex justify-center items-center"
           @click="mode.fucntion">
           <img :src="SendIcon" alt="보내기" class="object-scale-down w-3/4 h-3/4" />
         </button>
       </div>
       <div class="relative w-10 h-10">
         <button
-          class="bg-[#ffffff] rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 absolute bottom-0"
+          class="bg-[#ffffff] hover:bg-gray-200 rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 absolute bottom-0"
           @click="toggleEmoticon = !toggleEmoticon">
           <img :src="EmoticonIcon" alt="감정표현" class="w-6" />
         </button>
@@ -56,7 +56,7 @@
           </button> -->
       </div>
       <div
-        class="w-10 h-24 bg-[#ffffffdb] rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer"
+        class="w-10 h-24 bg-[#ffffffdb] hover:bg-gray-100 rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer"
         @click="cardReroll">
         <img :src="RefreshIcon" alt="" class="w-6">
         <p>결말<br>새로고침</p>
