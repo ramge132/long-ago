@@ -11,7 +11,7 @@
             <label class="self-start">1턴 당 시간(초)</label>
             <div class="w-full flex justify-between">
               <template v-for="n in 11" :key="n">
-                <p v-if="n % 2 != 0">{{ n + 19 }}</p>
+                <p v-if="n % 2 != 0">{{ n + 29 }}</p>
               </template>
             </div>
             <div
@@ -104,11 +104,11 @@ import { Mode1, Mode2, InviteIcon, PlayIcon } from "@/assets";
 
 const router = useRouter();
 const { toClipboard } = useCilpboard();
-const minTimeValue = ref(20);
-const maxTimeValue = ref(30);
+const minTimeValue = ref(30);
+const maxTimeValue = ref(40);
 const stepTimeValue = ref(2);
 const localRoomConfigs = ref({
-  currTurnTime: 20,
+  currTurnTime: 30,
   currMode: 1,
 });
 
