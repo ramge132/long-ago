@@ -177,7 +177,7 @@ p {
   transform-style: preserve-3d;
   user-select: none;
   /* background-color: white; 기본 페이지 색상 */
-  background-image: url("/src/assets/images/bookPage.svg");
+  background-image: url("/src/assets/images/bookPage.jpg");
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* 페이지 그림자 효과 */
 }
 .book .page:before {
