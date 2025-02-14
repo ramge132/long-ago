@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebSecurity //스프링 시큐리티 필터가 스프링 필터 체인에 등록됨.
 public class SecurityConfig {
 
     private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 변환을 위한 ObjectMapper
@@ -38,6 +38,7 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                         .loginProcessingUrl("/api/user/login") // 로그인 처리 URL
+                        .defaultSuccessUrl("/") //로그인 성공 시 메인 페이지로
                         .successHandler(this::onLoginSuccess)  // 로그인 성공 시 처리할 메서드
                         .failureHandler(this::onLoginFailure)  // 로그인 실패 시 처리할 메서드
                 )
@@ -59,7 +60,7 @@ public class SecurityConfig {
                 .success(true)
                 .status(HttpServletResponse.SC_OK)
                 .message("로그인 성공")
-                .data(Map.of("nickname", Optional.ofNullable(userDetails.getNickname()).orElse("익명 사용자")))
+                .data(Map.of("nickname", Optional.ofNullable(userDetails.getUsername()).orElse("익명 사용자")))
                 .timestamp(java.time.LocalDateTime.now().toString())
                 .path(request.getRequestURI()) // 요청 경로 추가
                 .build();

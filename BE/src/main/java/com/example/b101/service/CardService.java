@@ -2,8 +2,6 @@ package com.example.b101.service;
 
 import com.example.b101.domain.EndingCard;
 import com.example.b101.domain.StoryCard;
-import com.example.b101.repository.EndingCardRepository;
-import com.example.b101.repository.StoryCardRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class CardService {
 
-    private final StoryCardRepository storyCardRepository;
     private final CachingService cachingService;
-
 
     //결말 카드 셔플
     public List<EndingCard> shuffleEndingCard() {

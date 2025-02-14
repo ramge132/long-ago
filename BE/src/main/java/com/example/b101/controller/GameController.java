@@ -20,13 +20,13 @@ public class GameController{
     //게임 생성
     @PostMapping
     public ResponseEntity<?> createGame(@RequestBody GameRequest gameRequest, HttpServletRequest request) {
-        return gameService.save(gameRequest, request);
+        return gameService.saveGame(gameRequest, request);
     }
 
     //게임 삭제
     @DeleteMapping
     public ResponseEntity<?> deleteGame(@RequestBody DeleteGameRequest deleteGameRequest, HttpServletRequest request) {
-        return gameService.delete(deleteGameRequest,request);
+        return gameService.finishGame(deleteGameRequest,request);
     }
 
     //엔딩 카드 리롤

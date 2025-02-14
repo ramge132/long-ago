@@ -1,14 +1,12 @@
 package com.example.b101.repository;
 
 import com.example.b101.cache.SceneRedis;
-import com.example.b101.domain.Scene;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Repository
 public class RedisSceneRepoImpl implements RedisSceneRepository {

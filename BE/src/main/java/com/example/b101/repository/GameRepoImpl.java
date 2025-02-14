@@ -5,7 +5,6 @@ import com.example.b101.domain.PlayerStatus;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Repository

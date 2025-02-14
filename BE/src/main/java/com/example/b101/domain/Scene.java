@@ -2,9 +2,8 @@ package com.example.b101.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 
-import java.time.LocalDateTime;
+
 
 @Entity
 @Getter
@@ -31,11 +30,8 @@ public class Scene {
     @Column(name="IMAGE_URL",nullable = false,length = 1000)
     private String imageUrl;
 
-    @ManyToOne
-    @JoinColumn(name = "USER_ID")
-    private User user;
-
-    @CreatedDate
-    private LocalDateTime createdAt;
+//    @ManyToOne
+//    @JoinColumn(name = "USER_ID")
+//    private User user;
 
 }
