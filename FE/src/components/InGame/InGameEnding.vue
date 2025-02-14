@@ -1,12 +1,18 @@
 <template>
     <div class="absolute z-50 w-full h-full flex justify-center items-center bg-[#00000095] backdrop-blur-md">
-        <div v-if="props.isForceStopped === 'champ'">
-            <img src="@/assets/result.gif" alt="결과" class="w-full h-full">
+        <div v-if="props.isForceStopped === 'champ'" class="w-full h-full">
+            <img src="@/assets/result_champ.gif" alt="결과" class="w-full h-full">
             <div>
                 <img :src="topParticipant.image" class="absolute bottom-1/3 left-1/2 -translate-x-1/2 translate-y-8 w-36 h-36" alt="">
                 <div class="winner absolute top-3/4 left-1/2 -translate-x-1/2 font-katuri text-[#f1f1f1] text-6xl">
                     {{ topParticipant ? topParticipant.name : '결과 없음' }}
                 </div>
+            </div>
+        </div>
+        <div v-else-if="props.isForceStopped === 'fail'" class="w-full h-full">
+            <img src="@/assets/result_fail.gif" alt="결과" class="w-full h-full">
+            <div class="loser absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-katuri text-[#e0e0e0]">
+                전원 실패!
             </div>
         </div>
     </div>
@@ -33,6 +39,9 @@ const topParticipant = computed(() => {
 </script>
 <style scoped>
 .winner {
-  text-shadow: -2.5px 0px #2b87dc, 0px 2.5px #2b87dc, 2.5px 0px #2b87dc, 0px -2.5px #2b87dc;
+    text-shadow: -2.5px 0px #2b87dc, 0px 2.5px #2b87dc, 2.5px 0px #2b87dc, 0px -2.5px #2b87dc;
+}
+.loser {
+    text-shadow: -2.5px 0px #777777, 0px 2.5px #777777, 2.5px 0px #777777, 0px -2.5px #777777;
 }
 </style>
