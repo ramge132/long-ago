@@ -146,7 +146,7 @@ public class GameService {
     public ResponseEntity<?> finishGame(DeleteGameRequest deleteGameRequest, HttpServletRequest request) {
         //해당 gameId의 게임을 조회
         Game game = gameRepository.findById(deleteGameRequest.getGameId());
-        
+
         if (game == null) {
             return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다."
                     , HttpStatus.BAD_REQUEST, request.getRequestURI());
@@ -160,7 +160,7 @@ public class GameService {
             //GPU 서버에 요청을 보내기 위한 객체 생성
             GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
                     .session_id(deleteGameRequest.getGameId()) //게임 아이디
-                    .game_mode(1) //작화 스타일
+                    .game_mode(game.getDrawingStyle()) //작화 스타일
                     .user_sentence("") //사용자 프롬포트
                     .status(1) //책 표지 만들기
                     .build();
@@ -183,22 +183,24 @@ public class GameService {
                         request.getRequestURI());
             }
 
-            Book newbook = Book.builder()
-                    .id(UUID.randomUUID().toString())
-                    .build();
+//            Book newbook = Book.builder()
+//                    .id(UUID.randomUUID().toString())
+//                    .imageUrl("")
+//                    .title("book1")
+//                    .build();
+//
+//            List<Scene> sceneList = sceneRedisList.stream()
+//                    .map(sceneRedis -> Scene.builder()
+//                            .sceneOrder(sceneRedis.getSceneOrder())
+//                            .book(newbook)
+//                            .userPrompt(sceneRedis.getPrompt())
+//                            .build())
+//                    .toList();
 
-            List<Scene> sceneList = sceneRedisList.stream()
-                    .map(sceneRedis -> Scene.builder()
-                            .sceneOrder(sceneRedis.getSceneOrder())
-                            .book(newbook)
-                            .userPrompt(sceneRedis.getPrompt())
-                            .build())
-                    .toList();
 
-
-            newbook.setScenes(sceneList);
-
-            bookRepository.save(newbook);
+//            newbook.setScenes(sceneList);
+//
+//            bookRepository.save(newbook);
 
             //redis에 저장됐던 scene 데이터들 삭제
             sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());
@@ -215,7 +217,7 @@ public class GameService {
         //GPU 서버에 요청을 보내기 위한 객체 생성
         GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
                 .session_id(deleteGameRequest.getGameId()) //게임 아이디
-                .game_mode(1) //작화 스타일
+                .game_mode(game.getDrawingStyle()) //작화 스타일
                 .user_sentence("") //사용자 프롬포트
                 .status(2) //전원 패배로 끝남.
                 .build();
@@ -260,17 +262,17 @@ public class GameService {
 
         List<PlayerStatus> playerStatuses = game.getPlayerStatuses();
 
-        
+
         for (PlayerStatus playerStatus : playerStatuses) {
             //게임 플레이어 중의 userId가 있다면
             if (playerStatus.getUserId().equals(userId)) {
-                
+
                 //이 게임에서 사용되는 엔딩카드 리스트에서 한장을 뽑는다.
                 playerStatus.setEndingCard(game.getEndingCardlist().get(0));
-                
+
                 //뽑은 카드는 엔딩카드 리스트에서 삭제한다.
                 game.getEndingCardlist().remove(0);
-                
+
                 //game data를 업데이트 한다.
                 gameRepository.update(game);
 
@@ -285,10 +287,10 @@ public class GameService {
                 HttpStatus.BAD_REQUEST, request.getRequestURI());
     }
 
-    
+
     //플레이어 상태 조회 (플레이어가 소유한 카드 조회)
     public ResponseEntity<?> playStatusFindById(String gameId, String userId, HttpServletRequest request) {
-        
+
         //해당 gameId를 가진 게임이 없을 때
         if(gameRepository.findById(gameId) == null) {
             return ApiResponseUtil.failure("잘못된 gameId입니다.",
@@ -297,7 +299,7 @@ public class GameService {
 
         //해당 userId를 가진 플레이어가 소유한 카드 조회
         PlayerStatus playerStatus = gameRepository.getPlayerStatus(gameId, userId);
-        
+
         //null이라면 해당 userId가 없다는 것.
         if (playerStatus == null) {
             return ApiResponseUtil.failure("해당 userId는 게임에 존재 하지 않습니다.",
@@ -313,4 +315,3 @@ public class GameService {
 
 
 }
-
