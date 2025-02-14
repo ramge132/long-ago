@@ -119,18 +119,31 @@ public class SceneService {
 
         if(!deleteSceneRequest.isAccepted()){
 
-            //사용한 카드 삭제해야함
-            PlayerStatus playerStatus = gameRepository.getPlayerStatus(deleteSceneRequest.getGameId(), deleteSceneRequest.getUserId());
-
-            StoryCard storyCard = playerStatus.getStoryCards().stream().filter(storyCard1 -> storyCard1.getId() == deleteSceneRequest.getCardId()).findFirst().orElse(null);
-
-            playerStatus.getStoryCards().remove(storyCard);
-
             //sceene 데이터 삭제
             SceneRedis lastScene = scenes.get(scenes.size() - 1);
             redisSceneRepository.delete(lastScene);
             return ApiResponseUtil.success(lastScene, "투표 결과에 따라 삭제됨", HttpStatus.OK, request.getRequestURI());
         }
+
+        //사용한 카드 삭제해야함
+        PlayerStatus playerStatus = gameRepository.getPlayerStatus(deleteSceneRequest.getGameId(), deleteSceneRequest.getUserId());
+
+        StoryCard storyCard = playerStatus.getStoryCards().stream().filter(storyCard1 -> storyCard1.getId() == deleteSceneRequest.getCardId()).findFirst().orElse(null);
+        log.info(storyCard.toString());
+
+        // 🔹 카드 삭제
+        playerStatus.getStoryCards().remove(storyCard);
+
+        Game game = gameRepository.findById(deleteSceneRequest.getGameId());
+
+        game.getPlayerStatuses().remove(playerStatus);
+
+        game.getPlayerStatuses().stream()
+                .filter(ps -> ps.getUserId().equals(playerStatus.getUserId()))
+                .findFirst()
+                .ifPresent(ps -> ps.setStoryCards(playerStatus.getStoryCards()));
+
+        gameRepository.update(game);
 
         return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
 

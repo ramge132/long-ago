@@ -23,7 +23,7 @@ public class GameRepoImpl implements GameRepository {
         redisTemplate.opsForHash().put(KEY, game.getGameId(), game);
 
         // Key에 TTL 설정
-        redisTemplate.expire(KEY, 1, TimeUnit.HOURS);
+        redisTemplate.expire(KEY, 30, TimeUnit.MINUTES );
     }
 
     @Override
