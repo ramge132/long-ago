@@ -89,7 +89,6 @@ import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";
 import toast from "@/functions/toast";
-import testImage from "@/assets/test.png";
 
 const userStore = useUserStore();
 const toggleEmoticon = ref(false);

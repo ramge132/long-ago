@@ -50,7 +50,7 @@ const participants = ref([]);
 // 게임 설정
 const configurable = ref(false);
 const roomConfigs = ref({
-  currTurnTime: 20,
+  currTurnTime: 30,
   currMode: 1,
 });
 // 최대 참가자
@@ -452,7 +452,7 @@ const setupConnection = (conn) => {
             // 이미지 쓰레기통에 넣기
           }
         } catch (error) {
-          if (error.response.status === 409) {
+          if (error.response.status === 400) {
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
@@ -1157,7 +1157,7 @@ const voteEnd = async (data) => {
             // 이미지 쓰레기통에 넣기
           }
         } catch (error) {
-          if (error.response.status === 409) {
+          if (error.response.status === 400) {
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
