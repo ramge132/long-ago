@@ -19,6 +19,7 @@
           type="text"
           class="w-full h-12 font-medium rounded-xl border border-[#00000090] bg-neutral-100/50 px-3"
           v-model="nickname"
+          @keydown.enter="start"
         />
       </div>
       <div
