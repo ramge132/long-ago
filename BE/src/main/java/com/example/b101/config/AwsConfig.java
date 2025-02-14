@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 // 이유
 // 1. S3presigner.create()의 리소스 비용이 큼
 // 2. 보안
+@Getter
 @Configuration
 public class AwsConfig {
 
