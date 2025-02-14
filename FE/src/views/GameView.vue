@@ -169,6 +169,7 @@ const setupConnection = (conn) => {
 
   // 하트비트 시작
   let heartbeatInterval = setInterval(() => {
+    console.log(conn);
     if (conn.open) {
       console.log(conn.peer, "하트비트 송신")
       sendMessage("heartbeat", { timestamp: Date.now() }, conn);
@@ -280,13 +281,13 @@ const setupConnection = (conn) => {
       case "gameStart":
         startReceived(data).then(async () => {
           // 내 카드 받기
-          // const response = await enterGame({
-          //   userId: peerId.value,
-          //   gameId: gameID.value,
-          // });
+          const response = await enterGame({
+            userId: peerId.value,
+            gameId: gameID.value,
+          });
 
-          // storyCards.value = response.data.data.storyCards;
-          // endingCard.value = response.data.data.endingCard;
+          storyCards.value = response.data.data.storyCards;
+          endingCard.value = response.data.data.endingCard;
 
           router.push("/game/play");
 
@@ -506,7 +507,7 @@ const setupConnection = (conn) => {
 };
 
 // 기존 참가자들과 연결
-const handleExistingParticipants = (existingParticipants) => {
+const handleExistingParticipants = (existingParticipants) => { 
   const MAX_RETRIES = 5; // 최대 재시도 횟수
   const RETRY_DELAY = 2000; // 재시도 간격 (ms)
 
@@ -570,12 +571,14 @@ const handleExistingParticipants = (existingParticipants) => {
 // 방 참가
 const connectToRoom = async (roomID) => {
   const bossID = decompressUUID(roomID);
+  console.log("connectToRoom", peer.value);
   const conn = peer.value.connect(bossID);
 
   const MAX_RETRIES = 5; // 최대 재시도 횟수
   const RETRY_DELAY = 2000; // 재시도 간격 (ms) 
 
   const attemptConnection = () => {
+    console.log("연결 시도", conn.peer);
     conn.on("open", () => {
       setupConnection(conn);
       sendMessage(
@@ -593,6 +596,7 @@ const connectToRoom = async (roomID) => {
     });
 
     conn.on("data", (data) => {
+      console.log("수신데이터", data);
       if (data.type === "currentParticipants") {
         handleExistingParticipants(data.participants);
         roomConfigs.value = data.roomConfigs;
@@ -613,6 +617,9 @@ const connectToRoom = async (roomID) => {
       }
     });
 
+    // 재시도 횟수를 추적할 객체 생성
+    let retries = 0;
+
     // 연결이 실패했을 때 재시도
     conn.on("error", (error) => {
       console.error("연결 오류:", error);
@@ -623,6 +630,7 @@ const connectToRoom = async (roomID) => {
       } else {
         toast.errorToast("최대 재시도 횟수를 초과했습니다. 연결에 실패했습니다.");
         console.error("최대 재시도 횟수를 초과하여 연결에 실패했습니다.");
+        throw error;
       }
     })
   };

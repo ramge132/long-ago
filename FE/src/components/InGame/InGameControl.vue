@@ -2,14 +2,14 @@
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
     <div class="flex justify-center items-center grow">
       <div class="flex flex-col justify-center items-center w-3/4 mr-3">
-        <div class="flex justify-between w-full">
-          <div v-for="(card, index) in storyCards" :key="index" class="relative">
-            <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
-            <div
-              class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">
-              {{ card.keyword }}</div>
-          </div>
-        </div>
+          <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass"> 
+            <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
+              <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
+              <div
+                class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">
+                {{ card.keyword }}</div>
+            </div>
+          </transition-group>
       </div>
       <div class="flex flex-col flex-1 justify-center items-center">
         <div class="relative endingcard cursor-pointer" @click="sendEndingCard">
@@ -20,7 +20,7 @@
         </div>
       </div>
     </div>
-    <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full">
+    <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30]">
       <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
         v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
         <div class="flex flex-nowrap flex-col justify-center items-center relative" @click="changeMode">
@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from "vue";
+import { ref, watch, nextTick, onMounted } from "vue";
 import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon } from "@/assets";
 import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
@@ -130,6 +130,8 @@ const props = defineProps({
     Type: Object,
   },
 });
+
+const dynamicClass = ref(`card${props.storyCards.length}`);
 
 const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll"]);
 
@@ -203,6 +205,21 @@ const cardReroll = () => {
   }
 };
 
+const setLeaveStyle = (el) => {
+  const computedStyle = window.getComputedStyle(el);
+  const transform = computedStyle.transform; // 현재 transform 값을 가져옴
+  el.style.transition = "all 1s ease";
+  el.style.transform = `${transform} translateY(-50px)`; // 원래 transform 유지 + 추가 애니메이션
+  el.style.opacity = "0";
+};
+
+// transition 끝난 후 class 업데이트
+const updateClass = () => {
+  nextTick(() => {
+    dynamicClass.value = `card${props.storyCards.length}`;
+  });
+};
+
 watch(currChatModeIdx, async (newIndex, oldIndex) => {
   // 기존 input blur()
   if (chatRefs.value[oldIndex]) {
@@ -214,6 +231,21 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
   if (chatRefs.value[newIndex]) {
     chatRefs.value[newIndex].focus();
   }
+});
+
+onMounted(() => {
+  nextTick(() => {
+    document.querySelectorAll(".handCard").forEach((el, index, arr) => {
+    el.addEventListener("mouseenter", () => {
+      arr.forEach((item, i) => item.style.zIndex = i); // 초기화
+      el.style.zIndex = arr.length; // hover된 요소를 가장 위로
+    });
+    el.addEventListener("mouseleave", () => {
+    el.style.zIndex = index; // 원래 z-index로 복원
+  });
+  });
+
+  });
 });
 </script>
 
@@ -292,6 +324,37 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
     inset 0 0 30px #C9B29C,
     inset 0 0 30px #C9B29C,
     inset 0 0 30px #C9B29C;
-
 }
+
+.card4 > :nth-child(1){
+  transform: rotate(-10deg) translateY(13px);
+}
+
+.card4 > :nth-child(2){
+  transform: rotate(-3deg) translateX(-10px);
+}
+.card4 > :nth-child(3){
+  transform: rotate(3deg) translateX(-20px);
+}
+.card4 > :nth-child(4){
+  transform: rotate(10deg) translateX(-30px) translateY(15px);
+}
+
+.card3 > :nth-child(1){
+  transform: rotate(-3deg) translateY(3px) translateX(10px);
+}
+.card3 > :nth-child(2){
+  transform: rotate(0);
+}
+.card3 > :nth-child(3){
+  transform: rotate(3deg) translateY(3px) translateX(-10px);
+}
+
+.card2 > :nth-child(1){
+  transform: rotate(-2deg);
+}
+.card2 > :nth-child(2){
+  transform: rotate(2deg) translateX(-10px);
+}
+
 </style>
