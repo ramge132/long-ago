@@ -34,7 +34,7 @@ public class S3controller {
     // 3) download
     // imageUrl 세부 조정은 나중에...
     @GetMapping("/downloadFromS3/{objectKey}")
-    public  ResponseEntity<?> downloadFromS3(@RequestParam String objectKey, HttpServletRequest request) {
+    public  ResponseEntity<?> downloadFromS3(@PathVariable String objectKey, HttpServletRequest request) {
 
         return s3service.downloadFromS3(objectKey, request);
     }
