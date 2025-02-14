@@ -18,8 +18,6 @@ public class WebClientConfig {
     @Bean
     public WebClient webClient(WebClient.Builder builder) {
 
-        System.out.println(baseUrl);
-
 
         //WebClient 객체를 빌드하는데 요청 하나의 버퍼 크기를 최대 2MB로 지정.
         //WebClient의 응답 제한 시간을 1분으로 지정 (기본 값은 30초)

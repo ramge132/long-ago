@@ -11,7 +11,6 @@ import com.example.b101.dto.GenerateSceneRequest;
 import com.example.b101.repository.BookRepository;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
-import com.example.b101.repository.SceneRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,6 @@ import org.springframework.web.reactive.function.client.WebClientException;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -42,7 +40,7 @@ public class GameService {
     /**
      * 게임을 생성하고 Redis에 저장
      */
-    public ResponseEntity<?> save(GameRequest gameRequest, HttpServletRequest request) {
+    public ResponseEntity<?> saveGame(GameRequest gameRequest, HttpServletRequest request) {
         int playerCount = gameRequest.getPlayer().size();
 
         if (playerCount < 2) {
@@ -145,7 +143,7 @@ public class GameService {
 
 
 
-    public ResponseEntity<?> delete(DeleteGameRequest deleteGameRequest, HttpServletRequest request) {
+    public ResponseEntity<?> finishGame(DeleteGameRequest deleteGameRequest, HttpServletRequest request) {
         //해당 gameId의 게임을 조회
         Game game = gameRepository.findById(deleteGameRequest.getGameId());
         
@@ -185,23 +183,22 @@ public class GameService {
                         request.getRequestURI());
             }
 
-            Book book = Book.builder()
-                    .likeCnt(0)
-                    .viewCnt(0)
+            Book newbook = Book.builder()
+                    .id(UUID.randomUUID().toString())
                     .build();
-
 
             List<Scene> sceneList = sceneRedisList.stream()
                     .map(sceneRedis -> Scene.builder()
                             .sceneOrder(sceneRedis.getSceneOrder())
-                            .book(book)
+                            .book(newbook)
                             .userPrompt(sceneRedis.getPrompt())
                             .build())
                     .toList();
 
-            book.setScenes(sceneList);
 
-            bookRepository.save(book);
+            newbook.setScenes(sceneList);
+
+            bookRepository.save(newbook);
 
             //redis에 저장됐던 scene 데이터들 삭제
             sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());

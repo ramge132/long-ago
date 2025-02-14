@@ -1,6 +1,5 @@
 package com.example.b101.domain;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -9,8 +8,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Builder
 @Getter
@@ -26,7 +23,7 @@ public class User implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id; // 사용자 고유 ID
 
-    @Column(name="user_email",unique = true)
+    @Column(name="USER_EMAIL",unique = true)
     private String email;
 
     @Column(name = "USER_PASSWORD", length = 255)
@@ -43,6 +40,6 @@ public class User implements Serializable {
     @LastModifiedDate
     private LocalDateTime updatedAt; // 수정일
 
-    @OneToMany(mappedBy = "user")
-    private List<Author> books = new ArrayList<>();
+//    @OneToMany(mappedBy = "user")
+//    private List<Author> books = new ArrayList<>();
 }
