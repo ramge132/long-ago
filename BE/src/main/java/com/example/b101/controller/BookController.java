@@ -16,7 +16,7 @@ public class BookController {
 
     @GetMapping("/{page}")
     public ResponseEntity<?> findAll(@PathVariable int page,@RequestParam int mode, HttpServletRequest request) {
-        return bookService.getBooksByPageSortViewCnt(page, mode, request);
+        return bookService.getBooksByPageSort(page, mode, request);
     }
 
 

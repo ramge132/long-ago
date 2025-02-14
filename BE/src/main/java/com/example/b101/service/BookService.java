@@ -54,7 +54,7 @@ public class BookService {
     }
 
     //조회수 순 페이지네이션
-    public ResponseEntity<?> getBooksByPageSortViewCnt(int page, int mode, HttpServletRequest request) {
+    public ResponseEntity<?> getBooksByPageSort(int page, int mode, HttpServletRequest request) {
 
         Page<Book> books;
 
@@ -62,14 +62,14 @@ public class BookService {
             //해당하는 페이지의 12개의 책 데이터를 가져옴 (조회수 순)
             books = bookRepository.findAll(PageRequest.of(page-1, 13, Sort.by(Sort.Direction.DESC,"viewCnt")));
 
-            if(books.getContent().size()<3){
-                return ApiResponseUtil.failure("데이터가 없습니다.",
+            if(books.getContent().size()<9){
+                return ApiResponseUtil.success(books.getContent(),"book 데이터 조회수순으로 불러왔습니다. (pageSize보다 작음)",
                         HttpStatus.NOT_FOUND,
                         request.getRequestURI());
             }
 
             return ApiResponseUtil.success(books.getContent().subList(3,13),
-                    "전체 book 데이터를 불러왔습니다.",
+                    "book 데이터를 조회수순으로 불러왔습니다.",
                     HttpStatus.OK,
                     request.getRequestURI());
         }
@@ -87,13 +87,13 @@ public class BookService {
 
         if(bookList.size()<9){
             return ApiResponseUtil.success(bookList,
-                    "전체 book 데이터를 불러왔습니다.",
+                    "book 데이터 최신순으로 불러왔습니다. (pageSize보다 작음)",
                     HttpStatus.OK,
                     request.getRequestURI());
         }
 
         return ApiResponseUtil.success(bookList.subList(0,9),
-                "전체 book 데이터를 불러왔습니다.",
+                "book 데이터 최신순으로 불러왔습니다.",
                 HttpStatus.OK,
                 request.getRequestURI());
 
