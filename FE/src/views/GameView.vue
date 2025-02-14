@@ -422,7 +422,8 @@ const setupConnection = (conn) => {
                     gameStarted.value = false;
                     sendMessage("gameEnd", {}, peer.connection);
                     // 랭킹 페이지 이동
-                    router.push('/game/rank');
+                    gameEnd(true);
+                    // router.push('/game/rank');
                   } else {
                     sendMessage(
                       "nextTurn",
@@ -479,7 +480,8 @@ const setupConnection = (conn) => {
 
       case "gameEnd":
         gameStarted.value = false;
-        router.push("/game/rank");
+        gameEnd(true);
+        // router.push("/game/rank");
         break;
 
       case "heartbeat":
@@ -1120,7 +1122,8 @@ const voteEnd = async (data) => {
               gameStarted.value = false;
               sendMessage("gameEnd",{}, peer.connection);
               // 랭킹 페이지 이동
-              router.push('/game/rank');
+              gameEnd(true);
+              // router.push('/game/rank');
             } else {
               sendMessage(
                 "nextTurn",
@@ -1174,28 +1177,28 @@ const voteEnd = async (data) => {
     }
   }
 }
-if (currTurn.value === myTurn.value) {
-const lastContent = bookContents.value[bookContents.value.length - 1];
+// if (currTurn.value === myTurn.value) {
+// const lastContent = bookContents.value[bookContents.value.length - 1];
 
-watch(
-  () => lastContent.image,
-  (newImage) => {
-    if (newImage !== null) {
-      sendVoteResult();
-    }
-  },
-  { immediate: true }
-);
-} else {
+// watch(
+//   () => lastContent.image,
+//   (newImage) => {
+//     if (newImage !== null) {
+//       sendVoteResult();
+//     }
+//   },
+//   { immediate: true }
+// );
+// } else {
   sendVoteResult();
-}
+// }
 };
 
 const gameEnd = (status) => {
   // 게임 시작 상태 초기화
   gameStarted.value = false;
   // 메세지 초기화
-  receivedMessages.value = [];
+  // receivedMessages.value = [];
   // 턴 초기화
   currTurn.value = 0;
   totalTurn.value = 0;
