@@ -136,7 +136,7 @@ public class S3service {
             log.info(awsConfig.getAccessKey());
             log.info(awsConfig.getSecretKey());
             log.info(objectKey);
-            log.info("내 로그 여기있어요!!!!");
+            log.info("내 로그 여기있어 요!!!!");
             // S3 업로드 객체 생성
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                     .bucket(awsConfig.getBucketName())
