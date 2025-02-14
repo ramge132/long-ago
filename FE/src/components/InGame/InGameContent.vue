@@ -249,10 +249,10 @@ p {
     width: 100%;
     height: 100%;
     box-shadow: 
-      inset 0 0 30px #C9B29C /* 배경과 같은 색 */,
-      inset 0 0 30px #C9B29C,
-      inset 0 0 30px #C9B29C,
-      inset 0 0 30px #C9B29C;
+      inset 0 0 30px #EEEEF0 /* 배경과 같은 색 */,
+      inset 0 0 30px #EEEEF0,
+      inset 0 0 30px #EEEEF0,
+      inset 0 0 30px #EEEEF0;
     
 }
 </style>
