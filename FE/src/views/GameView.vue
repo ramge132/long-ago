@@ -31,7 +31,6 @@ import { useGameStore } from "@/stores/game";
 import { myTurnImage, currTurnImage, startImage } from "@/assets";
 import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering, createImage, voteResultSend } from "@/apis/game";
 import toast from "@/functions/toast";
-import testImage from "@/assets/test.png";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
