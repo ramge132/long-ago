@@ -63,7 +63,6 @@ const backgroundClass = computed(() => {
 });
 
 const toggleTerms = () => {
-  console.log('test');
   isTermsOfServiceOpened.value = !isTermsOfServiceOpened.value
 }
 </script>
