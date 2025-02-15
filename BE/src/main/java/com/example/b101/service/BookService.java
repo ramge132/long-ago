@@ -103,6 +103,7 @@ public class BookService {
                 .sceneResponseList(book.getScenes().stream()
                         .map(scene -> new SceneResponse(scene.getSceneOrder(), scene.getImageUrl(), scene.getUserPrompt()))
                         .toList())
+                .bookCover(book.getImageUrl())
                 .build();
 
         return ApiResponseUtil.success(bookResponse, "book 데이터 반환 성공", HttpStatus.OK, request.getRequestURI());
