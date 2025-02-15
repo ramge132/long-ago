@@ -25,10 +25,13 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,7 +42,7 @@ public class S3service {
     private final S3Presigner s3Presigner;
     private final S3Client s3Client;
     private final AwsConfig awsConfig;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(5); // 병렬 처리 스레드 풀
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10); // 병렬 처리 스레드 풀
     private final RedisSceneRepository redisSceneRepository;
 
     ////////////////////////////////////
@@ -90,54 +93,62 @@ public class S3service {
     ////////////////////////////
     // #2. 파일 업로드 + 예외 처리 //
     ////////////////////////////
-    public ResponseEntity<?> uploadToS3(String gameId, HttpServletRequest request) {
+    public boolean uploadToS3(String gameId) {
+
 
         // 1) Redis에서 gameId와 같은 Scene 다 가져오기
         List<SceneRedis> sceneRedisList = redisSceneRepository.findAllByGameId(gameId);
-        // 예외처리
+
+        // 책이 비어 있으면 예외처리 (사용자들이 게임을 안 했을 때)
         if (sceneRedisList.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("해당 gameId에 대한 데이터가 없습니다.");
+            log.info("해당 gameId에 대한 데이터가 레디스에 없음.");
+            return false;
         }
+        // 업로드 성공 여부 플래그 ( 동시성 문제로 사용)
+        AtomicBoolean isUploaded = new AtomicBoolean(false);
 
         // 2) 병렬로 S3 업로드
         List<CompletableFuture<Void>> uploadFutures = sceneRedisList.stream()
-                .map(scene -> CompletableFuture.runAsync(() -> uploadFileToS3(scene), executorService))
+                .map(scene -> CompletableFuture.runAsync(() -> {
+                    uploadFileToS3(scene);
+                    isUploaded.set(true);
+                }, executorService))
                 .toList();
 
-
-        // 3) 업로드 대기
+        // 3) 모든 업로드 끝날 까지 대기 (각각의 병렬 처리 예외 처리)
         CompletableFuture.allOf(uploadFutures.toArray(new CompletableFuture[0])).join();
 
-        return ApiResponseUtil.success(null, "저장 완료", HttpStatus.CREATED, request.getRequestURI());
-
+        if (!isUploaded.get()) {
+            log.info("사진 하나도 저장 안 됨");
+            return false;
+        }
+        log.info("아무튼 업로드 됨");
+        return true;
     }
+
     // S3 업로드 메서드 (바이너리 데이터를 바로 업로드)
     private void uploadFileToS3(SceneRedis scene) {
+        // 해당 이름의 객체로 S3에 저장
         String objectKey = scene.getGameId() + "/" + scene.getSceneOrder() + ".png";
 
-        // S3 업로드 객체
+        // S3 업로드 객체 빌드
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(awsConfig.getBucketName())
                 .key(objectKey)
                 .build();
 
-        // S3에 파일 업로드 (바이너리 데이터를 직접 업로드)
+        // S3에 파일 업로드 (바이너리 데이터(scene.getImage()를 업로드)
         s3Client.putObject(putObjectRequest, RequestBody.fromBytes(scene.getImage()));
     }
 
-    ///////////////////////
-    // #3.  파일 다운로드   //
-    //////////////////////
+    ///////////////////////////////////////
+    // #3.  파일 다운로드 + 예외 처리(정상 작동)  //
+    ///////////////////////////////////////
     public ResponseEntity<?> downloadFromS3(String objectKey, HttpServletRequest request) {
         try {
 
-            log.info(awsConfig.getBucketName());
-            log.info(awsConfig.getRegion());
-            log.info(awsConfig.getAccessKey());
-            log.info(awsConfig.getSecretKey());
-            log.info(objectKey);
-            log.info("내 로그 여기있어 요!!!!");
+            log.info("현재 위치 S3service.downloadFromS3");
+
             // S3 업로드 객체 생성
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                     .bucket(awsConfig.getBucketName())
@@ -147,7 +158,7 @@ public class S3service {
             byte[] fileBytes = s3Client.getObject(getObjectRequest).readAllBytes();
 
             // 파일 확장자에 따라 Content-Type 자동 설정
-            MediaType contentType = MediaType.IMAGE_JPEG;
+            MediaType contentType = getContentType(objectKey);
 
             return ResponseEntity.ok()
                     .contentType(contentType)
@@ -164,6 +175,17 @@ public class S3service {
         }
     }
 
+    // 파일 확장자에 따른 Content-Type 반환 ( 다운로드에서 사용 )
+    private MediaType getContentType(String objectKey) {
+        if (objectKey.endsWith(".png")) {
+            return MediaType.IMAGE_PNG;
+        } else if (objectKey.endsWith(".jpg") || objectKey.endsWith(".jpeg")) {
+            return MediaType.IMAGE_JPEG;
+        } else if (objectKey.endsWith(".gif")) {
+            return MediaType.IMAGE_GIF;
+        }
+        return MediaType.APPLICATION_OCTET_STREAM; // 기본값 (이미지 아닌 경우)
+    }
 }
 
 
