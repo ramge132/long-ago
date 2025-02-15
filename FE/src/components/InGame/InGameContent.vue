@@ -46,12 +46,16 @@ import { TurningPage } from "@/assets";
 const audioStore = useAudioStore();
 const pagesRef = ref(null);
 const flippedPages = reactive(new Set());
+const isClickLocked = ref(false);
 
 const props = defineProps({
   bookContents: {
     Type: Array,
   },
   gameStarted: {
+    Type: Boolean,
+  },
+  isElected: {
     Type: Boolean,
   },
 })
@@ -81,6 +85,12 @@ const isFlipped = (pageIndex) => {
 };
 
 const handlePageClick = (pageIndex) => {
+  // 와다다 클릭하지 못하게 하기
+  if (isClickLocked.value) {
+    return;
+  }
+  isClickLocked.value = true;
+
   if (pageIndex / 2 === props.bookContents.length) {
     return;
   }
@@ -112,28 +122,36 @@ const handlePageClick = (pageIndex) => {
     }
   }
   
+  setTimeout(() => {
+    isClickLocked.value = false; // 1초 후 잠금 해제
+  }, 1000);
+
   updatePagesZIndex();
 };
 
 watch(() => props.bookContents.length,
-(afterSize, beforeSize) => {
-  if (afterSize > beforeSize) {
-    for (let i of Array.from({length: afterSize}, (_, index) => index * 2)) {
+  () => {
+  updatePagesZIndex();
+});
+
+watch(() => props.isElected,
+(newValue) => {
+  if (newValue) {
+    for (let i of Array.from({length: props.bookContents.length}, (_, index) => index * 2)) {
       if (!isFlipped(i)) {
         flippedPages.add(i);
         flippedPages.add(i + 1);
       }
     }
-  } else {
-    flippedPages.delete(props.bookContents.length * 2);
   }
-  updatePagesZIndex();
-});
+})
 
 watch(() => props.gameStarted,
 (newValue) => {
   if (newValue === false) {
-    flippedPages.clear();
+    setTimeout(() => {
+      flippedPages.clear();
+    }, 9000);
   }
 })
 

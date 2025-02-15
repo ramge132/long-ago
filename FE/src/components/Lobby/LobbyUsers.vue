@@ -34,7 +34,7 @@
       </div>
     </div>
     <div
-      class="rounded-md border-2 border-[#00000050] h-36 max-h-36 overflow-y-scroll"
+      class="rounded-md border-2 border-[#00000050] flex-1 overflow-y-scroll"
       ref="chatBox"
     >
       <p

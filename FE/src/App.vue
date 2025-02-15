@@ -10,13 +10,13 @@
       <TopBar v-if="route.path === '/'" />
     </Transition>
     <div
-      class="view rounded-lg w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] bg-[#ffffff70] border-[1px] border-white backdrop-blur-[15px] flex flex-col justify-center items-center"
+      class="view rounded-lg w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] min-h-[650px] bg-[#ffffff70] border-[1px] border-white backdrop-blur-[15px] flex flex-col justify-center items-center"
     >
       <ToggleButton />
 
       <RouterView v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
-          <component :is="Component" />
+          <component :is="Component" @Loading="Loading" />
         </Transition>
       </RouterView>
     </div>
@@ -24,14 +24,27 @@
     <Transition name="fade">
       <FooterBar v-if="route.path === '/'" />
     </Transition>
+
+    <Transition name="fade">
+      <div v-if="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
+        <img src="@/assets/loading.gif" alt="" class="w-full h-full">
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { TigerAnimation } from "./components";
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { TopBar, FooterBar, ToggleButton } from "@/components";
+
+// 로딩 애니메이션 보이는 여부
+const isLoading = ref(false);
+
+const Loading = (data) => {
+  isLoading.value = data.value;
+};
 
 const route = useRoute();
 
