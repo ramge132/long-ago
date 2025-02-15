@@ -45,7 +45,7 @@ import { TermsOfService, TopBar, FooterBar, ToggleButton } from "@/components";
 
 // 로딩 애니메이션 보이는 여부
 const isLoading = ref(false);
-const isTermsOfServiceOpened = ref(true);
+const isTermsOfServiceOpened = ref(false);
 
 const Loading = (data) => {
   isLoading.value = data.value;
