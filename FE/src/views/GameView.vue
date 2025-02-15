@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full">
+  <div class="w-full h-full rounded-lg">
     <RouterView v-slot="{ Component }">
       <Transition name="fade" mode="out-in">
         <component :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
@@ -9,7 +9,7 @@
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
           :usedCard="usedCard" :isForceStopped="isForceStopped" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
-          @card-reroll="cardReroll" @vote-end="voteEnd" />
+          @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" />
       </Transition>
     </RouterView>
     <div
@@ -49,6 +49,7 @@ const connectedPeers = ref([]);
 // 채팅 메세지
 const receivedMessages = ref([]);
 // 현재 연결 된 참가자
+// const participants = ref([{name: "홍석진_12345", image: "/src/assets/images/profiles/default.jpg", score: 15}, {name: "홍석진_67891", image: "/src/assets/images/profiles/default.jpg", score: 15}]);
 const participants = ref([]);
 // 게임 설정
 const configurable = ref(false);
@@ -1234,7 +1235,7 @@ const gameEnd = async (status) => {
   // 메세지 초기화
   // receivedMessages.value = [];
   // 턴 초기화
-  currTurn.value = 0;
+  currTurn.value = -1;
   totalTurn.value = 0;
   
   // 비정상 종료인 경우 (긴장감 100 초과)
@@ -1262,6 +1263,10 @@ const gameEnd = async (status) => {
     // 우승자 쇼 오버레이
     isForceStopped.value = "champ";
   }
+};
+
+const goLobby = () => {
+  router.push("/game/lobby");
 };
 
 // 긴장감이 100 이상 진행 된 경우 전체 탈락
