@@ -1,11 +1,13 @@
 <template>
-    <div class="absolute z-50 w-full h-full flex justify-center items-center bg-[#00000095] backdrop-blur-md">
+    <div class="absolute z-50 w-full h-full flex justify-center items-center bg-[#00000095] backdrop-blur-md rounded-lg">
         <div v-if="props.isForceStopped === 'champ'" class="w-full h-full">
-            <img src="@/assets/result_champ.gif" alt="결과" class="w-full h-full">
-            <div>
-                <img :src="topParticipant.image" class="absolute bottom-1/3 left-1/2 -translate-x-1/2 translate-y-8 w-36 h-36" alt="">
-                <div class="winner absolute top-3/4 left-1/2 -translate-x-1/2 font-katuri text-[#f1f1f1] text-6xl">
-                    {{ topParticipant ? topParticipant.name : '결과 없음' }}
+            <img src="@/assets/result_champ.gif" alt="결과" class="w-full h-full rounded-lg">
+            <div class="flex gap-x-8 absolute left-1/2 -translate-x-1/2 bottom-32">
+                <div v-for="topParticipant of topParticipants" class="flex flex-col justify-center items-center">
+                    <img :src="topParticipant.image" class="w-36 h-36" alt="">
+                    <div class="winner font-katuri text-[#f1f1f1] text-4xl">
+                        {{ topParticipant ? topParticipant.name : '결과 없음' }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -30,11 +32,14 @@ const props = defineProps({
 });
 
 // 가장 높은 점수를 가진 참가자 찾기
-const topParticipant = computed(() => {
-    if (!props.participants.length) return null;
-    return props.participants.reduce((max, participant) => 
-        participant.score > max.score ? participant : max
-    );
+const topParticipants = computed(() => {
+  if (!props.participants.length) return [];
+  
+  // 참가자들의 점수 중 최댓값을 구합니다.
+  const maxScore = Math.max(...props.participants.map(p => p.score));
+  
+  // 점수가 최댓값과 같은 참가자들을 필터링합니다.
+  return props.participants.filter(p => p.score === maxScore);
 });
 </script>
 <style scoped>
