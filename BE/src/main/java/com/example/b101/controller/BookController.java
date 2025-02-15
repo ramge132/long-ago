@@ -26,12 +26,6 @@ public class BookController {
     }
 
 
-    @PostMapping
-    public ResponseEntity<?> save(@RequestBody BookRequest book, HttpServletRequest request) {
-        return bookService.saveBook(book, request);
-    }
-
-
     @GetMapping("/top3")
     public ResponseEntity<?> findBook1to3(HttpServletRequest request) {
         return bookService.findBook1to3(request);

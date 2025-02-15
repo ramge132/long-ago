@@ -26,21 +26,6 @@ public class BookService {
 
     private final BookRepository bookRepository;
 
-    // 책 저장
-    public ResponseEntity<?> saveBook(BookRequest bookRequest, HttpServletRequest request) {
-        log.info("[saveBook] 새로운 책 저장 요청: {}", bookRequest.getTitle());
-
-        Book book = Book.builder()
-                .id(UUID.randomUUID().toString())
-                .title(bookRequest.getTitle())
-                .imageUrl(bookRequest.getImageUrl())
-                .build();
-
-        bookRepository.save(book);
-        log.info("[saveBook] 책 저장 완료: ID={}, 제목={}", book.getId(), book.getTitle());
-
-        return ApiResponseUtil.success(book, "저장 성공", HttpStatus.CREATED, request.getRequestURI());
-    }
 
     // 1~3위 책 데이터 조회
     public ResponseEntity<?> findBook1to3(HttpServletRequest request) {
@@ -101,7 +86,7 @@ public class BookService {
     public ResponseEntity<?> getBookById(String id, HttpServletRequest request) {
         log.info("[getBookById] 책 조회 요청: ID={}", id);
 
-        Book book = bookRepository.findBookById(id).stream().findFirst().orElse(null);
+        Book book = bookRepository.findBookByBookId(id).stream().findFirst().orElse(null);
 
         if (book == null) {
             log.warn("[getBookById] 해당 ID의 책이 없음: ID={}", id);
@@ -110,11 +95,10 @@ public class BookService {
         }
 
         book.setViewCnt(book.getViewCnt() + 1);
-        bookRepository.save(book);
+        bookRepository.saveAndFlush(book); //조회수 즉시 반영
         log.info("[getBookById] 책 조회 성공 및 조회수 증가: ID={}, 조회수={}", id, book.getViewCnt());
 
         BookResponse bookResponse = BookResponse.builder()
-                .bookCover(book.getImageUrl())
                 .title(book.getTitle())
                 .sceneResponseList(book.getScenes().stream()
                         .map(scene -> new SceneResponse(scene.getSceneOrder(), scene.getImageUrl(), scene.getUserPrompt()))
