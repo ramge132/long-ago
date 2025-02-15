@@ -23,13 +23,8 @@ public class S3controller {
         return s3service.generatePresignedUrl(bookNum, fileName, request);
     }
 
-    // 2) upload
-    // 어떤 파라미터를 받아야하는지 모르겠당... 이미지 자체가 들어가야할 듯?
-    @PostMapping("/upload")
-    public ResponseEntity<?> uploadToS3(String gameId, HttpServletRequest request) throws IOException {
-
-        return s3service.uploadToS3(gameId, request);
-    }
+    // 2) upload ( 클라이언트와 소통을 하지 않기 때문에 Service에 만 있습니다.)
+    //
 
     // 3) download
     // imageUrl 세부 조정은 나중에...
