@@ -21,8 +21,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.util.*;
 
 @Slf4j
@@ -34,8 +36,7 @@ public class GameService {
     private final CardService cardService;
     private final RedisSceneRepository sceneRepository;
     private final WebClient webClient;
-    private final BookRepository bookRepository;
-
+    private final S3service s3service;
 
     /**
      * 게임을 생성하고 Redis에 저장
@@ -155,15 +156,17 @@ public class GameService {
         List<SceneRedis> sceneRedisList = sceneRepository.findAllByGameId(deleteGameRequest.getGameId());
 
 
+        int status = deleteGameRequest.isForceStopped() ? 2 : 1;
+
+        GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
+                .session_id(deleteGameRequest.getGameId())
+                .game_mode(game.getDrawingStyle())
+                .user_sentence("")
+                .status(status)
+                .build();
+
         //정상적인 게임 종료 시 책 표지를 반환
         if(!deleteGameRequest.isForceStopped()){
-            //GPU 서버에 요청을 보내기 위한 객체 생성
-            GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
-                    .session_id(deleteGameRequest.getGameId()) //게임 아이디
-                    .game_mode(game.getDrawingStyle()) //작화 스타일
-                    .user_sentence("") //사용자 프롬포트
-                    .status(1) //책 표지 만들기
-                    .build();
 
 
             // GPU 서버와 통신하여 데이터 받기
@@ -183,24 +186,50 @@ public class GameService {
                         request.getRequestURI());
             }
 
-//            Book newbook = Book.builder()
-//                    .id(UUID.randomUUID().toString())
-//                    .imageUrl("")
-//                    .title("book1")
-//                    .build();
-//
-//            List<Scene> sceneList = sceneRedisList.stream()
-//                    .map(sceneRedis -> Scene.builder()
-//                            .sceneOrder(sceneRedis.getSceneOrder())
-//                            .book(newbook)
-//                            .userPrompt(sceneRedis.getPrompt())
-//                            .build())
-//                    .toList();
+            //정상적인 게임 종료 시 책표지 생성
+            SceneRedis scene = SceneRedis.builder()
+                    .id(UUID.randomUUID().toString())
+                    .gameId(deleteGameRequest.getGameId())
+                    .image(generateImage)  // 바이너리 이미지 데이터 저장
+                    .sceneOrder(0) //책 표지는 순서가 0
+                    .build();
+
+            sceneRepository.save(scene); //책 표지를 0번으로 저장
 
 
-//            newbook.setScenes(sceneList);
-//
-//            bookRepository.save(newbook);
+            //S3에 업로드
+            boolean result = s3service.uploadToS3(deleteGameRequest.getGameId()); //s3에 이미지들 저장
+
+            if (!result) {
+                sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());
+                return ApiResponseUtil.failure("s3에 이미지 저장 중 에러 발생",
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        request.getRequestURI());
+            }
+
+            String baseUrl = ServletUriComponentsBuilder.fromRequestUri(request)
+                    .replacePath(null)
+                    .build()
+                    .toUriString();
+
+
+            Book book = Book.builder()
+                    .bookId(UUID.randomUUID().toString())
+                    .title("book"+deleteGameRequest.getGameId())
+                    .build();
+
+
+            List<Scene> sceneList = sceneRedisList.stream()
+                    .filter(sceneRedis -> sceneRedis.getSceneOrder()!=0)
+                    .map(sceneRedis -> new Scene(
+                            sceneRedis.getSceneOrder(),
+                            sceneRedis.getPrompt(),
+                            baseUrl+"/images/s3/downloadFromS3?objectKey="+book.getBookId()+"/"+sceneRedis.getSceneOrder()+".jpg"))
+                            .toList();
+
+            book.setImageUrl(baseUrl+"/images/s3/downloadFromS3?objectKey="+book.getBookId()+"/0.jpg"); //책 표지 url
+            book.setScenes(sceneList);
+
 
             //redis에 저장됐던 scene 데이터들 삭제
             sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());
@@ -212,15 +241,6 @@ public class GameService {
                     .contentType(MediaType.IMAGE_PNG) // PNG 형식으로 책 표지 응답
                     .body(generateImage);
         }
-
-
-        //GPU 서버에 요청을 보내기 위한 객체 생성
-        GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
-                .session_id(deleteGameRequest.getGameId()) //게임 아이디
-                .game_mode(game.getDrawingStyle()) //작화 스타일
-                .user_sentence("") //사용자 프롬포트
-                .status(2) //전원 패배로 끝남.
-                .build();
 
 
         try {

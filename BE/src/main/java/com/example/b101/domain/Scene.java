@@ -8,9 +8,6 @@ import lombok.*;
 @Entity
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
 public class Scene {
 
     @Id
@@ -28,10 +25,16 @@ public class Scene {
     private String userPrompt;
 
     @Column(name="IMAGE_URL",nullable = false,length = 1000)
-    private String imageUrl;
+    private String imageUrl; //책 표지
 
-//    @ManyToOne
-//    @JoinColumn(name = "USER_ID")
-//    private User user;
 
+    public Scene(int sceneOrder, String userPrompt, String imageUrl) {
+        this.sceneOrder = sceneOrder;
+        this.userPrompt = userPrompt;
+        this.imageUrl = imageUrl;
+    }
+
+    public Scene() {
+
+    }
 }
