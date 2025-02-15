@@ -46,6 +46,7 @@ import { TurningPage } from "@/assets";
 const audioStore = useAudioStore();
 const pagesRef = ref(null);
 const flippedPages = reactive(new Set());
+const isClickLocked = ref(false);
 
 const props = defineProps({
   bookContents: {
@@ -81,6 +82,13 @@ const isFlipped = (pageIndex) => {
 };
 
 const handlePageClick = (pageIndex) => {
+  // 와다다 클릭하지 못하게 하기
+  if (isClickLocked.value) {
+    console.log('is blocked!');
+    return;
+  }
+  isClickLocked.value = true;
+
   if (pageIndex / 2 === props.bookContents.length) {
     return;
   }
@@ -112,6 +120,10 @@ const handlePageClick = (pageIndex) => {
     }
   }
   
+  setTimeout(() => {
+    isClickLocked.value = false; // 1초 후 잠금 해제
+  }, 1000);
+
   updatePagesZIndex();
 };
 
@@ -133,7 +145,9 @@ watch(() => props.bookContents.length,
 watch(() => props.gameStarted,
 (newValue) => {
   if (newValue === false) {
-    flippedPages.clear();
+    setTimeout(() => {
+      flippedPages.clear();
+    }, 9000);
   }
 })
 
