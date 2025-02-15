@@ -80,7 +80,7 @@ public class FilteringService {
 
         if (isBadWord || changeStr.contains("*")) {
             log.warn("[findCardVariantsByCardId] 욕설 감지됨 - 변환된 문자열: {}", changeStr);
-            return ApiResponseUtil.failure("Prompt에 욕설이 사용되었습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
+            return ApiResponseUtil.failure("욕설이 사용되었습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
         // 프롬프트에서 플레이어가 가진 카드 변형어 개수 확인
@@ -90,10 +90,10 @@ public class FilteringService {
 
         if (keywordCnt > 1) {
             log.warn("[findCardVariantsByCardId] 중복된 카드 사용 감지 - keywordCnt: {}", keywordCnt);
-            return ApiResponseUtil.failure("Prompt에 중복된 카드가 사용되었습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
+            return ApiResponseUtil.failure("중복된 카드가 사용되었습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         } else if (keywordCnt < 1) {
             log.warn("[findCardVariantsByCardId] 사용한 카드 없음");
-            return ApiResponseUtil.failure("Prompt에 소유한 카드가 사용되지 않았습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
+            return ApiResponseUtil.failure("플레이어가 소유한 카드가 사용되지 않았습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
         // 사용한 카드 찾기
@@ -111,6 +111,6 @@ public class FilteringService {
         log.info("[findCardVariantsByCardId] 사용자가 사용한 카드 ID: {}", userCardId);
 
         // 성공 응답
-        return ApiResponseUtil.success(userCardId, "Prompt 필터링 성공", HttpStatus.OK, request.getRequestURI());
+        return ApiResponseUtil.success(userCardId, "필터링 성공", HttpStatus.OK, request.getRequestURI());
     }
 }
