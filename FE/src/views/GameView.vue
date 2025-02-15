@@ -7,7 +7,7 @@
           :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
-          :usedCard="usedCard" :isForceStopped="isForceStopped" @on-room-configuration="onRoomConfiguration"
+          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
           @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" />
       </Transition>
@@ -105,6 +105,8 @@ watch(isElected, (newValue) => {
 // 로딩 표시
 const emit = defineEmits(["Loading"]);
 
+// 투표 결과를 보냈는 지 여부
+const isVoted = ref(false);
 // 게임 종료 애니메이션
 watch(isForceStopped, (newValue) => {
   if (newValue !== null) {
@@ -365,6 +367,17 @@ const setupConnection = (conn) => {
         inProgress.value = false;
         addBookContent({ content: data.prompt, image: null });
         votings.value = [];
+        setTimeout(async () => {
+          if(isVoted.value) {
+            isVoted.value = false;
+          } else {
+            await voteEnd({
+              sender: userStore.userData.userNickname,
+              selected: "up",
+            });
+            isVoted.value = false;
+          }
+        }, 12000);
         break;
 
       case "sendImage":
@@ -696,11 +709,11 @@ const initializePeer = () => {
       peer.value = new Peer({
         config: {
           iceServers: [
-            { urls: "stun:stun.l.google.com:19302" }, // 예제 STUN 서버
+            // { urls: "stun:stun.l.google.com:19302" }, // 예제 STUN 서버
             {
               urls: "turn:i12b101.p.ssafy.io:3478",   // 턴서버 제작완료하면 바꿔야함
               username: import.meta.env.VITE_TURN_ID,              // docker 환경변수 참고
-              credential: import.meta.env.VITE_TURN_PW          // docker 환경변수 참고
+              credential: import.meta.env.VITE_TURN_PW,         // docker 환경변수 참고
             }
           ]
         }
@@ -1002,6 +1015,18 @@ const nextTurn = async (data) => {
       }
     });
 
+    setTimeout(async () => {
+          if(isVoted.value) {
+            isVoted.value = false;
+          } else {
+            await voteEnd({
+              sender: userStore.userData.userNickname,
+              selected: "up",
+            });
+            isVoted.value = false;
+          }
+        }, 12000);
+
     addBookContent({ content: data.prompt, image: null });
 
     // 투표 모달 띄우기
@@ -1099,6 +1124,8 @@ const voteEnd = async (data) => {
       )
     }
   });
+
+  isVoted.value = true;
 
   if (votings.value.length == participants.value.length) {
     let upCount = 0;

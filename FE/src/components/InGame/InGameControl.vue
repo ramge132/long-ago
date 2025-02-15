@@ -33,16 +33,16 @@
           <p class="whitespace-nowrap absolute top-[-1.25rem]" v-text="mode.mark"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
-        <input type="text" class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2" v-model="message"
+        <input type="text" class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2 focus:outline-0" v-model="message"
           @keyup.enter="mode.fucntion" :placeholder="mode.placeholder" :ref="(el) => (chatRefs[index] = el)" />
-        <button class="rounded-full w-8 h-8 shrink-0 p-1 flex justify-center items-center"
+        <button class="rounded-full w-8 h-8 shrink-0 p-1 flex justify-center items-center focus:outline-0"
           @click="mode.fucntion">
           <img :src="SendIcon" alt="보내기" class="object-scale-down w-3/4 h-3/4" />
         </button>
       </div>
       <div class="relative w-10 h-10">
         <button
-          class="bg-[#ffffff] hover:bg-gray-200 rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 absolute bottom-0"
+          class="bg-[#ffffff] hover:bg-gray-200 rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 absolute bottom-0 focus:outline-0"
           @click="toggleEmoticon = !toggleEmoticon">
           <img :src="EmoticonIcon" alt="감정표현" class="w-6" />
         </button>
@@ -236,6 +236,12 @@ const updateClass = () => {
   });
 };
 
+watch(() => props.currTurn, (newVal) => {
+  if(newVal === props.myTurn) {
+    currChatModeIdx.value = 1;
+  }
+}, {immediate: true});
+
 watch(currChatModeIdx, async (newIndex, oldIndex) => {
   // 기존 input blur()
   if (chatRefs.value[oldIndex]) {
@@ -252,15 +258,20 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
 onMounted(() => {
   nextTick(() => {
     document.querySelectorAll(".handCard").forEach((el, index, arr) => {
+    let computedStyle;
+    let transform;
     el.addEventListener("mouseenter", () => {
       arr.forEach((item, i) => item.style.zIndex = i); // 초기화
       el.style.zIndex = arr.length; // hover된 요소를 가장 위로
+      computedStyle = window.getComputedStyle(el);
+      transform = computedStyle.transform;
+      el.style.transform = `${transform} scale(120%)`;
     });
     el.addEventListener("mouseleave", () => {
     el.style.zIndex = index; // 원래 z-index로 복원
+    el.style.transform = `${transform} scale(100%)`
   });
   });
-
   });
 });
 
@@ -376,5 +387,4 @@ onkeydown = () => {
 .card2 > :nth-child(2){
   transform: rotate(2deg) translateX(-10px);
 }
-
 </style>
