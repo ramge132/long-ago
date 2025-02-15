@@ -17,11 +17,6 @@
       <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
-    <Transition name="fade">
-      <div v-if="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
-        <img src="@/assets/loading.gif" alt="" class="w-full h-full">
-      </div>
-    </Transition>
   </div>
 </template>
 
@@ -65,8 +60,6 @@ const InviteLink = ref("");
 const gameStarted = ref(false);
 // 게임 정상 종료 : "champ" 비정상 종료 : "fail" 디폴트 : null
 const isForceStopped = ref(null);
-// 로딩 애니메이션 보이는 여부
-const isLoading = ref(false);
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -98,6 +91,9 @@ const usedCard = ref({
 });
 // 투표 결과 표시
 const votings = ref([]);
+
+// 로딩 표시
+const emit = defineEmits(["Loading"]);
 
 // 게임 종료 애니메이션
 watch(isForceStopped, (newValue) => {
@@ -291,12 +287,9 @@ const setupConnection = (conn) => {
         };
         break;
 
-      // 수정필요 게임 시작 트리거 내용 추가해야 함
-      // 카드 요청 보내야함
-      // gameID, userID
       case "gameStart":
         // 로딩 애니메이션 활성화
-        isLoading.value = true;
+        emit("Loading", {value: true});
 
         startReceived(data).then(async () => {
           // 내 카드 받기
@@ -311,7 +304,7 @@ const setupConnection = (conn) => {
           setTimeout(async () => {
             await router.push("/game/play");
             // 로딩 애니메이션 비활성화
-            isLoading.value = false;
+            emit("Loading", {value: false});
             
             showOverlay('start').then(() => {
               setTimeout(() => {
@@ -837,7 +830,8 @@ const onRoomConfiguration = (data) => {
 ///////////////////////
 const gameStart = async (data) => {
   // 로딩 애니메이션 활성화
-  isLoading.value = true;
+  emit("Loading", {value: true});
+  
   // 게임 방 생성
   try {
     const response = await createGame({
@@ -876,7 +870,7 @@ const gameStart = async (data) => {
   setTimeout(async () => {
     await router.push("/game/play");
     // 로딩 애니메이션 비활성화
-    isLoading.value = false;
+    emit("Loading", {value: false});
     
     showOverlay('start').then(() => {
       setTimeout(() => {
