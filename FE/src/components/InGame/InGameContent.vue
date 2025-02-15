@@ -146,14 +146,32 @@ watch(() => props.isElected,
   }
 })
 
-watch(() => props.gameStarted,
-(newValue) => {
-  if (newValue === false) {
-    setTimeout(() => {
-      flippedPages.clear();
-    }, 9000);
+watch(
+  () => props.gameStarted,
+  (newValue) => {
+    if (newValue === false) {
+      setTimeout(() => {
+        // flippedPages를 배열로 변환한 후 내림차순 정렬 (큰 수부터)
+        const pages = Array.from(flippedPages).sort((a, b) => b - a);
+        let index = 0;
+        const interval = setInterval(() => {
+          // 2개씩 삭제
+          for (let i = 0; i < 2; i++) {
+            if (index < pages.length) {
+              flippedPages.delete(pages[index]);
+              index++;
+            }
+          }
+          // 모두 삭제되면 인터벌 정지
+          if (index >= pages.length) {
+            clearInterval(interval);
+          }
+        }, 100); // 100ms마다 실행
+      }, 9000);
+    }
   }
-})
+);
+
 
 onMounted(() => {
   updatePagesZIndex();
