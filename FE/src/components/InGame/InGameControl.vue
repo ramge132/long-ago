@@ -236,6 +236,12 @@ const updateClass = () => {
   });
 };
 
+watch(() => props.currTurn, (newVal) => {
+  if(newVal === props.myTurn) {
+    currChatModeIdx.value = 1;
+  }
+}, {immediate: true});
+
 watch(currChatModeIdx, async (newIndex, oldIndex) => {
   // 기존 input blur()
   if (chatRefs.value[oldIndex]) {
