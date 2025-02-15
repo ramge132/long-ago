@@ -365,10 +365,8 @@ const setupConnection = (conn) => {
         votings.value = [];
         setTimeout(async () => {
           if(isVoted.value) {
-            console.log("투표했음");
             isVoted.value = false;
           } else {
-            console.log("투표 안했음");
             await voteEnd({
               sender: userStore.userData.userNickname,
               selected: "up",
@@ -1012,10 +1010,8 @@ const nextTurn = async (data) => {
 
     setTimeout(async () => {
           if(isVoted.value) {
-            console.log("투표했음");
             isVoted.value = false;
           } else {
-            console.log("투표 안했음");
             await voteEnd({
               sender: userStore.userData.userNickname,
               selected: "up",
