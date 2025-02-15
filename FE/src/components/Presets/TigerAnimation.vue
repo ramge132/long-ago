@@ -9,7 +9,7 @@
       id="tiger"
       src="@/assets/ink.gif"
       alt="Tiger"
-      class="w-full h-auto fixed"
+      class="min-w-full min-h-full fixed"
     />
 
     <!-- 순차적으로 등장하는 텍스트 -->
@@ -17,13 +17,13 @@
       id="tiger-text"
       class="tiger-text flex gap-2 mt-5 p-1 text-black font-logoFont text-6xl absolute -translate-x-[5%] translate-y-[150%] overflow-hidden"
     >
-      <span class="word" style="animation-delay: 0.6s" :class="swing ? 'swing' : ''">L</span>
-      <span class="word" style="animation-delay: 0.7s" :class="swing ? 'swing' : ''">O</span>
-      <span class="word" style="animation-delay: 0.8s" :class="swing ? 'swing' : ''">N</span>
-      <span class="word" style="animation-delay: 0.9s" :class="swing ? 'swing' : ''">G&nbsp</span>
-      <span class="word" style="animation-delay: 1s" :class="swing ? 'swing' : ''">A</span>
-      <span class="word" style="animation-delay: 1.1s" :class="swing ? 'swing' : ''">G</span>
-      <span class="word" style="animation-delay: 1.2s" :class="swing ? 'swing' : ''" @animationend="startSwing">O</span>
+      <span class="word" :style="{ animationDelay: swing ? '0s' : '0.6s'}" :class="swing ? 'swing' : ''">L</span>
+      <span class="word" :style="{ animationDelay: swing ? '0s' : '0.7s'}" :class="swing ? 'swing' : ''">O</span>
+      <span class="word" :style="{ animationDelay: swing ? '0s' : '0.8s'}" :class="swing ? 'swing' : ''">N</span>
+      <span class="word" :style="{ animationDelay: swing ? '0s' : '0.9s'}" :class="swing ? 'swing' : ''">G&nbsp</span>
+      <span class="word" :style="{ animationDelay: swing ? '0s' : '1s'}" :class="swing ? 'swing' : ''">A</span>
+      <span class="word" :style="{ animationDelay: swing ? '0s' : '1.1s'}" :class="swing ? 'swing' : ''">G</span>
+      <span class="word" :style="{ animationDelay: swing ? '0s' : '1.2s'}" :class="swing ? 'swing' : ''" @animationend="startSwing">O</span>
     </div>
   </div>
 </template>
