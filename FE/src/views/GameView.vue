@@ -5,7 +5,7 @@
         <component :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
           v-model:roomConfigs="roomConfigs" :participants="participants" :receivedMessages="receivedMessages"
           :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn"
-          :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents"
+          :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
           :usedCard="usedCard" :isForceStopped="isForceStopped" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
@@ -91,6 +91,16 @@ const usedCard = ref({
 });
 // 투표 결과 표시
 const votings = ref([]);
+// 프롬프트 선출 여부
+const isElected = ref(false);
+
+watch(isElected, (newValue) => {
+  if (newValue === true) {
+    setTimeout(() => {
+      isElected.value = false;
+    }, 1000);
+  }
+})
 
 // 로딩 표시
 const emit = defineEmits(["Loading"]);
@@ -411,6 +421,7 @@ const setupConnection = (conn) => {
               await showOverlay('whoTurn');
               inProgress.value = true;
             } else {
+              isElected.value = true;
               isAccepted = true;
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
@@ -474,6 +485,7 @@ const setupConnection = (conn) => {
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               currentPlayer.score -= 1;
             } else {
+              isElected.value = true;
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               if (usedCard.value.isEnding) {
@@ -1131,6 +1143,7 @@ const voteEnd = async (data) => {
         inProgress.value = true;
       }
       else {
+        isElected.value = true;
         isAccepted = true;
 
         // 투표 가결 시 점수 +2
@@ -1195,6 +1208,7 @@ const voteEnd = async (data) => {
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
         currentPlayer.score -= 1;
       } else {
+        isElected.value = true;
         // 투표 가결 시 점수 +2
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
         if (usedCard.value.isEnding) {

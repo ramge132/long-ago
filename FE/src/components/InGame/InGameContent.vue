@@ -55,6 +55,9 @@ const props = defineProps({
   gameStarted: {
     Type: Boolean,
   },
+  isElected: {
+    Type: Boolean,
+  },
 })
 
 const calculateZIndex = (pageIndex) => {
@@ -84,7 +87,6 @@ const isFlipped = (pageIndex) => {
 const handlePageClick = (pageIndex) => {
   // 와다다 클릭하지 못하게 하기
   if (isClickLocked.value) {
-    console.log('is blocked!');
     return;
   }
   isClickLocked.value = true;
@@ -128,19 +130,21 @@ const handlePageClick = (pageIndex) => {
 };
 
 watch(() => props.bookContents.length,
-(afterSize, beforeSize) => {
-  if (afterSize > beforeSize) {
-    for (let i of Array.from({length: afterSize}, (_, index) => index * 2)) {
+  () => {
+  updatePagesZIndex();
+});
+
+watch(() => props.isElected,
+(newValue) => {
+  if (newValue) {
+    for (let i of Array.from({length: props.bookContents.length}, (_, index) => index * 2)) {
       if (!isFlipped(i)) {
         flippedPages.add(i);
         flippedPages.add(i + 1);
       }
     }
-  } else {
-    flippedPages.delete(props.bookContents.length * 2);
   }
-  updatePagesZIndex();
-});
+})
 
 watch(() => props.gameStarted,
 (newValue) => {
