@@ -7,7 +7,7 @@ const defaultOptions = {
   showCloseButtonOnHover: true, // true, false
   hideProgressBar: false, // true, false
   pauseOnHover: false, // true, false
-  position: "top-center", // top-right, top-center, top-left, bottom-right, bottom-center, bottom-left.
+  position: "bottom-center", // top-right, top-center, top-left, bottom-right, bottom-center, bottom-left.
   icon: true, //기본아이콘 true, 아이콘 컴포넌트가 있다면 해당 컴포넌트를 연결해도 됨.
 };
 const toast = useToast();

@@ -23,6 +23,7 @@ export { default as EmoticonIcon } from "./icons/emoticon.svg";
 export { default as TrashIcon } from "./icons/trash.svg";
 export { default as SendIcon } from "./icons/send.svg";
 export { default as ChangeIcon } from "./icons/change.svg";
+export { default as ReturnIcon } from "./icons/return.png";
 export { default as MyInfo } from "./icons/myinfo.svg";
 export { default as VoteUpLeftIcon } from "./icons/up_left.svg";
 export { default as VoteUpRightIcon } from "./icons/up_right.svg";

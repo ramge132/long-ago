@@ -1,6 +1,6 @@
 <template>
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
-    <div class="flex justify-center items-center grow" :class="gameStarted ? '' : ''">
+    <div v-if="gameStarted" class="flex justify-center items-center grow">
       <div class="flex flex-col justify-center items-center w-3/4 mr-3">
           <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass"> 
             <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
@@ -18,6 +18,12 @@
             class="endingcard-text w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e] text-xl">
             {{ endingCard.content }}</div>
         </div>
+      </div>
+    </div>
+    <div v-else class="flex justify-center items-center my-auto" @click="emit('goLobby')">
+      <div class="bg-gray-50 hover:bg-gray-200 p-4 rounded-2xl font-omp flex items-center gap-x-3 cursor-pointer">
+        로비로 돌아가기
+        <img :src="ReturnIcon" alt="" class="w-4">
       </div>
     </div>
     <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30]">
@@ -56,6 +62,7 @@
           </button> -->
       </div>
       <div
+        v-if="gameStarted"
         class="w-10 h-24 bg-[#ffffffdb] hover:bg-gray-100 rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer"
         @click="cardReroll">
         <img :src="RefreshIcon" alt="" class="w-6">
@@ -84,7 +91,7 @@
 
 <script setup>
 import { ref, watch, nextTick, onMounted } from "vue";
-import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon } from "@/assets";
+import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon, ReturnIcon } from "@/assets";
 import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";
@@ -130,12 +137,12 @@ const props = defineProps({
   },
   gameStarted: {
     Type: Boolean,
-  }
+  },
 });
 
 const dynamicClass = ref(`card${props.storyCards.length}`);
 
-const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll"]);
+const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll", "goLobby"]);
 
 const sendChat = () => {
   if (message.value.trim()) {
@@ -147,14 +154,18 @@ const sendChat = () => {
   }
 };
 const sendprompt = () => {
-  if (props.myTurn !== props.currTurn) {
-    toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
-  } else if (message.value.trim()) {
-    emit("nextTurn", {
-      prompt: message.value
-    });
-    message.value = "";
-    chatRefs.value[currChatModeIdx.value].blur();
+  if (props.gameStarted === false) {
+    toast.errorToast("게임 진행중에만 이야기를 제출할 수 있습니다!");
+  } else {
+    if (props.myTurn !== props.currTurn) {
+      toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
+    } else if (message.value.trim()) {
+      emit("nextTurn", {
+        prompt: message.value
+      });
+      message.value = "";
+      chatRefs.value[currChatModeIdx.value].blur();
+    }
   }
 };
 const sendEmoticon = (data) => {
@@ -191,7 +202,10 @@ const chatMode = ref([
 const currChatModeIdx = ref(0);
 
 window.addEventListener("keydown", (e) => {
-  if (e.ctrlKey) changeMode();
+  if (e.key === "Tab"){
+    changeMode();
+    e.preventDefault();
+  }
 });
 
 const changeMode = () => {
@@ -254,6 +268,10 @@ onMounted(() => {
   });
   });
 });
+
+onkeydown = () => {
+  chatRefs.value[currChatModeIdx.value].focus();
+};
 </script>
 
 <style scoped>

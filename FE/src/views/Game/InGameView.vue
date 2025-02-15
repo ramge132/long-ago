@@ -66,11 +66,13 @@
     <div class="col-span-3 row-span-2 grid grid-rows-5">
       <InGameContent
         :bookContents="bookContents"
+        :gameStarted="gameStarted"
       />
       <InGameControl
         @broadcast-message="broadcastMessage"
         @next-turn="nextTurn"
         @card-reroll="cardReroll"
+        @go-lobby="goLobby"
         :myTurn="myTurn"  
         :currTurn="currTurn"
         :storyCards="storyCards"
@@ -165,12 +167,14 @@
         </div>
       </div>
     </Transition> -->
-    <InGameEnding v-if="props.isForceStopped" :isForceStopped="isForceStopped" :participants="participants" />
+    <Transition name="fade">
+      <InGameEnding v-if="props.isForceStopped" :isForceStopped="isForceStopped" :participants="participants" />
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { onBeforeMount, ref, watch } from "vue";
+import { onBeforeUnmount, ref, watch } from "vue";
 import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon } from "@/assets";
 import Profile from "@/assets/images/profiles";
 import {
@@ -192,7 +196,7 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd"]);
+const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "goLobby"]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
@@ -208,6 +212,9 @@ const cardReroll = () => {
 const voteEnd = (data) => {
   emit("voteEnd", data);
 };
+const goLobby = () => {
+  emit("goLobby");
+}
 
 const props = defineProps({
   roomConfigs: {
@@ -242,7 +249,7 @@ const props = defineProps({
   },
   endingCard:{
     Type: Object,
-},
+  },
   prompt: {
     Type: String,
   },
@@ -260,7 +267,7 @@ const props = defineProps({
   },
   gameStarted: {
     Type: Boolean,
-  }
+  },
 });
 
 watch(
@@ -336,7 +343,7 @@ watch(
   { deep: true },
 );
 
-onBeforeMount(() => {
+onBeforeUnmount(() => {
   emit("gameExit");
 });
 </script>

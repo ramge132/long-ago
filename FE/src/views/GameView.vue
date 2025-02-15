@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full">
+  <div class="w-full h-full rounded-lg">
     <RouterView v-slot="{ Component }">
       <Transition name="fade" mode="out-in">
         <component :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
@@ -9,7 +9,7 @@
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
           :usedCard="usedCard" :isForceStopped="isForceStopped" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
-          @card-reroll="cardReroll" @vote-end="voteEnd" />
+          @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" />
       </Transition>
     </RouterView>
     <div
@@ -17,8 +17,11 @@
       <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
-    <!-- <div class="absolute top-0 left-0 rounded-lg w-full h-full">
-    </div> -->
+    <Transition name="fade">
+      <div v-if="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
+        <img src="@/assets/loading.gif" alt="" class="w-full h-full">
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -46,6 +49,7 @@ const connectedPeers = ref([]);
 // 채팅 메세지
 const receivedMessages = ref([]);
 // 현재 연결 된 참가자
+// const participants = ref([{name: "홍석진_12345", image: "/src/assets/images/profiles/default.jpg", score: 15}, {name: "홍석진_67891", image: "/src/assets/images/profiles/default.jpg", score: 15}]);
 const participants = ref([]);
 // 게임 설정
 const configurable = ref(false);
@@ -61,6 +65,8 @@ const InviteLink = ref("");
 const gameStarted = ref(false);
 // 게임 정상 종료 : "champ" 비정상 종료 : "fail" 디폴트 : null
 const isForceStopped = ref(null);
+// 로딩 애니메이션 보이는 여부
+const isLoading = ref(false);
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -289,6 +295,9 @@ const setupConnection = (conn) => {
       // 카드 요청 보내야함
       // gameID, userID
       case "gameStart":
+        // 로딩 애니메이션 활성화
+        isLoading.value = true;
+
         startReceived(data).then(async () => {
           // 내 카드 받기
           const response = await enterGame({
@@ -299,13 +308,19 @@ const setupConnection = (conn) => {
           storyCards.value = response.data.data.storyCards;
           endingCard.value = response.data.data.endingCard;
 
-          router.push("/game/play");
-
-          await showOverlay('start')
           setTimeout(async () => {
-            await showOverlay('whoTurn');
-            inProgress.value = true;
-          }, 1000);
+            await router.push("/game/play");
+            // 로딩 애니메이션 비활성화
+            isLoading.value = false;
+            
+            showOverlay('start').then(() => {
+              setTimeout(() => {
+                showOverlay('whoTurn').then(() => {
+                  inProgress.value = true;
+                });
+              }, 1000);
+            });
+          }, 3000);
         });
         break;
 
@@ -698,6 +713,12 @@ const initializePeer = () => {
         setupConnection(conn);
       });
 
+      // 연결이 끊어졌을 때 다시 연결 유지 시도
+      peer.value.on("disconnected", () => {
+        console.log("Peer 연결이 끊어짐. 다시 연결 시도...");
+        peer.value.reconnect();
+      });
+
       peer.value.on("error", (err) => {
         console.error("Peer error:", err);
         reject(err);
@@ -815,6 +836,8 @@ const onRoomConfiguration = (data) => {
 // 게임 진행 관련 부분 //
 ///////////////////////
 const gameStart = async (data) => {
+  // 로딩 애니메이션 활성화
+  isLoading.value = true;
   // 게임 방 생성
   try {
     const response = await createGame({
@@ -833,8 +856,7 @@ const gameStart = async (data) => {
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
 
-  router.push("/game/play");
-
+  
   connectedPeers.value.forEach((peer) => {
     sendMessage(
       "gameStart",
@@ -851,11 +873,19 @@ const gameStart = async (data) => {
       myTurn.value = inGameOrder.value.indexOf(i);
     }
   });
-  await showOverlay('start');
   setTimeout(async () => {
-    await showOverlay('whoTurn');
-    inProgress.value = true;
-  }, 1000);
+    await router.push("/game/play");
+    // 로딩 애니메이션 비활성화
+    isLoading.value = false;
+    
+    showOverlay('start').then(() => {
+      setTimeout(() => {
+        showOverlay('whoTurn').then(() => {
+          inProgress.value = true;
+        });
+      }, 1000);
+    });
+  }, 3000);
 };
 
 const startReceived = (data) => {
@@ -1199,29 +1229,44 @@ const voteEnd = async (data) => {
 // }
 };
 
-const gameEnd = (status) => {
+const gameEnd = async (status) => {
   // 게임 시작 상태 초기화
   gameStarted.value = false;
   // 메세지 초기화
   // receivedMessages.value = [];
   // 턴 초기화
-  currTurn.value = 0;
+  currTurn.value = -1;
   totalTurn.value = 0;
   
   // 비정상 종료인 경우 (긴장감 100 초과)
   if (!status) {
     // 책 비우기
     // 방장인 경우 게임실패 송신
-    // if (participants.value[0].id == peerId.value) {
-    //   // 비정상 종료 api 들어가야함
-    // }
+    if (participants.value[0].id == peerId.value) {
+      // 비정상 종료 api 들어가야함
+      const response = await deleteGame({
+        gameId: gameID.value,
+        isForceStopped: true
+      })
+    }
     // 전체 실패 쇼 오버레이
     isForceStopped.value = "fail";
   } else {
     // 정상 종료인 경우
+    if (participants.value[0].id == peerId.value) {
+      // 비정상 종료 api 들어가야함
+      const response = await deleteGame({
+        gameId: gameID.value,
+        isForceStopped: false
+      })
+    }
     // 우승자 쇼 오버레이
     isForceStopped.value = "champ";
   }
+};
+
+const goLobby = () => {
+  router.push("/game/lobby");
 };
 
 // 긴장감이 100 이상 진행 된 경우 전체 탈락
