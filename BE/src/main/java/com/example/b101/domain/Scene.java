@@ -2,16 +2,12 @@ package com.example.b101.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 
-import java.time.LocalDateTime;
+
 
 @Entity
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
 public class Scene {
 
     @Id
@@ -29,13 +25,16 @@ public class Scene {
     private String userPrompt;
 
     @Column(name="IMAGE_URL",nullable = false,length = 1000)
-    private String imageUrl;
+    private String imageUrl; //책 표지
 
-    @ManyToOne
-    @JoinColumn(name = "USER_ID")
-    private User user;
 
-    @CreatedDate
-    private LocalDateTime createdAt;
+    public Scene(int sceneOrder, String userPrompt, String imageUrl) {
+        this.sceneOrder = sceneOrder;
+        this.userPrompt = userPrompt;
+        this.imageUrl = imageUrl;
+    }
 
+    public Scene() {
+
+    }
 }

@@ -12,8 +12,8 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-//    @Value("${WEBCLIENT.BASE.URL}")
-    private String baseUrl = "http://115.124.123.240:18444";
+    @Value("${WEBCLIENT.BASE.URL:http://localhost:8080}")
+    private String baseUrl;
 
     @Bean
     public WebClient webClient(WebClient.Builder builder) {

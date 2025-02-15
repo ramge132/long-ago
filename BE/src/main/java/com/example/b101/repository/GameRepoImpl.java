@@ -5,7 +5,6 @@ import com.example.b101.domain.PlayerStatus;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Repository
@@ -24,7 +23,7 @@ public class GameRepoImpl implements GameRepository {
         redisTemplate.opsForHash().put(KEY, game.getGameId(), game);
 
         // Key에 TTL 설정
-        redisTemplate.expire(KEY, 1, TimeUnit.HOURS);
+        redisTemplate.expire(KEY, 30, TimeUnit.MINUTES );
     }
 
     @Override

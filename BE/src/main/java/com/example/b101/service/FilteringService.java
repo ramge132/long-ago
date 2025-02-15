@@ -27,12 +27,13 @@ public class FilteringService {
     private final BadWordFiltering badWordFiltering = new BadWordFiltering();
 
     public ResponseEntity<?> findCardVariantsByCardId(FilteringRequest filteringRequest, HttpServletRequest request) {
+        log.info("[findCardVariantsByCardId] 요청됨 - gameId: {}, userId: {}", filteringRequest.getGameId(), filteringRequest.getUserId());
+
         // 게임 존재 여부 확인
         Game game = gameRepository.findById(filteringRequest.getGameId());
         if (game == null) {
-            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다.",
-                    HttpStatus.BAD_REQUEST,
-                    request.getRequestURI());
+            log.warn("[findCardVariantsByCardId] 게임을 찾을 수 없음 - gameId: {}", filteringRequest.getGameId());
+            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
         // 사용자 상태 확인
@@ -42,19 +43,24 @@ public class FilteringService {
                 .orElse(null);
 
         if (playerStatus == null) {
-            return ApiResponseUtil.failure("해당 userId는 게임에 존재하지 않습니다.",
-                    HttpStatus.BAD_REQUEST,
-                    request.getRequestURI());
+            log.warn("[findCardVariantsByCardId] 플레이어를 찾을 수 없음 - userId: {}", filteringRequest.getUserId());
+            return ApiResponseUtil.failure("해당 userId는 게임에 존재하지 않습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
+        // 스토리 카드 변형어 데이터 로드
         List<StoryCardVariants> storyCardVariantsList = cachingService.getCardVariantsAll().getStoryCardVariants();
+        if (storyCardVariantsList == null || storyCardVariantsList.isEmpty()) {
+            log.warn("[findCardVariantsByCardId] 스토리 카드 변형어 데이터 없음");
+        }
 
-
-        // 플레이어 상태의 모든 StoryCard id 가져오기
+        // 플레이어가 가진 모든 StoryCard ID 가져오기
         List<Integer> playerStoryCardIds = playerStatus.getStoryCards().stream()
                 .map(StoryCard::getId)
                 .toList();
 
+        if (playerStoryCardIds.isEmpty()) {
+            log.warn("[findCardVariantsByCardId] 플레이어가 가진 StoryCard가 없음 - userId: {}", filteringRequest.getUserId());
+        }
 
         // 플레이어가 가진 모든 카드의 변형어들을 가져옴.
         List<String> allVariants = storyCardVariantsList.stream()
@@ -62,40 +68,35 @@ public class FilteringService {
                 .map(StoryCardVariants::getVariant)
                 .toList();
 
-        log.info(allVariants.toString());
+        log.info("[findCardVariantsByCardId] 플레이어가 가진 카드 변형어 리스트: {}", allVariants);
 
-
+        // 사용자 입력값(프롬프트)에서 욕설 필터링
         boolean isBadWord = badWordFiltering.blankCheck(filteringRequest.getUserPrompt());
 
-        String changeStr = badWordFiltering.change(filteringRequest.getUserPrompt(),new String[] {"*", " ", ".", ",", "-", "_", "+", "=", "~", "!", "@", "#", "$", "%", "^", "&", "(", ")", "[", "]", "{", "}",
-                "|", "/", ":", ";", "'", "<", ">", "?", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
+        String changeStr = badWordFiltering.change(filteringRequest.getUserPrompt(), new String[] {
+                "*", " ", ".", ",", "-", "_", "+", "=", "~", "!", "@", "#", "$", "%", "^", "&", "(", ")", "[", "]", "{", "}",
+                "|", "/", ":", ";", "'", "<", ">", "?", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+        });
 
-
-        if(isBadWord || changeStr.contains("*")) {
-            return ApiResponseUtil.failure("Prompt에 욕설이 사용되었습니다.",
-                    HttpStatus.BAD_REQUEST,
-                    request.getRequestURI());
+        if (isBadWord || changeStr.contains("*")) {
+            log.warn("[findCardVariantsByCardId] 욕설 감지됨 - 변환된 문자열: {}", changeStr);
+            return ApiResponseUtil.failure("Prompt에 욕설이 사용되었습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
-
-        // prompt에 사용자가 낸 card 외에 소지하고 있는 card의 변형어들을 포함하고 있는지 확인
+        // 프롬프트에서 플레이어가 가진 카드 변형어 개수 확인
         long keywordCnt = allVariants.stream()
                 .filter(variant -> filteringRequest.getUserPrompt().contains(variant))
                 .count();
 
-
-
         if (keywordCnt > 1) {
-            return ApiResponseUtil.failure("Prompt에 중복된 카드가 사용되었습니다.",
-                    HttpStatus.BAD_REQUEST,
-                    request.getRequestURI());
-        }
-        else if(keywordCnt < 1) {
-            return ApiResponseUtil.failure("Prompt에 소유한 카드가 사용되지 않았습니다.",
-                    HttpStatus.BAD_REQUEST,
-                    request.getRequestURI());
+            log.warn("[findCardVariantsByCardId] 중복된 카드 사용 감지 - keywordCnt: {}", keywordCnt);
+            return ApiResponseUtil.failure("Prompt에 중복된 카드가 사용되었습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
+        } else if (keywordCnt < 1) {
+            log.warn("[findCardVariantsByCardId] 사용한 카드 없음");
+            return ApiResponseUtil.failure("Prompt에 소유한 카드가 사용되지 않았습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
+        // 사용한 카드 찾기
         String usedKeyword = allVariants.stream()
                 .filter(variant -> filteringRequest.getUserPrompt().contains(variant))
                 .findFirst()
@@ -107,13 +108,9 @@ public class FilteringService {
                 .findFirst()
                 .orElse(-1);
 
+        log.info("[findCardVariantsByCardId] 사용자가 사용한 카드 ID: {}", userCardId);
 
         // 성공 응답
-        return ApiResponseUtil.success(userCardId,"Prompt 필터링 성공",
-                HttpStatus.OK,
-                request.getRequestURI());
+        return ApiResponseUtil.success(userCardId, "Prompt 필터링 성공", HttpStatus.OK, request.getRequestURI());
     }
-
-
-
 }

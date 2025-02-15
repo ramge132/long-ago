@@ -1,5 +1,4 @@
 package com.example.b101.service;
-
 import com.example.b101.domain.User;
 import com.example.b101.dto.CustomUserDetails;
 import com.example.b101.repository.UserRepository;
@@ -24,6 +23,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
 
         // CustomUserDetails 반환
-        return new CustomUserDetails(user.getEmail(), user.getPassword(), user.getNickname());
+        return new CustomUserDetails(user);
     }
 }

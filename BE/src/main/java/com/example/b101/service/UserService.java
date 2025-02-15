@@ -5,6 +5,7 @@ import com.example.b101.dto.SignUpRequest;
 import com.example.b101.repository.UserRepository;
 import com.example.b101.common.ApiResponseUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -12,22 +13,15 @@ import org.springframework.stereotype.Service;
 
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder encoder;
 
-
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder encoder) {
-        this.userRepository = userRepository;
-        this.encoder = encoder;
-    }
-
-
-
     //닉네임 사용 가능 여부
     public ResponseEntity<?> findByNickname(String nickname, HttpServletRequest request) {
-        if (userRepository.findByNickname(nickname).isPresent()) {
+        if (usedNickname(nickname)) {
             return ApiResponseUtil.failure("이미 사용중인 닉네임입니다.",
                     HttpStatus.CONFLICT,
                     request.getRequestURI());
@@ -37,6 +31,7 @@ public class UserService {
                 HttpStatus.OK,
                 request.getRequestURI());
     }
+
 
     //회원가입
     public ResponseEntity<?> saveUser(SignUpRequest signUpRequest, HttpServletRequest request) {
@@ -58,6 +53,9 @@ public class UserService {
     public boolean usedEmail(String email) {
         return userRepository.findByEmail(email).isPresent();
     }
+
+    //닉네임 중복 체크
+    public boolean usedNickname(String nickname) {return userRepository.findByNickname(nickname).isPresent();}
 
 
 }

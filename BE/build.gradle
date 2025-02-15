@@ -53,6 +53,8 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
+    // AWS
+    implementation 'software.amazon.awssdk:s3:2.30.15' // S3
 }
 
 tasks.named('test') {
