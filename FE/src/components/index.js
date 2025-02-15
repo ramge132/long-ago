@@ -3,6 +3,7 @@ export { default as TopBar } from "./Presets/TopBar.vue";
 export { default as FooterBar } from "./Presets/FooterBar.vue";
 export { default as TigerAnimation } from "./Presets/TigerAnimation.vue";
 export { default as ToggleButton } from "./Presets/ToggleButton.vue";
+export { default as TermsOfService } from "./Presets/TermsOfService.vue";
 
 // Auth
 export { default as SignIn } from "./Auth/SignIn.vue";
