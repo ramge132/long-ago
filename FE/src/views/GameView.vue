@@ -1279,10 +1279,14 @@ const gameEnd = async (status) => {
     // 방장인 경우 게임실패 송신
     if (participants.value[0].id == peerId.value) {
       // 비정상 종료 api 들어가야함
-      const response = await deleteGame({
-        gameId: gameID.value,
-        isForceStopped: true
-      })
+      try {
+        const response = await deleteGame({
+          gameId: gameID.value,
+          isForceStopped: true
+        })
+      } catch (error) {
+        console.log(error);
+      }
     }
     // 전체 실패 쇼 오버레이
     isForceStopped.value = "fail";
@@ -1290,10 +1294,14 @@ const gameEnd = async (status) => {
     // 정상 종료인 경우
     if (participants.value[0].id == peerId.value) {
       // 비정상 종료 api 들어가야함
-      const response = await deleteGame({
-        gameId: gameID.value,
-        isForceStopped: false
-      })
+      try {
+        const response = await deleteGame({
+          gameId: gameID.value,
+          isForceStopped: false
+        })
+      } catch (error) {
+        console.log(error)
+      }
     }
     // 우승자 쇼 오버레이
     isForceStopped.value = "champ";
