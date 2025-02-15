@@ -50,7 +50,10 @@ const flippedPages = reactive(new Set());
 const props = defineProps({
   bookContents: {
     Type: Array,
-  }
+  },
+  gameStarted: {
+    Type: Boolean,
+  },
 })
 
 const calculateZIndex = (pageIndex) => {
@@ -126,6 +129,13 @@ watch(() => props.bookContents.length,
   }
   updatePagesZIndex();
 });
+
+watch(() => props.gameStarted,
+(newValue) => {
+  if (newValue === false) {
+    flippedPages.clear();
+  }
+})
 
 onMounted(() => {
   updatePagesZIndex();
