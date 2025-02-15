@@ -40,7 +40,7 @@
             </div>
           </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 == 0">
+          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index < 3">
             <img src="" alt="" class="w-24 h-24">
           </div>
         </div>
@@ -118,7 +118,7 @@
               </div>
             </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 != 0">
+          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index > 2">
             <img src="" alt="" class="w-24 h-24">
           </div>
           </div>
@@ -315,19 +315,20 @@ watch(
         props.votings[props.votings.length - 1].sender
       ) {
         const select = ref();
+        console.log(index);
         if (
           props.votings[props.votings.length - 1].selected ==
           "up"
         ) {
           select.value = document.querySelector(".vote" + index);
-          if(index % 2 === 0) {
+          if(index < 3) {
             select.value.firstChild.src = VoteUpLeftIcon;
           } else {
             select.value.firstChild.src = VoteUpRightIcon;
           }
         } else {
           select.value = document.querySelector(".vote" + index);
-          if(index % 2 === 0) {
+          if(index < 3) {
             select.value.firstChild.src = VoteDownLeftIcon;
           } else {
             select.value.firstChild.src = VoteDownRightIcon;
