@@ -5,7 +5,7 @@
       <template v-for="(order, index) in props.inGameOrder" :key="order">
         <div
           class="flex flex-col justify-center items-center relative ml-3"
-          v-if="index % 2 == 0"
+          v-if="index < 3"
         >
           <div class="w-28 h-28 relative">
             <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
@@ -51,7 +51,7 @@
       >
         <div
           class="flex flex-col justify-center items-center ml-3"
-          v-if="n % 2 == 0"
+          v-if="props.participants.length + n <= 3"
         >
           <div
             class="rounded-full overflow-hidden w-24 h-24 border border-black"
@@ -82,7 +82,7 @@
         <template v-for="(order, index) in props.inGameOrder" :key="order">
           <div
             class="flex flex-col justify-center items-center relative mr-3"
-            v-if="index % 2 != 0"
+            v-if="index > 2"
           >
             <div class="w-28 h-28 relative">
               <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
@@ -93,7 +93,7 @@
               </div>
             </div>
             <div
-              class="absolute z-40 bg-[#ffffff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
+              class="absolute z-40 bg-[#ffffff] w-[120px] min-h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
               :class="'speech-bubble' + index"
             >
               <p></p>
@@ -127,7 +127,7 @@
         >
           <div
             class="flex flex-col justify-center items-center mr-3"
-            v-if="n % 2 != 0"
+            v-if="props.participants.length + n > 3"
           >
             <div
               class="rounded-full overflow-hidden w-24 h-24 border border-black"
@@ -291,7 +291,7 @@ watch(
         clearTimeout(chatTime.value[index][type]);
         chatTime.value[index][type] = setTimeout(() => {
           select.value.classList.add("hidden");
-        }, 3000);
+        }, 5000);
       }
     });
   },
