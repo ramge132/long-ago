@@ -238,15 +238,20 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
 onMounted(() => {
   nextTick(() => {
     document.querySelectorAll(".handCard").forEach((el, index, arr) => {
+    let computedStyle;
+    let transform;
     el.addEventListener("mouseenter", () => {
       arr.forEach((item, i) => item.style.zIndex = i); // 초기화
       el.style.zIndex = arr.length; // hover된 요소를 가장 위로
+      computedStyle = window.getComputedStyle(el);
+      transform = computedStyle.transform;
+      el.style.transform = `${transform} scale(120%)`;
     });
     el.addEventListener("mouseleave", () => {
     el.style.zIndex = index; // 원래 z-index로 복원
+    el.style.transform = `${transform} scale(100%)`
   });
   });
-
   });
 });
 </script>
@@ -358,5 +363,4 @@ onMounted(() => {
 .card2 > :nth-child(2){
   transform: rotate(2deg) translateX(-10px);
 }
-
 </style>
