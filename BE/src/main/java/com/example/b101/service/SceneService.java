@@ -76,6 +76,7 @@ public class SceneService {
                     .bodyToMono(byte[].class)
                     .block();
         } catch (WebClientException e) {
+            log.error("GPU 서버 에러 발생");
             return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생",
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     request.getRequestURI());

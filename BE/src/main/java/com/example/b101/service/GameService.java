@@ -224,10 +224,10 @@ public class GameService {
                     .map(sceneRedis -> new Scene(
                             sceneRedis.getSceneOrder(),
                             sceneRedis.getPrompt(),
-                            baseUrl+"/images/s3/downloadFromS3?objectKey="+book.getBookId()+"/"+sceneRedis.getSceneOrder()+".jpg"))
+                            baseUrl+"/images/s3/downloadFromS3?objectKey="+book.getBookId()+"/"+sceneRedis.getSceneOrder()+".png"))
                             .toList();
 
-            book.setImageUrl(baseUrl+"/images/s3/downloadFromS3?objectKey="+book.getBookId()+"/0.jpg"); //책 표지 url
+            book.setImageUrl(baseUrl+"/images/s3/downloadFromS3?objectKey="+book.getBookId()+"/0.png"); //책 표지 url
             book.setScenes(sceneList);
 
 

@@ -128,6 +128,8 @@ public class S3service {
 
     // S3 업로드 메서드 (바이너리 데이터를 바로 업로드)
     private void uploadFileToS3(SceneRedis scene) {
+        log.info("image 데이터가 있나요? : {} bytes", scene.getImage() != null ? scene.getImage().length : 0);
+
         // 해당 이름의 객체로 S3에 저장
         String objectKey = scene.getGameId() + "/" + scene.getSceneOrder() + ".png";
 
