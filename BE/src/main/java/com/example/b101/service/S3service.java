@@ -42,7 +42,7 @@ public class S3service {
     private final S3Presigner s3Presigner;
     private final S3Client s3Client;
     private final AwsConfig awsConfig;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10); // 병렬 처리 스레드 풀
+    private final ExecutorService executorService = Executors.newFixedThreadPool(2); // 병렬 처리 스레드 풀
     private final RedisSceneRepository redisSceneRepository;
 
     ////////////////////////////////////
