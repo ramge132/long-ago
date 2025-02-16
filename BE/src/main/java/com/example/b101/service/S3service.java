@@ -121,7 +121,7 @@ public class S3service {
                 .map(scene -> CompletableFuture.runAsync(() -> {
                     try {
                         uploadFileToS3(scene);
-                        log.info( "파일 업로드 성공 - SceneOrder: {}", scene.getSceneOrder());
+                        log.info( "파일 업로드 성공 - SceneOrder: {}, Image Size: {} bytes", scene.getSceneOrder(), scene.getImage().length);
                         isUploaded.set(true);
                     } catch (Exception e) {
                         log.error( "파일 업로드 실패 - SceneOrder: {} 에러: {}", scene.getSceneOrder(), e.getMessage());
