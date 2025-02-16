@@ -99,6 +99,15 @@ public class S3service {
         // 1) Redis에서 gameId와 같은 Scene 다 가져오기
         List<SceneRedis> sceneRedisList = redisSceneRepository.findAllByGameId(gameId);
 
+        for (int i = 0; i < sceneRedisList.size(); i++) {
+            SceneRedis scene = sceneRedisList.get(i);
+            byte[] image = scene.getImage();  // 이미지 데이터
+            int imageSize = image != null ? image.length : 0;  // 이미지 크기 계산 (이미지가 null일 경우 0으로 설정)
+
+            // 로그 출력
+            log.info("Index: {}, SceneOrder: {}, Image Size: {} bytes", i, scene.getSceneOrder(), imageSize);
+        }
+
         // 책이 비어 있으면 예외처리 (사용자들이 게임을 안 했을 때)
         if (sceneRedisList.isEmpty()) {
             log.info("해당 gameId에 대한 데이터가 레디스에 없음.");
