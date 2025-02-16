@@ -64,12 +64,16 @@ build_FE:
     - docker build --no-cache -t $IMAGE_NAME:$CI_COMMIT_SHA -f $DOCKERFILE_PATH $CONTEXT
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
 
+
   rules:
-  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "FE/dev"
+    when: always
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "FE/dev"
     when: always
   - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main"
     when: always
   - when: never
+  resource_group: kingGodEmperor
 
 
 #########################
@@ -106,11 +110,14 @@ build_BE:
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
 
   rules:
-  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "BE/dev"
+    when: always
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "BE/dev"
     when: always
   - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main"
     when: always
   - when: never
+  resource_group: kingGodEmperor
 
 
 ########################
@@ -140,15 +147,18 @@ push_FE:
     - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
-    
+
   dependencies:
     - build_FE
   rules:
-  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "FE/dev" || $CI_COMMIT_BRANCH == "main")
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "FE/dev"
+    when: always
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "FE/dev"
     when: always
   - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main"
     when: always
   - when: never
+  resource_group: kingGodEmperor
 
 
 ########################
@@ -182,11 +192,14 @@ push_BE:
   dependencies:
     - build_BE
   rules:
-  - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "BE/dev" || $CI_COMMIT_BRANCH == "main")
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "BE/dev"
+    when: always
+  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "BE/dev"
     when: always
   - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main"
     when: always
   - when: never
+  resource_group: kingGodEmperor
 
 
 #######################
@@ -222,8 +235,10 @@ cleanup:
 
     # GitLab Runner가 사용하는 불필요한 빌드 파일 정리
     - rm -rf /builds/* || true
+
   rules:
    - when: always
+  resource_group: kingGodEmperor
 
 
 ##################
@@ -285,11 +300,12 @@ deploy_main:
     - push_FE
     - push_BE
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "main"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
       when: always
     - if: $CI_COMMIT_BRANCH == "CICD/main"
       when: always
     - when: never
+  resource_group: kingGodEmperor
 
 deploy_test:
   stage: deploy
@@ -333,11 +349,11 @@ deploy_test:
     - push_FE
     - push_BE
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == "FE/dev" || $CI_COMMIT_REF_NAME == "BE/dev")
+    - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRNACH == "FE/dev" || $CI_COMMIT_BRANCH == "BE/dev")
       when: always
     - if: $CI_COMMIT_BRANCH == "CICD/test"
       when: always
     - when: never
-
+  resource_group: kingGodEmperor
 
 
