@@ -226,7 +226,14 @@ cleanup:
     - push_FE
     - push_BE
   rules:
-   - when: always
+    - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == "FE/dev" || $CI_COMMIT_REF_NAME == "BE/dev")
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "main"
+      when: always
+    - if: $CI_COMMIT_BRANCH == "CICD/test" || $CI_COMMIT_BRANCH == "CICD/main"
+      when: always
+    - when: never
+
 
 
 ##################
