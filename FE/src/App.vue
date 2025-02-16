@@ -1,11 +1,11 @@
 <template>
+  <Transition name="fade-out">
+    <TigerAnimation />
+  </Transition>
   <div
     class="bg-no-repeat bg-cover bg-center w-screen h-screen flex flex-col justify-center items-center relative"
     :class="backgroundClass"
   >
-    <Transition name="fade-out">
-      <TigerAnimation />
-    </Transition>
     <Transition name="fade">
       <TopBar v-if="route.path === '/'" />
     </Transition>
@@ -22,11 +22,15 @@
     </div>
 
     <Transition name="fade">
-      <FooterBar v-if="route.path === '/'" />
+      <FooterBar v-if="route.path === '/'" @toggle-terms="toggleTerms" />
+    </Transition>
+    
+    <Transition name="fade">
+      <TermsOfService v-show="isTermsOfServiceOpened" @click="toggleTerms" />
     </Transition>
 
     <Transition name="fade">
-      <div v-if="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
+      <div v-show="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
         <img src="@/assets/loading.gif" alt="" class="w-full h-full">
       </div>
     </Transition>
@@ -37,10 +41,11 @@
 import { TigerAnimation } from "./components";
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
-import { TopBar, FooterBar, ToggleButton } from "@/components";
+import { TermsOfService, TopBar, FooterBar, ToggleButton } from "@/components";
 
 // 로딩 애니메이션 보이는 여부
 const isLoading = ref(false);
+const isTermsOfServiceOpened = ref(false);
 
 const Loading = (data) => {
   isLoading.value = data.value;
@@ -56,6 +61,10 @@ const backgroundClass = computed(() => {
       return "bg-fairytail-image";
   }
 });
+
+const toggleTerms = () => {
+  isTermsOfServiceOpened.value = !isTermsOfServiceOpened.value
+}
 </script>
 
 <style>

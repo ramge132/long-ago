@@ -193,9 +193,7 @@ const setupConnection = (conn) => {
 
   // 하트비트 시작
   let heartbeatInterval = setInterval(() => {
-    console.log(conn);
     if (conn.open) {
-      console.log(conn.peer, "하트비트 송신")
       sendMessage("heartbeat", { timestamp: Date.now() }, conn);
     } else {
       clearInterval(heartbeatInterval);
@@ -522,7 +520,6 @@ const setupConnection = (conn) => {
         break;
 
       case "heartbeat_back":
-        console.log(conn.peer, "하트비트 응답 받음");
         conn.lastHeartbeat = Date.now();
         break;
     }
@@ -1105,10 +1102,7 @@ const cardReroll = async () => {
 // 투표 종료
 const voteEnd = async (data) => {
   prompt.value = "";
-  votings.value.push({
-    sender: data.sender,
-    selected: data.selected,
-  });
+  isVoted.value = true;
   // 이미지 들어올 때까지 대기
 
   const sendVoteResult = async () => {
@@ -1124,8 +1118,6 @@ const voteEnd = async (data) => {
       )
     }
   });
-
-  isVoted.value = true;
 
   if (votings.value.length == participants.value.length) {
     let upCount = 0;
@@ -1247,21 +1239,28 @@ const voteEnd = async (data) => {
     }
   }
 }
-// if (currTurn.value === myTurn.value) {
-// const lastContent = bookContents.value[bookContents.value.length - 1];
-
-// watch(
-//   () => lastContent.image,
-//   (newImage) => {
-//     if (newImage !== null) {
-//       sendVoteResult();
-//     }
-//   },
-//   { immediate: true }
-// );
-// } else {
+if (currTurn.value === myTurn.value) {
+  watch(
+    () => bookContents.value,
+    (newBookContents) => {
+      const lastContent = newBookContents[newBookContents.length - 1];
+      if (lastContent && lastContent.image !== null) {
+        votings.value.push({
+          sender: data.sender,
+          selected: data.selected,
+        });
+        sendVoteResult();
+      }
+    },
+    { deep: true, immediate: true }
+  );
+} else {
+  votings.value.push({
+    sender: data.sender,
+    selected: data.selected,
+  });
   sendVoteResult();
-// }
+}
 };
 
 const gameEnd = async (status) => {
@@ -1279,10 +1278,14 @@ const gameEnd = async (status) => {
     // 방장인 경우 게임실패 송신
     if (participants.value[0].id == peerId.value) {
       // 비정상 종료 api 들어가야함
-      const response = await deleteGame({
-        gameId: gameID.value,
-        isForceStopped: true
-      })
+      try {
+        const response = await deleteGame({
+          gameId: gameID.value,
+          isForceStopped: true
+        })
+      } catch (error) {
+        console.log(error);
+      }
     }
     // 전체 실패 쇼 오버레이
     isForceStopped.value = "fail";
@@ -1290,10 +1293,14 @@ const gameEnd = async (status) => {
     // 정상 종료인 경우
     if (participants.value[0].id == peerId.value) {
       // 비정상 종료 api 들어가야함
-      const response = await deleteGame({
-        gameId: gameID.value,
-        isForceStopped: false
-      })
+      try {
+        const response = await deleteGame({
+          gameId: gameID.value,
+          isForceStopped: false
+        })
+      } catch (error) {
+        console.log(error)
+      }
     }
     // 우승자 쇼 오버레이
     isForceStopped.value = "champ";

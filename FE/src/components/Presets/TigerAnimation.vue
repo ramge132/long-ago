@@ -1,6 +1,6 @@
 <template>
   <div
-    v-show="isVisible"
+    v-if="isVisible"
     id="tiger-animation"
     class="fixed inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#0000008c] z-50"
     :class="{ 'fade-out': !isVisible }"

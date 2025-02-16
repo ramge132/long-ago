@@ -42,6 +42,7 @@
 import { ref, onMounted, reactive, watch, defineProps } from "vue";
 import { useAudioStore } from "@/stores/audio";
 import { TurningPage } from "@/assets";
+import { initVoices, speakText } from "@/functions/tts";
 
 const audioStore = useAudioStore();
 const pagesRef = ref(null);
@@ -146,14 +147,62 @@ watch(() => props.isElected,
   }
 })
 
-watch(() => props.gameStarted,
-(newValue) => {
-  if (newValue === false) {
-    setTimeout(() => {
-      flippedPages.clear();
-    }, 9000);
+// tts
+const runBookSequence = async () => {
+  // 동기적으로 initVoices() 실행 (만약 비동기라면 await 사용)
+  await initVoices();
+
+  // 책 내용을 순서대로 처리: 0,1 페이지, 그 다음 2,3 페이지, ...
+  for (const [i, element] of props.bookContents.entries()) {
+    // 두 페이지씩 추가 (페이지 넘기는 효과)
+    flippedPages.add(i * 2);
+    flippedPages.add(i * 2 + 1);
+
+    // 페이지 넘기는 효과음 재생
+    const turningEffect = new Audio(TurningPage);
+    turningEffect.play();
+
+    // 음성 데이터가 있다면 TTS 실행 및 완료될 때까지 대기
+    if (audioStore.audioData) {
+      // tts 함수(speakText)가 음성 재생 완료 후 resolve하는 프로미스를 반환한다고 가정합니다.
+      await speakText(element.content);
+    }
   }
-})
+  
+  // 모든 작업이 완료되면 클릭 잠금 해제
+  isClickLocked.value = false;
+}
+
+watch(
+  () => props.gameStarted,
+  async (newValue) => {
+    if (newValue === false) {
+      isClickLocked.value = true;
+      setTimeout(async () => {
+        // flippedPages를 배열로 변환한 후 내림차순 정렬 (큰 수부터)
+        const pages = Array.from(flippedPages).sort((a, b) => b - a);
+        let index = 0;
+
+        // 0.3초마다 2개씩 삭제하는 인터벌 실행
+        const deleteInterval = setInterval(() => {
+          for (let i = 0; i < 2; i++) {
+            if (index < pages.length) {
+              flippedPages.delete(pages[index]);
+              index++;
+            }
+          }
+          // 모든 페이지 삭제되면 인터벌 정지 후 다음 단계 진행
+          if (index >= pages.length) {
+            clearInterval(deleteInterval);
+            // 후속 작업 실행 (비동기 함수 내에서 순차 처리)
+            runBookSequence();
+          }
+        }, 300);
+      }, 9000);
+    }
+  }
+);
+
 
 onMounted(() => {
   updatePagesZIndex();

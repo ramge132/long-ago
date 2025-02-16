@@ -169,7 +169,7 @@
       </div>
     </Transition> -->
     <Transition name="fade">
-      <InGameEnding v-if="props.isForceStopped" :isForceStopped="isForceStopped" :participants="participants" />
+      <InGameEnding v-show="props.isForceStopped" :isForceStopped="isForceStopped" :participants="participants" />
     </Transition>
   </div>
 </template>
