@@ -71,7 +71,7 @@ public class FilteringService {
         log.info("[findCardVariantsByCardId] 플레이어가 가진 카드 변형어 리스트: {}", allVariants);
 
         // 사용자 입력값(프롬프트)에서 욕설 필터링
-        boolean isBadWord = badWordFiltering.blankCheck(filteringRequest.getUserPrompt());
+        boolean isBadWord = badWordFiltering.check(filteringRequest.getUserPrompt());
 
         String changeStr = badWordFiltering.change(filteringRequest.getUserPrompt(), new String[] {
                 "*", " ", ".", ",", "-", "_", "+", "=", "~", "!", "@", "#", "$", "%", "^", "&", "(", ")", "[", "]", "{", "}",
