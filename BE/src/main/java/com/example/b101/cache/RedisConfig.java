@@ -20,21 +20,7 @@ import java.time.Duration;
 @Configuration
 public class RedisConfig {
 
-    @Value("${spring.data.redis.port}")
-    private int port;
-
-    @Value("${spring.data.redis.host}")
-    private String host;
-
-
-    @Bean
-    public LettuceConnectionFactory redisConnectionFactory() {
-        // Lettuce라는 라이브러리를 활용해 Redis 연결을 관리하는 객체를 생성하고
-        // Lettuce가 jedis보다 성능이 더 좋음
-        // Redis 서버에 대한 정보(host, port)를 설정한다.
-        return new LettuceConnectionFactory(new RedisStandaloneConfiguration(host, port));
-    }
-
+    //spring boot 기본 redis 라이브러리가 Lettuce
 
     //데이터 캐싱을 위한 캐시 매니저
     @Bean
