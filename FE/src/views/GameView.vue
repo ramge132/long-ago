@@ -1263,16 +1263,20 @@ const voteEnd = async (data) => {
   }
 }
 if (currTurn.value === myTurn.value) {
-  watch(
-    () => bookContents.value,
-    (newBookContents) => {
+  let stopWatch;
+  stopWatch = watch(
+    () => [bookContents.value, votings.value],
+    ([newBookContents, newVotings]) => {
       const lastContent = newBookContents[newBookContents.length - 1];
-      if (lastContent && lastContent.image !== null) {
+      if (lastContent && lastContent.image !== null && newVotings.length === participants.value.length - 1) {
         votings.value.push({
           sender: data.sender,
           selected: data.selected,
         });
         sendVoteResult();
+        if(stopWatch) {
+          stopWatch();
+        }
       }
     },
     { deep: true, immediate: true }
