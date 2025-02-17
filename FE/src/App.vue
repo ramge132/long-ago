@@ -10,13 +10,13 @@
       <TopBar v-if="route.path === '/'" />
     </Transition>
     <div
-      class="view rounded-lg w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] min-h-[650px] bg-[#ffffff70] border-[1px] border-white backdrop-blur-[15px] flex flex-col justify-center items-center"
+      class="view rounded-lg w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] min-h-[600px] bg-[#ffffff70] border-[1px] border-white backdrop-blur-[15px] flex flex-col justify-center items-center"
     >
       <ToggleButton />
 
       <RouterView v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
-          <component :is="Component" @Loading="Loading" />
+          <component :is="Component" @start-loading="startLoading" />
         </Transition>
       </RouterView>
     </div>
@@ -47,7 +47,7 @@ import { TermsOfService, TopBar, FooterBar, ToggleButton } from "@/components";
 const isLoading = ref(false);
 const isTermsOfServiceOpened = ref(false);
 
-const Loading = (data) => {
+const startLoading = (data) => {
   isLoading.value = data.value;
 };
 

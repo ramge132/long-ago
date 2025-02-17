@@ -67,7 +67,7 @@ const inGameOrder = ref([]);
 // 현재 턴 인덱스
 const currTurn = ref(0);
 // 누적 턴
-const totalTurn = ref(0);
+const totalTurn = ref(1);
 // 나의 턴 순서
 const myTurn = ref(null);
 const inProgress = ref(false);
@@ -103,7 +103,7 @@ watch(isElected, (newValue) => {
 })
 
 // 로딩 표시
-const emit = defineEmits(["Loading"]);
+const emit = defineEmits(["startLoading"]);
 
 // 투표 결과를 보냈는 지 여부
 const isVoted = ref(false);
@@ -299,7 +299,7 @@ const setupConnection = (conn) => {
 
       case "gameStart":
         // 로딩 애니메이션 활성화
-        emit("Loading", {value: true});
+        emit("startLoading", {value: true});
 
         startReceived(data).then(async () => {
           // 내 카드 받기
@@ -314,7 +314,7 @@ const setupConnection = (conn) => {
           setTimeout(async () => {
             await router.push("/game/play");
             // 로딩 애니메이션 비활성화
-            emit("Loading", {value: false});
+            emit("startLoading", {value: false});
             
             showOverlay('start').then(() => {
               setTimeout(() => {
@@ -852,7 +852,7 @@ const onRoomConfiguration = (data) => {
 ///////////////////////
 const gameStart = async (data) => {
   // 로딩 애니메이션 활성화
-  emit("Loading", {value: true});
+  emit("startLoading", {value: true});
   
   // 게임 방 생성
   try {
@@ -892,7 +892,7 @@ const gameStart = async (data) => {
   setTimeout(async () => {
     await router.push("/game/play");
     // 로딩 애니메이션 비활성화
-    emit("Loading", {value: false});
+    emit("startLoading", {value: false});
     
     showOverlay('start').then(() => {
       setTimeout(() => {
@@ -1266,8 +1266,6 @@ if (currTurn.value === myTurn.value) {
 const gameEnd = async (status) => {
   // 게임 시작 상태 초기화
   gameStarted.value = false;
-  // 메세지 초기화
-  // receivedMessages.value = [];
   // 턴 초기화
   currTurn.value = -1;
   totalTurn.value = 0;
@@ -1308,6 +1306,16 @@ const gameEnd = async (status) => {
 };
 
 const goLobby = () => {
+  // 게임 관련 데이터 초기화
+  receivedMessages.value = [];
+  currTurn.value = 0;
+  bookContents.value = [{ content: "", image: null }];
+  votings.value = [];
+  myTurn.value = null;
+  inProgress.value = false;
+  inGameOrder.value = [];
+  isForceStopped.value = null;
+
   router.push("/game/lobby");
 };
 
