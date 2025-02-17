@@ -4,18 +4,18 @@
     <form class="h-full">
       <div class="h-full w-full grid grid-rows-4">
         <div
-          class="row-span-3 grid grid-cols-7 grid-rows-7 gap-x-8 gap-y-8 border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5"
+          class="row-span-3 grid grid-cols-3 grid-rows-3   border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5"
           :class="configurable == false ? 'pointer-events-none' : ''"
         >
-          <div class="col-span-4 row-span-2 flex flex-col items-center">
-            <label class="self-start">1턴 당 시간(초)</label>
-            <div class="w-full flex justify-between">
+          <div class="col-span-3 flex flex-col items-center">
+            <label>턴당 소요 시간(초)</label>
+            <div class="w-2/3 flex justify-between">
               <template v-for="n in 11" :key="n">
                 <p v-if="n % 2 != 0">{{ n + 29 }}</p>
               </template>
             </div>
             <div
-              class="range-container drop-shadow-md relative w-full h-[20px] flex justify-center items-center"
+              class="range-container drop-shadow-md relative w-2/3 h-[20px] flex justify-center items-center"
             >
               <input
                 type="range"
@@ -36,7 +36,7 @@
               </div>
             </div>
           </div>
-          <div class="col-span-4 row-span-5">
+          <div class="col-span-3 row-span-2 flex flex-col items-center">
             <label class="mb-2 block">게임 모드</label>
             <div class="grid grid-cols-2 gap-x-3 h-2/3">
               <label
