@@ -307,6 +307,21 @@ const setupConnection = (conn) => {
         break;
 
       case "gameStart":
+        // 게임 관련 데이터 초기화
+        receivedMessages.value = [];
+        currTurn.value = 0;
+        bookContents.value = [{ content: "", image: null }];
+        votings.value = [];
+        myTurn.value = null;
+        inProgress.value = false;
+        inGameOrder.value = [];
+        isForceStopped.value = null;
+        usedCard.value = {
+          id: 0,
+          keyword: "",
+          isEnding: false
+        };
+        
         // 로딩 애니메이션 활성화
         emit("startLoading", {value: true});
 
@@ -870,6 +885,20 @@ const onRoomConfiguration = (data) => {
 // 게임 진행 관련 부분 //
 ///////////////////////
 const gameStart = async (data) => {
+  // 게임 관련 데이터 초기화
+  receivedMessages.value = [];
+  currTurn.value = 0;
+  bookContents.value = [{ content: "", image: null }];
+  votings.value = [];
+  myTurn.value = null;
+  inProgress.value = false;
+  inGameOrder.value = [];
+  isForceStopped.value = null;
+  usedCard.value = {
+    id: 0,
+    keyword: "",
+    isEnding: false
+  };
   // 로딩 애니메이션 활성화
   emit("startLoading", {value: true});
   
@@ -1334,6 +1363,11 @@ const goLobby = () => {
   inProgress.value = false;
   inGameOrder.value = [];
   isForceStopped.value = null;
+  usedCard.value = {
+    id: 0,
+    keyword: "",
+    isEnding: false
+  };
 
   router.push("/game/lobby");
 };
