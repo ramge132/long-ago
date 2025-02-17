@@ -207,6 +207,9 @@ const setupConnection = (conn) => {
   }
 
   conn.on("data", async (data) => {
+    if (data.type != "heartbeat" && data.type != "heartbeat_back") {
+      console.log("수신데이터", data);
+    }
     switch (data.type) {
       case "newParticipant":
         // 현재 참가자 목록 전송
@@ -226,6 +229,12 @@ const setupConnection = (conn) => {
         if (!participants.value.some((p) => p.id === data.data.id)) {
           participants.value.push(data.data);
         }
+        break;
+
+      case "currentParticipants":
+        // 현재 참가자 받기
+        handleExistingParticipants(data.participants);
+        roomConfigs.value = data.roomConfigs;
         break;
 
       case "message":
@@ -549,65 +558,91 @@ const setupConnection = (conn) => {
 };
 
 // 기존 참가자들과 연결
-const handleExistingParticipants = (existingParticipants) => { 
-  const MAX_RETRIES = 5; // 최대 재시도 횟수
-  const RETRY_DELAY = 2000; // 재시도 간격 (ms)
+const handleExistingParticipants = async (existingParticipants) => {
+  const MAX_RETRIES = 5;
+  const RETRY_DELAY = 2000;
 
-  // 참가자 목록 업데이트
-  existingParticipants.forEach((newParticipant) => {
-    // 이미 존재하는 참가자인지 확인
-    const isExisting = participants.value.some(
-      (existing) => existing.id === newParticipant.id,
+  // Promise를 반환하는 연결 함수
+  const connectToParticipant = (participant) => {
+    return new Promise((resolve, reject) => {
+      if (connectedPeers.value.some((p) => p.id === participant.id
+      &&
+      participant.id !== peerId.value)) {
+        console.log("이미 연결되었지만, participants에는 없음", participant);
+        participants.value.push(participant);
+        resolve();
+      } else if (
+        participant.id !== peerId.value &&
+        !connectedPeers.value.some((p) => p.id === participant.id)
+      ) {
+        console.log("참가자 연결 시도", participant);
+        let retries = 0;
+
+        const tryConnecting = () => {
+          const conn = peer.value.connect(participant.id);
+
+          conn.on("open", () => {
+            setupConnection(conn);
+            
+            const isExisting = participants.value.some(
+              (existing) => existing.id === participant.id
+            );
+
+            if (!isExisting) {
+              participants.value.push(participant);
+            } else {
+              console.log("이미 존재하는 참가자:", participant);
+            }
+            resolve();
+          });
+
+          conn.on("error", (error) => {
+            console.error(participant.id, "와 연결 오류:", error);
+
+            if (retries < MAX_RETRIES) {
+              retries++;
+              console.log(`${participant.id} 연결 재시도 중... (${retries}/${MAX_RETRIES})`);
+
+              setTimeout(() => {
+                console.log(`재시도 ${retries}번째: ${participant.id}`);
+                tryConnecting();
+              }, RETRY_DELAY);
+            } else {
+              toast.errorToast(`${participant.id}와 연결에 실패했습니다. 최대 재시도 횟수 초과`);
+              reject(new Error(`${participant.id}와 연결 실패`));
+            }
+          });
+        };
+
+        tryConnecting();
+      } else {
+        resolve();
+      }
+    });
+  };
+
+  try {
+    // 모든 참가자 연결이 완료될 때까지 대기
+    await Promise.all(
+      existingParticipants.map(participant => connectToParticipant(participant))
     );
 
-    // 존재하지 않는 참가자만 추가
-    if (!isExisting) {
+    // 모든 연결이 완료된 후 나 자신 추가
+    const newParticipant = {
+      id: peerId.value,
+      name: userStore.userData.userNickname,
+      image: userStore.userData.userProfile,
+      score: 10,
+    };
+    
+    if (!participants.value.some(
+              (existing) => existing.id === newParticipant.id
+            )) {
       participants.value.push(newParticipant);
-    } else {
-      console.log("이미 존재하는 참가자:", newParticipant);
     }
-  });
-
-  // 각 참가자와 연결
-  existingParticipants.forEach((participant) => {
-    if (
-      participant.id !== peerId.value &&
-      !connectedPeers.value.some((p) => p.id === participant.id)
-    ) {
-      // 재시도 횟수를 추적할 객체 생성
-      let retries = 0;
-
-      const tryConnecting = () => {
-        const conn = peer.value.connect(participant.id);
-
-        conn.on("open", () => {
-          setupConnection(conn);
-        });
-
-        // 연결이 실패했을 때 재시도
-        conn.on("error", (error) => {
-          console.error(participant.id, "와 연결 오류:", error);
-
-          if (retries < MAX_RETRIES) {
-            retries++; // 재시도 횟수 증가
-            console.log(`${participant.id} 연결 재시도 중... (${retries}/${MAX_RETRIES})`);
-
-            // 일정 시간 후 재시도
-            setTimeout(() => {
-              console.log(`재시도 ${retries}번째: ${participant.id}`);
-              tryConnecting(); // 재시도 호출
-            }, RETRY_DELAY);
-          } else {
-            toast.errorToast(`${participant.id}와 연결에 실패했습니다. 최대 재시도 횟수 초과`);
-            console.error(`${participant.id}와 연결에 실패했습니다. 최대 재시도 횟수를 초과하였습니다.`);
-          }
-        });
-      };
-
-      // 처음 연결 시도
-      tryConnecting();
-    }
-  });
+  } catch (error) {
+    console.error("참가자 연결 중 오류 발생:", error);
+  }
 };
 
 // 방 참가
@@ -637,27 +672,29 @@ const connectToRoom = async (roomID) => {
       );
     });
 
-    conn.on("data", (data) => {
-      console.log("수신데이터", data);
-      if (data.type === "currentParticipants") {
-        handleExistingParticipants(data.participants);
-        roomConfigs.value = data.roomConfigs;
-      } else if (data.type === "newParticipantJoined") {
-        participants.value.push(data.data);
-      }
+    // conn.on("data", (data) => {
+    //   if (data.type != "heartbeat" && data.type != "heartbeat_back") {
+    //     console.log("수신데이터", data);
+    //   }
+    //   if (data.type === "currentParticipants") {
+    //     handleExistingParticipants(data.participants);
+    //     roomConfigs.value = data.roomConfigs;
+    //   } else if (data.type === "newParticipantJoined") {
+    //     participants.value.push(data.data);
+    //   }
 
-      const newParticipant = {
-        id: peerId.value,
-        name: userStore.userData.userNickname,
-        image: userStore.userData.userProfile,
-        score: 10,
-      };
+    //   const newParticipant = {
+    //     id: peerId.value,
+    //     name: userStore.userData.userNickname,
+    //     image: userStore.userData.userProfile,
+    //     score: 10,
+    //   };
 
-      // 중복 확인 후 추가
-      if (!participants.value.some((p) => p.id === newParticipant.id)) {
-        participants.value.push(newParticipant);
-      }
-    });
+    //   // 중복 확인 후 추가
+    //   if (!participants.value.some((p) => p.id === newParticipant.id)) {
+    //     participants.value.push(newParticipant);
+    //   }
+    // });
 
     // 재시도 횟수를 추적할 객체 생성
     let retries = 0;
@@ -743,21 +780,6 @@ const initializePeer = () => {
     }
   });
 };
-
-// 피어들 연결상태 3초마다 확인
-// const checkPeerConnections = () => {
-//   console.log(connectedPeers.value);
-//   connectedPeers.value = connectedPeers.value.filter((peer) => {
-//     if (!peer.connection.open) {
-//       console.warn(`⚠️ 연결 끊김: ${peer.id}. 제거합니다.`);
-//       return false; // 연결이 끊어진 피어는 제거
-//     }
-//     return true;
-//   });
-
-//   setTimeout(checkPeerConnections, 3000); // 3초마다 체크
-// };
-
 
 // 컴포넌트 마운트
 onMounted(async () => {
@@ -1032,31 +1054,32 @@ const nextTurn = async (data) => {
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
     try {
-      const responseImage = await createImage({
-        gameId: gameID.value,
-        userId: peerId.value,
-        userPrompt: data.prompt,
-        turn: totalTurn.value,
-      });
-      // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-      const imageBlob = URL.createObjectURL(responseImage.data);
+      // const responseImage = await createImage({
+      //   gameId: gameID.value,
+      //   userId: peerId.value,
+      //   userPrompt: data.prompt,
+      //   turn: totalTurn.value,
+      // });
+      // // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
+      // const imageBlob = URL.createObjectURL(responseImage.data);
 
-      // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
-      const arrayBuffer = await responseImage.data.arrayBuffer();
+      // // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
+      // const arrayBuffer = await responseImage.data.arrayBuffer();
       
       // 사람들에게 이미지 전송
       connectedPeers.value.forEach((peer) => {
         if (peer.id !== peerId.value && peer.connection.open) {
           sendMessage(
             "sendImage",
-            { imageBlob: arrayBuffer },
+            // { imageBlob: arrayBuffer },
+            { imageBlob: "arrayBuffer" },
             peer.connection
           )
         }
       });
       
       // 나의 책에 이미지 넣기
-      bookContents.value[bookContents.value.length - 1].image = imageBlob;
+      bookContents.value[bookContents.value.length - 1].image = "imageBlob";
     } catch (error) {
       console.log(error);
     }
