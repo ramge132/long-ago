@@ -8,6 +8,7 @@ import lombok.*;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 public class Scene {
 
     @Id
@@ -32,9 +33,5 @@ public class Scene {
         this.sceneOrder = sceneOrder;
         this.userPrompt = userPrompt;
         this.imageUrl = imageUrl;
-    }
-
-    public Scene() {
-
     }
 }

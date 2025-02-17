@@ -1,6 +1,4 @@
 package com.example.b101.controller;
-
-import com.example.b101.dto.BookRequest;
 import com.example.b101.service.BookService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;

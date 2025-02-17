@@ -26,8 +26,6 @@ public class Game implements Serializable {
     private List<PlayerStatus> playerStatuses;
 
     //작화 스타일
-    //1번이 기본모드
-    //2번이 클레이모드
     private int drawingStyle;
 
 

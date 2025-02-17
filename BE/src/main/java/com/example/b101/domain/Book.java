@@ -19,6 +19,7 @@ public class Book {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    //Id는 String 값을 쓸 수가 없음..
     private int id;
 
     @Column(name = "BOOK_ID",unique = true,nullable = false)
