@@ -40,7 +40,7 @@
             </div>
           </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index < 3">
+          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index">
             <img src="" alt="" class="w-24 h-24">
           </div>
         </div>
@@ -119,7 +119,7 @@
               </div>
             </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index > 2">
+          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index">
             <img src="" alt="" class="w-24 h-24">
           </div>
           </div>
@@ -175,7 +175,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref, watch } from "vue";
+import { nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon } from "@/assets";
 import Profile from "@/assets/images/profiles";
 import {
@@ -313,8 +313,9 @@ watch(
 );
 
 watch(
-  () => props.votings,
-  () => {
+  () => props.votings.length,
+  async (newVal, oldVal) => {
+    await nextTick();
     props.inGameOrder.forEach((order, index) => {
       if (
         props.votings.length != 0 &&
@@ -322,7 +323,6 @@ watch(
         props.votings[props.votings.length - 1].sender
       ) {
         const select = ref();
-        console.log(index);
         if (
           props.votings[props.votings.length - 1].selected ==
           "up"
