@@ -638,7 +638,9 @@ const connectToRoom = async (roomID) => {
     });
 
     conn.on("data", (data) => {
-      console.log("수신데이터", data);
+      if(data.type != "heartbeat" && data.type != "heartbeat_back") {
+        console.log("수신데이터", data);
+      }
       if (data.type === "currentParticipants") {
         handleExistingParticipants(data.participants);
         roomConfigs.value = data.roomConfigs;
@@ -1032,31 +1034,31 @@ const nextTurn = async (data) => {
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
     try {
-      const responseImage = await createImage({
-        gameId: gameID.value,
-        userId: peerId.value,
-        userPrompt: data.prompt,
-        turn: totalTurn.value,
-      });
-      // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-      const imageBlob = URL.createObjectURL(responseImage.data);
+      // const responseImage = await createImage({
+      //   gameId: gameID.value,
+      //   userId: peerId.value,
+      //   userPrompt: data.prompt,
+      //   turn: totalTurn.value,
+      // });
+      // // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
+      // const imageBlob = URL.createObjectURL(responseImage.data);
 
-      // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
-      const arrayBuffer = await responseImage.data.arrayBuffer();
+      // // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
+      // const arrayBuffer = await responseImage.data.arrayBuffer();
       
       // 사람들에게 이미지 전송
       connectedPeers.value.forEach((peer) => {
         if (peer.id !== peerId.value && peer.connection.open) {
           sendMessage(
             "sendImage",
-            { imageBlob: arrayBuffer },
+            { imageBlob: "arrayBuffer" },
             peer.connection
           )
         }
       });
       
       // 나의 책에 이미지 넣기
-      bookContents.value[bookContents.value.length - 1].image = imageBlob;
+      bookContents.value[bookContents.value.length - 1].image = "imageBlob";
     } catch (error) {
       console.log(error);
     }
@@ -1240,16 +1242,20 @@ const voteEnd = async (data) => {
   }
 }
 if (currTurn.value === myTurn.value) {
-  watch(
-    () => bookContents.value,
-    (newBookContents) => {
+  let stopWatch;
+  stopWatch = watch(
+    () => [bookContents.value, votings.value],
+    ([newBookContents, newVotings]) => {
       const lastContent = newBookContents[newBookContents.length - 1];
-      if (lastContent && lastContent.image !== null) {
+      if (lastContent && lastContent.image !== null && newVotings.length === participants.value.length - 1) {
         votings.value.push({
           sender: data.sender,
           selected: data.selected,
         });
         sendVoteResult();
+        if(stopWatch) {
+          stopWatch();
+        }
       }
     },
     { deep: true, immediate: true }
