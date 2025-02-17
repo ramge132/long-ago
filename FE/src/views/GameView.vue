@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Peer from "peerjs";
 import { useUserStore } from "@/stores/auth";
@@ -395,10 +395,7 @@ const setupConnection = (conn) => {
         break;
 
       case "voteResult":
-        votings.value.push({
-          sender: data.sender,
-          selected: data.selected
-        });
+        votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
 
         if (votings.value.length == participants.value.length) {
           let upCount = 0;
@@ -1266,13 +1263,11 @@ if (currTurn.value === myTurn.value) {
   let stopWatch;
   stopWatch = watch(
     () => [bookContents.value, votings.value],
-    ([newBookContents, newVotings]) => {
+    async ([newBookContents, newVotings]) => {
+      await nextTick();
       const lastContent = newBookContents[newBookContents.length - 1];
       if (lastContent && lastContent.image !== null && newVotings.length === participants.value.length - 1) {
-        votings.value.push({
-          sender: data.sender,
-          selected: data.selected,
-        });
+        votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
         sendVoteResult();
         if(stopWatch) {
           stopWatch();
@@ -1282,10 +1277,7 @@ if (currTurn.value === myTurn.value) {
     { deep: true, immediate: true }
   );
 } else {
-  votings.value.push({
-    sender: data.sender,
-    selected: data.selected,
-  });
+  votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
   sendVoteResult();
 }
 };
