@@ -64,9 +64,11 @@ const props = defineProps({
 const calculateZIndex = (pageIndex) => {
   const totalPages = props.bookContents.length * 2 + 1;
   
+  // 홀수 페이지 인덱스가 높을수록 z-index가 커야함
   if (pageIndex % 2 === 1) {
     return pageIndex * 2;
   }
+  // 짝수 페이지 인덱스가 낮을수록 z-index가 커야함
   else {
     return (totalPages - pageIndex) * 2;
   }
@@ -90,11 +92,11 @@ const handlePageClick = (pageIndex) => {
   if (isClickLocked.value) {
     return;
   }
-  isClickLocked.value = true;
-
   if (pageIndex / 2 === props.bookContents.length) {
     return;
   }
+  isClickLocked.value = true;
+
   
   if (audioStore.audioData) {
     const turningEffect = new Audio(TurningPage);
@@ -130,10 +132,11 @@ const handlePageClick = (pageIndex) => {
   updatePagesZIndex();
 };
 
-watch(() => props.bookContents.length,
+watch(() => props.bookContents,
   () => {
   updatePagesZIndex();
-});
+},
+{ deep: true });
 
 watch(() => props.isElected,
 (newValue) => {
@@ -313,9 +316,14 @@ p {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+.page img {
+  backface-visibility: hidden;
+}
+
 .bg-effect {
     display: inline-block;
     position: relative;
+    backface-visibility: hidden;
 }
 .bg-effect:after {
     position: absolute;
@@ -330,6 +338,5 @@ p {
       inset 0 0 30px #EEEEF0,
       inset 0 0 30px #EEEEF0,
       inset 0 0 30px #EEEEF0;
-    
 }
 </style>
