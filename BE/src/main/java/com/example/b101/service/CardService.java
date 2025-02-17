@@ -18,6 +18,41 @@ public class CardService {
 
     private final CachingService cachingService;
 
+    //시연용 결말 카드
+    public List<EndingCard> getEndingCards() {
+        return cachingService.getEndingCardAll().getEndingCards();
+    }
+
+
+    //시연용 이야기 카드
+    public List<List<StoryCard>> getStoryCards(int playerCnt) {
+        List<List<StoryCard>> cards = new ArrayList<>();
+
+        List<String> attribute = Arrays.asList("인물","사물","장소","상태");
+
+        for(String attributeName : attribute) {
+            cards.add(getStoryCardByAttribute(attributeName,playerCnt));
+        }
+
+        return cards;
+    }
+
+
+    //시연용 이야기 카드 속성별 분배
+    public List<StoryCard> getStoryCardByAttribute(String attribute, int playerCnt) {
+
+        return cachingService.getStoryCardAll().getStoryCards()
+                .stream()
+                .filter(storyCard -> storyCard.getAttribute().equals(attribute))
+                .toList()
+                .subList(0, playerCnt);
+    }
+
+
+
+
+
+
     // 결말 카드 셔플
     public List<EndingCard> shuffleEndingCard() {
         log.info("[shuffleEndingCard] 결말 카드 데이터를 가져오는 중...");

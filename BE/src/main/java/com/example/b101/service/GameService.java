@@ -8,7 +8,6 @@ import com.example.b101.dto.DeleteGameRequest;
 import com.example.b101.dto.GameRequest;
 import com.example.b101.dto.GameResponse;
 import com.example.b101.dto.GenerateSceneRequest;
-import com.example.b101.repository.BookRepository;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +23,6 @@ import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.util.*;
 
 @Slf4j
@@ -37,6 +35,66 @@ public class GameService {
     private final RedisSceneRepository sceneRepository;
     private final WebClient webClient;
     private final S3service s3service;
+
+
+    //시연용
+    public ResponseEntity<?> createGame(GameRequest gameRequest,HttpServletRequest request) {
+        int playerCnt = gameRequest.getPlayer().size();
+
+        if(playerCnt < 2) {
+            return ApiResponseUtil.failure("플레이어 수가 2인 미만입니다.",
+                    HttpStatus.BAD_REQUEST,
+                    request.getRequestURI());
+        }
+
+        List<EndingCard> endingCards = cardService.getEndingCards();
+        List<List<StoryCard>> storyCards = cardService.getStoryCards(playerCnt);
+
+
+        List<PlayerStatus> playerStatuses = getPlayerStatuses(gameRequest,storyCards,endingCards,playerCnt);
+
+        Game game = Game.builder()
+                .gameId(UUID.randomUUID().toString())
+                .endingCardlist(endingCards)
+                .playerStatuses(playerStatuses)
+                .drawingStyle(gameRequest.getDrawingStyle())
+                .build();
+
+        gameRepository.save(game);
+
+        GameResponse gameResponse = GameResponse.builder()
+                .gameId(game.getGameId())
+                .status(game.getPlayerStatuses().stream().filter(player -> player.getUserId().equals(gameRequest.getBossId())).findFirst().orElse(null))
+                .build();
+
+        return ApiResponseUtil.success(gameResponse, "게임 생성", HttpStatus.CREATED, request.getRequestURI());
+    }
+
+
+    //시연용 카드 분배 로직
+    public List<PlayerStatus> getPlayerStatuses(GameRequest gameRequest,List<List<StoryCard>> storyCards, List<EndingCard> endingCards, int playerCnt) {
+        List<PlayerStatus> playerStatuses = new ArrayList<>();
+        for(int i=0; i<playerCnt; i++) {
+            PlayerStatus playerStatus = new PlayerStatus();
+            playerStatus.setUserId(gameRequest.getPlayer().get(i)); //userId 설정
+
+            List<StoryCard> storyCardList = new ArrayList<>();
+            for(int j=0; j<4; j++){
+                StoryCard storyCard = storyCards.get(j).get(i);
+                storyCardList.add(storyCard);
+
+            }
+
+            EndingCard endingCard = endingCards.remove(i);
+
+            playerStatus.setEndingCard(endingCard);
+            playerStatus.setStoryCards(storyCardList);
+
+            playerStatuses.add(playerStatus);
+        }
+
+        return playerStatuses;
+    }
 
     /**
      * 게임을 생성하고 Redis에 저장
