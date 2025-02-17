@@ -1,15 +1,15 @@
 <template>
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
-    <div class="flex justify-center items-center grow">
+    <div v-if="gameStarted" class="flex justify-center items-center grow">
       <div class="flex flex-col justify-center items-center w-3/4 mr-3">
-        <div class="flex justify-between w-full">
-          <div v-for="(card, index) in storyCards" :key="index" class="relative">
-            <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
-            <div
-              class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">
-              {{ card.keyword }}</div>
-          </div>
-        </div>
+          <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass"> 
+            <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
+              <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
+              <div
+                class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">
+                {{ card.keyword }}</div>
+            </div>
+          </transition-group>
       </div>
       <div class="flex flex-col flex-1 justify-center items-center">
         <div class="relative endingcard cursor-pointer" @click="sendEndingCard">
@@ -20,23 +20,29 @@
         </div>
       </div>
     </div>
-    <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full">
+    <div v-else class="flex justify-center items-center my-auto" @click="emit('goLobby')">
+      <div class="bg-gray-50 hover:bg-gray-200 p-4 rounded-2xl font-omp flex items-center gap-x-3 cursor-pointer">
+        로비로 돌아가기
+        <img :src="ReturnIcon" alt="" class="w-4">
+      </div>
+    </div>
+    <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30]">
       <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
         v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
-        <div class="flex flex-nowrap flex-col justify-center items-center relative" @click="changeMode">
+        <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer" @click="changeMode">
           <p class="whitespace-nowrap absolute top-[-1.25rem]" v-text="mode.mark"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
-        <input type="text" class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2" v-model="message"
+        <input type="text" class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2 focus:outline-0" v-model="message"
           @keyup.enter="mode.fucntion" :placeholder="mode.placeholder" :ref="(el) => (chatRefs[index] = el)" />
-        <button class="rounded-full border w-8 h-8 shrink-0 border-black p-1 flex justify-center items-center"
+        <button class="rounded-full w-8 h-8 shrink-0 p-1 flex justify-center items-center focus:outline-0"
           @click="mode.fucntion">
           <img :src="SendIcon" alt="보내기" class="object-scale-down w-3/4 h-3/4" />
         </button>
       </div>
       <div class="relative w-10 h-10">
         <button
-          class="bg-[#ffffff] rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 absolute bottom-0"
+          class="bg-[#ffffff] hover:bg-gray-200 rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 absolute bottom-0 focus:outline-0"
           @click="toggleEmoticon = !toggleEmoticon">
           <img :src="EmoticonIcon" alt="감정표현" class="w-6" />
         </button>
@@ -56,7 +62,8 @@
           </button> -->
       </div>
       <div
-        class="w-10 h-24 bg-[#ffffffdb] rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer"
+        v-if="gameStarted"
+        class="w-10 h-24 bg-[#ffffffdb] hover:bg-gray-100 rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer"
         @click="cardReroll">
         <img :src="RefreshIcon" alt="" class="w-6">
         <p>결말<br>새로고침</p>
@@ -83,13 +90,12 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from "vue";
-import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon } from "@/assets";
+import { ref, watch, nextTick, onMounted } from "vue";
+import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon, ReturnIcon } from "@/assets";
 import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";
 import toast from "@/functions/toast";
-import testImage from "@/assets/test.png";
 
 const userStore = useUserStore();
 const toggleEmoticon = ref(false);
@@ -129,9 +135,14 @@ const props = defineProps({
   endingCard: {
     Type: Object,
   },
+  gameStarted: {
+    Type: Boolean,
+  },
 });
 
-const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll"]);
+const dynamicClass = ref(`card${props.storyCards.length}`);
+
+const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll", "goLobby"]);
 
 const sendChat = () => {
   if (message.value.trim()) {
@@ -143,14 +154,18 @@ const sendChat = () => {
   }
 };
 const sendprompt = () => {
-  if (props.myTurn !== props.currTurn) {
-    toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
-  } else if (message.value.trim()) {
-    emit("nextTurn", {
-      prompt: message.value
-    });
-    message.value = "";
-    chatRefs.value[currChatModeIdx.value].blur();
+  if (props.gameStarted === false) {
+    toast.errorToast("게임 진행중에만 이야기를 제출할 수 있습니다!");
+  } else {
+    if (props.myTurn !== props.currTurn) {
+      toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
+    } else if (message.value.trim()) {
+      emit("nextTurn", {
+        prompt: message.value
+      });
+      message.value = "";
+      chatRefs.value[currChatModeIdx.value].blur();
+    }
   }
 };
 const sendEmoticon = (data) => {
@@ -187,7 +202,10 @@ const chatMode = ref([
 const currChatModeIdx = ref(0);
 
 window.addEventListener("keydown", (e) => {
-  if (e.ctrlKey) changeMode();
+  if (e.key === "Tab"){
+    changeMode();
+    e.preventDefault();
+  }
 });
 
 const changeMode = () => {
@@ -203,6 +221,27 @@ const cardReroll = () => {
   }
 };
 
+const setLeaveStyle = (el) => {
+  const computedStyle = window.getComputedStyle(el);
+  const transform = computedStyle.transform; // 현재 transform 값을 가져옴
+  el.style.transition = "all 1s ease";
+  el.style.transform = `${transform} translateY(-50px)`; // 원래 transform 유지 + 추가 애니메이션
+  el.style.opacity = "0";
+};
+
+// transition 끝난 후 class 업데이트
+const updateClass = () => {
+  nextTick(() => {
+    dynamicClass.value = `card${props.storyCards.length}`;
+  });
+};
+
+watch(() => props.currTurn, (newVal) => {
+  if(newVal === props.myTurn) {
+    currChatModeIdx.value = 1;
+  }
+}, {immediate: true});
+
 watch(currChatModeIdx, async (newIndex, oldIndex) => {
   // 기존 input blur()
   if (chatRefs.value[oldIndex]) {
@@ -215,6 +254,30 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
     chatRefs.value[newIndex].focus();
   }
 });
+
+onMounted(() => {
+  nextTick(() => {
+    document.querySelectorAll(".handCard").forEach((el, index, arr) => {
+    let computedStyle;
+    let transform;
+    el.addEventListener("mouseenter", () => {
+      arr.forEach((item, i) => item.style.zIndex = i); // 초기화
+      el.style.zIndex = arr.length; // hover된 요소를 가장 위로
+      computedStyle = window.getComputedStyle(el);
+      transform = computedStyle.transform;
+      el.style.transform = `${transform} scale(120%)`;
+    });
+    el.addEventListener("mouseleave", () => {
+    el.style.zIndex = index; // 원래 z-index로 복원
+    el.style.transform = `${transform} scale(100%)`
+  });
+  });
+  });
+});
+
+onkeydown = () => {
+  chatRefs.value[currChatModeIdx.value].focus();
+};
 </script>
 
 <style scoped>
@@ -292,6 +355,36 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
     inset 0 0 30px #C9B29C,
     inset 0 0 30px #C9B29C,
     inset 0 0 30px #C9B29C;
+}
 
+.card4 > :nth-child(1){
+  transform: rotate(-10deg) translateY(13px);
+}
+
+.card4 > :nth-child(2){
+  transform: rotate(-3deg) translateX(-10px);
+}
+.card4 > :nth-child(3){
+  transform: rotate(3deg) translateX(-20px);
+}
+.card4 > :nth-child(4){
+  transform: rotate(10deg) translateX(-30px) translateY(15px);
+}
+
+.card3 > :nth-child(1){
+  transform: rotate(-3deg) translateY(3px) translateX(10px);
+}
+.card3 > :nth-child(2){
+  transform: rotate(0);
+}
+.card3 > :nth-child(3){
+  transform: rotate(3deg) translateY(3px) translateX(-10px);
+}
+
+.card2 > :nth-child(1){
+  transform: rotate(-2deg);
+}
+.card2 > :nth-child(2){
+  transform: rotate(2deg) translateX(-10px);
 }
 </style>

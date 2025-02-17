@@ -1,3 +1,4 @@
+import default_profile from "@/assets/images/profiles/default.jpg"
 import cat_1 from "@/assets/images/profiles/cat_1.svg"
 import cat_2 from "@/assets/images/profiles/cat_2.svg"
 import cat_4 from "@/assets/images/profiles/cat_4.svg"
@@ -43,6 +44,7 @@ import tiger_2 from "@/assets/images/profiles/tiger_2.svg"
 
 
 export default {
+ default_profile,
  cat_1,
  cat_2,
  cat_4,

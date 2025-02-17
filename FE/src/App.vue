@@ -1,37 +1,55 @@
 <template>
+  <Transition name="fade-out">
+    <TigerAnimation />
+  </Transition>
   <div
     class="bg-no-repeat bg-cover bg-center w-screen h-screen flex flex-col justify-center items-center relative"
     :class="backgroundClass"
   >
-    <Transition name="fade-out">
-      <TigerAnimation />
-    </Transition>
     <Transition name="fade">
       <TopBar v-if="route.path === '/'" />
     </Transition>
     <div
-      class="view rounded-lg w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] bg-[#ffffff70] border-[1px] border-white backdrop-blur-[15px] flex flex-col justify-center items-center"
+      class="view rounded-lg w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] min-h-[600px] bg-[#ffffff70] border-[1px] border-white backdrop-blur-[15px] flex flex-col justify-center items-center"
     >
       <ToggleButton />
 
       <RouterView v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
-          <component :is="Component" />
+          <component :is="Component" @start-loading="startLoading" />
         </Transition>
       </RouterView>
     </div>
 
     <Transition name="fade">
-      <FooterBar v-if="route.path === '/'" />
+      <FooterBar v-if="route.path === '/'" @toggle-terms="toggleTerms" />
+    </Transition>
+    
+    <Transition name="fade">
+      <TermsOfService v-show="isTermsOfServiceOpened" @click="toggleTerms" />
+    </Transition>
+
+    <Transition name="fade">
+      <div v-show="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
+        <img src="@/assets/loading.gif" alt="" class="w-full h-full">
+      </div>
     </Transition>
   </div>
 </template>
 
 <script setup>
 import { TigerAnimation } from "./components";
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
-import { TopBar, FooterBar, ToggleButton } from "@/components";
+import { TermsOfService, TopBar, FooterBar, ToggleButton } from "@/components";
+
+// 로딩 애니메이션 보이는 여부
+const isLoading = ref(false);
+const isTermsOfServiceOpened = ref(false);
+
+const startLoading = (data) => {
+  isLoading.value = data.value;
+};
 
 const route = useRoute();
 
@@ -43,6 +61,10 @@ const backgroundClass = computed(() => {
       return "bg-fairytail-image";
   }
 });
+
+const toggleTerms = () => {
+  isTermsOfServiceOpened.value = !isTermsOfServiceOpened.value
+}
 </script>
 
 <style>

@@ -11,7 +11,7 @@
             <label class="self-start">1턴 당 시간(초)</label>
             <div class="w-full flex justify-between">
               <template v-for="n in 11" :key="n">
-                <p v-if="n % 2 != 0">{{ n + 19 }}</p>
+                <p v-if="n % 2 != 0">{{ n + 29 }}</p>
               </template>
             </div>
             <div
@@ -69,25 +69,29 @@
           <div class="flex justify-center items-center">
             <button
               type="button"
-              class="border-2 w-[50%] h-[30%] max-w-[150px] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105"
+              class="duration-300 ease-in-out border-2 w-40 h-10 rounded-lg border-black bg-black text-white flex items-center justify-center hover:shadow-md hover:scale-105"
               @click="copy"
             >
-              <img
-                :src="InviteIcon"
-                alt="초대 아이콘"
-                class="w-1/3 h-1/2 mr-2"
-              />
-              초대하기
+              <div class="flex gap-x-4">
+                <img
+                  :src="InviteIcon"
+                  alt="초대 아이콘"
+                  class="w-4"
+                />
+                <span>초대하기</span>
+              </div>
             </button>
           </div>
           <div class="flex justify-center items-center">
             <button
               type="button"
-              class="border-2 w-[50%] h-[30%] rounded-lg border-black bg-yellow-100 flex items-center hover:shadow-md hover:scale-105"
+              class="duration-300 ease-in-out border-2 w-40 h-10 rounded-lg border-black bg-black text-white flex items-center justify-center hover:shadow-md hover:scale-105"
               @click="gameStart"
             >
-              <img :src="PlayIcon" alt="시작 아이콘" class="w-1/3 h-1/2 mr-2" />
-              <span> 시작하기 </span>
+              <div class="flex gap-x-4">
+                <img :src="StartIcon" alt="시작 아이콘" class="w-4" />
+                <span>시작하기</span>
+              </div>
             </button>
           </div>
         </div>
@@ -100,15 +104,15 @@ import { ref, computed, watch, defineProps, defineEmits } from "vue";
 import { useRouter } from "vue-router";
 import useCilpboard from "vue-clipboard3";
 import toast from "@/functions/toast";
-import { Mode1, Mode2, InviteIcon, PlayIcon } from "@/assets";
+import { Mode1, Mode2, InviteIcon, StartIcon } from "@/assets";
 
 const router = useRouter();
 const { toClipboard } = useCilpboard();
-const minTimeValue = ref(20);
-const maxTimeValue = ref(30);
+const minTimeValue = ref(30);
+const maxTimeValue = ref(40);
 const stepTimeValue = ref(2);
 const localRoomConfigs = ref({
-  currTurnTime: 20,
+  currTurnTime: 30,
   currMode: 1,
 });
 

@@ -39,8 +39,7 @@ export const enterGame = async (data) => {
 // 방 삭제 (방장만 게임 종료 시 삭제하면 됩니둥둥둥~)
 export const deleteGame = async (data) => {
   try {
-    const params = data;
-    const response = await apiClient.delete(import.meta.env.VITE_GAME, {params});
+    const response = await apiClient.delete(import.meta.env.VITE_GAME, {data: data});
     return response;
   } catch (error) {
     console.log(error);

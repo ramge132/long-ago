@@ -16,7 +16,7 @@
           :key="index"
         >
           <div
-            class="page cursor-pointer flex flex-col items-center justify-center"
+            class="page cursor-pointer flex flex-col font-story text-4xl p-14 break-keep items-center justify-center"
             :class="{ flipped: isFlipped(index * 2 + 1) }"
             @click="handlePageClick(index * 2 + 1)"
             :style="{ zIndex: calculateZIndex(index * 2 + 1) }">
@@ -42,23 +42,33 @@
 import { ref, onMounted, reactive, watch, defineProps } from "vue";
 import { useAudioStore } from "@/stores/audio";
 import { TurningPage } from "@/assets";
+import { initVoices, speakText } from "@/functions/tts";
 
 const audioStore = useAudioStore();
 const pagesRef = ref(null);
 const flippedPages = reactive(new Set());
+const isClickLocked = ref(false);
 
 const props = defineProps({
   bookContents: {
     Type: Array,
-  }
+  },
+  gameStarted: {
+    Type: Boolean,
+  },
+  isElected: {
+    Type: Boolean,
+  },
 })
 
 const calculateZIndex = (pageIndex) => {
   const totalPages = props.bookContents.length * 2 + 1;
   
+  // 홀수 페이지 인덱스가 높을수록 z-index가 커야함
   if (pageIndex % 2 === 1) {
     return pageIndex * 2;
   }
+  // 짝수 페이지 인덱스가 낮을수록 z-index가 커야함
   else {
     return (totalPages - pageIndex) * 2;
   }
@@ -78,9 +88,15 @@ const isFlipped = (pageIndex) => {
 };
 
 const handlePageClick = (pageIndex) => {
+  // 와다다 클릭하지 못하게 하기
+  if (isClickLocked.value) {
+    return;
+  }
   if (pageIndex / 2 === props.bookContents.length) {
     return;
   }
+  isClickLocked.value = true;
+
   
   if (audioStore.audioData) {
     const turningEffect = new Audio(TurningPage);
@@ -109,23 +125,87 @@ const handlePageClick = (pageIndex) => {
     }
   }
   
+  setTimeout(() => {
+    isClickLocked.value = false; // 1초 후 잠금 해제
+  }, 1000);
+
   updatePagesZIndex();
 };
 
-watch(() => props.bookContents.length,
-(afterSize, beforeSize) => {
-  if (afterSize > beforeSize) {
-    for (let i of Array.from({length: afterSize}, (_, index) => index * 2)) {
+watch(() => props.bookContents,
+  () => {
+  updatePagesZIndex();
+},
+{ deep: true });
+
+watch(() => props.isElected,
+(newValue) => {
+  if (newValue) {
+    for (let i of Array.from({length: props.bookContents.length}, (_, index) => index * 2)) {
       if (!isFlipped(i)) {
         flippedPages.add(i);
         flippedPages.add(i + 1);
       }
     }
-  } else {
-    flippedPages.delete(props.bookContents.length * 2);
   }
-  updatePagesZIndex();
-});
+})
+
+// tts
+const runBookSequence = async () => {
+  // 동기적으로 initVoices() 실행 (만약 비동기라면 await 사용)
+  await initVoices();
+
+  // 책 내용을 순서대로 처리: 0,1 페이지, 그 다음 2,3 페이지, ...
+  for (const [i, element] of props.bookContents.entries()) {
+    // 두 페이지씩 추가 (페이지 넘기는 효과)
+    flippedPages.add(i * 2);
+    flippedPages.add(i * 2 + 1);
+
+    // 페이지 넘기는 효과음 재생
+    const turningEffect = new Audio(TurningPage);
+    turningEffect.play();
+
+    // 음성 데이터가 있다면 TTS 실행 및 완료될 때까지 대기
+    if (audioStore.audioData) {
+      // tts 함수(speakText)가 음성 재생 완료 후 resolve하는 프로미스를 반환한다고 가정합니다.
+      await speakText(element.content);
+    }
+  }
+  
+  // 모든 작업이 완료되면 클릭 잠금 해제
+  isClickLocked.value = false;
+}
+
+watch(
+  () => props.gameStarted,
+  async (newValue) => {
+    if (newValue === false) {
+      isClickLocked.value = true;
+      setTimeout(async () => {
+        // flippedPages를 배열로 변환한 후 내림차순 정렬 (큰 수부터)
+        const pages = Array.from(flippedPages).sort((a, b) => b - a);
+        let index = 0;
+
+        // 0.3초마다 2개씩 삭제하는 인터벌 실행
+        const deleteInterval = setInterval(() => {
+          for (let i = 0; i < 2; i++) {
+            if (index < pages.length) {
+              flippedPages.delete(pages[index]);
+              index++;
+            }
+          }
+          // 모든 페이지 삭제되면 인터벌 정지 후 다음 단계 진행
+          if (index >= pages.length) {
+            clearInterval(deleteInterval);
+            // 후속 작업 실행 (비동기 함수 내에서 순차 처리)
+            runBookSequence();
+          }
+        }, 300);
+      }, 9000);
+    }
+  }
+);
+
 
 onMounted(() => {
   updatePagesZIndex();
@@ -177,7 +257,7 @@ p {
   transform-style: preserve-3d;
   user-select: none;
   /* background-color: white; 기본 페이지 색상 */
-  background-image: url("/src/assets/images/bookPage.svg");
+  background-image: url("/src/assets/images/bookPage.jpg");
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* 페이지 그림자 효과 */
 }
 .book .page:before {
@@ -236,9 +316,14 @@ p {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+.page img {
+  backface-visibility: hidden;
+}
+
 .bg-effect {
     display: inline-block;
     position: relative;
+    backface-visibility: hidden;
 }
 .bg-effect:after {
     position: absolute;
@@ -249,10 +334,9 @@ p {
     width: 100%;
     height: 100%;
     box-shadow: 
-      inset 0 0 30px #C9B29C /* 배경과 같은 색 */,
-      inset 0 0 30px #C9B29C,
-      inset 0 0 30px #C9B29C,
-      inset 0 0 30px #C9B29C;
-    
+      inset 0 0 30px #EEEEF0 /* 배경과 같은 색 */,
+      inset 0 0 30px #EEEEF0,
+      inset 0 0 30px #EEEEF0,
+      inset 0 0 30px #EEEEF0;
 }
 </style>

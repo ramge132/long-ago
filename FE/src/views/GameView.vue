@@ -1,15 +1,15 @@
 <template>
-  <div class="w-full h-full">
+  <div class="w-full h-full rounded-lg">
     <RouterView v-slot="{ Component }">
       <Transition name="fade" mode="out-in">
         <component :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
           v-model:roomConfigs="roomConfigs" :participants="participants" :receivedMessages="receivedMessages"
           :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn"
-          :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents"
+          :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
-          :usedCard="usedCard" @on-room-configuration="onRoomConfiguration" @broadcast-message="broadcastMessage"
-          @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn" @card-reroll="cardReroll"
-          @vote-end="voteEnd" />
+          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" @on-room-configuration="onRoomConfiguration"
+          @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
+          @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" />
       </Transition>
     </RouterView>
     <div
@@ -17,8 +17,6 @@
       <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
-    <!-- <div class="absolute top-0 left-0 rounded-lg w-full h-full">
-    </div> -->
   </div>
 </template>
 
@@ -31,7 +29,6 @@ import { useGameStore } from "@/stores/game";
 import { myTurnImage, currTurnImage, startImage } from "@/assets";
 import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering, createImage, voteResultSend } from "@/apis/game";
 import toast from "@/functions/toast";
-import testImage from "@/assets/test.png";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -47,11 +44,12 @@ const connectedPeers = ref([]);
 // 채팅 메세지
 const receivedMessages = ref([]);
 // 현재 연결 된 참가자
+// const participants = ref([{name: "홍석진_12345", image: "/src/assets/images/profiles/default.jpg", score: 15}, {name: "홍석진_67891", image: "/src/assets/images/profiles/default.jpg", score: 15}]);
 const participants = ref([]);
 // 게임 설정
 const configurable = ref(false);
 const roomConfigs = ref({
-  currTurnTime: 20,
+  currTurnTime: 30,
   currMode: 1,
 });
 // 최대 참가자
@@ -60,6 +58,8 @@ const maxParticipants = 6;
 const InviteLink = ref("");
 // 게임 시작 여부
 const gameStarted = ref(false);
+// 게임 정상 종료 : "champ" 비정상 종료 : "fail" 디폴트 : null
+const isForceStopped = ref(null);
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -67,7 +67,7 @@ const inGameOrder = ref([]);
 // 현재 턴 인덱스
 const currTurn = ref(0);
 // 누적 턴
-const totalTurn = ref(0);
+const totalTurn = ref(1);
 // 나의 턴 순서
 const myTurn = ref(null);
 const inProgress = ref(false);
@@ -91,6 +91,30 @@ const usedCard = ref({
 });
 // 투표 결과 표시
 const votings = ref([]);
+// 프롬프트 선출 여부
+const isElected = ref(false);
+
+watch(isElected, (newValue) => {
+  if (newValue === true) {
+    setTimeout(() => {
+      isElected.value = false;
+    }, 1000);
+  }
+})
+
+// 로딩 표시
+const emit = defineEmits(["startLoading"]);
+
+// 투표 결과를 보냈는 지 여부
+const isVoted = ref(false);
+// 게임 종료 애니메이션
+watch(isForceStopped, (newValue) => {
+  if (newValue !== null) {
+    setTimeout(() => {
+      isForceStopped.value = null;
+    }, 6000);
+  }
+});
 
 // 긴장감 퍼센트
 const percentage = computed(() => {
@@ -153,6 +177,30 @@ const broadcastMessage = (data) => {
 
 // 새로운 연결 설정
 const setupConnection = (conn) => {
+  // ICE 연결 상태 모니터링
+  const peerConnection = conn.peerConnection;
+  if (peerConnection) {
+    peerConnection.oniceconnectionstatechange = () => {
+      const state = peerConnection.iceConnectionState;
+      console.log(`ICE 연결 상태: ${state}`);
+      
+      if (state === 'failed' || state === 'disconnected') {
+        console.warn(`피어 ${conn.peer}와의 ICE 연결 실패`);
+        handleReconnection(conn.peer);
+      }
+    };
+  }
+
+  // 하트비트 시작
+  let heartbeatInterval = setInterval(() => {
+    if (conn.open) {
+      sendMessage("heartbeat", { timestamp: Date.now() }, conn);
+    } else {
+      clearInterval(heartbeatInterval);
+    }
+  }, 5000);
+
+  
   if (participants.value.length >= maxParticipants) {
     conn.close();
     return;
@@ -204,7 +252,6 @@ const setupConnection = (conn) => {
         participants.value = participants.value.filter(
           (participant) => participant.id !== data.id,
         );
-        console.log(participants.value);
 
         inGameOrder.value.forEach((order, index) => {
           if (order > removedOrder) inGameOrder.value[index] -= 1;
@@ -216,7 +263,7 @@ const setupConnection = (conn) => {
         });
         const currTurnExited = currTurn.value === removedIndex;
         currTurn.value %= participants.value.length;
-        if (currTurnExited) {
+        if (currTurnExited && gameStarted.value) {
           inProgress.value = false;
           await showOverlay('whoTurn');
           inProgress.value = true;
@@ -250,27 +297,33 @@ const setupConnection = (conn) => {
         };
         break;
 
-      // 수정필요 게임 시작 트리거 내용 추가해야 함
-      // 카드 요청 보내야함
-      // gameID, userID
       case "gameStart":
+        // 로딩 애니메이션 활성화
+        emit("startLoading", {value: true});
+
         startReceived(data).then(async () => {
           // 내 카드 받기
           const response = await enterGame({
             userId: peerId.value,
             gameId: gameID.value,
-          })
+          });
 
           storyCards.value = response.data.data.storyCards;
           endingCard.value = response.data.data.endingCard;
 
-          router.push("/game/play");
-
-          await showOverlay('start')
           setTimeout(async () => {
-            await showOverlay('whoTurn');
-            inProgress.value = true;
-          }, 1000);
+            await router.push("/game/play");
+            // 로딩 애니메이션 비활성화
+            emit("startLoading", {value: false});
+            
+            showOverlay('start').then(() => {
+              setTimeout(() => {
+                showOverlay('whoTurn').then(() => {
+                  inProgress.value = true;
+                });
+              }, 1000);
+            });
+          }, 3000);
         });
         break;
 
@@ -312,10 +365,23 @@ const setupConnection = (conn) => {
         inProgress.value = false;
         addBookContent({ content: data.prompt, image: null });
         votings.value = [];
+        setTimeout(async () => {
+          if(isVoted.value) {
+            isVoted.value = false;
+          } else {
+            await voteEnd({
+              sender: userStore.userData.userNickname,
+              selected: "up",
+            });
+            isVoted.value = false;
+          }
+        }, 12000);
         break;
 
       case "sendImage":
-        const imageBlob = URL.createObjectURL(data.imageBlob);
+        const receivedArrayBuffer = data.imageBlob;
+        const receivedBlob = new Blob([receivedArrayBuffer]);
+        const imageBlob = URL.createObjectURL(receivedBlob);
         bookContents.value[bookContents.value.length - 1].image = imageBlob;
         break;
 
@@ -334,7 +400,9 @@ const setupConnection = (conn) => {
           });
 
           if (currTurn.value === myTurn.value) {
+            let isAccepted;
             if (upCount < downCount) {
+              isAccepted = false;
               // 이미지 버리는 api
               // 내 이미지 버리기
               if (bookContents.value.length === 1) {
@@ -364,6 +432,8 @@ const setupConnection = (conn) => {
               await showOverlay('whoTurn');
               inProgress.value = true;
             } else {
+              isElected.value = true;
+              isAccepted = true;
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               if (usedCard.value.isEnding) {
@@ -379,9 +449,11 @@ const setupConnection = (conn) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   if (usedCard.value.isEnding) {
                     // 게임 종료 송신
+                    gameStarted.value = false;
                     sendMessage("gameEnd", {}, peer.connection);
-                    // 수정 중 //
-                    router.push('/game/rank');
+                    // 랭킹 페이지 이동
+                    gameEnd(true);
+                    // router.push('/game/rank');
                   } else {
                     sendMessage(
                       "nextTurn",
@@ -398,12 +470,33 @@ const setupConnection = (conn) => {
                 }
               });
             }
+            // 투표 결과 전송 api
+      try {
+          const response = await voteResultSend({
+            gameId: gameID.value,
+            userId: peerId.value,
+            isAccepted: isAccepted,
+            cardId: usedCard.value.id,
+          });
+          if (response.status === 200) {
+            // 이미지 쓰레기통에 넣기
+          }
+        } catch (error) {
+          if (error.response.status === 400) {
+            storyCards.value.forEach((card, index) => {
+              if (card.id === usedCard.value.id) {
+                storyCards.value.splice(index, 1);
+              }
+            });
+          }
+        }
           } else {
             if (upCount < downCount) {
               // 현재 턴 사람 점수 -1
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               currentPlayer.score -= 1;
             } else {
+              isElected.value = true;
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               if (usedCard.value.isEnding) {
@@ -417,7 +510,17 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
-        router.push("/game/rank");
+        gameStarted.value = false;
+        gameEnd(true);
+        // router.push("/game/rank");
+        break;
+
+      case "heartbeat":
+        sendMessage("heartbeat_back", { timestamp: data.timestamp }, conn);
+        break;
+
+      case "heartbeat_back":
+        conn.lastHeartbeat = Date.now();
         break;
     }
   });
@@ -428,6 +531,15 @@ const setupConnection = (conn) => {
       (p) => p.id !== conn.peer,
     );
     participants.value = participants.value.filter((p) => p.id !== conn.peer);
+
+    clearInterval(heartbeatInterval);
+
+    
+    console.warn(`⚠️ ${conn.peer} 연결 종료됨. 재연결 시도 중...`);
+    setTimeout(() => {
+      connectToRoom(conn.peer);
+    }, 3000);
+
   });
 
   connectedPeers.value.push({
@@ -437,7 +549,10 @@ const setupConnection = (conn) => {
 };
 
 // 기존 참가자들과 연결
-const handleExistingParticipants = (existingParticipants) => {
+const handleExistingParticipants = (existingParticipants) => { 
+  const MAX_RETRIES = 5; // 최대 재시도 횟수
+  const RETRY_DELAY = 2000; // 재시도 간격 (ms)
+
   // 참가자 목록 업데이트
   existingParticipants.forEach((newParticipant) => {
     // 이미 존재하는 참가자인지 확인
@@ -454,16 +569,43 @@ const handleExistingParticipants = (existingParticipants) => {
   });
 
   // 각 참가자와 연결
-  existingParticipants.forEach(async (participant) => {
+  existingParticipants.forEach((participant) => {
     if (
       participant.id !== peerId.value &&
       !connectedPeers.value.some((p) => p.id === participant.id)
     ) {
-      const conn = peer.value.connect(participant.id);
+      // 재시도 횟수를 추적할 객체 생성
+      let retries = 0;
 
-      conn.on("open", () => {
-        setupConnection(conn);
-      });
+      const tryConnecting = () => {
+        const conn = peer.value.connect(participant.id);
+
+        conn.on("open", () => {
+          setupConnection(conn);
+        });
+
+        // 연결이 실패했을 때 재시도
+        conn.on("error", (error) => {
+          console.error(participant.id, "와 연결 오류:", error);
+
+          if (retries < MAX_RETRIES) {
+            retries++; // 재시도 횟수 증가
+            console.log(`${participant.id} 연결 재시도 중... (${retries}/${MAX_RETRIES})`);
+
+            // 일정 시간 후 재시도
+            setTimeout(() => {
+              console.log(`재시도 ${retries}번째: ${participant.id}`);
+              tryConnecting(); // 재시도 호출
+            }, RETRY_DELAY);
+          } else {
+            toast.errorToast(`${participant.id}와 연결에 실패했습니다. 최대 재시도 횟수 초과`);
+            console.error(`${participant.id}와 연결에 실패했습니다. 최대 재시도 횟수를 초과하였습니다.`);
+          }
+        });
+      };
+
+      // 처음 연결 시도
+      tryConnecting();
     }
   });
 };
@@ -471,44 +613,77 @@ const handleExistingParticipants = (existingParticipants) => {
 // 방 참가
 const connectToRoom = async (roomID) => {
   const bossID = decompressUUID(roomID);
+  console.log("connectToRoom", peer.value);
   const conn = peer.value.connect(bossID);
 
-  conn.on("open", () => {
-    setupConnection(conn);
-    sendMessage(
-      "newParticipant",
-      {
-        data: {
-          id: peerId.value,
-          name: userStore.userData.userNickname,
-          image: userStore.userData.userProfile,
-          score: 10
+  const MAX_RETRIES = 5; // 최대 재시도 횟수
+  const RETRY_DELAY = 2000; // 재시도 간격 (ms) 
+
+  const attemptConnection = () => {
+    console.log("연결 시도", conn.peer);
+    conn.on("open", () => {
+      setupConnection(conn);
+      sendMessage(
+        "newParticipant",
+        {
+          data: {
+            id: peerId.value,
+            name: userStore.userData.userNickname,
+            image: userStore.userData.userProfile,
+            score: 10
+          },
         },
-      },
-      conn,
-    );
-  });
+        conn,
+      );
+    });
 
-  conn.on("data", (data) => {
-    if (data.type === "currentParticipants") {
-      handleExistingParticipants(data.participants);
-      roomConfigs.value = data.roomConfigs;
-    } else if (data.type === "newParticipantJoined") {
-      participants.value.push(data.data);
-    }
+    conn.on("data", (data) => {
+      console.log("수신데이터", data);
+      if (data.type === "currentParticipants") {
+        handleExistingParticipants(data.participants);
+        roomConfigs.value = data.roomConfigs;
+      } else if (data.type === "newParticipantJoined") {
+        participants.value.push(data.data);
+      }
 
-    const newParticipant = {
-      id: peerId.value,
-      name: userStore.userData.userNickname,
-      image: userStore.userData.userProfile,
-      score: 10,
-    };
+      const newParticipant = {
+        id: peerId.value,
+        name: userStore.userData.userNickname,
+        image: userStore.userData.userProfile,
+        score: 10,
+      };
 
-    // 중복 확인 후 추가
-    if (!participants.value.some((p) => p.id === newParticipant.id)) {
-      participants.value.push(newParticipant);
-    }
-  });
+      // 중복 확인 후 추가
+      if (!participants.value.some((p) => p.id === newParticipant.id)) {
+        participants.value.push(newParticipant);
+      }
+    });
+
+    // 재시도 횟수를 추적할 객체 생성
+    let retries = 0;
+
+    // 연결이 실패했을 때 재시도
+    conn.on("error", (error) => {
+      console.error("연결 오류:", error);
+
+      if (retries < MAX_RETRIES) {
+        console.log(`재시도 중... (${retries + 1}/${MAX_RETRIES})`);
+        setTimeout(() => attemptConnection(retries + 1), RETRY_DELAY); // 일정 시간 후 재시도
+      } else {
+        toast.errorToast("최대 재시도 횟수를 초과했습니다. 연결에 실패했습니다.");
+        console.error("최대 재시도 횟수를 초과하여 연결에 실패했습니다.");
+        throw error;
+      }
+    })
+  };
+
+  try {
+    attemptConnection();
+  } catch (error) {
+    console.error("연결 오류:", error);
+    toast.errorToast("연결 오류가 발생했습니다. 다시 시도해주세요.");
+    throw error;
+  }
 };
 
 // 새 참가자 정보 브로드캐스트
@@ -531,11 +706,11 @@ const initializePeer = () => {
       peer.value = new Peer({
         config: {
           iceServers: [
-            { urls: "stun:stun.l.google.com:19302" }, // 예제 STUN 서버
+            // { urls: "stun:stun.l.google.com:19302" }, // 예제 STUN 서버
             {
               urls: "turn:i12b101.p.ssafy.io:3478",   // 턴서버 제작완료하면 바꿔야함
               username: import.meta.env.VITE_TURN_ID,              // docker 환경변수 참고
-              credential: import.meta.env.VITE_TURN_PW          // docker 환경변수 참고
+              credential: import.meta.env.VITE_TURN_PW,         // docker 환경변수 참고
             }
           ]
         }
@@ -553,6 +728,12 @@ const initializePeer = () => {
         setupConnection(conn);
       });
 
+      // 연결이 끊어졌을 때 다시 연결 유지 시도
+      peer.value.on("disconnected", () => {
+        console.log("Peer 연결이 끊어짐. 다시 연결 시도...");
+        peer.value.reconnect();
+      });
+
       peer.value.on("error", (err) => {
         console.error("Peer error:", err);
         reject(err);
@@ -562,6 +743,21 @@ const initializePeer = () => {
     }
   });
 };
+
+// 피어들 연결상태 3초마다 확인
+// const checkPeerConnections = () => {
+//   console.log(connectedPeers.value);
+//   connectedPeers.value = connectedPeers.value.filter((peer) => {
+//     if (!peer.connection.open) {
+//       console.warn(`⚠️ 연결 끊김: ${peer.id}. 제거합니다.`);
+//       return false; // 연결이 끊어진 피어는 제거
+//     }
+//     return true;
+//   });
+
+//   setTimeout(checkPeerConnections, 3000); // 3초마다 체크
+// };
+
 
 // 컴포넌트 마운트
 onMounted(async () => {
@@ -593,7 +789,21 @@ onMounted(async () => {
   } catch (error) {
     console.error("Peer initialization failed:", error);
   }
+
+  // checkPeerConnections();
 });
+
+// // 퇴장 관련
+// addEventListener("beforeunload", () => {
+//   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
+//   connectedPeers.value.forEach((peer) => {
+//     sendMessage(
+//       "system",
+//       { id: peerId.value, nickname: userStore.userData.userNickname },
+//       peer.connection,
+//     );
+//   });
+// });
 
 // 퇴장 관련
 addEventListener("beforeunload", () => {
@@ -602,9 +812,19 @@ addEventListener("beforeunload", () => {
     sendMessage(
       "system",
       { id: peerId.value, nickname: userStore.userData.userNickname },
-      peer.connection,
+      peer.connection
     );
+
+    // 연결 종료 신호 보내기
+    if (peer.connection.open) {
+      peer.connection.close();  // 연결 종료
+    }
   });
+
+  // 자신도 연결 종료
+  if (peer.value) {
+    peer.value.destroy();  // 자신의 Peer 객체 종료
+  }
 });
 
 // 방 설정 관련 부분
@@ -631,6 +851,9 @@ const onRoomConfiguration = (data) => {
 // 게임 진행 관련 부분 //
 ///////////////////////
 const gameStart = async (data) => {
+  // 로딩 애니메이션 활성화
+  emit("startLoading", {value: true});
+  
   // 게임 방 생성
   try {
     const response = await createGame({
@@ -649,8 +872,7 @@ const gameStart = async (data) => {
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
 
-  router.push("/game/play");
-
+  
   connectedPeers.value.forEach((peer) => {
     sendMessage(
       "gameStart",
@@ -667,11 +889,19 @@ const gameStart = async (data) => {
       myTurn.value = inGameOrder.value.indexOf(i);
     }
   });
-  await showOverlay('start');
   setTimeout(async () => {
-    await showOverlay('whoTurn');
-    inProgress.value = true;
-  }, 1000);
+    await router.push("/game/play");
+    // 로딩 애니메이션 비활성화
+    emit("startLoading", {value: false});
+    
+    showOverlay('start').then(() => {
+      setTimeout(() => {
+        showOverlay('whoTurn').then(() => {
+          inProgress.value = true;
+        });
+      }, 1000);
+    });
+  }, 3000);
 };
 
 const startReceived = (data) => {
@@ -760,7 +990,7 @@ const nextTurn = async (data) => {
         toast.errorToast("긴장감이 충분히 오르지 않았습니다!");
         return;
       }
-      usedCard.value.text = endingCard.value.content;
+      usedCard.value.keyword = data.prompt;
       usedCard.value.isEnding = isEnding;
     }
 
@@ -782,6 +1012,18 @@ const nextTurn = async (data) => {
       }
     });
 
+    setTimeout(async () => {
+          if(isVoted.value) {
+            isVoted.value = false;
+          } else {
+            await voteEnd({
+              sender: userStore.userData.userNickname,
+              selected: "up",
+            });
+            isVoted.value = false;
+          }
+        }, 12000);
+
     addBookContent({ content: data.prompt, image: null });
 
     // 투표 모달 띄우기
@@ -798,13 +1040,16 @@ const nextTurn = async (data) => {
       });
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
       const imageBlob = URL.createObjectURL(responseImage.data);
+
+      // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
+      const arrayBuffer = await responseImage.data.arrayBuffer();
       
       // 사람들에게 이미지 전송
       connectedPeers.value.forEach((peer) => {
         if (peer.id !== peerId.value && peer.connection.open) {
           sendMessage(
             "sendImage",
-            { imageBlob: responseImage.data },
+            { imageBlob: arrayBuffer },
             peer.connection
           )
         }
@@ -857,10 +1102,7 @@ const cardReroll = async () => {
 // 투표 종료
 const voteEnd = async (data) => {
   prompt.value = "";
-  votings.value.push({
-    sender: data.sender,
-    selected: data.selected,
-  });
+  isVoted.value = true;
   // 이미지 들어올 때까지 대기
 
   const sendVoteResult = async () => {
@@ -875,7 +1117,7 @@ const voteEnd = async (data) => {
         peer.connection
       )
     }
-  })
+  });
 
   if (votings.value.length == participants.value.length) {
     let upCount = 0;
@@ -920,6 +1162,7 @@ const voteEnd = async (data) => {
         inProgress.value = true;
       }
       else {
+        isElected.value = true;
         isAccepted = true;
 
         // 투표 가결 시 점수 +2
@@ -937,9 +1180,11 @@ const voteEnd = async (data) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             if (usedCard.value.isEnding) {
               // 게임 종료 송신
+              gameStarted.value = false;
               sendMessage("gameEnd",{}, peer.connection);
-              // 수정 중 //
-              router.push('/game/rank');
+              // 랭킹 페이지 이동
+              gameEnd(true);
+              // router.push('/game/rank');
             } else {
               sendMessage(
                 "nextTurn",
@@ -955,21 +1200,20 @@ const voteEnd = async (data) => {
         // inProgress.value = false;
         await showOverlay('whoTurn');
         inProgress.value = true;
-
-        // 투표 결과 전송 api
-        try {
+      }
+      // 투표 결과 전송 api
+      try {
           const response = await voteResultSend({
             gameId: gameID.value,
             userId: peerId.value,
             isAccepted: isAccepted,
             cardId: usedCard.value.id,
           });
-
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
           }
         } catch (error) {
-          if (error.response.status === 409) {
+          if (error.response.status === 400) {
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
@@ -977,13 +1221,13 @@ const voteEnd = async (data) => {
             });
           }
         }
-      }
     } else {
       if (upCount < downCount) {
         // 현재 턴 사람 점수 -1
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
         currentPlayer.score -= 1;
       } else {
+        isElected.value = true;
         // 투표 가결 시 점수 +2
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
         if (usedCard.value.isEnding) {
@@ -992,23 +1236,98 @@ const voteEnd = async (data) => {
           currentPlayer.score += 2;
         }
       }
-
     }
   }
 }
-
-const lastContent = bookContents.value[bookContents.value.length - 1];
-
-watch(
-  () => lastContent.image,
-  (newImage) => {
-    if (newImage !== null) {
-      sendVoteResult();
-    }
-  },
-  { immediate: true }
-);
+if (currTurn.value === myTurn.value) {
+  watch(
+    () => bookContents.value,
+    (newBookContents) => {
+      const lastContent = newBookContents[newBookContents.length - 1];
+      if (lastContent && lastContent.image !== null) {
+        votings.value.push({
+          sender: data.sender,
+          selected: data.selected,
+        });
+        sendVoteResult();
+      }
+    },
+    { deep: true, immediate: true }
+  );
+} else {
+  votings.value.push({
+    sender: data.sender,
+    selected: data.selected,
+  });
+  sendVoteResult();
+}
 };
+
+const gameEnd = async (status) => {
+  // 게임 시작 상태 초기화
+  gameStarted.value = false;
+  // 턴 초기화
+  currTurn.value = -1;
+  totalTurn.value = 0;
+  
+  // 비정상 종료인 경우 (긴장감 100 초과)
+  if (!status) {
+    // 책 비우기
+    // 방장인 경우 게임실패 송신
+    if (participants.value[0].id == peerId.value) {
+      // 비정상 종료 api 들어가야함
+      try {
+        const response = await deleteGame({
+          gameId: gameID.value,
+          isForceStopped: true
+        })
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    // 전체 실패 쇼 오버레이
+    isForceStopped.value = "fail";
+  } else {
+    // 정상 종료인 경우
+    if (participants.value[0].id == peerId.value) {
+      // 비정상 종료 api 들어가야함
+      try {
+        const response = await deleteGame({
+          gameId: gameID.value,
+          isForceStopped: false
+        })
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    // 우승자 쇼 오버레이
+    isForceStopped.value = "champ";
+  }
+};
+
+const goLobby = () => {
+  // 게임 관련 데이터 초기화
+  receivedMessages.value = [];
+  currTurn.value = 0;
+  bookContents.value = [{ content: "", image: null }];
+  votings.value = [];
+  myTurn.value = null;
+  inProgress.value = false;
+  inGameOrder.value = [];
+  isForceStopped.value = null;
+
+  router.push("/game/lobby");
+};
+
+// 긴장감이 100 이상 진행 된 경우 전체 탈락
+watch(
+  () => percentage.value,
+  (percent) => {
+    if (percent > 100) {
+      gameEnd(false);
+    }
+  }
+)
 </script>
 <style>
 /* Enter 애니메이션 (슬라이드 없이 나타남) */

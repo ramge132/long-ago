@@ -1,17 +1,17 @@
 <template>
-  <div class="w-full h-full grid grid-cols-5 grid-rows-2">
+  <div class="w-full h-full grid grid-cols-5 grid-rows-2 relative">
     <div class="h-full row-span-2 grid grid-rows-3 justify-start">
       <!-- <template v-for="(user, index) in props.participants" :key="user.id"> -->
       <template v-for="(order, index) in props.inGameOrder" :key="order">
         <div
           class="flex flex-col justify-center items-center relative ml-3"
-          v-if="index % 2 == 0"
+          v-if="index < 3"
         >
           <div class="w-28 h-28 relative">
             <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
             <div
-              class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 bottom-1 z-0"
-              :class="currTurn === index ? 'sun' : ''"
+              class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
+              :class="currTurn === index ? 'border-4 border-[#0073ff]' : ''"
               >
             </div>
           </div>
@@ -40,7 +40,7 @@
             </div>
           </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 == 0">
+          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index < 3">
             <img src="" alt="" class="w-24 h-24">
           </div>
         </div>
@@ -51,11 +51,13 @@
       >
         <div
           class="flex flex-col justify-center items-center ml-3"
-          v-if="n % 2 == 0"
+          v-if="props.participants.length + n <= 3"
         >
           <div
-            class="rounded-full bg-gray-500 w-24 h-24 border border-black"
-          ></div>
+            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+          >
+            <img :src="Profile.default_profile" alt="">
+          </div>
           <div>비어 있음</div>
           <div class="h-5"></div>
         </div>
@@ -64,33 +66,37 @@
     <div class="col-span-3 row-span-2 grid grid-rows-5">
       <InGameContent
         :bookContents="bookContents"
+        :gameStarted="gameStarted"
+        :isElected="isElected"
       />
       <InGameControl
         @broadcast-message="broadcastMessage"
         @next-turn="nextTurn"
         @card-reroll="cardReroll"
+        @go-lobby="goLobby"
         :myTurn="myTurn"  
         :currTurn="currTurn"
         :storyCards="storyCards"
         :endingCard="endingCard"
+        :gameStarted="gameStarted"
       />
     </div>
       <div class="h-full row-span-2 grid grid-rows-3 justify-end">
         <template v-for="(order, index) in props.inGameOrder" :key="order">
           <div
             class="flex flex-col justify-center items-center relative mr-3"
-            v-if="index % 2 != 0"
+            v-if="index > 2"
           >
             <div class="w-28 h-28 relative">
               <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
               <div
                 class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 bottom-1 z-0"
-                :class="currTurn === index ? 'sun' : ''"
+                :class="currTurn === index ? 'border-4 border-[blue]' : ''"
                 >
               </div>
             </div>
             <div
-              class="absolute z-40 bg-[#ffffff] w-[120px] h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
+              class="absolute z-40 bg-[#ffffff] w-[120px] min-h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
               :class="'speech-bubble' + index"
             >
               <p></p>
@@ -113,7 +119,7 @@
               </div>
             </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index % 2 != 0">
+          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index > 2">
             <img src="" alt="" class="w-24 h-24">
           </div>
           </div>
@@ -124,11 +130,13 @@
         >
           <div
             class="flex flex-col justify-center items-center mr-3"
-            v-if="n % 2 != 0"
+            v-if="props.participants.length + n > 3"
           >
             <div
-              class="rounded-full bg-gray-500 w-24 h-24 border border-black"
-            ></div>
+              class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            >
+              <img :src="Profile.default_profile" alt="">
+            </div>
             <div>비어 있음</div>
             <div class="h-5"></div>
           </div>
@@ -140,18 +148,43 @@
       :inProgress="inProgress"
       :percentage="percentage"
     />
-    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" v-if="prompt !== ''"/>
+    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" v-if="prompt !== '' && isVoted === false"/>
+    <!-- <Transition name="fade">
+      <div
+        v-if="modal.isOpen"
+        @click="toggleModal"
+        class="absolute bg-[#00000050] w-full h-full top-0 left-0 flex justify-center items-center"
+      >
+        <div
+          @click.stop
+          class="w-72 h-72 text-[#ffffff] font-makgeolli text-2xl rounded-md overflow-hidden flex flex-col"
+        >
+
+          <div
+            class="flex-1 max-w-full bg-[#00000090] overflow-auto flex items-center justify-center"
+          >
+
+          </div>
+        </div>
+      </div>
+    </Transition> -->
+    <Transition name="fade">
+      <InGameEnding v-show="props.isForceStopped" :isForceStopped="isForceStopped" :participants="participants" />
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { onBeforeMount, ref, watch } from "vue";
+import { onBeforeUnmount, ref, watch } from "vue";
 import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon } from "@/assets";
+import Profile from "@/assets/images/profiles";
 import {
   InGameControl,
   InGameContent,
   InGameProgress,
   InGameVote,
+  InGameTrash,
+  InGameEnding,
 } from "@/components";
 
 const maxParticipants = 6;
@@ -164,7 +197,7 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd"]);
+const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "goLobby"]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
@@ -180,6 +213,9 @@ const cardReroll = () => {
 const voteEnd = (data) => {
   emit("voteEnd", data);
 };
+const goLobby = () => {
+  emit("goLobby");
+}
 
 const props = defineProps({
   roomConfigs: {
@@ -214,7 +250,7 @@ const props = defineProps({
   },
   endingCard:{
     Type: Object,
-},
+  },
   prompt: {
     Type: String,
   },
@@ -226,6 +262,18 @@ const props = defineProps({
   },
   usedCard: {
     Type: Object,
+  },
+  isForceStopped: {
+    Type: String,
+  },
+  gameStarted: {
+    Type: Boolean,
+  },
+  isElected: {
+    Type: Boolean,
+  },
+  isVoted: {
+    Type: Boolean,
   },
 });
 
@@ -257,7 +305,7 @@ watch(
         clearTimeout(chatTime.value[index][type]);
         chatTime.value[index][type] = setTimeout(() => {
           select.value.classList.add("hidden");
-        }, 3000);
+        }, 5000);
       }
     });
   },
@@ -274,19 +322,20 @@ watch(
         props.votings[props.votings.length - 1].sender
       ) {
         const select = ref();
+        console.log(index);
         if (
           props.votings[props.votings.length - 1].selected ==
           "up"
         ) {
           select.value = document.querySelector(".vote" + index);
-          if(index % 2 === 0) {
+          if(index < 3) {
             select.value.firstChild.src = VoteUpLeftIcon;
           } else {
             select.value.firstChild.src = VoteUpRightIcon;
           }
         } else {
           select.value = document.querySelector(".vote" + index);
-          if(index % 2 === 0) {
+          if(index < 3) {
             select.value.firstChild.src = VoteDownLeftIcon;
           } else {
             select.value.firstChild.src = VoteDownRightIcon;
@@ -302,13 +351,13 @@ watch(
   { deep: true },
 );
 
-onBeforeMount(() => {
+onBeforeUnmount(() => {
   emit("gameExit");
 });
 </script>
 
 <style scoped>
-@keyframes corona {
+/* @keyframes corona {
   0%,
   100% {
     box-shadow:
@@ -326,5 +375,5 @@ onBeforeMount(() => {
 
 .sun {
   animation: corona 2s infinite alternate ease-in-out;
-}
+} */
 </style>

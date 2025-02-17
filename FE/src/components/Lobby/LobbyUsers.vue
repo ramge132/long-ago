@@ -34,7 +34,7 @@
       </div>
     </div>
     <div
-      class="rounded-md border-2 border-[#00000050] h-36 max-h-36 overflow-y-scroll"
+      class="rounded-md border-2 border-[#00000050] flex-1 max-h-28 overflow-y-scroll"
       ref="chatBox"
     >
       <p
@@ -57,7 +57,7 @@
       />
       <button
         @click="send"
-        class="absolute h-8 w-14 right-2 px-4 py-2 bg-[#E5E091] hover:bg-[#e6dd6b] text-center text-[0.8rem] text-black rounded-lg transition-colors"
+        class="absolute h-8 w-14 right-2 px-4 py-2 bg-black text-center text-[0.8rem] text-white rounded-lg transition-colors"
       >
         전송
       </button>

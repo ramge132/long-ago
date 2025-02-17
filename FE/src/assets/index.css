@@ -16,6 +16,18 @@
   font-weight: 400;
 }
 
+@font-face {
+  font-family: "story";
+  src: url("@/assets/fonts/story.ttf") format("truetype");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "logoFont";
+  src: url("@/assets/fonts/logoFont.ttf") format("truetype");
+  font-weight: 600;
+}
+
  /* 기본 폰트입니둥 */
  @font-face {
 	font-family: 'Pretendard';
@@ -100,7 +112,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #e5e091; /* 스크롤바 색상 */
+  background: #60a4d7; /* 스크롤바 색상 */
 }
 
 ::-webkit-scrollbar-track {
