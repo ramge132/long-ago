@@ -21,24 +21,16 @@ public class SceneController {
     private final FilteringService filteringService;
 
     
-    //이야기 카드로 이미지 생성
+    //카드로 이미지 생성
     @PostMapping
-    public ResponseEntity<?> addSceneStoryCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
+    public ResponseEntity<?> addSceneByCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
         return sceneService.createScene(sceneRequest, request);
     }
 
     //프롬포트 필터링
     @PostMapping("/filtering")
     public ResponseEntity<?> filterPrompt(@RequestBody FilteringRequest filteringRequest, HttpServletRequest request) {
-        log.info("필터링 요청옴");
         return filteringService.findCardVariantsByCardId(filteringRequest,request);
-
-    }
-
-    //게임에서 생성된 모든 scene 데이터 조회
-    @GetMapping
-    public ResponseEntity<?> getAllScene(@RequestParam String gameId,HttpServletRequest request) {
-        return sceneService.getScenesByGameId(gameId,request);
     }
 
     //투표 반대 시 scene 데이터 삭제

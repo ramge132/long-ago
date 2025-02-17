@@ -1,13 +1,11 @@
 package com.example.b101.cache;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
@@ -20,25 +18,16 @@ import java.time.Duration;
 @Configuration
 public class RedisConfig {
 
-    @Value("${spring.data.redis.port}")
-    private int port;
-
-    @Value("${spring.data.redis.host}")
-    private String host;
-
-
-    @Bean
-    public LettuceConnectionFactory redisConnectionFactory() {
-        // Lettuce라는 라이브러리를 활용해 Redis 연결을 관리하는 객체를 생성하고
-        // Lettuce가 jedis보다 성능이 더 좋음
-        // Redis 서버에 대한 정보(host, port)를 설정한다.
-        return new LettuceConnectionFactory(new RedisStandaloneConfiguration(host, port));
-    }
-
+    //spring boot 기본 redis 라이브러리가 Lettuce
 
     //데이터 캐싱을 위한 캐시 매니저
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+        
+        //데이터 캐싱을 할 때
+        //키는 String으로 직렬화
+        //벨류는 JSON 형태로 직렬화
+        //TTL은 1분으로
         RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))

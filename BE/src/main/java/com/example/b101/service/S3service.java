@@ -42,7 +42,7 @@ public class S3service {
     private final S3Presigner s3Presigner;
     private final S3Client s3Client;
     private final AwsConfig awsConfig;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10); // 병렬 처리 스레드 풀
+    private final ExecutorService executorService = Executors.newFixedThreadPool(2); // 병렬 처리 스레드 풀
     private final RedisSceneRepository redisSceneRepository;
 
     ////////////////////////////////////
@@ -99,6 +99,15 @@ public class S3service {
         // 1) Redis에서 gameId와 같은 Scene 다 가져오기
         List<SceneRedis> sceneRedisList = redisSceneRepository.findAllByGameId(gameId);
 
+        for (int i = 0; i < sceneRedisList.size(); i++) {
+            SceneRedis scene = sceneRedisList.get(i);
+            byte[] image = scene.getImage();  // 이미지 데이터
+            int imageSize = image != null ? image.length : 0;  // 이미지 크기 계산 (이미지가 null일 경우 0으로 설정)
+
+            // 로그 출력
+            log.info("Index: {}, SceneOrder: {}, Image Size: {} bytes", i, scene.getSceneOrder(), imageSize);
+        }
+
         // 책이 비어 있으면 예외처리 (사용자들이 게임을 안 했을 때)
         if (sceneRedisList.isEmpty()) {
             log.info("해당 gameId에 대한 데이터가 레디스에 없음.");
@@ -110,8 +119,13 @@ public class S3service {
         // 2) 병렬로 S3 업로드
         List<CompletableFuture<Void>> uploadFutures = sceneRedisList.stream()
                 .map(scene -> CompletableFuture.runAsync(() -> {
-                    uploadFileToS3(scene);
-                    isUploaded.set(true);
+                    try {
+                        uploadFileToS3(scene);
+                        log.info( "파일 업로드 성공 - SceneOrder: {}, Image Size: {} bytes", scene.getSceneOrder(), scene.getImage().length);
+                        isUploaded.set(true);
+                    } catch (Exception e) {
+                        log.error( "파일 업로드 실패 - SceneOrder: {} 에러: {}", scene.getSceneOrder(), e.getMessage());
+                    }
                 }, executorService))
                 .toList();
 
@@ -128,6 +142,8 @@ public class S3service {
 
     // S3 업로드 메서드 (바이너리 데이터를 바로 업로드)
     private void uploadFileToS3(SceneRedis scene) {
+        log.info("image 데이터가 있나요? : {} bytes", scene.getImage() != null ? scene.getImage().length : 0);
+
         // 해당 이름의 객체로 S3에 저장
         String objectKey = scene.getGameId() + "/" + scene.getSceneOrder() + ".png";
 
