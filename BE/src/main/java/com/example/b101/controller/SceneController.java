@@ -21,9 +21,9 @@ public class SceneController {
     private final FilteringService filteringService;
 
     
-    //이야기 카드로 이미지 생성
+    //카드로 이미지 생성
     @PostMapping
-    public ResponseEntity<?> addSceneStoryCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
+    public ResponseEntity<?> addSceneByCard(@RequestBody SceneRequest sceneRequest, HttpServletRequest request) {
         return sceneService.createScene(sceneRequest, request);
     }
 

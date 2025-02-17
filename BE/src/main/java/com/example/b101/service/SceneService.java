@@ -35,6 +35,8 @@ public class SceneService {
 
 
     public ResponseEntity<?> createScene(SceneRequest sceneRequest, HttpServletRequest request) {
+        log.info("게임 턴: {}", sceneRequest.getTurn());
+
         // 게임 데이터 조회 및 유효성 검사
         Game game = gameRepository.findById(sceneRequest.getGameId());
         if (game == null) {
