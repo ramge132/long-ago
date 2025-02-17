@@ -265,11 +265,11 @@ onMounted(() => {
       el.style.zIndex = arr.length; // hover된 요소를 가장 위로
       computedStyle = window.getComputedStyle(el);
       transform = computedStyle.transform;
-      el.style.transform = `${transform} scale(120%)`;
+      el.style.setProperty("scale", "120%"); // CSS 변수 설정
     });
     el.addEventListener("mouseleave", () => {
     el.style.zIndex = index; // 원래 z-index로 복원
-    el.style.transform = `${transform} scale(100%)`
+    el.style.setProperty("scale", "100%"); // CSS 변수 원래 값으로 복원
   });
   });
   });
@@ -287,6 +287,10 @@ onkeydown = () => {
 
 .emoticon {
   transition: all 0.3s ease-in-out;
+}
+
+.handCard {
+  transform: var(--original-transform, none) scale(var(--hover-scale, 100%));
 }
 
 .storycard {
