@@ -3,7 +3,7 @@
     class="flex flex-col w-full h-full items-center justify-center p-5 gap-y-5"
   >
     <img :src="Logo" alt="로고" class="w-52" />
-    <div class="w-full h-full grid grid-cols-3 gap-x-5">
+    <div class="w-full flex-1 grid grid-cols-3 gap-x-5">
       <LobbyUsers
         :participants="props.participants"
         :connectedPeers="props.connectedPeers"
