@@ -23,6 +23,12 @@ public class GameController{
         return gameService.saveGame(gameRequest, request);
     }
 
+    //시연용 게임 생성
+    @PostMapping("/test")
+    public ResponseEntity<?> createGameTest(@RequestBody GameRequest gameRequest, HttpServletRequest request) {
+        return gameService.createGame(gameRequest, request);
+    }
+
     //게임 삭제
     @DeleteMapping
     public ResponseEntity<?> deleteGame(@RequestBody DeleteGameRequest deleteGameRequest, HttpServletRequest request) {

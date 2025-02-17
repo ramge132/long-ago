@@ -33,7 +33,7 @@ public class Book {
 
     //book을 삭제하면 자동으로 자식 scenes도 삭제됨. scene 데이터들이 필요할 때만 데이터를 가져오기 위해 지연 로딩 설정(N+1 문제 방지)
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Scene> scenes = new ArrayList<>();
+    private List<Scene> scenes;
 
     @Builder.Default
     @Column(name = "VIEW_COUNT", nullable = false)
