@@ -132,14 +132,11 @@ public class SceneService {
         PlayerStatus playerStatus = gameRepository.getPlayerStatus(deleteSceneRequest.getGameId(), deleteSceneRequest.getUserId());
 
         StoryCard storyCard = playerStatus.getStoryCards().stream().filter(storyCard1 -> storyCard1.getId() == deleteSceneRequest.getCardId()).findFirst().orElse(null);
-        log.info(storyCard.toString());
 
         // 🔹 카드 삭제
         playerStatus.getStoryCards().remove(storyCard);
 
         Game game = gameRepository.findById(deleteSceneRequest.getGameId());
-
-        game.getPlayerStatuses().remove(playerStatus);
 
         game.getPlayerStatuses().stream()
                 .filter(ps -> ps.getUserId().equals(playerStatus.getUserId()))
@@ -150,23 +147,5 @@ public class SceneService {
 
         return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
 
-    }
-
-    public ResponseEntity<?> getScenesByGameId(String gameId, HttpServletRequest request) {
-        if(gameRepository.findById(gameId) == null) {
-            return ApiResponseUtil.failure("해당 gameId를 가진 game이 없습니다.",
-                    HttpStatus.BAD_REQUEST,
-                    request.getRequestURI());
-        }
-        List<SceneRedis> sceneRedisList = redisSceneRepository.findAllByGameId(gameId);
-        if(sceneRedisList.isEmpty()){
-            return ApiResponseUtil.failure("만들어진 scene이 없습니다.",
-                    HttpStatus.NO_CONTENT,
-                    request.getRequestURI());
-        }
-        return ApiResponseUtil.success(sceneRedisList,
-                "해당 game의 모든 scene을 가져왔습니다.",
-                HttpStatus.OK,
-                request.getRequestURI());
     }
 }

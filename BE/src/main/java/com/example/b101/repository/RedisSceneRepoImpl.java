@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Repository
 public class RedisSceneRepoImpl implements RedisSceneRepository {
@@ -23,6 +24,8 @@ public class RedisSceneRepoImpl implements RedisSceneRepository {
     public void save(SceneRedis sceneRedis) {
         String hashKey = String.format("%s:%s", sceneRedis.getGameId(), sceneRedis.getId());
         redisTemplate.opsForHash().put(KEY, hashKey, sceneRedis);
+
+        redisTemplate.expire(KEY,30, TimeUnit.MINUTES);
     }
 
     //redis에 저장된 scene 정보 삭제

@@ -1,14 +1,12 @@
 package com.example.b101.cache;
 
 import lombok.*;
-import org.springframework.data.redis.core.RedisHash;
 import java.io.Serializable;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@RedisHash(value = "scene", timeToLive = 3600) // TTL 1시간 설정
 /**
  *  Scene은 투표로 반대가 나오면 영구적으로 저장할 필요도 없고
  *  실시간으로 보여줄 때도 인메모리 방식인 redis가 속도가 빠르기 때문에

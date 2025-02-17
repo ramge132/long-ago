@@ -30,15 +30,7 @@ public class SceneController {
     //프롬포트 필터링
     @PostMapping("/filtering")
     public ResponseEntity<?> filterPrompt(@RequestBody FilteringRequest filteringRequest, HttpServletRequest request) {
-        log.info("필터링 요청옴");
         return filteringService.findCardVariantsByCardId(filteringRequest,request);
-
-    }
-
-    //게임에서 생성된 모든 scene 데이터 조회
-    @GetMapping
-    public ResponseEntity<?> getAllScene(@RequestParam String gameId,HttpServletRequest request) {
-        return sceneService.getScenesByGameId(gameId,request);
     }
 
     //투표 반대 시 scene 데이터 삭제

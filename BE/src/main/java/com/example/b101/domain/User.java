@@ -39,7 +39,4 @@ public class User implements Serializable {
     @Column(name = "UPDATED_AT")
     @LastModifiedDate
     private LocalDateTime updatedAt; // 수정일
-
-//    @OneToMany(mappedBy = "user")
-//    private List<Author> books = new ArrayList<>();
 }
