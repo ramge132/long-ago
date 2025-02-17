@@ -165,11 +165,8 @@ const runBookSequence = async () => {
     const turningEffect = new Audio(TurningPage);
     turningEffect.play();
 
-    // 음성 데이터가 있다면 TTS 실행 및 완료될 때까지 대기
-    if (audioStore.audioData) {
-      // tts 함수(speakText)가 음성 재생 완료 후 resolve하는 프로미스를 반환한다고 가정합니다.
-      await speakText(element.content);
-    }
+    // tts 함수(speakText)가 음성 재생 완료 후 resolve하는 프로미스를 반환한다고 가정합니다.
+    await speakText(element.content);
   }
   
   // 모든 작업이 완료되면 클릭 잠금 해제
@@ -198,7 +195,10 @@ watch(
           if (index >= pages.length) {
             clearInterval(deleteInterval);
             // 후속 작업 실행 (비동기 함수 내에서 순차 처리)
-            runBookSequence();
+            // 음성 데이터가 있다면 TTS 실행 및 완료될 때까지 대기
+            if (audioStore.audioData) {
+              runBookSequence();
+            }
           }
         }, 300);
       }, 9000);
