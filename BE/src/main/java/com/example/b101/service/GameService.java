@@ -239,6 +239,8 @@ public class GameService {
                         request.getRequestURI());
             }
 
+            log.info(bookCover.toString());
+
             //정상적인 게임 종료 시 책표지 생성
             SceneRedis scene = SceneRedis.builder()
                     .id(UUID.randomUUID().toString())
