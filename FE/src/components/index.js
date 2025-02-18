@@ -4,6 +4,7 @@ export { default as FooterBar } from "./Presets/FooterBar.vue";
 export { default as TigerAnimation } from "./Presets/TigerAnimation.vue";
 export { default as ToggleButton } from "./Presets/ToggleButton.vue";
 export { default as TermsOfService } from "./Presets/TermsOfService.vue";
+export { default as EBook } from "./Presets/EBook.vue";
 
 // Auth
 export { default as SignIn } from "./Auth/SignIn.vue";
