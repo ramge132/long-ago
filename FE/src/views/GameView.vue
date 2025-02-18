@@ -1374,9 +1374,9 @@ const goLobby = () => {
 
 // 긴장감이 100 이상 진행 된 경우 전체 탈락
 watch(
-  () => percentage.value,
-  (percent) => {
-    if (percent > 100) {
+  () => [percentage.value, isElected.value],
+  ([newPercent, oldPercent], []) => {
+    if (newPercent > oldPercent && oldPercent > 100 && isElected.value) {
       gameEnd(false);
     }
   }

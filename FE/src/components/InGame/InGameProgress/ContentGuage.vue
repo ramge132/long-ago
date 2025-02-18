@@ -8,11 +8,12 @@
     </div>
 
     <!-- 게이지 바 -->
-    <div class="h-3 w-5/6 bg-gray-300 rounded-full relative overflow-hidden">
+    <div class="h-3 w-5/6 bg-gray-300 rounded-full relative">
+      <div class="absolute z-10 w-[2px] h-4 bg-[#00000080] left-[35%] top-0 -translate-x-1/2 -translate-y-[2px]"></div>
       <div
-        class="absolute top-0 left-0 h-full rounded-full transition-all duration-300"
+        class="absolute top-0 left-0 h-full rounded-full max-w-full transition-all duration-300"
         :class="gaugeColor"
-        :style="{ width: `${percentage}%` }"
+        :style="{ width: `${percentage}` }"
       ></div>
     </div>
   </div>

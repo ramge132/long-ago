@@ -25,11 +25,11 @@
       v-else
       class="p-3 font-semibold flex items-center gap-x-5 text-white text-sm"
     >
-      <RouterLink
-        to="#"
+      <div
+        @click="toggleBestSeller"
         class="transform transition-all duration-300 hover:scale-110 cursor-pointer"
         >베스트 셀러
-      </RouterLink>
+      </div>
       <img
         class="h-6 transform transition-all duration-300 hover:scale-110 cursor-pointer"
         @click="toggleModal"
@@ -85,6 +85,24 @@
         </div>
       </div>
     </Transition>
+    <Transition name="fade">
+      <div
+        v-if="bestSeller.isOpen"
+        @click="toggleBestSeller"
+        class="absolute bg-[#00000050] w-full h-full top-0 left-0 flex justify-center items-center"
+      >
+        <div class="rounded-lg w-4/5 h-5/6 max-w-6xl max-h-[700px] min-w-[1000px] min-h-[600px] bg-[#ffffff70] border-[1px] border-white backdrop-blur-[15px] flex flex-col justify-center items-center">
+          <!-- 헤더 -->
+          <div class="font-katuri text-4xl">베스트셀러</div>
+          <!-- 베스트셀러 1,2,3위 포디움 -->
+          <div></div>
+          <!-- 책들 게시판 형식 -->
+          <div></div>
+          <!-- 페이지네이션 -->
+          <div></div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 <script setup>
@@ -103,8 +121,17 @@ const modal = ref({
   status: "signin",
 });
 
+const bestSeller = ref({
+  isOpen: false,
+  page: 1,
+})
+
 const toggleModal = () => {
   modal.value.isOpen = !modal.value.isOpen;
+};
+
+const toggleBestSeller = () => {
+  bestSeller.value.isOpen = !bestSeller.value.isOpen;
 };
 
 const toggleSignIn = (status) => {
