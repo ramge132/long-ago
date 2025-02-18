@@ -25,6 +25,7 @@ export { default as VoteUpLeftIcon } from "./icons/up_left.svg";
 export { default as VoteUpRightIcon } from "./icons/up_right.svg";
 export { default as VoteDownLeftIcon } from "./icons/down_left.svg";
 export { default as VoteDownRightIcon } from "./icons/down_right.svg";
+export { default as ShareIcon } from "./icons/share.png";
 
 // musics
 export { default as LobbyMusic } from "./musics/backgroundMusic.mp3";

@@ -20,10 +20,19 @@
         </div>
       </div>
     </div>
-    <div v-else class="flex justify-center items-center my-auto" @click="emit('goLobby')">
-      <div class="bg-gray-50 hover:bg-gray-200 p-4 rounded-2xl font-omp flex items-center gap-x-3 cursor-pointer">
+    <div v-else class="flex justify-center items-center gap-x-4 my-auto">
+      <div
+        @click="emit('goLobby')"
+        class="bg-gray-50 hover:bg-gray-200 p-4 rounded-2xl font-omp flex items-center gap-x-3 cursor-pointer"
+      >
         로비로 돌아가기
         <img :src="ReturnIcon" alt="" class="w-4">
+      </div>
+      <div
+        @click="copy"
+        class="bg-gray-50 hover:bg-gray-200 p-4 rounded-full cursor-pointer"
+      >
+        <img :src="ShareIcon" alt="" class="w-4">
       </div>
     </div>
     <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30]">
@@ -91,13 +100,15 @@
 
 <script setup>
 import { ref, watch, nextTick, onMounted } from "vue";
-import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon, ReturnIcon } from "@/assets";
+import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon, ReturnIcon, ShareIcon } from "@/assets";
 import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";
 import toast from "@/functions/toast";
+import useCilpboard from "vue-clipboard3";
 
 const userStore = useUserStore();
+const { toClipboard } = useCilpboard();
 const toggleEmoticon = ref(false);
 const message = ref("");
 const chatRefs = ref([]);
@@ -277,6 +288,16 @@ onMounted(() => {
 
 onkeydown = () => {
   chatRefs.value[currChatModeIdx.value].focus();
+};
+
+const copy = async () => {
+  try {
+    await toClipboard(import.meta.env.VITE_MAIN_API_SERVER_URL);
+    toast.successToast("클립보드에 복사되었습니다.");
+  } catch (error) {
+    toast.errorToast("복사 실패");
+    console.log(error);
+  }
 };
 </script>
 
