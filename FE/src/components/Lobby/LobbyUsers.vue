@@ -23,7 +23,7 @@
       :key="'waiting-' + n"
       class="flex items-center gap-x-3 rounded-md p-1 border-2 border-[#00000050]"
     >
-      <div class="rounded-full border border-black w-10 h-10 bg-gray-500"></div>
+      <div class="rounded-full border border-white w-10 h-10 bg-gray-500"></div>
       <div class="flex">
         <div class="animate-bounce" style="animation-delay: 0.1s">대</div>
         <div class="animate-bounce" style="animation-delay: 0.2s">기</div>
