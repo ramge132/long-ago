@@ -206,7 +206,7 @@ const setupConnection = (conn) => {
   }, 5000);
 
   
-  if (participants.value.length >= maxParticipants) {
+  if (participants.value.length >= maxParticipants || gameStarted.value) {
     conn.close();
     return;
   }
@@ -508,7 +508,7 @@ const setupConnection = (conn) => {
             // 이미지 쓰레기통에 넣기
           }
         } catch (error) {
-          if (error.response.status === 400) {
+          if (error.response.status === 409) {
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
