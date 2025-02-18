@@ -229,7 +229,7 @@ public class GameService {
             byte[] bookCover;
             try {
                 bookCover = webClient.post()  //post형식으로 webClient의 요청을 보냄.
-                        .uri("/generate").accept(MediaType.APPLICATION_JSON)
+                        .uri("/generate").accept(MediaType.IMAGE_PNG)
                         .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
                         .retrieve()
                         .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -252,9 +252,13 @@ public class GameService {
 
             sceneRepository.save(scene); //책 표지를 0번으로 저장
 
+            Book book = Book.builder()
+                    .bookId(UUID.randomUUID().toString())
+                    .title("책 제목입니다")
+                    .build();
 
             //S3에 업로드
-            boolean result = s3service.uploadToS3(deleteGameRequest.getGameId()); //s3에 이미지들 저장
+            boolean result = s3service.uploadToS3(book.getBookId(),deleteGameRequest.getGameId()); //s3에 이미지들 저장
 
             if (!result) {
                 sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());
@@ -267,12 +271,6 @@ public class GameService {
                     .replacePath(null)
                     .build()
                     .toUriString();
-
-
-            Book book = Book.builder()
-                    .bookId(UUID.randomUUID().toString())
-                    .title("책 제목입니다")
-                    .build();
 
 
             List<Scene> sceneList = sceneRedisList.stream()
