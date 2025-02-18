@@ -115,16 +115,17 @@ public class SceneService {
 
 
     public ResponseEntity<?> deleteScene(DeleteSceneRequest deleteSceneRequest, HttpServletRequest request) {
-
+        log.info("투표 요청 왔습니다.");
         List<SceneRedis> scenes = redisSceneRepository.findAllByGameId(deleteSceneRequest.getGameId());
         if(scenes.isEmpty()) {
+            log.error("저장된 scene이 없습니다.");
             return ApiResponseUtil.failure("아직 저장된 scene이 없습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
 
         if(!deleteSceneRequest.isAccepted()){
-
+            log.info("투표 결과 반대");
             //sceene 데이터 삭제
             SceneRedis lastScene = scenes.get(scenes.size() - 1);
             redisSceneRepository.delete(lastScene);
@@ -148,6 +149,8 @@ public class SceneService {
 
 
         gameRepository.update(game);
+        
+        log.info("투표 결과 찬성");
 
         return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
 
