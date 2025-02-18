@@ -6,7 +6,8 @@ import lombok.Data;
 @Data
 public class BookCover {
 
-    byte[] image;
-
     String title;
+
+    String image_bytes;
+
 }
