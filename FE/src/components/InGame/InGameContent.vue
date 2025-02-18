@@ -198,6 +198,9 @@ watch(
             // 음성 데이터가 있다면 TTS 실행 및 완료될 때까지 대기
             if (audioStore.audioData) {
               runBookSequence();
+            } else {
+              // 모든 작업이 완료되면 클릭 잠금 해제
+              isClickLocked.value = false;
             }
           }
         }, 300);
