@@ -41,9 +41,9 @@
             <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll p-5 pointer-events-auto">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
-                  <div class="flex flex-col items-center w-full" :class="configurable === false ? 'pointer-events-none' : ''">
+                  <div class="flex flex-col items-center w-full">
                     <p class="mb-2">{{ mode.text }}</p>
-                    <label class="rounded-lg overflow-hidden" :for="'mode' + index" :class="localRoomConfigs.currMode === mode.value ? 'outline outline-4 outline-blue-600' : ''" @click="localRoomConfigs.currMode = mode.value" @mouseover="mode.ishovered = true" @mouseleave="mode.ishovered = false">
+                    <label class="rounded-lg overflow-hidden" :for="'mode' + index" :class="localRoomConfigs.currMode === mode.value ? 'outline outline-4 outline-blue-600' : ''" @click="handleClick($event, mode.value)" @mouseover="mode.ishovered = true" @mouseleave="mode.ishovered = false">
                       <img :src="localRoomConfigs.currMode === mode.value || mode.ishovered ? modeViews[mode.value].modePreview : modeViews[mode.value].modeImage" alt="">
                     </label>
                   </div>
@@ -245,6 +245,14 @@ const chunkedModes = computed(() => {
   }
   return result;
 });
+
+const handleClick = (event, data) => {
+  if(props.configurable) {
+    localRoomConfigs.value.currMode = data;
+  } else {
+    event.preventDefault();
+  }
+}
 
 watch(
   () => props.roomConfigs,
