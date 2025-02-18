@@ -206,7 +206,7 @@ const setupConnection = (conn) => {
   }, 5000);
 
   
-  if (participants.value.length >= maxParticipants) {
+  if (participants.value.length > maxParticipants) {
     conn.close();
     return;
   }
@@ -830,8 +830,6 @@ onMounted(async () => {
   } catch (error) {
     console.error("Peer initialization failed:", error);
   }
-
-  // checkPeerConnections();
 });
 
 // // 퇴장 관련
