@@ -13,7 +13,7 @@
       <div
         class="absolute top-0 left-0 h-full rounded-full max-w-full transition-all duration-300"
         :class="gaugeColor"
-        :style="{ width: `${percentage}` }"
+        :style="{ width: `${percentage}%` }"
       ></div>
     </div>
   </div>
