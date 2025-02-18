@@ -256,7 +256,7 @@ public class GameService {
                     .build();
 
             //S3에 업로드
-            boolean result = s3service.uploadToS3(book.getBookId(),deleteGameRequest.getGameId()); //s3에 이미지들 저장
+            boolean result = s3service.uploadToS3(deleteGameRequest.getGameId(),book.getBookId()); //s3에 이미지들 저장
 
             if (!result) {
                 log.error("s3 이미지 저장 실패");
