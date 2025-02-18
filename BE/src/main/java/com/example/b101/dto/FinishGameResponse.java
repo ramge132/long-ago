@@ -11,5 +11,5 @@ public class FinishGameResponse {
 
     String title;
 
-    byte[] bookCover;
+    String bookCover;
 }
