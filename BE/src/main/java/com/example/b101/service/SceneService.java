@@ -106,6 +106,8 @@ public class SceneService {
 
         redisSceneRepository.save(scene);
 
+        log.info("Redis에 저장된 scene 개수 : {}", redisSceneRepository.findAllByGameId(sceneRequest.getGameId()).size());
+
 
         // 이미지 바이너리 데이터를 PNG 미디어 타입으로 반환
         return ResponseEntity.status(HttpStatus.CREATED)
