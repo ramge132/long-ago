@@ -7,7 +7,7 @@
           :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
-          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" @on-room-configuration="onRoomConfiguration"
+          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
           @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" />
       </Transition>
@@ -93,6 +93,11 @@ const usedCard = ref({
 const votings = ref([]);
 // 프롬프트 선출 여부
 const isElected = ref(false);
+// 책 표지, 제목
+const bookCover = ref({
+  title: "", imageUrl: ""
+});
+
 
 watch(isElected, (newValue) => {
   if (newValue === true) {
@@ -1344,6 +1349,8 @@ const gameEnd = async (status) => {
           gameId: gameID.value,
           isForceStopped: false
         })
+        bookCover.value.title = response.data.title;
+        bookCover.value.imageUrl = response.data.imageUrl;
       } catch (error) {
         console.log(error)
       }

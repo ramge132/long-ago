@@ -68,6 +68,7 @@
         :bookContents="bookContents"
         :gameStarted="gameStarted"
         :isElected="isElected"
+        :bookCover="bookCover"
       />
       <InGameControl
         @broadcast-message="broadcastMessage"
@@ -90,8 +91,8 @@
             <div class="w-28 h-28 relative">
               <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
               <div
-                class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 bottom-1 z-0"
-                :class="currTurn === index ? 'border-4 border-[blue]' : ''"
+                class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
+                :class="currTurn === index ? 'border-4 border-[#0073ff]' : ''"
                 >
               </div>
             </div>
@@ -274,6 +275,9 @@ const props = defineProps({
   },
   isVoted: {
     Type: Boolean,
+  },
+  bookCover: {
+    Type: Object,
   },
 });
 
