@@ -21,14 +21,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import Peer from "peerjs";
+import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, voteResultSend } from "@/apis/game";
+import { currTurnImage, myTurnImage, startImage } from "@/assets";
+import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
-import { myTurnImage, currTurnImage, startImage } from "@/assets";
-import { createGame, enterGame, deleteGame, endingCardReroll, promptFiltering, createImage, voteResultSend } from "@/apis/game";
-import toast from "@/functions/toast";
+import Peer from "peerjs";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -50,7 +50,7 @@ const participants = ref([]);
 const configurable = ref(false);
 const roomConfigs = ref({
   currTurnTime: 30,
-  currMode: 1,
+  currMode: 0,
 });
 // 최대 참가자
 const maxParticipants = 6;
@@ -371,6 +371,7 @@ const setupConnection = (conn) => {
         }
         inProgress.value = false;
         currTurn.value = data.currTurn;
+        totalTurn.value++;
         await showOverlay('whoTurn');
         inProgress.value = true;
         break;
@@ -426,9 +427,9 @@ const setupConnection = (conn) => {
           });
 
           if (currTurn.value === myTurn.value) {
-            let isAccepted;
+            let accepted;
             if (upCount < downCount) {
-              isAccepted = false;
+              accepted = false;
               // 이미지 버리는 api
               // 내 이미지 버리기
               if (bookContents.value.length === 1) {
@@ -459,7 +460,7 @@ const setupConnection = (conn) => {
               inProgress.value = true;
             } else {
               isElected.value = true;
-              isAccepted = true;
+              accepted = true;
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               if (usedCard.value.isEnding) {
@@ -501,9 +502,10 @@ const setupConnection = (conn) => {
           const response = await voteResultSend({
             gameId: gameID.value,
             userId: peerId.value,
-            isAccepted: isAccepted,
+            accepted: accepted,
             cardId: usedCard.value.id,
           });
+          console.log(response);
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
           }
@@ -1085,6 +1087,7 @@ const nextTurn = async (data) => {
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
     try {
+      console.log('totalTurn = ', totalTurn.value);
       const responseImage = await createImage({
         gameId: gameID.value,
         userId: peerId.value,
@@ -1182,10 +1185,10 @@ const voteEnd = async (data) => {
     });
 
     if (currTurn.value === myTurn.value) {
-      let isAccepted;
+      let accepted;
       if (upCount < downCount) {
         // 이미지 버리는 api
-        isAccepted = false;
+        accepted = false;
 
         // 내 이미지 버리기
         if (bookContents.value.length === 1) {
@@ -1217,7 +1220,7 @@ const voteEnd = async (data) => {
       }
       else {
         isElected.value = true;
-        isAccepted = true;
+        accepted = true;
 
         // 투표 가결 시 점수 +2
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
@@ -1229,6 +1232,7 @@ const voteEnd = async (data) => {
 
         // 턴 종료 트리거 송신하기
         currTurn.value = (currTurn.value + 1) % participants.value.length;
+        totalTurn.value++;
         // condition에서 다음 턴 or 게임 종료
         connectedPeers.value.forEach((peer) => {
           if (peer.id !== peerId.value && peer.connection.open) {
@@ -1260,9 +1264,10 @@ const voteEnd = async (data) => {
           const response = await voteResultSend({
             gameId: gameID.value,
             userId: peerId.value,
-            isAccepted: isAccepted,
+            accepted: accepted,
             cardId: usedCard.value.id,
           });
+          console.log(response);
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
           }
@@ -1321,7 +1326,7 @@ const gameEnd = async (status) => {
   gameStarted.value = false;
   // 턴 초기화
   currTurn.value = -1;
-  totalTurn.value = 0;
+  totalTurn.value = 1;
   
   // 비정상 종료인 경우 (긴장감 100 초과)
   if (!status) {
