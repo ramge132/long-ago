@@ -124,6 +124,7 @@ public class SceneService {
                     request.getRequestURI());
         }
 
+        log.info("투표 결과 : {}",deleteSceneRequest.isAccepted());
         if(!deleteSceneRequest.isAccepted()){
             log.info("투표 결과 반대");
             //sceene 데이터 삭제
