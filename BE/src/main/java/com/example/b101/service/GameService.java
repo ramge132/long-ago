@@ -4,10 +4,7 @@ import com.example.b101.cache.Game;
 import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
 import com.example.b101.domain.*;
-import com.example.b101.dto.DeleteGameRequest;
-import com.example.b101.dto.GameRequest;
-import com.example.b101.dto.GameResponse;
-import com.example.b101.dto.GenerateSceneRequest;
+import com.example.b101.dto.*;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -228,15 +225,15 @@ public class GameService {
 
 
             // GPU 서버와 통신하여 데이터 받기
-            byte[] generateImage;
+            BookCover bookCover;
             try {
-                generateImage = webClient.post()  //post형식으로 webClient의 요청을 보냄.
-                        .uri("/generate").accept(MediaType.IMAGE_PNG) //이미지 파일로 받는다.
+                bookCover = webClient.post()  //post형식으로 webClient의 요청을 보냄.
+                        .uri("/generate").accept(MediaType.APPLICATION_JSON)
                         .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
                         .retrieve()
                         .onStatus(HttpStatusCode::is4xxClientError, response ->
                                 response.createException().flatMap(Mono::error))    //GPU 서버에서 422에러를 응답하면 PROMPT가 누락
-                        .bodyToMono(byte[].class) //응답의 본문(body)만 가져옴.
+                        .bodyToMono(BookCover.class) //응답의 본문(body)만 가져옴.
                         .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
             } catch (WebClientException e) { //GPU 서버에서 에러 반환 시
                 return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생 : "+e.getMessage(),
@@ -248,7 +245,7 @@ public class GameService {
             SceneRedis scene = SceneRedis.builder()
                     .id(UUID.randomUUID().toString())
                     .gameId(deleteGameRequest.getGameId())
-                    .image(generateImage)  // 바이너리 이미지 데이터 저장
+                    .image(bookCover.getImage())  // 바이너리 이미지 데이터 저장
                     .sceneOrder(0) //책 표지는 순서가 0
                     .build();
 
@@ -273,7 +270,7 @@ public class GameService {
 
             Book book = Book.builder()
                     .bookId(UUID.randomUUID().toString())
-                    .title("book"+deleteGameRequest.getGameId())
+                    .title(bookCover.getTitie())
                     .build();
 
 
@@ -295,9 +292,15 @@ public class GameService {
             //게임 데이터 삭제
             gameRepository.delete(game);
 
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .contentType(MediaType.IMAGE_PNG) // PNG 형식으로 책 표지 응답
-                    .body(generateImage);
+
+            FinishGameResponse finishGameResponse = FinishGameResponse.builder()
+                    .bookId(book.getBookId())
+                    .bookCover(bookCover.getImage())
+                    .title(book.getTitle())
+                    .build();
+
+            return ApiResponseUtil.success(finishGameResponse,"책 생성 완료"
+                    ,HttpStatus.CREATED,request.getRequestURI());
         }
 
 

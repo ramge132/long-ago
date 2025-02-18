@@ -138,12 +138,14 @@ public class SceneService {
 
         storyCard.ifPresent(storyCard1 -> {playerStatus.getStoryCards().remove(storyCard1);});
 
+
         Game game = gameRepository.findById(deleteSceneRequest.getGameId());
 
         game.getPlayerStatuses().stream()
                 .filter(ps -> ps.getUserId().equals(playerStatus.getUserId()))
                 .findFirst()
                 .ifPresent(ps -> ps.setStoryCards(playerStatus.getStoryCards()));
+
 
         gameRepository.update(game);
 

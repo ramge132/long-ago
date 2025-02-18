@@ -14,8 +14,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -107,5 +111,14 @@ public class BookService {
                 .build();
 
         return ApiResponseUtil.success(bookResponse, "book 데이터 반환 성공", HttpStatus.OK, request.getRequestURI());
+    }
+
+
+    @Scheduled(cron = "0 0 12 * * *")  // 매일 정오에 실행
+    public void autoDeleteBook() {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(7);
+        int deletedCount = bookRepository.deleteByCreatedAtBefore(cutoffDate);
+
+        log.info("🔍 {}개의 책이 삭제되었습니다. (기준일: {})", deletedCount, cutoffDate);
     }
 }
