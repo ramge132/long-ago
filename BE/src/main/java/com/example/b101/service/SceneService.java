@@ -10,6 +10,7 @@ import com.example.b101.dto.GenerateSceneRequest;
 import com.example.b101.dto.SceneRequest;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
+import com.example.b101.repository.StoryCardRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -31,6 +33,7 @@ public class SceneService {
     private final RedisSceneRepository redisSceneRepository;
     private final GameRepository gameRepository;
     private final WebClient webClient;
+    private final StoryCardRepository storyCardRepository;
 
 
 
@@ -131,10 +134,9 @@ public class SceneService {
         //사용한 카드 삭제해야함
         PlayerStatus playerStatus = gameRepository.getPlayerStatus(deleteSceneRequest.getGameId(), deleteSceneRequest.getUserId());
 
-        StoryCard storyCard = playerStatus.getStoryCards().stream().filter(storyCard1 -> storyCard1.getId() == deleteSceneRequest.getCardId()).findFirst().orElse(null);
+        Optional<StoryCard> storyCard = storyCardRepository.findById(deleteSceneRequest.getCardId());
 
-        // 🔹 카드 삭제
-        playerStatus.getStoryCards().remove(storyCard);
+        storyCard.ifPresent(storyCard1 -> {playerStatus.getStoryCards().remove(storyCard1);});
 
         Game game = gameRepository.findById(deleteSceneRequest.getGameId());
 
