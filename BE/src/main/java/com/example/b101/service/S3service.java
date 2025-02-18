@@ -95,9 +95,11 @@ public class S3service {
     ////////////////////////////
     public boolean uploadToS3(String gameId,String bookId) {
 
-
+        log.info("s3에 이미지 저장 로직 실행");
         // 1) Redis에서 gameId와 같은 Scene 다 가져오기
         List<SceneRedis> sceneRedisList = redisSceneRepository.findAllByGameId(gameId);
+
+        log.info("Redis에 저장된 scene 데이터들 : {}", sceneRedisList.size());
 
         for (int i = 0; i < sceneRedisList.size(); i++) {
             SceneRedis scene = sceneRedisList.get(i);
