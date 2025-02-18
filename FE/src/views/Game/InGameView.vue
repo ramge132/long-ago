@@ -68,6 +68,7 @@
         :bookContents="bookContents"
         :gameStarted="gameStarted"
         :isElected="isElected"
+        :bookCover="bookCover"
       />
       <InGameControl
         @broadcast-message="broadcastMessage"
@@ -274,6 +275,9 @@ const props = defineProps({
   },
   isVoted: {
     Type: Boolean,
+  },
+  bookCover: {
+    Type: Object,
   },
 });
 
