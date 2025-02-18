@@ -9,7 +9,7 @@
       >
         <!-- 책 -->
         <div class="relative w-[600px] h-[400px]">
-          <InGameContent :bookContents="[{}]" />
+          <InGameContent :bookContents="bookContents" />
         </div>
 
         <div @click="closeEBook" class="bg-black rounded-xl cursor-pointer w-40 h-10">
@@ -22,20 +22,28 @@
     </div>
 </template>
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { InGameContent } from "@/components";
 import { StartIcon } from "@/assets";
+import { getBook } from "@/apis/book";
 
+const props = defineProps({
+    ISBN: {
+        Type: String,
+    },
+})
 const emit = defineEmits(["closeEBook"]);
 
-const bestSeller = ref({
-  isOpen: false,
-  page: 1,
-})
+const bookContents = ref([{content: "", image: null}])
 
 const closeEBook = () => {
     emit("closeEBook");
 };
+
+onMounted(async () => {
+    // const response = await getBook({id: props.ISBN});
+    
+});
 </script>
 <style scoped>
     

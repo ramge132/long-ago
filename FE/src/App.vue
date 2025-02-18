@@ -36,7 +36,7 @@
     </Transition>
 
     <Transition name="fade">
-      <EBook v-if="isEBookOpened" @close-e-book="closeEBook" />
+      <EBook v-if="isEBookOpened" :ISBN="route.query.ISBN" @close-e-book="closeEBook" />
     </Transition>
   </div>
 </template>
