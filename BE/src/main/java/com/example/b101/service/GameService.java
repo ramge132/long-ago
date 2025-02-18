@@ -225,7 +225,8 @@ public class GameService {
 
 
             // GPU 서버와 통신하여 데이터 받기
-            BookCover bookCover;
+//            BookCover bookCover;
+            byte[] bookCover;
             try {
                 bookCover = webClient.post()  //post형식으로 webClient의 요청을 보냄.
                         .uri("/generate").accept(MediaType.APPLICATION_JSON)
@@ -233,7 +234,7 @@ public class GameService {
                         .retrieve()
                         .onStatus(HttpStatusCode::is4xxClientError, response ->
                                 response.createException().flatMap(Mono::error))    //GPU 서버에서 422에러를 응답하면 PROMPT가 누락
-                        .bodyToMono(BookCover.class) //응답의 본문(body)만 가져옴.
+                        .bodyToMono(byte[].class) //응답의 본문(body)만 가져옴.
                         .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
             } catch (WebClientException e) { //GPU 서버에서 에러 반환 시
                 return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생 : "+e.getMessage(),
@@ -245,7 +246,7 @@ public class GameService {
             SceneRedis scene = SceneRedis.builder()
                     .id(UUID.randomUUID().toString())
                     .gameId(deleteGameRequest.getGameId())
-                    .image(bookCover.getImage())  // 바이너리 이미지 데이터 저장
+                    .image(bookCover)  // 바이너리 이미지 데이터 저장
                     .sceneOrder(0) //책 표지는 순서가 0
                     .build();
 
@@ -270,7 +271,7 @@ public class GameService {
 
             Book book = Book.builder()
                     .bookId(UUID.randomUUID().toString())
-                    .title(bookCover.getTitie())
+                    .title("책 제목입니다")
                     .build();
 
 
@@ -295,7 +296,7 @@ public class GameService {
 
             FinishGameResponse finishGameResponse = FinishGameResponse.builder()
                     .bookId(book.getBookId())
-                    .bookCover(bookCover.getImage())
+                    .bookCover(book.getImageUrl())
                     .title(book.getTitle())
                     .build();
 
