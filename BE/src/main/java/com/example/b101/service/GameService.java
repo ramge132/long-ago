@@ -239,7 +239,6 @@ public class GameService {
                         request.getRequestURI());
             }
 
-            log.info(bookCover.toString());
 
             //정상적인 게임 종료 시 책표지 생성
             SceneRedis scene = SceneRedis.builder()
@@ -260,6 +259,7 @@ public class GameService {
             boolean result = s3service.uploadToS3(book.getBookId(),deleteGameRequest.getGameId()); //s3에 이미지들 저장
 
             if (!result) {
+                log.error("s3 이미지 저장 실패");
                 sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());
                 return ApiResponseUtil.failure("s3에 이미지 저장 중 에러 발생",
                         HttpStatus.INTERNAL_SERVER_ERROR,
