@@ -185,11 +185,12 @@ public class GameService {
                 }
             }
 
+
             //빌더패턴을 이용해서 플레이어 상태 객체 생성
             playerStatuses.add(PlayerStatus.builder()
                     .userId(userId)
                     .storyCards(storyCards)
-                    .endingCard(endingCards.get(i))
+                    .endingCard(endingCards.remove(0))
                     .build());
 
         }
