@@ -93,11 +93,13 @@ public class S3service {
     ////////////////////////////
     // #2. 파일 업로드 + 예외 처리 //
     ////////////////////////////
-    public boolean uploadToS3(String gameId) {
+    public boolean uploadToS3(String gameId,String bookId) {
 
-
+        log.info("s3에 이미지 저장 로직 실행");
         // 1) Redis에서 gameId와 같은 Scene 다 가져오기
         List<SceneRedis> sceneRedisList = redisSceneRepository.findAllByGameId(gameId);
+
+        log.info("Redis에 저장된 scene 데이터들 : {}", sceneRedisList.size());
 
         for (int i = 0; i < sceneRedisList.size(); i++) {
             SceneRedis scene = sceneRedisList.get(i);
@@ -120,7 +122,7 @@ public class S3service {
         List<CompletableFuture<Void>> uploadFutures = sceneRedisList.stream()
                 .map(scene -> CompletableFuture.runAsync(() -> {
                     try {
-                        uploadFileToS3(scene);
+                        uploadFileToS3(scene,bookId);
                         log.info( "파일 업로드 성공 - SceneOrder: {}, Image Size: {} bytes", scene.getSceneOrder(), scene.getImage().length);
                         isUploaded.set(true);
                     } catch (Exception e) {
@@ -141,11 +143,11 @@ public class S3service {
     }
 
     // S3 업로드 메서드 (바이너리 데이터를 바로 업로드)
-    private void uploadFileToS3(SceneRedis scene) {
+    private void uploadFileToS3(SceneRedis scene,String bookId) {
         log.info("image 데이터가 있나요? : {} bytes", scene.getImage() != null ? scene.getImage().length : 0);
 
         // 해당 이름의 객체로 S3에 저장
-        String objectKey = scene.getGameId() + "/" + scene.getSceneOrder() + ".png";
+        String objectKey = bookId + "/" + scene.getSceneOrder() + ".png";
 
         // S3 업로드 객체 빌드
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()

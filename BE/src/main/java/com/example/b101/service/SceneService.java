@@ -10,6 +10,7 @@ import com.example.b101.dto.GenerateSceneRequest;
 import com.example.b101.dto.SceneRequest;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
+import com.example.b101.repository.StoryCardRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -31,6 +33,7 @@ public class SceneService {
     private final RedisSceneRepository redisSceneRepository;
     private final GameRepository gameRepository;
     private final WebClient webClient;
+    private final StoryCardRepository storyCardRepository;
 
 
 
@@ -103,6 +106,8 @@ public class SceneService {
 
         redisSceneRepository.save(scene);
 
+        log.info("Redis에 저장된 scene 개수 : {}", redisSceneRepository.findAllByGameId(sceneRequest.getGameId()).size());
+
 
         // 이미지 바이너리 데이터를 PNG 미디어 타입으로 반환
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -112,16 +117,18 @@ public class SceneService {
 
 
     public ResponseEntity<?> deleteScene(DeleteSceneRequest deleteSceneRequest, HttpServletRequest request) {
-
+        log.info("투표 요청 왔습니다.");
         List<SceneRedis> scenes = redisSceneRepository.findAllByGameId(deleteSceneRequest.getGameId());
         if(scenes.isEmpty()) {
+            log.error("저장된 scene이 없습니다.");
             return ApiResponseUtil.failure("아직 저장된 scene이 없습니다.",
                     HttpStatus.BAD_REQUEST,
                     request.getRequestURI());
         }
 
+        log.info("투표 결과 : {}",deleteSceneRequest.isAccepted());
         if(!deleteSceneRequest.isAccepted()){
-
+            log.info("투표 결과 반대");
             //sceene 데이터 삭제
             SceneRedis lastScene = scenes.get(scenes.size() - 1);
             redisSceneRepository.delete(lastScene);
@@ -131,10 +138,10 @@ public class SceneService {
         //사용한 카드 삭제해야함
         PlayerStatus playerStatus = gameRepository.getPlayerStatus(deleteSceneRequest.getGameId(), deleteSceneRequest.getUserId());
 
-        StoryCard storyCard = playerStatus.getStoryCards().stream().filter(storyCard1 -> storyCard1.getId() == deleteSceneRequest.getCardId()).findFirst().orElse(null);
+        Optional<StoryCard> storyCard = storyCardRepository.findById(deleteSceneRequest.getCardId());
 
-        // 🔹 카드 삭제
-        playerStatus.getStoryCards().remove(storyCard);
+        storyCard.ifPresent(storyCard1 -> {playerStatus.getStoryCards().remove(storyCard1);});
+
 
         Game game = gameRepository.findById(deleteSceneRequest.getGameId());
 
@@ -143,7 +150,10 @@ public class SceneService {
                 .findFirst()
                 .ifPresent(ps -> ps.setStoryCards(playerStatus.getStoryCards()));
 
+
         gameRepository.update(game);
+        
+        log.info("투표 결과 찬성");
 
         return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
 

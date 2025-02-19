@@ -4,10 +4,7 @@ import com.example.b101.cache.Game;
 import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
 import com.example.b101.domain.*;
-import com.example.b101.dto.DeleteGameRequest;
-import com.example.b101.dto.GameRequest;
-import com.example.b101.dto.GameResponse;
-import com.example.b101.dto.GenerateSceneRequest;
+import com.example.b101.dto.*;
 import com.example.b101.repository.BookRepository;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
@@ -24,7 +21,6 @@ import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.util.*;
 
 @Slf4j
@@ -37,6 +33,67 @@ public class GameService {
     private final RedisSceneRepository sceneRepository;
     private final WebClient webClient;
     private final S3service s3service;
+    private final BookRepository bookRepository;
+
+
+    //시연용
+    public ResponseEntity<?> createGame(GameRequest gameRequest,HttpServletRequest request) {
+        int playerCnt = gameRequest.getPlayer().size();
+
+        if(playerCnt < 2) {
+            return ApiResponseUtil.failure("플레이어 수가 2인 미만입니다.",
+                    HttpStatus.BAD_REQUEST,
+                    request.getRequestURI());
+        }
+
+        List<EndingCard> endingCards = cardService.getEndingCards();
+        List<List<StoryCard>> storyCards = cardService.getStoryCards(playerCnt);
+
+
+        List<PlayerStatus> playerStatuses = getPlayerStatuses(gameRequest,storyCards,endingCards,playerCnt);
+
+        Game game = Game.builder()
+                .gameId(UUID.randomUUID().toString())
+                .endingCardlist(endingCards)
+                .playerStatuses(playerStatuses)
+                .drawingStyle(gameRequest.getDrawingStyle())
+                .build();
+
+        gameRepository.save(game);
+
+        GameResponse gameResponse = GameResponse.builder()
+                .gameId(game.getGameId())
+                .status(game.getPlayerStatuses().stream().filter(player -> player.getUserId().equals(gameRequest.getBossId())).findFirst().orElse(null))
+                .build();
+
+        return ApiResponseUtil.success(gameResponse, "게임 생성", HttpStatus.CREATED, request.getRequestURI());
+    }
+
+
+    //시연용 카드 분배 로직
+    public List<PlayerStatus> getPlayerStatuses(GameRequest gameRequest,List<List<StoryCard>> storyCards, List<EndingCard> endingCards, int playerCnt) {
+        List<PlayerStatus> playerStatuses = new ArrayList<>();
+        for(int i=0; i<playerCnt; i++) {
+            PlayerStatus playerStatus = new PlayerStatus();
+            playerStatus.setUserId(gameRequest.getPlayer().get(i)); //userId 설정
+
+            List<StoryCard> storyCardList = new ArrayList<>();
+            for(int j=0; j<4; j++){
+                StoryCard storyCard = storyCards.get(j).get(i);
+                storyCardList.add(storyCard);
+
+            }
+
+            EndingCard endingCard = endingCards.remove(i);
+
+            playerStatus.setEndingCard(endingCard);
+            playerStatus.setStoryCards(storyCardList);
+
+            playerStatuses.add(playerStatus);
+        }
+
+        return playerStatuses;
+    }
 
     /**
      * 게임을 생성하고 Redis에 저장
@@ -130,11 +187,12 @@ public class GameService {
                 }
             }
 
+
             //빌더패턴을 이용해서 플레이어 상태 객체 생성
             playerStatuses.add(PlayerStatus.builder()
                     .userId(userId)
                     .storyCards(storyCards)
-                    .endingCard(endingCards.get(i))
+                    .endingCard(endingCards.remove(0))
                     .build());
 
         }
@@ -170,15 +228,13 @@ public class GameService {
 
 
             // GPU 서버와 통신하여 데이터 받기
-            byte[] generateImage;
+            BookCover bookCover;
             try {
-                generateImage = webClient.post()  //post형식으로 webClient의 요청을 보냄.
-                        .uri("/generate").accept(MediaType.IMAGE_PNG) //이미지 파일로 받는다.
+                bookCover = webClient.post()  //post형식으로 webClient의 요청을 보냄.
+                        .uri("/generate").accept(MediaType.APPLICATION_JSON)
                         .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
                         .retrieve()
-                        .onStatus(HttpStatusCode::is4xxClientError, response ->
-                                response.createException().flatMap(Mono::error))    //GPU 서버에서 422에러를 응답하면 PROMPT가 누락
-                        .bodyToMono(byte[].class) //응답의 본문(body)만 가져옴.
+                        .bodyToMono(BookCover.class) //응답의 본문(body)만 가져옴.
                         .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
             } catch (WebClientException e) { //GPU 서버에서 에러 반환 시
                 return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생 : "+e.getMessage(),
@@ -186,21 +242,27 @@ public class GameService {
                         request.getRequestURI());
             }
 
+
             //정상적인 게임 종료 시 책표지 생성
             SceneRedis scene = SceneRedis.builder()
                     .id(UUID.randomUUID().toString())
                     .gameId(deleteGameRequest.getGameId())
-                    .image(generateImage)  // 바이너리 이미지 데이터 저장
+                    .image(Base64.getDecoder().decode(Objects.requireNonNull(bookCover).getImage_bytes()))  // 바이너리 이미지 데이터 저장
                     .sceneOrder(0) //책 표지는 순서가 0
                     .build();
 
             sceneRepository.save(scene); //책 표지를 0번으로 저장
 
+            Book book = Book.builder()
+                    .bookId(UUID.randomUUID().toString())
+                    .title(bookCover.getTitle())
+                    .build();
 
             //S3에 업로드
-            boolean result = s3service.uploadToS3(deleteGameRequest.getGameId()); //s3에 이미지들 저장
+            boolean result = s3service.uploadToS3(deleteGameRequest.getGameId(),book.getBookId()); //s3에 이미지들 저장
 
             if (!result) {
+                log.error("s3 이미지 저장 실패");
                 sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());
                 return ApiResponseUtil.failure("s3에 이미지 저장 중 에러 발생",
                         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -211,12 +273,6 @@ public class GameService {
                     .replacePath(null)
                     .build()
                     .toUriString();
-
-
-            Book book = Book.builder()
-                    .bookId(UUID.randomUUID().toString())
-                    .title("book"+deleteGameRequest.getGameId())
-                    .build();
 
 
             List<Scene> sceneList = sceneRedisList.stream()
@@ -231,15 +287,23 @@ public class GameService {
             book.setScenes(sceneList);
 
 
+            bookRepository.save(book);
+
             //redis에 저장됐던 scene 데이터들 삭제
             sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());
 
             //게임 데이터 삭제
             gameRepository.delete(game);
 
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .contentType(MediaType.IMAGE_PNG) // PNG 형식으로 책 표지 응답
-                    .body(generateImage);
+
+            FinishGameResponse finishGameResponse = FinishGameResponse.builder()
+                    .bookId(book.getBookId())
+                    .bookCover(book.getImageUrl())
+                    .title(book.getTitle())
+                    .build();
+
+            return ApiResponseUtil.success(finishGameResponse,"책 생성 완료"
+                    ,HttpStatus.CREATED,request.getRequestURI());
         }
 
 

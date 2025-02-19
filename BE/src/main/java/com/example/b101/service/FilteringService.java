@@ -9,6 +9,10 @@ import com.example.b101.dto.FilteringRequest;
 import com.example.b101.repository.GameRepository;
 import com.vane.badwordfiltering.BadWordFiltering;
 import jakarta.servlet.http.HttpServletRequest;
+import kr.co.shineware.nlp.komoran.constant.DEFAULT_MODEL;
+import kr.co.shineware.nlp.komoran.core.Komoran;
+import kr.co.shineware.nlp.komoran.model.KomoranResult;
+import kr.co.shineware.nlp.komoran.model.Token;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,6 +29,7 @@ public class FilteringService {
     private final GameRepository gameRepository;
     private final CachingService cachingService;
     private final BadWordFiltering badWordFiltering = new BadWordFiltering();
+
 
     public ResponseEntity<?> findCardVariantsByCardId(FilteringRequest filteringRequest, HttpServletRequest request) {
 
@@ -83,9 +88,15 @@ public class FilteringService {
             return ApiResponseUtil.failure("욕설이 사용되었습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
-        // 프롬프트에서 플레이어가 가진 카드 변형어 개수 확인
+
+        Komoran komoran = new Komoran(DEFAULT_MODEL.LIGHT);
+
+        KomoranResult analyzeResultList = komoran.analyze(filteringRequest.getUserPrompt());
+
+        List<Token> tokenList = analyzeResultList.getTokenList();
+
         long keywordCnt = allVariants.stream()
-                .filter(variant -> filteringRequest.getUserPrompt().contains(variant))
+                .filter(variant -> tokenList.stream().anyMatch(token -> token.getMorph().equals(variant)))
                 .count();
 
         if (keywordCnt > 1) {
