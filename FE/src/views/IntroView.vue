@@ -23,7 +23,7 @@
         />
       </div>
       <div
-        class="w-80 h-16 font-semibold text-2xl rounded-xl bg-black text-white cursor-pointer flex justify-center items-center"
+        class="w-80 h-16 font-semibold text-2xl rounded-xl bg-black text-white cursor-pointer flex justify-center items-center startBtn"
       >
         <div
           @click="start"
@@ -255,5 +255,18 @@ const pagination = {
   color: black;
   font-weight: 900;
   scale: 0.5;
+}
+.startBtn:hover {
+  background: linear-gradient(60deg, rgba(232,193,147,1) 0%, rgba(193,164,204,1) 20%, rgba(221,124,175,1) 60%, rgba(191,176,209,1) 90%, #9FBACC 100%);
+  background-size: 300% 100%;
+  animation: gradient 1.5s ease-in-out infinite alternate;
+}
+@keyframes gradient {
+  0% {
+    background-position: 0%;
+  }
+  100% {
+    background-position: 100%;
+  }
 }
 </style>
