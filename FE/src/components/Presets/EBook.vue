@@ -46,11 +46,20 @@ const closeEBook = () => {
 
 onMounted(async () => {
   try {
-    const response = await getBook({id: props.ISBN});
+    const response = await getBook({ id: props.ISBN });
+
     bookCover.value = {
-      imageUrl: response.data.data.bookCover,
+      imageUrl: response.data.bookCover,
       title: response.data.data.title,
-    }
+    };
+
+    bookContents.value = response.data.data.sceneResponseList
+      .sort((a, b) => a.order - b.order) // order 오름차순 정렬
+      .map(scene => ({
+        content: scene.prompt,  // prompt -> content
+        image: scene.imageUrl   // imageUrl -> image
+      }));
+
   } catch (error) {
     console.error(error);
   }

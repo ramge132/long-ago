@@ -79,6 +79,7 @@
         :storyCards="storyCards"
         :endingCard="endingCard"
         :gameStarted="gameStarted"
+        :ISBN="ISBN"
       />
     </div>
       <div class="h-full row-span-2 grid grid-rows-3 justify-end">
@@ -276,6 +277,9 @@ const props = defineProps({
   },
   bookCover: {
     Type: Object,
+  },
+  ISBN: {
+    Type: String,
   },
 });
 

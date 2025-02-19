@@ -29,6 +29,7 @@
         <img :src="ReturnIcon" alt="" class="w-4">
       </div>
       <div
+        v-if="ISBN != ''"
         @click="copy"
         class="bg-gray-50 hover:bg-gray-200 p-4 rounded-full cursor-pointer"
       >
@@ -148,6 +149,9 @@ const props = defineProps({
   },
   gameStarted: {
     Type: Boolean,
+  },
+  ISBN: {
+    Type: String,
   },
 });
 
@@ -292,7 +296,7 @@ onkeydown = () => {
 
 const copy = async () => {
   try {
-    await toClipboard(import.meta.env.VITE_MAIN_API_SERVER_URL);
+    await toClipboard(import.meta.env.VITE_MAIN_API_SERVER_URL + "?ISBN=" + props.ISBN);
     toast.successToast("클립보드에 복사되었습니다.");
   } catch (error) {
     toast.errorToast("복사 실패");
