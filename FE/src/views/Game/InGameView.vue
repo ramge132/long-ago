@@ -11,7 +11,7 @@
             <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
             <div
               class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
-              :class="currTurn === index ? 'border-4 border-[#0073ff]' : ''"
+              :class="currTurn === index ? 'border-4 border-color' : ''"
               >
             </div>
           </div>
@@ -91,7 +91,7 @@
               <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
               <div
                 class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
-                :class="currTurn === index ? 'border-4 border-[#0073ff]' : ''"
+                :class="currTurn === index ? 'border-4 border-color' : ''"
                 >
               </div>
             </div>
@@ -359,6 +359,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.border-color {
+  border-color: #72a0ff;
+}
+
 /* @keyframes corona {
   0%,
   100% {
