@@ -148,7 +148,8 @@
       :inProgress="inProgress"
       :percentage="percentage"
     />
-    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" v-if="prompt !== '' && isVoted === false"/>
+    <!-- <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" v-if="prompt !== '' && isVoted === false"/> -->
+    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard"/>
     <!-- <Transition name="fade">
       <div
         v-if="modal.isOpen"
