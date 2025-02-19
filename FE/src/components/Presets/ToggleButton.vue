@@ -1,8 +1,10 @@
 <template>
   <div
-    class="absolute z-10 left-5 top-5 flex gap-x-3 items-center text-gray-800"
+    class="absolute z-10 left-5 top-5 flex-col text-gray-800"
     :class="isInGame ? 'left-5 top-[-30px]' : 'left-5 top-5'"
   >
+  <div class="flex items-center gap-x-3">
+
     <span class="font-semibold">SOUND</span>
     <span
       class="text-[10px]"
@@ -28,6 +30,15 @@
     <!-- 오디오 -->
     <audio ref="audioRef" :src="route.path === '/game/rank' ? RankingMusic : LobbyMusic" loop></audio>
   </div>
+    <div class="flex items-center gap-x-3">
+      <span class="font-semibold">VOLUME</span>
+      <input type="range" min="0" max="1" v-model="audioStore.audioVolume" step="0.01">
+      <span
+      class="text-[10px]"
+      >{{ Math.round(audioStore.audioVolume * 100) }}</span
+    >
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -49,10 +60,14 @@ const toggleAudio = () => {
     if (audioStore.audioData) {
       audioRef.value.play();
     } else {
-      audioRef.value.pause();
+      audioRef.value.pause(); 
     }
   }
 };
+
+watch(() => audioStore.audioVolume, () => {
+  audioRef.value.volume = audioStore.audioVolume;
+});
 
 watch(
   () => route.path,
@@ -174,5 +189,50 @@ body .dribbble {
 body .dribbble img {
   display: block;
   height: 28px;
+}
+
+input[type="range"] {
+  appearance: none;
+  width: 100%;
+  padding: 2px;
+  box-shadow: inset 4px 6px 10px -4px rgba(0, 0, 0, 0.3),
+    0 1px 1px -1px rgba(255, 255, 255, 0.3);
+  background: #9ea0be;
+  overflow: hidden;
+  outline: none;
+  border: 1px solid rgba(0, 0, 0, 0.7);
+  border-radius: 20px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  background: #d1d8ff;
+  position: relative;
+  z-index: 3;
+  box-shadow: inset 4px 6px 10px -4px #d1d8ffbd,
+    0 1px 1px -1px #d1d8ff97;
+    border-radius: 50%
+}
+
+input[type="range"]::-moz-range-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #333;
+  position: relative;
+  z-index: 3;
+  box-shadow: inset 4px 6px 10px -4px rgba(0, 0, 0, 0.3),
+    0 1px 1px -1px rgba(255, 255, 255, 0.3);
+    border-radius: 50%
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  cursor: pointer;
 }
 </style>
