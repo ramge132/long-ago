@@ -3,13 +3,15 @@
     <div class="book absolute top-0">
       <div class="pages" ref="pagesRef">
         <div
-          class="page cursor-pointer flex flex-col items-center justify-center text-[#fee09e] text-4xl font-katuri"
+          class="page cursor-pointer flex flex-col items-center justify-center text-[#fee09e] text-4xl font-katuri relative"
           :class="{ flipped: isFlipped(0) }"
           @click="handlePageClick(0)"
           style="text-shadow: -1px 0px #8a622a, 0px 1px #8a622a, 1px 0px #8a622a, 0px -1px #8a622a;"
           :style="{ zIndex: calculateZIndex(0) }"
-          v-html="`아주 먼<br>옛날..<br>`"
         >
+        <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute -translate-y-3/4" style="backface-visibility: hidden"></p>
+        <img :src="bookCover.imageUrl" alt="" v-if="bookCover.imageUrl" class="w-full h-full object-fill">
+        
         </div>
         <template
           v-for="(content, index) in bookContents"
@@ -59,7 +61,14 @@ const props = defineProps({
   isElected: {
     Type: Boolean,
   },
+  bookCover: {
+    Type: Object,
+  }
 })
+// const test = ref({
+//   imageUrl: rule4,
+//   title: "해리포터의 악행을 밝힙니다."
+// })
 
 const calculateZIndex = (pageIndex) => {
   const totalPages = props.bookContents.length * 2 + 1;
@@ -165,11 +174,8 @@ const runBookSequence = async () => {
     const turningEffect = new Audio(TurningPage);
     turningEffect.play();
 
-    // 음성 데이터가 있다면 TTS 실행 및 완료될 때까지 대기
-    if (audioStore.audioData) {
-      // tts 함수(speakText)가 음성 재생 완료 후 resolve하는 프로미스를 반환한다고 가정합니다.
-      await speakText(element.content);
-    }
+    // tts 함수(speakText)가 음성 재생 완료 후 resolve하는 프로미스를 반환한다고 가정합니다.
+    await speakText(element.content);
   }
   
   // 모든 작업이 완료되면 클릭 잠금 해제
@@ -198,7 +204,13 @@ watch(
           if (index >= pages.length) {
             clearInterval(deleteInterval);
             // 후속 작업 실행 (비동기 함수 내에서 순차 처리)
-            runBookSequence();
+            // 음성 데이터가 있다면 TTS 실행 및 완료될 때까지 대기
+            if (audioStore.audioData) {
+              runBookSequence();
+            } else {
+              // 모든 작업이 완료되면 클릭 잠금 해제
+              isClickLocked.value = false;
+            }
           }
         }, 300);
       }, 9000);

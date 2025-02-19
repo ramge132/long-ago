@@ -31,21 +31,26 @@
 
     <Transition name="fade">
       <div v-show="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
-        <img src="@/assets/loading.gif" alt="" class="w-full h-full">
+        <img src="@/assets/loading.gif" alt="" class="w-full h-full object-cover">
       </div>
+    </Transition>
+
+    <Transition name="fade">
+      <EBook v-if="isEBookOpened" :ISBN="route.query.ISBN" @close-e-book="closeEBook" />
     </Transition>
   </div>
 </template>
 
 <script setup>
 import { TigerAnimation } from "./components";
-import { ref, computed } from "vue";
+import { ref, computed, Transition, watch } from "vue";
 import { useRoute } from "vue-router";
-import { TermsOfService, TopBar, FooterBar, ToggleButton } from "@/components";
+import { TermsOfService, TopBar, FooterBar, ToggleButton, EBook } from "@/components";
 
 // 로딩 애니메이션 보이는 여부
 const isLoading = ref(false);
 const isTermsOfServiceOpened = ref(false);
+const isEBookOpened = ref(false);
 
 const startLoading = (data) => {
   isLoading.value = data.value;
@@ -65,6 +70,20 @@ const backgroundClass = computed(() => {
 const toggleTerms = () => {
   isTermsOfServiceOpened.value = !isTermsOfServiceOpened.value
 }
+
+const closeEBook = () => {
+  isEBookOpened.value = false;
+};
+
+watch(
+  () => route.query.ISBN,
+  (newISBN) => {
+    if (newISBN) {
+      isEBookOpened.value = true;
+    }
+  },
+  { immediate: true } // 처음 마운트될 때도 실행
+);
 </script>
 
 <style>

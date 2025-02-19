@@ -11,7 +11,7 @@
             <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
             <div
               class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
-              :class="currTurn === index ? 'border-4 border-[#0073ff]' : ''"
+              :class="currTurn === index ? 'border-4 border-color' : ''"
               >
             </div>
           </div>
@@ -40,7 +40,7 @@
             </div>
           </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index < 3">
+          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index">
             <img src="" alt="" class="w-24 h-24">
           </div>
         </div>
@@ -54,11 +54,10 @@
           v-if="props.participants.length + n <= 3"
         >
           <div
-            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            class="rounded-full overflow-hidden w-24 h-24 border-2 border-white"
           >
             <img :src="Profile.default_profile" alt="">
           </div>
-          <div>비어 있음</div>
           <div class="h-5"></div>
         </div>
       </template>
@@ -68,6 +67,7 @@
         :bookContents="bookContents"
         :gameStarted="gameStarted"
         :isElected="isElected"
+        :bookCover="bookCover"
       />
       <InGameControl
         @broadcast-message="broadcastMessage"
@@ -79,6 +79,7 @@
         :storyCards="storyCards"
         :endingCard="endingCard"
         :gameStarted="gameStarted"
+        :ISBN="ISBN"
       />
     </div>
       <div class="h-full row-span-2 grid grid-rows-3 justify-end">
@@ -90,8 +91,8 @@
             <div class="w-28 h-28 relative">
               <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
               <div
-                class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 bottom-1 z-0"
-                :class="currTurn === index ? 'border-4 border-[blue]' : ''"
+                class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
+                :class="currTurn === index ? 'border-4 border-color' : ''"
                 >
               </div>
             </div>
@@ -119,7 +120,7 @@
               </div>
             </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index" v-if="index > 2">
+          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index">
             <img src="" alt="" class="w-24 h-24">
           </div>
           </div>
@@ -133,11 +134,10 @@
             v-if="props.participants.length + n > 3"
           >
             <div
-              class="rounded-full overflow-hidden w-24 h-24 border border-black"
+              class="rounded-full overflow-hidden w-24 h-24 border-2 border-white"
             >
               <img :src="Profile.default_profile" alt="">
             </div>
-            <div>비어 있음</div>
             <div class="h-5"></div>
           </div>
         </template>
@@ -175,7 +175,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref, watch } from "vue";
+import { nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon } from "@/assets";
 import Profile from "@/assets/images/profiles";
 import {
@@ -275,6 +275,12 @@ const props = defineProps({
   isVoted: {
     Type: Boolean,
   },
+  bookCover: {
+    Type: Object,
+  },
+  ISBN: {
+    Type: String,
+  },
 });
 
 watch(
@@ -313,8 +319,9 @@ watch(
 );
 
 watch(
-  () => props.votings,
-  () => {
+  () => props.votings.length,
+  async (newVal, oldVal) => {
+    await nextTick();
     props.inGameOrder.forEach((order, index) => {
       if (
         props.votings.length != 0 &&
@@ -322,7 +329,6 @@ watch(
         props.votings[props.votings.length - 1].sender
       ) {
         const select = ref();
-        console.log(index);
         if (
           props.votings[props.votings.length - 1].selected ==
           "up"
@@ -357,6 +363,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.border-color {
+  border-color: #72a0ff;
+}
+
 /* @keyframes corona {
   0%,
   100% {

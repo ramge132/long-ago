@@ -20,17 +20,27 @@
         </div>
       </div>
     </div>
-    <div v-else class="flex justify-center items-center my-auto" @click="emit('goLobby')">
-      <div class="bg-gray-50 hover:bg-gray-200 p-4 rounded-2xl font-omp flex items-center gap-x-3 cursor-pointer">
+    <div v-else class="flex justify-center items-center gap-x-4 my-auto">
+      <div
+        @click="emit('goLobby')"
+        class="bg-gray-50 hover:bg-gray-200 p-4 rounded-2xl font-omp flex items-center gap-x-3 cursor-pointer"
+      >
         로비로 돌아가기
         <img :src="ReturnIcon" alt="" class="w-4">
+      </div>
+      <div
+        v-if="ISBN != ''"
+        @click="copy"
+        class="bg-gray-50 hover:bg-gray-200 p-4 rounded-full cursor-pointer"
+      >
+        <img :src="ShareIcon" alt="" class="w-4">
       </div>
     </div>
     <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30]">
       <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
         v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
         <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer" @click="changeMode">
-          <p class="whitespace-nowrap absolute top-[-1.25rem]" v-text="mode.mark"></p>
+          <p class="whitespace-nowrap absolute top-[-1.25rem] font-semibold" style="text-shadow: 2px 0 4px #fff, -2px 0 4px #fff, 0 2px 4px #fff, 0 -2px 4px #fff, 1px 1px #fff, -1px -1px 4px #fff, 1px -1px 4px #fff, -1px 1px 4px #fff;" v-text="mode.mark" :class="index === 1 ? 'text-[#72a0ff]' : ''"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
         <input type="text" class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2 focus:outline-0" v-model="message"
@@ -91,13 +101,15 @@
 
 <script setup>
 import { ref, watch, nextTick, onMounted } from "vue";
-import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon, ReturnIcon } from "@/assets";
+import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon, ReturnIcon, ShareIcon } from "@/assets";
 import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";
 import toast from "@/functions/toast";
+import useCilpboard from "vue-clipboard3";
 
 const userStore = useUserStore();
+const { toClipboard } = useCilpboard();
 const toggleEmoticon = ref(false);
 const message = ref("");
 const chatRefs = ref([]);
@@ -137,6 +149,9 @@ const props = defineProps({
   },
   gameStarted: {
     Type: Boolean,
+  },
+  ISBN: {
+    Type: String,
   },
 });
 
@@ -265,11 +280,11 @@ onMounted(() => {
       el.style.zIndex = arr.length; // hover된 요소를 가장 위로
       computedStyle = window.getComputedStyle(el);
       transform = computedStyle.transform;
-      el.style.transform = `${transform} scale(120%)`;
+      el.style.setProperty("scale", "120%"); // CSS 변수 설정
     });
     el.addEventListener("mouseleave", () => {
     el.style.zIndex = index; // 원래 z-index로 복원
-    el.style.transform = `${transform} scale(100%)`
+    el.style.setProperty("scale", "100%"); // CSS 변수 원래 값으로 복원
   });
   });
   });
@@ -277,6 +292,16 @@ onMounted(() => {
 
 onkeydown = () => {
   chatRefs.value[currChatModeIdx.value].focus();
+};
+
+const copy = async () => {
+  try {
+    await toClipboard(import.meta.env.VITE_MAIN_API_SERVER_URL + "?ISBN=" + props.ISBN);
+    toast.successToast("클립보드에 복사되었습니다.");
+  } catch (error) {
+    toast.errorToast("복사 실패");
+    console.log(error);
+  }
 };
 </script>
 
@@ -287,6 +312,10 @@ onkeydown = () => {
 
 .emoticon {
   transition: all 0.3s ease-in-out;
+}
+
+.handCard {
+  transform: var(--original-transform, none) scale(var(--hover-scale, 100%));
 }
 
 .storycard {

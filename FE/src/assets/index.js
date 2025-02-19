@@ -8,10 +8,6 @@ export { default as rule3 } from "./images/rules/how_3.svg";
 export { default as rule4 } from "./images/rules/how_4.svg";
 export { default as rule5 } from "./images/rules/how_5.svg";
 
-// modes
-export { default as Mode1 } from "./images/modes/mode1.svg";
-export { default as Mode2 } from "./images/modes/mode2.svg";
-
 // icons
 export { default as RefreshIcon } from "./icons/refresh.svg"
 export { default as StartIcon } from "./icons/start.svg";
@@ -29,6 +25,7 @@ export { default as VoteUpLeftIcon } from "./icons/up_left.svg";
 export { default as VoteUpRightIcon } from "./icons/up_right.svg";
 export { default as VoteDownLeftIcon } from "./icons/down_left.svg";
 export { default as VoteDownRightIcon } from "./icons/down_right.svg";
+export { default as ShareIcon } from "./icons/share.png";
 
 // musics
 export { default as LobbyMusic } from "./musics/backgroundMusic.mp3";

@@ -2,20 +2,20 @@
   <div class="col-span-2">
     <!-- 방 설정 메뉴 표시 -->
     <form class="h-full">
-      <div class="h-full w-full grid grid-rows-4">
+      <div class="h-full w-full grid grid-rows-6">
         <div
-          class="row-span-3 grid grid-cols-7 grid-rows-7 gap-x-8 gap-y-8 border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5"
+          class="row-span-5 grid grid-cols-3 grid-rows-5 border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5 font-extrabold"
           :class="configurable == false ? 'pointer-events-none' : ''"
         >
-          <div class="col-span-4 row-span-2 flex flex-col items-center">
-            <label class="self-start">1턴 당 시간(초)</label>
-            <div class="w-full flex justify-between">
+          <div class="col-span-3 flex flex-col items-center">
+            <label>턴당 소요 시간(초)</label>
+            <div class="w-2/3 flex justify-between">
               <template v-for="n in 11" :key="n">
                 <p v-if="n % 2 != 0">{{ n + 29 }}</p>
               </template>
             </div>
             <div
-              class="range-container drop-shadow-md relative w-full h-[20px] flex justify-center items-center"
+              class="range-container drop-shadow-md relative w-2/3 h-[20px] flex justify-center items-center"
             >
               <input
                 type="range"
@@ -36,32 +36,19 @@
               </div>
             </div>
           </div>
-          <div class="col-span-4 row-span-5">
-            <label class="mb-2 block">게임 모드</label>
-            <div class="grid grid-cols-2 gap-x-3 h-2/3">
-              <label
-                class="border-2 border-black rounded-xl flex flex-col justify-between p-3"
-                v-for="(mode, index) in modes"
-                :key="index"
-                :for="'mode' + index"
-                :class="
-                  localRoomConfigs.currMode === mode.value
-                    ? 'shadow-lg scale-105'
-                    : ''
-                "
-              >
-                <img :src="mode.icon" alt="모드 아이콘" />
-                <p class="text-xs" v-html="mode.text"></p>
-                <input
-                  type="radio"
-                  :id="'mode' + index"
-                  name="mode"
-                  :value="mode.value"
-                  v-model="localRoomConfigs.currMode"
-                  class="self-center appearance-none border border-black rounded-xl w-5 h-5 checked:bg-white checked:border-[#EB978B] checked:border-4"
-                  :checked="index === 0"
-                />
-              </label>
+          <div class="col-span-3 row-span-4 flex flex-col items-center">
+            <label class="block mt-4">게임 모드</label>
+            <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll p-5 pointer-events-auto">
+              <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
+                <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
+                  <div class="flex flex-col items-center w-full">
+                    <p class="mb-2">{{ mode.text }}</p>
+                    <label class="rounded-lg overflow-hidden" :for="'mode' + index" :class="localRoomConfigs.currMode === mode.value ? 'outline outline-4 outline-color' : ''" @click="handleClick($event, mode.value)" @mouseover="mode.ishovered = true" @mouseleave="mode.ishovered = false">
+                      <img :src="localRoomConfigs.currMode === mode.value || mode.ishovered ? modeViews[mode.value].modePreview : modeViews[mode.value].modeImage" alt="">
+                    </label>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -104,7 +91,8 @@ import { ref, computed, watch, defineProps, defineEmits } from "vue";
 import { useRouter } from "vue-router";
 import useCilpboard from "vue-clipboard3";
 import toast from "@/functions/toast";
-import { Mode1, Mode2, InviteIcon, StartIcon } from "@/assets";
+import { InviteIcon, StartIcon } from "@/assets";
+import mode from "@/assets/images/modes";
 
 const router = useRouter();
 const { toClipboard } = useCilpboard();
@@ -113,8 +101,24 @@ const maxTimeValue = ref(40);
 const stepTimeValue = ref(2);
 const localRoomConfigs = ref({
   currTurnTime: 30,
-  currMode: 1,
+  currMode: 0,
 });
+const modeViews = ref(
+  [
+  "Mode0",
+  "Mode1",
+  "Mode2",
+  "Mode3",
+  "Mode4",
+  "Mode5",
+  "Mode6",
+  "Mode7",
+  "Mode8",
+  ].map((type) => ({
+    modeImage: mode[`${type}`],
+    modePreview: mode[`${type}_preview`],
+  }))
+);
 
 const emit = defineEmits(["roomConfiguration", "gameStart"]);
 
@@ -157,14 +161,54 @@ const ticks = computed(() => {
 // 게임 모드
 const modes = ref([
   {
-    icon: Mode1,
     text: "기본 모드",
-    value: 1,
+    value: 0,
+    ishovered: false,
   },
   {
-    icon: Mode2,
-    text: "클레이 모드",
+    
+    text: "3D 모드",
+    value: 1,
+    ishovered: false,
+  },
+  {
+    text: "코믹북 모드",
     value: 2,
+    ishovered: false,
+  },
+  {
+    
+    text: "클레이 모드",
+    value: 3,
+    ishovered: false,
+  },
+  {
+    text: "어린이 모드",
+    value: 4,
+    ishovered: false,
+  },
+  {
+    
+    text: "픽셀 모드",
+    value: 5,
+    ishovered: false,
+  },
+  {
+    text: "PS1 모드",
+    value: 6,
+    ishovered: false,
+  },
+  {
+    
+    text: "동화책 모드",
+    value: 7,
+    ishovered: false,
+  },
+  {
+    
+    text: "일러스트 모드",
+    value: 8,
+    ishovered: false,
   },
 ]);
 
@@ -194,6 +238,22 @@ const gameStart = () => {
   }
 };
 
+const chunkedModes = computed(() => {
+  const result = [];
+  for (let i = 0; i < modes.value.length; i += 3) {
+    result.push(modes.value.slice(i, i + 3)) // 3개씩 잘라서 새로운 배열에 추가
+  }
+  return result;
+});
+
+const handleClick = (event, data) => {
+  if(props.configurable) {
+    localRoomConfigs.value.currMode = data;
+  } else {
+    event.preventDefault();
+  }
+}
+
 watch(
   () => props.roomConfigs,
   () => {
@@ -212,4 +272,8 @@ watch(
   { deep: true },
 );
 </script>
-<style></style>
+<style>
+  .outline-color {
+    outline-color: #72a0ff;
+  }
+</style>

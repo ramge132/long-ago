@@ -1,6 +1,6 @@
 <template>
   <div
-    class="absolute w-full h-full bg-[#00000050] flex justify-center items-center"
+    class="absolute w-full h-full rounded-lg bg-[#00000050] flex justify-center items-center"
   >
     <div class="w-2/3 h-5/6 bg-[#ffffffdd] rounded-xl flex flex-col items-center p-3 gap-3 z-20" :class="voteEnded ? 'bounce-reverse' : 'bounce'" @animationend="handleAnimationEnd">
       <div class="meter orange w-full h-14">
