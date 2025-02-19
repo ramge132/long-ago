@@ -54,11 +54,10 @@
           v-if="props.participants.length + n <= 3"
         >
           <div
-            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            class="rounded-full overflow-hidden w-24 h-24 border-2 border-white"
           >
             <img :src="Profile.default_profile" alt="">
           </div>
-          <div>비어 있음</div>
           <div class="h-5"></div>
         </div>
       </template>
@@ -134,11 +133,10 @@
             v-if="props.participants.length + n > 3"
           >
             <div
-              class="rounded-full overflow-hidden w-24 h-24 border border-black"
+              class="rounded-full overflow-hidden w-24 h-24 border-2 border-white"
             >
               <img :src="Profile.default_profile" alt="">
             </div>
-            <div>비어 있음</div>
             <div class="h-5"></div>
           </div>
         </template>
