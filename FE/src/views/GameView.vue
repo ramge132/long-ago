@@ -472,14 +472,16 @@ const setupConnection = (conn) => {
               // 턴 종료 트리거 송신하기
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
+              if (usedCard.value.isEnding) {
+                await gameEnd(true);
+              }
               connectedPeers.value.forEach(async (peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   if (usedCard.value.isEnding) {
                     // 게임 종료 송신
                     gameStarted.value = false;
-                    sendMessage("gameEnd", {}, peer.connection);
+                    sendMessage("gameEnd", {bookCover: bookCover.value}, peer.connection);
                     // 랭킹 페이지 이동
-                    gameEnd(true);
                     // router.push('/game/rank');
                   } else {
                     sendMessage(
@@ -539,6 +541,7 @@ const setupConnection = (conn) => {
 
       case "gameEnd":
         gameStarted.value = false;
+        bookCover.value = data.bookCover;
         gameEnd(true);
         // router.push("/game/rank");
         break;
@@ -1234,14 +1237,16 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         totalTurn.value++;
         // condition에서 다음 턴 or 게임 종료
+        if(usedCard.value.isEnding) {
+          await gameEnd(true);
+        }
         connectedPeers.value.forEach((peer) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             if (usedCard.value.isEnding) {
               // 게임 종료 송신
               gameStarted.value = false;
-              sendMessage("gameEnd",{}, peer.connection);
+              sendMessage("gameEnd",{bookCover: bookCover.value}, peer.connection);
               // 랭킹 페이지 이동
-              gameEnd(true);
               // router.push('/game/rank');
             } else {
               sendMessage(
