@@ -13,7 +13,7 @@ const apiClient = axios.create({
 export const getBook = async (data) => {
     try {
         const params = data;
-        const response = await apiClient.get("/book", {params});
+        const response = await apiClient.get("/apis/book", {params});
         return response;
     } catch (error) {
         console.log(error);

@@ -11,7 +11,7 @@
             <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
             <div
               class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
-              :class="currTurn === index ? 'border-4 border-[#0073ff]' : ''"
+              :class="currTurn === index ? 'border-4 border-color' : ''"
               >
             </div>
           </div>
@@ -54,11 +54,10 @@
           v-if="props.participants.length + n <= 3"
         >
           <div
-            class="rounded-full overflow-hidden w-24 h-24 border border-black"
+            class="rounded-full overflow-hidden w-24 h-24 border-2 border-white"
           >
             <img :src="Profile.default_profile" alt="">
           </div>
-          <div>비어 있음</div>
           <div class="h-5"></div>
         </div>
       </template>
@@ -80,6 +79,7 @@
         :storyCards="storyCards"
         :endingCard="endingCard"
         :gameStarted="gameStarted"
+        :ISBN="ISBN"
       />
     </div>
       <div class="h-full row-span-2 grid grid-rows-3 justify-end">
@@ -92,7 +92,7 @@
               <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
               <div
                 class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
-                :class="currTurn === index ? 'border-4 border-[#0073ff]' : ''"
+                :class="currTurn === index ? 'border-4 border-color' : ''"
                 >
               </div>
             </div>
@@ -134,11 +134,10 @@
             v-if="props.participants.length + n > 3"
           >
             <div
-              class="rounded-full overflow-hidden w-24 h-24 border border-black"
+              class="rounded-full overflow-hidden w-24 h-24 border-2 border-white"
             >
               <img :src="Profile.default_profile" alt="">
             </div>
-            <div>비어 있음</div>
             <div class="h-5"></div>
           </div>
         </template>
@@ -279,6 +278,9 @@ const props = defineProps({
   bookCover: {
     Type: Object,
   },
+  ISBN: {
+    Type: String,
+  },
 });
 
 watch(
@@ -361,6 +363,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.border-color {
+  border-color: #72a0ff;
+}
+
 /* @keyframes corona {
   0%,
   100% {

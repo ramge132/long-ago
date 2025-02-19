@@ -4,7 +4,7 @@
       <Transition name="fade" mode="out-in">
         <component :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
           v-model:roomConfigs="roomConfigs" :participants="participants" :receivedMessages="receivedMessages"
-          :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn"
+          :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn" :ISBN="ISBN"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
           :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" @on-room-configuration="onRoomConfiguration"
@@ -97,6 +97,7 @@ const isElected = ref(false);
 const bookCover = ref({
   title: "", imageUrl: ""
 });
+const ISBN = ref("");
 
 
 watch(isElected, (newValue) => {
@@ -206,7 +207,7 @@ const setupConnection = (conn) => {
   }, 5000);
 
   
-  if (participants.value.length >= maxParticipants) {
+  if (participants.value.length > maxParticipants || gameStarted.value) {
     conn.close();
     return;
   }
@@ -472,14 +473,22 @@ const setupConnection = (conn) => {
               // 턴 종료 트리거 송신하기
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
+              if (usedCard.value.isEnding) {
+                await gameEnd(true);
+              }
               connectedPeers.value.forEach(async (peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   if (usedCard.value.isEnding) {
                     // 게임 종료 송신
                     gameStarted.value = false;
-                    sendMessage("gameEnd", {}, peer.connection);
+                    sendMessage("gameEnd",
+                      {
+                        bookCover: bookCover.value,
+                        isbn: ISBN.value,
+                      },
+                      peer.connection
+                    );
                     // 랭킹 페이지 이동
-                    gameEnd(true);
                     // router.push('/game/rank');
                   } else {
                     sendMessage(
@@ -539,6 +548,8 @@ const setupConnection = (conn) => {
 
       case "gameEnd":
         gameStarted.value = false;
+        bookCover.value = data.bookCover;
+        ISBN.value = data.isbn;
         gameEnd(true);
         // router.push("/game/rank");
         break;
@@ -830,8 +841,6 @@ onMounted(async () => {
   } catch (error) {
     console.error("Peer initialization failed:", error);
   }
-
-  // checkPeerConnections();
 });
 
 // // 퇴장 관련
@@ -1234,14 +1243,22 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         totalTurn.value++;
         // condition에서 다음 턴 or 게임 종료
+        if(usedCard.value.isEnding) {
+          await gameEnd(true);
+        }
         connectedPeers.value.forEach((peer) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             if (usedCard.value.isEnding) {
               // 게임 종료 송신
               gameStarted.value = false;
-              sendMessage("gameEnd",{}, peer.connection);
+              sendMessage("gameEnd",
+                {
+                  bookCover: bookCover.value,
+                  isbn: ISBN.value,
+                },
+                peer.connection
+              );
               // 랭킹 페이지 이동
-              gameEnd(true);
               // router.push('/game/rank');
             } else {
               sendMessage(
@@ -1348,12 +1365,13 @@ const gameEnd = async (status) => {
   } else {
     // 정상 종료인 경우
     if (participants.value[0].id == peerId.value) {
-      // 비정상 종료 api 들어가야함
+      // 정상 종료 api 들어가야함
       try {
         const response = await deleteGame({
           gameId: gameID.value,
           isForceStopped: false
         })
+        ISBN.value = response.data.data.bookId;
         bookCover.value.title = response.data.data.title;
         bookCover.value.imageUrl = response.data.data.bookCover;
       } catch (error) {

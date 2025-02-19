@@ -29,6 +29,7 @@
         <img :src="ReturnIcon" alt="" class="w-4">
       </div>
       <div
+        v-if="ISBN != ''"
         @click="copy"
         class="bg-gray-50 hover:bg-gray-200 p-4 rounded-full cursor-pointer"
       >
@@ -39,7 +40,7 @@
       <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
         v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
         <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer" @click="changeMode">
-          <p class="whitespace-nowrap absolute top-[-1.25rem]" v-text="mode.mark"></p>
+          <p class="whitespace-nowrap absolute top-[-1.25rem] font-semibold" style="text-shadow: 2px 0 4px #fff, -2px 0 4px #fff, 0 2px 4px #fff, 0 -2px 4px #fff, 1px 1px #fff, -1px -1px 4px #fff, 1px -1px 4px #fff, -1px 1px 4px #fff;" v-text="mode.mark" :class="index === 1 ? 'text-[#72a0ff]' : ''"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
         <input type="text" class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2 focus:outline-0" v-model="message"
@@ -148,6 +149,9 @@ const props = defineProps({
   },
   gameStarted: {
     Type: Boolean,
+  },
+  ISBN: {
+    Type: String,
   },
 });
 
@@ -292,7 +296,7 @@ onkeydown = () => {
 
 const copy = async () => {
   try {
-    await toClipboard(import.meta.env.VITE_MAIN_API_SERVER_URL);
+    await toClipboard(import.meta.env.VITE_MAIN_API_SERVER_URL + "?ISBN=" + props.ISBN);
     toast.successToast("클립보드에 복사되었습니다.");
   } catch (error) {
     toast.errorToast("복사 실패");

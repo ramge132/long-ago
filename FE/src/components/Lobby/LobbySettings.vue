@@ -43,7 +43,7 @@
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
                   <div class="flex flex-col items-center w-full">
                     <p class="mb-2">{{ mode.text }}</p>
-                    <label class="rounded-lg overflow-hidden" :for="'mode' + index" :class="localRoomConfigs.currMode === mode.value ? 'outline outline-4 outline-blue-600' : ''" @click="handleClick($event, mode.value)" @mouseover="mode.ishovered = true" @mouseleave="mode.ishovered = false">
+                    <label class="rounded-lg overflow-hidden" :for="'mode' + index" :class="localRoomConfigs.currMode === mode.value ? 'outline outline-4 outline-color' : ''" @click="handleClick($event, mode.value)" @mouseover="mode.ishovered = true" @mouseleave="mode.ishovered = false">
                       <img :src="localRoomConfigs.currMode === mode.value || mode.ishovered ? modeViews[mode.value].modePreview : modeViews[mode.value].modeImage" alt="">
                     </label>
                   </div>
@@ -272,4 +272,8 @@ watch(
   { deep: true },
 );
 </script>
-<style></style>
+<style>
+  .outline-color {
+    outline-color: #72a0ff;
+  }
+</style>

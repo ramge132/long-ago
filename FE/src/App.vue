@@ -31,7 +31,7 @@
 
     <Transition name="fade">
       <div v-show="isLoading" class="absolute z-50 top-0 left-0 rounded-lg w-full h-full bg-[#ffffff30]">
-        <img src="@/assets/loading.gif" alt="" class="w-full h-full">
+        <img src="@/assets/loading.gif" alt="" class="w-full h-full object-cover">
       </div>
     </Transition>
 
