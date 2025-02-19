@@ -5,6 +5,7 @@ import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
 import com.example.b101.domain.*;
 import com.example.b101.dto.*;
+import com.example.b101.repository.BookRepository;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ public class GameService {
     private final RedisSceneRepository sceneRepository;
     private final WebClient webClient;
     private final S3service s3service;
+    private final BookRepository bookRepository;
 
 
     //시연용
@@ -185,11 +187,12 @@ public class GameService {
                 }
             }
 
+
             //빌더패턴을 이용해서 플레이어 상태 객체 생성
             playerStatuses.add(PlayerStatus.builder()
                     .userId(userId)
                     .storyCards(storyCards)
-                    .endingCard(endingCards.get(i))
+                    .endingCard(endingCards.remove(0))
                     .build());
 
         }
@@ -283,6 +286,8 @@ public class GameService {
             book.setImageUrl(baseUrl+"/images/s3/downloadFromS3?objectKey="+book.getBookId()+"/0.png"); //책 표지 url
             book.setScenes(sceneList);
 
+
+            bookRepository.save(book);
 
             //redis에 저장됐던 scene 데이터들 삭제
             sceneRepository.deleteAllByGameId(deleteGameRequest.getGameId());
