@@ -27,7 +27,7 @@ import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
 import Peer from "peerjs";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const userStore = useUserStore();
@@ -313,7 +313,9 @@ const setupConnection = (conn) => {
         break;
 
       case "gameStart":
+        console.log(data);
         // 게임 관련 데이터 초기화
+        participants.value = data.participants;
         receivedMessages.value = [];
         currTurn.value = 0;
         bookContents.value = [{ content: "", image: null }];
@@ -877,6 +879,28 @@ addEventListener("beforeunload", () => {
   }
 });
 
+// 컴포넌트 언마운트 전에 peer 객체 정리
+onBeforeUnmount(() => {
+  // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
+  connectedPeers.value.forEach((peer) => {
+    sendMessage(
+      "system",
+      { id: peerId.value, nickname: userStore.userData.userNickname },
+      peer.connection
+    );
+
+    // 연결 종료 신호 보내기
+    if (peer.connection.open) {
+      peer.connection.close();  // 연결 종료
+    }
+  });
+
+  // 자신도 연결 종료
+  if (peer.value) {
+    peer.value.destroy();  // 자신의 Peer 객체 종료
+  }
+})
+
 // 방 설정 관련 부분
 const onRoomConfiguration = (data) => {
   roomConfigs.value = data;
@@ -944,6 +968,7 @@ const gameStart = async (data) => {
         gameStarted: gameStarted.value,
         order: inGameOrder.value,
         gameId: gameID.value,
+        participants: participants.value,
       },
       peer.connection,
     );
