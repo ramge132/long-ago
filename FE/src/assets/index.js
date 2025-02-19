@@ -25,6 +25,10 @@ export { default as VoteUpLeftIcon } from "./icons/up_left.svg";
 export { default as VoteUpRightIcon } from "./icons/up_right.svg";
 export { default as VoteDownLeftIcon } from "./icons/down_left.svg";
 export { default as VoteDownRightIcon } from "./icons/down_right.svg";
+export { default as VoteUpLeftgif } from "./icons/thumbs_up_left.gif"
+export { default as VoteUpRightgif } from "./icons/thumbs_up_right.gif"
+export { default as VoteDownLeftgif } from "./icons/thumbs_down_left.gif"
+export { default as VoteDownRightgif } from "./icons/thumbs_down_right.gif"
 export { default as ShareIcon } from "./icons/share.png";
 
 // musics
