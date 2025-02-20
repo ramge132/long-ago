@@ -98,11 +98,11 @@ public class SceneService {
                 .id(UUID.randomUUID().toString())
                 .gameId(sceneRequest.getGameId())
                 .prompt(sceneRequest.getUserPrompt())
-                .image(generateImage)  // 바이너리 이미지 데이터 저장
                 .sceneOrder(sceneRequest.getTurn())
                 .userId(sceneRequest.getUserId())
                 .build();
 
+        scene.setImage(generateImage);
 
         redisSceneRepository.save(scene);
 
