@@ -326,6 +326,8 @@ const setupConnection = (conn) => {
         receivedMessages.value = [];
         currTurn.value = 0;
         bookContents.value = [{ content: "", image: null }];
+        bookCover.value = {title: "", imageUrl: ""};
+        ISBN.value = "";
         votings.value = [];
         myTurn.value = null;
         inProgress.value = false;
@@ -972,6 +974,8 @@ const gameStart = async (data) => {
   receivedMessages.value = [];
   currTurn.value = 0;
   bookContents.value = [{ content: "", image: null }];
+  bookCover.value = {title: "", imageUrl: ""};
+  ISBN.value = "";
   votings.value = [];
   myTurn.value = null;
   inProgress.value = false;
@@ -1459,6 +1463,8 @@ const goLobby = () => {
   receivedMessages.value = [];
   currTurn.value = 0;
   bookContents.value = [{ content: "", image: null }];
+  bookCover.value = {title: "", imageUrl: ""};
+  ISBN.value = "";
   votings.value = [];
   myTurn.value = null;
   inProgress.value = false;
