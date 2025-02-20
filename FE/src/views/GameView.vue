@@ -157,6 +157,9 @@ function decompressUUID(compressedStr) {
 
 // 메시지 송신 함수
 const sendMessage = (type, payload, conn) => {
+  if (type != "heartBeat" || type != "heartBeat_back") {
+    console.log(type, payload);
+  }
   if (conn && conn.open) {
     conn.send({ type, ...payload });
   }
