@@ -28,6 +28,12 @@
   font-weight: 600;
 }
 
+@font-face {
+  font-family: "title";
+  src: url("@/assets/fonts/title.ttf") format("truetype");
+  font-weight: 600;
+}
+
  /* 기본 폰트입니둥 */
  @font-face {
 	font-family: 'Pretendard';

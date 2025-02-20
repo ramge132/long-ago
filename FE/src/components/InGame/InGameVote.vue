@@ -21,9 +21,9 @@
     </div>
     <div class="bg-[#ffffffdd] h-max rounded-lg flex flex-col translate-y-2/3 items-center p-4 ml-3 transition-all duration-1000 ease-in-out" :class="showCard ? '' : '-translate-x-[120%] opacity-0 z-0'">
       <p class="font-omp text-xl mb-2">사용한 카드</p>
-      <div class="relative">
+      <div class="relative" ref="cardRef">
         <img :src="usedCard.isEnding ? CardImage.endingCardBack : CardImage.storyCardBack" alt="스토리카드" class="w-20">
-        <div class="w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri" :class="usedCard.isEnding ? 'endingcard text-[#fee09e] text-sm' : 'storycard text-[#eadfcd] text-xl'">{{ props.usedCard.keyword }}</div>
+        <div class="w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri" :class="usedCard.isEnding ? 'endingcard text-[#fee09e]' : 'storycard text-[#eadfcd]'" ref="contentRef">{{ props.usedCard.keyword }}</div>
       </div>
     </div>
   </div>
@@ -31,13 +31,18 @@
 <script setup>
 import { VoteUpLeftIcon, VoteDownRightIcon } from '@/assets';
 import CardImage from "@/assets/cards";
-import { ref } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useUserStore } from '@/stores/auth';
 const userStore = useUserStore();
 const selected = ref("up");
 const countStarted = ref(false);
 const voteEnded = ref(false);
 const showCard = ref(false);
+const cardRef = ref(null);
+const contentRef = ref(null);
+const contentSizes = ref([
+  "xl", "lg", "sm", "xs"
+]);
 const emit = defineEmits(['voteEnd']);
 const startCount = () => {
   countStarted.value = true;
@@ -73,6 +78,18 @@ const handleAnimationEnd = (event) => {
     showCard.value = true;
   }
 };
+
+onMounted(async () => {
+  await nextTick();
+  if(contentRef.value && cardRef.value) {
+    let index = 0;
+    contentRef.value.classList.add("text-" + contentSizes.value[index]);
+    while(contentRef.value.scrollHeight > cardRef.value.clientHeight && index < contentSizes.value.length - 1) {
+      contentRef.value.classList.remove("text-" + contentSizes.value[index++]);
+      contentRef.value.classList.add("text-" + contentSizes.value[index]);
+    }
+  }
+});
 
 </script>
 <style scoped>

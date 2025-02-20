@@ -12,10 +12,10 @@
           </transition-group>
       </div>
       <div class="flex flex-col flex-1 justify-center items-center">
-        <div class="relative endingcard cursor-pointer" @click="sendEndingCard">
+        <div class="relative endingcard cursor-pointer" @click="sendEndingCard" ref="cardRef">
           <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-28">
           <div
-            class="endingcard-text w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e] text-xl">
+            class="endingcard-text w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e]" ref="contentRef">
             {{ endingCard.content }}</div>
         </div>
       </div>
@@ -113,6 +113,11 @@ const { toClipboard } = useCilpboard();
 const toggleEmoticon = ref(false);
 const message = ref("");
 const chatRefs = ref([]);
+const cardRef = ref(null);
+const contentRef = ref(null);
+const contentSizes = ref([
+  "xl", "lg", "sm", "xs"
+]);
 const rerollCount = ref(3);
 const emoticons = ref(
   [
@@ -269,6 +274,18 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
     chatRefs.value[newIndex].focus();
   }
 });
+
+watch(() => props.endingCard, async () => {
+  await nextTick();
+  if(contentRef.value && cardRef.value) {
+    let index = 0;
+    contentRef.value.classList.add("text-" + contentSizes.value[index]);
+    while(contentRef.value.scrollHeight > cardRef.value.clientHeight && index < contentSizes.value.length - 1) {
+      contentRef.value.classList.remove("text-" + contentSizes.value[index++]);
+      contentRef.value.classList.add("text-" + contentSizes.value[index]);
+    }
+  }
+}, {deep: true, immediate: true});
 
 onMounted(() => {
   nextTick(() => {
