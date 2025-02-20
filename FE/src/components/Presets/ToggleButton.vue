@@ -1,7 +1,7 @@
 <template>
   <div
-    class="absolute z-10 left-5 top-5 flex-col text-gray-800"
-    :class="isInGame ? 'left-5 top-[-30px]' : 'left-5 top-5'"
+    class="absolute z-10 left-5 top-5 flex flex-col gap-y-1 text-gray-800"
+    :class="isInGame ? 'left-5 top-[-50px]' : 'left-5 top-5'"
   >
   <div class="flex items-center gap-x-3">
 
@@ -30,8 +30,8 @@
     <!-- 오디오 -->
     <audio ref="audioRef" :src="route.path === '/game/rank' ? RankingMusic : LobbyMusic" loop></audio>
   </div>
-    <div class="flex items-center gap-x-3">
-      <span class="font-semibold">VOLUME</span>
+    <div v-show="audioStore.audioData" class="flex items-center gap-x-3">
+      <span class="font-semibold text-sm">VOLUME</span>
       <input type="range" min="0" max="1" v-model="audioStore.audioVolume" step="0.01">
       <span
       class="text-[10px]"
@@ -191,7 +191,7 @@ body .dribbble img {
   height: 28px;
 }
 
-input[type="range"] {
+/* input[type="range"] {
   appearance: none;
   width: 100%;
   padding: 2px;
@@ -233,6 +233,27 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 input[type="range"]::-moz-range-thumb:hover {
+  cursor: pointer;
+} */
+input[type="range"]{
+  -webkit-appearance:none;
+  width:85px;
+  height:4px;
+  border-radius: 2px;
+  background: #505162;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:15px;
+  height:15px;
+  border-radius: 100%;
+  background: #f7f8ff;
+  position:relative;
+  border: 3px solid #f7f8ff;
+  z-index:3;
   cursor: pointer;
 }
 </style>
