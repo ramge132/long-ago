@@ -1480,7 +1480,7 @@ const goLobby = () => {
 watch(
   () => [percentage.value, isElected.value],
   ([newPercent, oldPercent], []) => {
-    if (newPercent > oldPercent && oldPercent > 100 && isElected.value) {
+    if (newPercent > oldPercent && newPercent > 100 && isElected.value) {
       gameEnd(false);
       // 전체 실패 쇼 오버레이
       isForceStopped.value = "fail";
