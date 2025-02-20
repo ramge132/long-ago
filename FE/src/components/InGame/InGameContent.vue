@@ -9,7 +9,7 @@
           style="text-shadow: -1px 0px #8a622a, 0px 1px #8a622a, 1px 0px #8a622a, 0px -1px #8a622a;"
           :style="{ zIndex: calculateZIndex(0) }"
         >
-        <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute -translate-y-3/4" style="backface-visibility: hidden"></p>
+        <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute -translate-y-150px" style="backface-visibility: hidden"></p>
         <img :src="bookCover.imageUrl" alt="" v-if="bookCover.imageUrl" class="w-full h-full object-fill">
         
         </div>

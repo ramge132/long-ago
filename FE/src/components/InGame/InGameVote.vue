@@ -1,13 +1,13 @@
 <template>
   <div
-    class="absolute w-full h-full rounded-lg bg-[#00000050] flex justify-center items-center"
+    class="absolute w-full h-full rounded-lg bg-[#00000050] flex justify-center"
   >
-    <div class="w-2/3 h-5/6 bg-[#ffffffdd] rounded-xl flex flex-col items-center p-3 gap-3 z-20" :class="voteEnded ? 'bounce-reverse' : 'bounce'" @animationend="handleAnimationEnd">
+    <div class="w-1/2 h-2/3 bg-[#ffffffdd] rounded-xl flex flex-col items-center p-3 gap-3 z-20" :class="voteEnded ? 'bounce-reverse' : 'bounce'" @animationend="handleAnimationEnd">
       <div class="meter orange w-full h-14">
         <span class="w-full rounded-full" :class="countStarted ? 'decrease' : ''" @animationend="voteEnd"></span>
       </div>
-      <p class="text-6xl font-katuri" v-text="usedCard.isEnding ? '이 이야기로 끝맺을까요?' : '이 이야기를 추가할까요?'"></p> 
-      <div class="border-2 border-black w-full rounded-md flex justify-center items-center h-32">
+      <p class="text-5xl font-katuri" v-text="usedCard.isEnding ? '이 이야기로 끝맺을까요?' : '이 이야기를 추가할까요?'"></p> 
+      <div class="border-2 border-black w-full rounded-md flex justify-center items-center h-32 text-xl">
         <p>{{ prompt }}</p>
       </div>
       <div class="grid grid-cols-2 w-full h-full gap-4">
@@ -19,11 +19,11 @@
         </div>
       </div>
     </div>
-    <div class="bg-[#ffffffdd] rounded-lg flex flex-col justify-center items-center p-4 ml-3 transition-all duration-1000 ease-in-out" :class="showCard ? '' : '-translate-x-[120%] opacity-0 z-0'">
+    <div class="bg-[#ffffffdd] h-max rounded-lg flex flex-col translate-y-2/3 items-center p-4 ml-3 transition-all duration-1000 ease-in-out" :class="showCard ? '' : '-translate-x-[120%] opacity-0 z-0'">
       <p class="font-omp text-xl mb-2">사용한 카드</p>
       <div class="relative">
-        <img :src="usedCard.isEnding ? CardImage.endingCardBack : CardImage.storyCardBack" alt="스토리카드" class="w-28">
-        <div class="w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri" :class="usedCard.isEnding ? 'endingcard text-[#fee09e] text-xl' : 'storycard text-[#eadfcd] text-3xl'">{{ props.usedCard.keyword }}</div>
+        <img :src="usedCard.isEnding ? CardImage.endingCardBack : CardImage.storyCardBack" alt="스토리카드" class="w-20">
+        <div class="w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri" :class="usedCard.isEnding ? 'endingcard text-[#fee09e] text-sm' : 'storycard text-[#eadfcd] text-xl'">{{ props.usedCard.keyword }}</div>
       </div>
     </div>
   </div>
