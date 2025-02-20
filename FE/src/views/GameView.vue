@@ -488,13 +488,16 @@ const setupConnection = (conn) => {
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
-                await gameEnd(true).then(() => {
+                await gameEnd(true).then((res) => {
                   connectedPeers.value.forEach(async (p) => {
                     if (p.id !== peerId.value && p.connection.open) {
                       sendMessage("gameEnd",
                         {
-                          bookCover: bookCover.value,
-                          isbn: ISBN.value,
+                          bookCover: {
+                            title: res.data.data.title,
+                            imageUrl: res.data.data.bookCover
+                          },
+                          isbn: res.data.data.bookId,
                         },
                         p.connection
                       );
@@ -1320,13 +1323,16 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         // condition에서 다음 턴 or 게임 종료
         if (usedCard.value.isEnding) {
-          await gameEnd(true).then(() => {
+          await gameEnd(true).then((res) => {
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
                 sendMessage("gameEnd",
                   {
-                    bookCover: bookCover.value,
-                    isbn: ISBN.value,
+                    bookCover: {
+                      title: res.data.data.title,
+                      imageUrl: res.data.data.bookCover
+                    },
+                    isbn: res.data.data.bookId,
                   },
                   p.connection
                 );
@@ -1452,6 +1458,8 @@ const gameEnd = async (status) => {
         ISBN.value = response.data.data.bookId;
         bookCover.value.title = response.data.data.title;
         bookCover.value.imageUrl = response.data.data.bookCover;
+
+        return response;
       } catch (error) {
         console.log(error)
       }
