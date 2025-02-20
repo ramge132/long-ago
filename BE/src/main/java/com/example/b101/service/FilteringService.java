@@ -95,10 +95,12 @@ public class FilteringService {
 
         List<Token> tokenList = analyzeResultList.getTokenList();
 
-
+        for (Token token : tokenList) {
+            log.info(token.getMorph());
+        }
 
         long keywordCnt = allVariants.stream()
-                .filter(variant -> tokenList.stream().anyMatch(token -> variant.contains(token.getMorph())))
+                .filter(variant -> tokenList.stream().anyMatch(token -> token.getMorph().equals(variant)))
                 .count();
 
         if (keywordCnt > 1) {

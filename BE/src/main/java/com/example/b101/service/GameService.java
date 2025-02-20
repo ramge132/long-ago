@@ -242,6 +242,9 @@ public class GameService {
                         request.getRequestURI());
             }
 
+            if(bookCover.getImage_bytes() == null){
+                log.error("이미지가 안왔음");
+            }
 
             //정상적인 게임 종료 시 책표지 생성
             SceneRedis scene = SceneRedis.builder()
