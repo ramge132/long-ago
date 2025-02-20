@@ -499,6 +499,8 @@ const setupConnection = (conn) => {
                     );
                     // 랭킹 페이지 이동
                     // router.push('/game/rank');
+                    // 우승자 쇼 오버레이
+                    isForceStopped.value = "champ";
                   } else {
                     sendMessage(
                       "nextTurn",
@@ -560,6 +562,8 @@ const setupConnection = (conn) => {
         bookCover.value = data.bookCover;
         ISBN.value = data.isbn;
         gameEnd(true);
+        // 우승자 쇼 오버레이
+        isForceStopped.value = "champ";
         // router.push("/game/rank");
         break;
 
@@ -1292,6 +1296,8 @@ const voteEnd = async (data) => {
               );
               // 랭킹 페이지 이동
               // router.push('/game/rank');
+              // 우승자 쇼 오버레이
+              isForceStopped.value = "champ";
             } else {
               sendMessage(
                 "nextTurn",
@@ -1393,7 +1399,7 @@ const gameEnd = async (status) => {
       }
     }
     // 전체 실패 쇼 오버레이
-    isForceStopped.value = "fail";
+    // isForceStopped.value = "fail";
   } else {
     // 정상 종료인 경우
     if (participants.value[0].id == peerId.value) {
@@ -1411,7 +1417,7 @@ const gameEnd = async (status) => {
       }
     }
     // 우승자 쇼 오버레이
-    isForceStopped.value = "champ";
+    // isForceStopped.value = "champ";
   }
 };
 
@@ -1440,6 +1446,8 @@ watch(
   ([newPercent, oldPercent], []) => {
     if (newPercent > oldPercent && oldPercent > 100 && isElected.value) {
       gameEnd(false);
+      // 전체 실패 쇼 오버레이
+      isForceStopped.value = "fail";
     }
   }
 )
