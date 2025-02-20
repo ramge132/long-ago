@@ -243,6 +243,7 @@ public class GameService {
             }
 
             if(bookCover.getImage_bytes() == null){
+                log.info(bookCover.toString());
                 log.error("이미지가 안왔음");
             }
 
