@@ -247,7 +247,7 @@ public class GameService {
             SceneRedis scene = SceneRedis.builder()
                     .id(UUID.randomUUID().toString())
                     .gameId(deleteGameRequest.getGameId())
-                    .image(Base64.getDecoder().decode(Objects.requireNonNull(bookCover).getImage_bytes()))  // 바이너리 이미지 데이터 저장
+                    .image(bookCover.getImage_bytes())  // 바이너리 이미지 데이터 저장
                     .sceneOrder(0) //책 표지는 순서가 0
                     .build();
 
