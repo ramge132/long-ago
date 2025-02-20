@@ -158,6 +158,9 @@ function decompressUUID(compressedStr) {
 
 // 메시지 송신 함수
 const sendMessage = (type, payload, conn) => {
+  if (type != "heartBeat" || type != "heartBeat_back") {
+    console.log(type, payload);
+  }
   if (conn && conn.open) {
     conn.send({ type, ...payload });
   }
@@ -327,6 +330,8 @@ const setupConnection = (conn) => {
         receivedMessages.value = [];
         currTurn.value = 0;
         bookContents.value = [{ content: "", image: null }];
+        bookCover.value = {title: "", imageUrl: ""};
+        ISBN.value = "";
         votings.value = [];
         myTurn.value = null;
         inProgress.value = false;
@@ -485,13 +490,16 @@ const setupConnection = (conn) => {
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
-                await gameEnd(true).then(() => {
+                await gameEnd(true).then((res) => {
                   connectedPeers.value.forEach(async (p) => {
                     if (p.id !== peerId.value && p.connection.open) {
                       sendMessage("gameEnd",
                         {
-                          bookCover: bookCover.value,
-                          isbn: ISBN.value,
+                          bookCover: {
+                            title: res.data.data.title,
+                            imageUrl: res.data.data.bookCover
+                          },
+                          isbn: res.data.data.bookId,
                         },
                         p.connection
                       );
@@ -975,6 +983,8 @@ const gameStart = async (data) => {
   receivedMessages.value = [];
   currTurn.value = 0;
   bookContents.value = [{ content: "", image: null }];
+  bookCover.value = {title: "", imageUrl: ""};
+  ISBN.value = "";
   votings.value = [];
   myTurn.value = null;
   inProgress.value = false;
@@ -1336,13 +1346,16 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         // condition에서 다음 턴 or 게임 종료
         if (usedCard.value.isEnding) {
-          await gameEnd(true).then(() => {
+          await gameEnd(true).then((res) => {
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
                 sendMessage("gameEnd",
                   {
-                    bookCover: bookCover.value,
-                    isbn: ISBN.value,
+                    bookCover: {
+                      title: res.data.data.title,
+                      imageUrl: res.data.data.bookCover
+                    },
+                    isbn: res.data.data.bookId,
                   },
                   p.connection
                 );
@@ -1469,6 +1482,8 @@ const gameEnd = async (status) => {
         ISBN.value = response.data.data.bookId;
         bookCover.value.title = response.data.data.title;
         bookCover.value.imageUrl = response.data.data.bookCover;
+
+        return response;
       } catch (error) {
         console.log(error)
       }
@@ -1483,6 +1498,8 @@ const goLobby = () => {
   receivedMessages.value = [];
   currTurn.value = 0;
   bookContents.value = [{ content: "", image: null }];
+  bookCover.value = {title: "", imageUrl: ""};
+  ISBN.value = "";
   votings.value = [];
   myTurn.value = null;
   inProgress.value = false;
@@ -1502,14 +1519,15 @@ const goLobby = () => {
 
 // 긴장감이 100 이상 진행 된 경우 전체 탈락
 watch(
-  () => [percentage.value, isElected.value],
-  ([newPercent, oldPercent], []) => {
-    if (newPercent > oldPercent && newPercent > 100 && isElected.value) {
+  () => [percentage.value, usedCard.value],
+  ([newPercent, oldPercent], [a, b]) => {
+    if (newPercent > oldPercent && newPercent >= 100 && b.isEnding == false) {
       gameEnd(false);
       // 전체 실패 쇼 오버레이
       isForceStopped.value = "fail";
     }
-  }
+  },
+  { deep: true }
 )
 </script>
 <style>
