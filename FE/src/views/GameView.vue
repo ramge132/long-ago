@@ -483,40 +483,72 @@ const setupConnection = (conn) => {
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
-                await gameEnd(true);
-              }
-              connectedPeers.value.forEach(async (peer) => {
-                if (peer.id !== peerId.value && peer.connection.open) {
-                  if (usedCard.value.isEnding) {
-                    // 게임 종료 송신
-                    gameStarted.value = false;
-                    sendMessage("gameEnd",
-                      {
-                        bookCover: bookCover.value,
-                        isbn: ISBN.value,
-                      },
-                      peer.connection
-                    );
-                    // 랭킹 페이지 이동
-                    // router.push('/game/rank');
-                    // 우승자 쇼 오버레이
-                    isForceStopped.value = "champ";
-                  } else {
+                await gameEnd(true).then(() => {
+                  connectedPeers.value.forEach(async (p) => {
+                    if (p.id !== peerId.value && p.connection.open) {
+                      sendMessage("gameEnd",
+                        {
+                          bookCover: bookCover.value,
+                          isbn: ISBN.value,
+                        },
+                        p.connection
+                      );
+                    };
+                  });
+                  
+                  gameStarted.value = false;
+                  isForceStopped.value = "champ";
+                });
+              } else {
+                connectedPeers.value.forEach(async (p) => {
+                  if (p.id !== peerId.value && p.connection.open) {
                     sendMessage(
                       "nextTurn",
                       {
                         currTurn: currTurn.value,
                         imageDelete: false,
                       },
-                      peer.connection
+                      p.connection
                     )
-                    // inProgress.value = false;
-                    await showOverlay('whoTurn');
-                    inProgress.value = true;
-                  }
-                }
-              });
+                  };
+                });
+
+                await showOverlay('whoTurn');
+                inProgress.value = true;
+              };
             }
+            //   connectedPeers.value.forEach(async (peer) => {
+            //     if (peer.id !== peerId.value && peer.connection.open) {
+            //       if (usedCard.value.isEnding) {
+            //         // 게임 종료 송신
+            //         gameStarted.value = false;
+            //         sendMessage("gameEnd",
+            //           {
+            //             bookCover: bookCover.value,
+            //             isbn: ISBN.value,
+            //           },
+            //           peer.connection
+            //         );
+            //         // 랭킹 페이지 이동
+            //         // router.push('/game/rank');
+            //         // 우승자 쇼 오버레이
+            //         isForceStopped.value = "champ";
+            //       } else {
+            //         sendMessage(
+            //           "nextTurn",
+            //           {
+            //             currTurn: currTurn.value,
+            //             imageDelete: false,
+            //           },
+            //           peer.connection
+            //         )
+            //         // inProgress.value = false;
+            //         await showOverlay('whoTurn');
+            //         inProgress.value = true;
+            //       }
+            //     }
+            //   });
+            // }
             // 투표 결과 전송 api
       try {
           const response = await voteResultSend({
@@ -945,6 +977,9 @@ const gameStart = async (data) => {
   inProgress.value = false;
   inGameOrder.value = [];
   isForceStopped.value = null;
+  participants.value.forEach((participant) => {
+    participant.score = 10;
+  })
   usedCard.value = {
     id: 0,
     keyword: "",
@@ -1266,7 +1301,6 @@ const voteEnd = async (data) => {
       else {
         isElected.value = true;
         accepted = true;
-
         // 투표 가결 시 점수 +2
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
         if (usedCard.value.isEnding) {
@@ -1277,42 +1311,41 @@ const voteEnd = async (data) => {
 
         // 턴 종료 트리거 송신하기
         currTurn.value = (currTurn.value + 1) % participants.value.length;
-        totalTurn.value++;
         // condition에서 다음 턴 or 게임 종료
-        if(usedCard.value.isEnding) {
-          await gameEnd(true);
-        }
-        connectedPeers.value.forEach((peer) => {
-          if (peer.id !== peerId.value && peer.connection.open) {
-            if (usedCard.value.isEnding) {
-              // 게임 종료 송신
-              gameStarted.value = false;
-              sendMessage("gameEnd",
-                {
-                  bookCover: bookCover.value,
-                  isbn: ISBN.value,
-                },
-                peer.connection
-              );
-              // 랭킹 페이지 이동
-              // router.push('/game/rank');
-              // 우승자 쇼 오버레이
-              isForceStopped.value = "champ";
-            } else {
+        if (usedCard.value.isEnding) {
+          await gameEnd(true).then(() => {
+            connectedPeers.value.forEach(async (p) => {
+              if (p.id !== peerId.value && p.connection.open) {
+                sendMessage("gameEnd",
+                  {
+                    bookCover: bookCover.value,
+                    isbn: ISBN.value,
+                  },
+                  p.connection
+                );
+              };
+            });
+            
+            gameStarted.value = false;
+            isForceStopped.value = "champ";
+          });
+        } else {
+          connectedPeers.value.forEach(async (p) => {
+            if (p.id !== peerId.value && p.connection.open) {
               sendMessage(
                 "nextTurn",
                 {
                   currTurn: currTurn.value,
                   imageDelete: false,
                 },
-                peer.connection
+                p.connection
               )
-            }
-          }
-        });
-        // inProgress.value = false;
-        await showOverlay('whoTurn');
-        inProgress.value = true;
+            };
+          });
+
+          await showOverlay('whoTurn');
+          inProgress.value = true;
+        };
       }
       // 투표 결과 전송 api
       try {
@@ -1431,6 +1464,9 @@ const goLobby = () => {
   inProgress.value = false;
   inGameOrder.value = [];
   isForceStopped.value = null;
+  participants.value.forEach((participant) => {
+    participant.score = 10;
+  });
   usedCard.value = {
     id: 0,
     keyword: "",
