@@ -55,8 +55,9 @@ watch(() => props.isForceStopped, () => {
             audioStore.audioPlay = false;
         } else if (props.isForceStopped === "fail") {
             loseMusic.play();
-            audioStore.audioPlay = true;
+            audioStore.audioPlay = false;
         } else {
+            audioStore.audioPlay = true;
             winningMusic.pause();
             loseMusic.pause();
             winningMusic.currentTime = 0
