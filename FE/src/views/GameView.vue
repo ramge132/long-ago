@@ -1519,9 +1519,10 @@ const goLobby = () => {
 
 // 긴장감이 100 이상 진행 된 경우 전체 탈락
 watch(
-  () => [percentage.value, usedCard.value],
-  ([newPercent, oldPercent], [a, b]) => {
-    if (newPercent > oldPercent && newPercent >= 100 && b.isEnding == false) {
+  () => [percentage.value, usedCard.value, isElected.value],
+  ([newPercent, newUsedCard, newIsElected], [oldPercent, oldUsedCard, oldIsElected]) => {
+    console.log(newPercent, oldPercent, newUsedCard, oldUsedCard, newIsElected, oldIsElected);
+    if (newPercent >= oldPercent && newPercent >= 100 && newUsedCard.isEnding == false && newIsElected) {
       gameEnd(false);
       // 전체 실패 쇼 오버레이
       isForceStopped.value = "fail";
