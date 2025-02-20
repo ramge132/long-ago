@@ -84,7 +84,7 @@ public class GameService {
 
             }
 
-            EndingCard endingCard = endingCards.remove(i);
+            EndingCard endingCard = endingCards.remove(0);
 
             playerStatus.setEndingCard(endingCard);
             playerStatus.setStoryCards(storyCardList);

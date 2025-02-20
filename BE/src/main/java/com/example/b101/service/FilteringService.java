@@ -111,8 +111,8 @@ public class FilteringService {
 
         // 사용한 카드 찾기
         Integer userCardId = storyCardVariantsList.stream()
-                .filter(variant -> tokenList.stream().anyMatch(token -> token.getMorph().contains(variant.getVariant())))
-                .map(variant -> variant.getStoryCard().getId())
+                .filter(variant -> playerStoryCardIds.contains(variant.getStoryCard().getId()) && tokenList.stream().anyMatch(token -> token.getMorph().contains(variant.getVariant())))
+                .map(storyCardVariants -> storyCardVariants.getStoryCard().getId())
                 .findFirst()
                 .orElse(null);
 
