@@ -1,7 +1,10 @@
 package com.example.b101.cache;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+
 import java.io.Serializable;
+import java.util.Base64;
 
 @Data
 @Builder
@@ -25,6 +28,16 @@ public class SceneRedis implements Serializable {
 
     private String prompt; //사용자가 생성한 프롬포트
 
-    private byte[] image; //바이너리 형태로 저장된 이미지
+    private String image; //베이스 인코딩해서 저장된 이미지
 
+
+    @JsonIgnore
+    public byte[] getImage() {
+        return Base64.getDecoder().decode(image);
+    }
+
+    @JsonIgnore
+    public void setImage(byte[] image) {
+        this.image = Base64.getEncoder().encodeToString(image);
+    }
 }
