@@ -7,7 +7,7 @@
           :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn" :ISBN="ISBN"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
-          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" @on-room-configuration="onRoomConfiguration"
+          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" :isPreview="isPreview" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
           @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" />
       </Transition>
@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, voteResultSend } from "@/apis/game";
+import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend } from "@/apis/game";
 import { currTurnImage, myTurnImage, startImage, MessageMusic } from "@/assets";
 import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
@@ -101,7 +101,8 @@ const bookCover = ref({
   title: "", imageUrl: ""
 });
 const ISBN = ref("");
-
+// 시연 모드 on/off
+const isPreview = ref(false);
 
 watch(isElected, (newValue) => {
   if (newValue === true) {
@@ -347,6 +348,7 @@ const setupConnection = (conn) => {
             gameId: gameID.value,
           });
 
+          isPreview.value = response.data.data.isPreview;
           storyCards.value = response.data.data.storyCards;
           endingCard.value = response.data.data.endingCard;
 
@@ -989,25 +991,44 @@ const gameStart = async (data) => {
   // 로딩 애니메이션 활성화
   emit("startLoading", {value: true});
   
+  // 시연 모드 확인
+  isPreview.value = data.isPreview;
+
   // 게임 방 생성
-  try {
-    const response = await createGame({
-      bossId: peerId.value,
-      player: participants.value.map((p) => p.id),
-      drawingStyle: roomConfigs.value.currMode,
-    })
-    gameID.value = response.data.data.gameId;
-    storyCards.value = response.data.data.status.storyCards;
-    endingCard.value = response.data.data.status.endingCard;
-  } catch (error) {
-    console.log(error);
-    // return;
+  if(isPreview.value) {
+    console.log("preview test");
+    try {
+      const response = await testGame({
+        bossId: peerId.value,
+        player: participants.value.map((p) => p.id),
+        drawingStyle: roomConfigs.value.currMode,
+      });
+      gameID.value = response.data.data.gameId;
+      storyCards.value = response.data.data.status.storyCards;
+      endingCard.value = response.data.data.status.endingCard;
+    } catch (error) {
+      console.log(error);
+    }
+  } else {
+    try {
+      const response = await createGame({
+        bossId: peerId.value,
+        player: participants.value.map((p) => p.id),
+        drawingStyle: roomConfigs.value.currMode,
+      })
+      gameID.value = response.data.data.gameId;
+      storyCards.value = response.data.data.status.storyCards;
+      endingCard.value = response.data.data.status.endingCard;
+    } catch (error) {
+      console.log(error);
+      // return;
+    }
   }
 
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
-
   
+  console.log(isPreview.value);
   connectedPeers.value.forEach((peer) => {
     sendMessage(
       "gameStart",
@@ -1016,6 +1037,7 @@ const gameStart = async (data) => {
         order: inGameOrder.value,
         gameId: gameID.value,
         participants: participants.value,
+        isPreview: isPreview.value,
       },
       peer.connection,
     );
