@@ -94,8 +94,9 @@ public class SceneService {
         }
 
         // Redis 등 저장소에 이미지 데이터와 함께 Scene 정보 저장
+        String id = UUID.randomUUID().toString();
         SceneRedis scene = SceneRedis.builder()
-                .id(UUID.randomUUID().toString())
+                .id(id)
                 .gameId(sceneRequest.getGameId())
                 .prompt(sceneRequest.getUserPrompt())
                 .image(generateImage)  // 바이너리 이미지 데이터 저장
@@ -108,6 +109,8 @@ public class SceneService {
 
         log.info("Redis에 저장된 scene 개수 : {}", redisSceneRepository.findAllByGameId(sceneRequest.getGameId()).size());
 
+        log.info("GPU 서버에서 온 이미지 크기 : {}", generateImage.length);
+        log.info("Redis에 저장된 이미지 크기 : {}", redisSceneRepository.findById(id).getImage().length);
 
         // 이미지 바이너리 데이터를 PNG 미디어 타입으로 반환
         return ResponseEntity.status(HttpStatus.CREATED)
