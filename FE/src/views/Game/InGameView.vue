@@ -39,9 +39,12 @@
               {{ props.participants[order].score }}
             </div>
           </div>
+          <div class="absolute bottom-6 -right-5 font-bold text-2xl opacity-0" :class="'scoreChange' + index">
+              <p></p>
+          </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index">
-            <img src="" alt="" class="w-24 h-24">
+          <div class="absolute z-10 right-0 translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden scale-150" :class="'vote' + index">
+            <img src="" alt="" class="w-48 h-27">
           </div>
         </div>
       </template>
@@ -119,9 +122,12 @@
                 {{ props.participants[order].score }}
               </div>
             </div>
+            <div class="absolute bottom-6 -left-5 font-bold text-2xl opacity-0" :class="'scoreChange' + index">
+              <p></p>
+          </div>
           <!-- 투표 (수정) -->
-          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden" :class="'vote' + index">
-            <img src="" alt="" class="w-24 h-24">
+          <div class="absolute z-10 left-0 -translate-x-28 top-1/2 -translate-y-1/2 flex justify-center items-center hidden scale-150" :class="'vote' + index">
+            <img src="" alt="" class="w-48 h-27">
           </div>
           </div>
         </template>
@@ -176,7 +182,7 @@
 
 <script setup>
 import { nextTick, onBeforeUnmount, ref, watch } from "vue";
-import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon } from "@/assets";
+import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon, VoteUpLeftgif, VoteUpRightgif, VoteDownLeftgif, VoteDownRightgif } from "@/assets";
 import Profile from "@/assets/images/profiles";
 import {
   InGameControl,
@@ -283,6 +289,33 @@ const props = defineProps({
   },
 });
 
+watch(() => props.participants.map(participant => participant.score),
+  (newScores, oldScores) => {
+    newScores.forEach((newScore, index) => {
+      if (newScore !== oldScores[index]) {
+        props.inGameOrder.forEach((order, idx) => {
+        if(order == index) {
+        const select = document.querySelector(".scoreChange" + idx);
+        if(newScore > oldScores[index]) {
+          select.firstChild.textContent = "+" + (newScore - oldScores[index]);
+          select.classList.add("plusScore");
+          setTimeout(() => {
+            select.classList.remove("plusScore");
+          }, 2000);
+        } else {
+          select.firstChild.textContent = "-" + (oldScores[index] - newScore);
+          select.classList.add("minusScore");
+          setTimeout(() => {
+            select.classList.remove("minusScore");
+          }, 2000);
+        }
+      }
+    });
+      }
+    });
+    
+});
+
 watch(
   () => props.receivedMessages,
   () => {
@@ -320,39 +353,43 @@ watch(
 
 watch(
   () => props.votings.length,
-  async (newVal, oldVal) => {
+  async () => {
     await nextTick();
-    props.inGameOrder.forEach((order, index) => {
-      if (
-        props.votings.length != 0 &&
-        props.participants[order].name ==
-        props.votings[props.votings.length - 1].sender
-      ) {
-        const select = ref();
-        if (
-          props.votings[props.votings.length - 1].selected ==
-          "up"
-        ) {
-          select.value = document.querySelector(".vote" + index);
-          if(index < 3) {
-            select.value.firstChild.src = VoteUpLeftIcon;
-          } else {
-            select.value.firstChild.src = VoteUpRightIcon;
+    if(props.votings.length === props.participants.length) {
+      props.votings.forEach((vote) => {
+        props.inGameOrder.forEach((order, index) => {
+          if (
+            props.participants[order].name ==
+            vote.sender
+          ) {
+            const select = ref();
+            if (
+              vote.selected ==
+              "up"
+            ) {
+              select.value = document.querySelector(".vote" + index);
+              if(index < 3) {
+                select.value.firstChild.src = VoteUpLeftgif;
+              } else {
+                select.value.firstChild.src = VoteUpRightgif;
+              }
+            } else {
+              select.value = document.querySelector(".vote" + index);
+              if(index < 3) {
+                select.value.firstChild.src = VoteDownLeftgif;
+              } else {
+                select.value.firstChild.src = VoteDownRightgif;
+              }
+            }
+            select.value.classList.remove("hidden");
+            setTimeout(() => {
+              select.value.classList.add("hidden");
+              select.value.firstChild.src = null;
+            }, 3800);
           }
-        } else {
-          select.value = document.querySelector(".vote" + index);
-          if(index < 3) {
-            select.value.firstChild.src = VoteDownLeftIcon;
-          } else {
-            select.value.firstChild.src = VoteDownRightIcon;
-          }
-        }
-        select.value.classList.remove("hidden");
-        setTimeout(() => {
-          select.value.classList.add("hidden");
-        }, 2000);
-      }
-    });
+        });
+      });
+    }
   },
   { deep: true },
 );
@@ -367,23 +404,33 @@ onBeforeUnmount(() => {
   border-color: #72a0ff;
 }
 
-/* @keyframes corona {
-  0%,
-  100% {
-    box-shadow:
-      0 0 6px 3px rgba(102, 204, 255, 0.8),
-      0 0 12px 6px rgba(0, 102, 255, 0.6),
-      0 0 24px 12px rgba(0, 51, 204, 0.4);
+.plusScore {
+  color: rgb(0, 152, 0);
+  animation: plus 2s ease-in-out forwards;
+}
+
+.minusScore {
+  color: rgb(164, 1, 1);
+  animation: minus 2s ease-in-out forwards;
+}
+
+@keyframes plus {
+  0% {
+    opacity: 1;
   }
-  50% {
-    box-shadow:
-      0 0 8px 4px rgba(102, 204, 255, 0.9),
-      0 0 15px 12px rgba(0, 102, 255, 0.7),
-      0 0 28px 14px rgba(0, 51, 204, 0.5);
+  100% {
+    opacity: 0;
+    transform: translateY(-100%);
   }
 }
 
-.sun {
-  animation: corona 2s infinite alternate ease-in-out;
-} */
+@keyframes minus {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
 </style>

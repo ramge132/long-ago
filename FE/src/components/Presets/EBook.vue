@@ -49,7 +49,7 @@ onMounted(async () => {
     const response = await getBook({ id: props.ISBN });
 
     bookCover.value = {
-      imageUrl: response.data.bookCover,
+      imageUrl: response.data.data.bookCover,
       title: response.data.data.title,
     };
 

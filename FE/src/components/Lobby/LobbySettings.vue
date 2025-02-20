@@ -183,7 +183,7 @@ const modes = ref([
     ishovered: false,
   },
   {
-    text: "어린이 모드",
+    text: "유치원 모드",
     value: 4,
     ishovered: false,
   },

@@ -20,7 +20,13 @@
     </div>
 </template>
 <script setup>
-import { computed } from "vue";
+import { computed, watch } from "vue";
+import { useAudioStore } from "@/stores/audio";
+import { WinningMusic, LoseMusic } from "@/assets";
+
+const audioStore = useAudioStore();
+const winningMusic = new Audio(WinningMusic);
+const loseMusic = new Audio(LoseMusic);
 
 const props = defineProps({
     participants: {
@@ -40,6 +46,23 @@ const topParticipants = computed(() => {
   
   // 점수가 최댓값과 같은 참가자들을 필터링합니다.
   return props.participants.filter(p => p.score === maxScore);
+});
+
+watch(() => props.isForceStopped, () => {
+    if (audioStore.audioData) {
+        if (props.isForceStopped === "champ") {
+            winningMusic.play();
+            audioStore.audioPlay = false;
+        } else if (props.isForceStopped === "fail") {
+            loseMusic.play();
+            audioStore.audioPlay = true;
+        } else {
+            winningMusic.pause();
+            loseMusic.pause();
+            winningMusic.currentTime = 0
+            loseMusic.currentTime = 0
+        }
+    }
 });
 </script>
 <style scoped>

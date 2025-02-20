@@ -22,13 +22,16 @@
 
 <script setup>
 import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, voteResultSend } from "@/apis/game";
-import { currTurnImage, myTurnImage, startImage } from "@/assets";
+import { currTurnImage, myTurnImage, startImage, MessageMusic } from "@/assets";
 import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
+import { useAudioStore } from "@/stores/audio";
 import Peer from "peerjs";
 import { computed, nextTick, onMounted, ref, watch, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
+
+const audioStore = useAudioStore();
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -249,6 +252,10 @@ const setupConnection = (conn) => {
           message: data.message,
           form: data.form,
         });
+        if (audioStore.audioData) {
+          const messageMusic = new Audio(MessageMusic);
+          messageMusic.play();
+        }
         break;
 
       case "system":
@@ -492,6 +499,8 @@ const setupConnection = (conn) => {
                     );
                     // 랭킹 페이지 이동
                     // router.push('/game/rank');
+                    // 우승자 쇼 오버레이
+                    isForceStopped.value = "champ";
                   } else {
                     sendMessage(
                       "nextTurn",
@@ -553,6 +562,8 @@ const setupConnection = (conn) => {
         bookCover.value = data.bookCover;
         ISBN.value = data.isbn;
         gameEnd(true);
+        // 우승자 쇼 오버레이
+        isForceStopped.value = "champ";
         // router.push("/game/rank");
         break;
 
@@ -1285,6 +1296,8 @@ const voteEnd = async (data) => {
               );
               // 랭킹 페이지 이동
               // router.push('/game/rank');
+              // 우승자 쇼 오버레이
+              isForceStopped.value = "champ";
             } else {
               sendMessage(
                 "nextTurn",
@@ -1386,7 +1399,7 @@ const gameEnd = async (status) => {
       }
     }
     // 전체 실패 쇼 오버레이
-    isForceStopped.value = "fail";
+    // isForceStopped.value = "fail";
   } else {
     // 정상 종료인 경우
     if (participants.value[0].id == peerId.value) {
@@ -1404,7 +1417,7 @@ const gameEnd = async (status) => {
       }
     }
     // 우승자 쇼 오버레이
-    isForceStopped.value = "champ";
+    // isForceStopped.value = "champ";
   }
 };
 
@@ -1433,6 +1446,8 @@ watch(
   ([newPercent, oldPercent], []) => {
     if (newPercent > oldPercent && oldPercent > 100 && isElected.value) {
       gameEnd(false);
+      // 전체 실패 쇼 오버레이
+      isForceStopped.value = "fail";
     }
   }
 )
