@@ -3,13 +3,13 @@
     <div class="book absolute top-0">
       <div class="pages" ref="pagesRef">
         <div
-          class="page cursor-pointer flex flex-col items-center justify-center text-[#fee09e] text-4xl font-katuri relative"
+          class="page cursor-pointer flex flex-col items-center justify-center text-4xl font-katuri relative"
           :class="{ flipped: isFlipped(0) }"
           @click="handlePageClick(0)"
-          style="text-shadow: -1px 0px #8a622a, 0px 1px #8a622a, 1px 0px #8a622a, 0px -1px #8a622a;"
+          style="text-shadow: -2px 0px black, 0px 2px black, 2px 0px black, 0px -2px black;"
           :style="{ zIndex: calculateZIndex(0) }"
         >
-        <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute -translate-y-150px" style="backface-visibility: hidden"></p>
+        <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute -translate-y-150px font-title text-white" style="backface-visibility: hidden"></p>
         <img :src="bookCover.imageUrl" alt="" v-if="bookCover.imageUrl" class="w-full h-full object-fill">
         
         </div>
@@ -231,7 +231,6 @@ onMounted(() => {
 }
 p {
   text-align: center;
-  color: #000000;
 }
 .page {
   width: 30vw;
