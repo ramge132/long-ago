@@ -7,7 +7,7 @@
           :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn" :ISBN="ISBN"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
-          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" @on-room-configuration="onRoomConfiguration"
+          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" :isPreview="isPreview" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
           @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" />
       </Transition>
@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, voteResultSend } from "@/apis/game";
+import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend } from "@/apis/game";
 import { currTurnImage, myTurnImage, startImage, MessageMusic } from "@/assets";
 import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
@@ -101,7 +101,8 @@ const bookCover = ref({
   title: "", imageUrl: ""
 });
 const ISBN = ref("");
-
+// 시연 모드 on/off
+const isPreview = ref(false);
 
 watch(isElected, (newValue) => {
   if (newValue === true) {
@@ -157,6 +158,9 @@ function decompressUUID(compressedStr) {
 
 // 메시지 송신 함수
 const sendMessage = (type, payload, conn) => {
+  if (type != "heartBeat" || type != "heartBeat_back") {
+    console.log(type, payload);
+  }
   if (conn && conn.open) {
     conn.send({ type, ...payload });
   }
@@ -326,6 +330,8 @@ const setupConnection = (conn) => {
         receivedMessages.value = [];
         currTurn.value = 0;
         bookContents.value = [{ content: "", image: null }];
+        bookCover.value = {title: "", imageUrl: ""};
+        ISBN.value = "";
         votings.value = [];
         myTurn.value = null;
         inProgress.value = false;
@@ -347,6 +353,7 @@ const setupConnection = (conn) => {
             gameId: gameID.value,
           });
 
+          isPreview.value = response.data.data.isPreview;
           storyCards.value = response.data.data.storyCards;
           endingCard.value = response.data.data.endingCard;
 
@@ -379,9 +386,9 @@ const setupConnection = (conn) => {
           const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
           currentPlayer.score -= 1;
         }
+        totalTurn.value = data.totalTurn;
         inProgress.value = false;
         currTurn.value = data.currTurn;
-        totalTurn.value++;
         await showOverlay('whoTurn');
         inProgress.value = true;
         break;
@@ -452,7 +459,6 @@ const setupConnection = (conn) => {
               currentPlayer.score -= 1;
               // 턴 종료 트리거 송신하기
               currTurn.value = (currTurn.value + 1) % participants.value.length;
-              totalTurn.value++;
               connectedPeers.value.forEach((peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   sendMessage(
@@ -460,6 +466,7 @@ const setupConnection = (conn) => {
                     {
                       currTurn: currTurn.value,
                       imageDelete: true,
+                      totalTurn: totalTurn.value,
                     },
                     peer.connection
                   )
@@ -483,13 +490,16 @@ const setupConnection = (conn) => {
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
-                await gameEnd(true).then(() => {
+                await gameEnd(true).then((res) => {
                   connectedPeers.value.forEach(async (p) => {
                     if (p.id !== peerId.value && p.connection.open) {
                       sendMessage("gameEnd",
                         {
-                          bookCover: bookCover.value,
-                          isbn: ISBN.value,
+                          bookCover: {
+                            title: res.data.data.title,
+                            imageUrl: res.data.data.bookCover
+                          },
+                          isbn: res.data.data.bookId,
                         },
                         p.connection
                       );
@@ -507,6 +517,7 @@ const setupConnection = (conn) => {
                       {
                         currTurn: currTurn.value,
                         imageDelete: false,
+                        totalTurn: totalTurn.value,
                       },
                       p.connection
                     )
@@ -972,6 +983,8 @@ const gameStart = async (data) => {
   receivedMessages.value = [];
   currTurn.value = 0;
   bookContents.value = [{ content: "", image: null }];
+  bookCover.value = {title: "", imageUrl: ""};
+  ISBN.value = "";
   votings.value = [];
   myTurn.value = null;
   inProgress.value = false;
@@ -988,25 +1001,44 @@ const gameStart = async (data) => {
   // 로딩 애니메이션 활성화
   emit("startLoading", {value: true});
   
+  // 시연 모드 확인
+  isPreview.value = data.isPreview;
+
   // 게임 방 생성
-  try {
-    const response = await createGame({
-      bossId: peerId.value,
-      player: participants.value.map((p) => p.id),
-      drawingStyle: roomConfigs.value.currMode,
-    })
-    gameID.value = response.data.data.gameId;
-    storyCards.value = response.data.data.status.storyCards;
-    endingCard.value = response.data.data.status.endingCard;
-  } catch (error) {
-    console.log(error);
-    // return;
+  if(isPreview.value) {
+    console.log("preview test");
+    try {
+      const response = await testGame({
+        bossId: peerId.value,
+        player: participants.value.map((p) => p.id),
+        drawingStyle: roomConfigs.value.currMode,
+      });
+      gameID.value = response.data.data.gameId;
+      storyCards.value = response.data.data.status.storyCards;
+      endingCard.value = response.data.data.status.endingCard;
+    } catch (error) {
+      console.log(error);
+    }
+  } else {
+    try {
+      const response = await createGame({
+        bossId: peerId.value,
+        player: participants.value.map((p) => p.id),
+        drawingStyle: roomConfigs.value.currMode,
+      })
+      gameID.value = response.data.data.gameId;
+      storyCards.value = response.data.data.status.storyCards;
+      endingCard.value = response.data.data.status.endingCard;
+    } catch (error) {
+      console.log(error);
+      // return;
+    }
   }
 
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
-
   
+  console.log(isPreview.value);
   connectedPeers.value.forEach((peer) => {
     sendMessage(
       "gameStart",
@@ -1015,6 +1047,7 @@ const gameStart = async (data) => {
         order: inGameOrder.value,
         gameId: gameID.value,
         participants: participants.value,
+        isPreview: isPreview.value,
       },
       peer.connection,
     );
@@ -1172,7 +1205,7 @@ const nextTurn = async (data) => {
         gameId: gameID.value,
         userId: peerId.value,
         userPrompt: data.prompt,
-        turn: totalTurn.value,
+        turn: totalTurn.value++,
       });
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
       const imageBlob = URL.createObjectURL(responseImage.data);
@@ -1207,7 +1240,6 @@ const nextTurn = async (data) => {
 
     // 턴 종료 트리거 송신하기
     currTurn.value = (currTurn.value + 1) % participants.value.length;
-    totalTurn.value++;
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
@@ -1215,6 +1247,7 @@ const nextTurn = async (data) => {
           {
             currTurn: currTurn.value,
             isTimeout: true,
+            totalTurn: totalTurn.value,
           },
           peer.connection
         )
@@ -1281,7 +1314,6 @@ const voteEnd = async (data) => {
         currentPlayer.score -= 1;
         // 턴 종료 트리거 송신하기
         currTurn.value = (currTurn.value + 1) % participants.value.length;
-        totalTurn.value++;
         connectedPeers.value.forEach((peer) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             sendMessage(
@@ -1289,6 +1321,7 @@ const voteEnd = async (data) => {
               {
                 currTurn: currTurn.value,
                 imageDelete: true,
+                totalTurn: totalTurn.value,
               },
               peer.connection
             )
@@ -1313,13 +1346,16 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         // condition에서 다음 턴 or 게임 종료
         if (usedCard.value.isEnding) {
-          await gameEnd(true).then(() => {
+          await gameEnd(true).then((res) => {
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
                 sendMessage("gameEnd",
                   {
-                    bookCover: bookCover.value,
-                    isbn: ISBN.value,
+                    bookCover: {
+                      title: res.data.data.title,
+                      imageUrl: res.data.data.bookCover
+                    },
+                    isbn: res.data.data.bookId,
                   },
                   p.connection
                 );
@@ -1337,6 +1373,7 @@ const voteEnd = async (data) => {
                 {
                   currTurn: currTurn.value,
                   imageDelete: false,
+                  totalTurn: totalTurn.value,
                 },
                 p.connection
               )
@@ -1445,6 +1482,8 @@ const gameEnd = async (status) => {
         ISBN.value = response.data.data.bookId;
         bookCover.value.title = response.data.data.title;
         bookCover.value.imageUrl = response.data.data.bookCover;
+
+        return response;
       } catch (error) {
         console.log(error)
       }
@@ -1459,6 +1498,8 @@ const goLobby = () => {
   receivedMessages.value = [];
   currTurn.value = 0;
   bookContents.value = [{ content: "", image: null }];
+  bookCover.value = {title: "", imageUrl: ""};
+  ISBN.value = "";
   votings.value = [];
   myTurn.value = null;
   inProgress.value = false;
@@ -1478,14 +1519,16 @@ const goLobby = () => {
 
 // 긴장감이 100 이상 진행 된 경우 전체 탈락
 watch(
-  () => [percentage.value, isElected.value],
-  ([newPercent, oldPercent], []) => {
-    if (newPercent > oldPercent && newPercent > 100 && isElected.value) {
+  () => [percentage.value, usedCard.value, isElected.value],
+  ([newPercent, newUsedCard, newIsElected], [oldPercent, oldUsedCard, oldIsElected]) => {
+    console.log(newPercent, oldPercent, newUsedCard, oldUsedCard, newIsElected, oldIsElected);
+    if (newPercent >= oldPercent && newPercent >= 100 && newUsedCard.isEnding == false && newIsElected) {
       gameEnd(false);
       // 전체 실패 쇼 오버레이
       isForceStopped.value = "fail";
     }
-  }
+  },
+  { deep: true }
 )
 </script>
 <style>

@@ -4,7 +4,7 @@
   >
     <div class="w-1/2 h-2/3 bg-[#ffffffdd] rounded-xl flex flex-col items-center p-3 gap-3 z-20" :class="voteEnded ? 'bounce-reverse' : 'bounce'" @animationend="handleAnimationEnd">
       <div class="meter orange w-full h-14">
-        <span class="w-full rounded-full" :class="countStarted ? 'decrease' : ''" @animationend="voteEnd"></span>
+        <span class="w-full rounded-full" :class="countStarted ? 'decrease' : ''" :style="{ animationDuration: duration + 's'}" @animationend="voteEnd"></span>
       </div>
       <p class="text-5xl font-katuri" v-text="usedCard.isEnding ? '이 이야기로 끝맺을까요?' : '이 이야기를 추가할까요?'"></p> 
       <div class="border-2 border-black w-full rounded-md flex justify-center items-center h-32 text-xl">
@@ -43,6 +43,7 @@ const contentRef = ref(null);
 const contentSizes = ref([
   "xl", "lg", "sm", "xs"
 ]);
+const duration = ref(10);
 const emit = defineEmits(['voteEnd']);
 const startCount = () => {
   countStarted.value = true;
@@ -54,6 +55,9 @@ const props = defineProps({
   },
   usedCard: {
     Type: Object,
+  },
+  isPreview: {
+    Type: Boolean,
   },
 })
 const voteEnd = () => {
@@ -88,6 +92,9 @@ onMounted(async () => {
       contentRef.value.classList.remove("text-" + contentSizes.value[index++]);
       contentRef.value.classList.add("text-" + contentSizes.value[index]);
     }
+  }
+  if(props.isPreview) {
+    duration.value = 7;
   }
 });
 
@@ -177,9 +184,8 @@ onMounted(async () => {
 .bounce-reverse {
   animation: bounce-reverse 0.5s;
 }
-
 .decrease {
-  animation: decrease 10s linear forwards;
+  animation: decrease linear forwards;
 }
 .storycard {
   text-shadow: -1px 0px #9f876a, 0px 1px #9f876a, 1px 0px #9f876a, 0px -1px #9f876a;

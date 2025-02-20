@@ -154,7 +154,7 @@
       :inProgress="inProgress"
       :percentage="percentage"
     />
-    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" v-if="prompt !== '' && isVoted === false"/>
+    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" :isPreview="isPreview" v-if="prompt !== '' && isVoted === false"/>
     <!-- <Transition name="fade">
       <div
         v-if="modal.isOpen"
@@ -286,6 +286,9 @@ const props = defineProps({
   },
   ISBN: {
     Type: String,
+  },
+  isPreview: {
+    Type: Boolean,
   },
 });
 
