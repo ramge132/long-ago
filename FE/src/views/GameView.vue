@@ -934,6 +934,9 @@ const gameStart = async (data) => {
   inProgress.value = false;
   inGameOrder.value = [];
   isForceStopped.value = null;
+  participants.value.forEach((participant) => {
+    participant.score = 10;
+  })
   usedCard.value = {
     id: 0,
     keyword: "",
@@ -1418,6 +1421,9 @@ const goLobby = () => {
   inProgress.value = false;
   inGameOrder.value = [];
   isForceStopped.value = null;
+  participants.value.forEach((participant) => {
+    participant.score = 10;
+  });
   usedCard.value = {
     id: 0,
     keyword: "",
