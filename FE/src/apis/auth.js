@@ -9,7 +9,7 @@ const apiClient = axios.create({
   withCredentials: false,
 });
 
-// API 정의 부분
+// API 정의 부분 
 
 // 회원가입
 export const postRegister = async (data) => {
