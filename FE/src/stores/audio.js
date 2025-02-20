@@ -4,6 +4,7 @@ export const useAudioStore = defineStore("audioData", {
   state: () => ({
     audioVolume: 1,
     audioData: false,
+    audioPlay: false,
   }),
   actions: {
     // toggleAudio() {

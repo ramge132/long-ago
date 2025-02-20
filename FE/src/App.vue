@@ -44,15 +44,32 @@
 <script setup>
 import { TigerAnimation } from "./components";
 import { ref, computed, Transition, watch } from "vue";
+import { useAudioStore } from "./stores/audio";
 import { useRoute } from "vue-router";
+import { LoadingMusic } from "./assets";
 import { TermsOfService, TopBar, FooterBar, ToggleButton, EBook } from "@/components";
 
 // 로딩 애니메이션 보이는 여부
 const isLoading = ref(false);
 const isTermsOfServiceOpened = ref(false);
 const isEBookOpened = ref(false);
+const audioStore = useAudioStore();
+const loadingMusic = new Audio(LoadingMusic);
 
 const startLoading = (data) => {
+  // 로딩 시작인 경우
+  if (audioStore.audioData) {
+    loadingMusic.loop = true;
+    if (data.value) {
+      loadingMusic.play();
+      audioStore.audioPlay = false;
+      console.log(audioStore.audioData);
+    } else {
+      loadingMusic.pause();
+      loadingMusic.currentTime = 0;
+      audioStore.audioPlay = true;
+    }
+  }
   isLoading.value = data.value;
 };
 
