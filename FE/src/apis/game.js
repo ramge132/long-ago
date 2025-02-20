@@ -95,3 +95,14 @@ export const voteResultSend = async (data) => {
     throw error;
   }
 } 
+
+// 시연 모드 게임 시작
+export const testGame = async (data) => {
+  try {
+    const response = await apiClient.post("/apis/game/test", data);
+    return response;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
