@@ -379,9 +379,9 @@ const setupConnection = (conn) => {
           const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
           currentPlayer.score -= 1;
         }
+        totalTurn.value = data.totalTurn;
         inProgress.value = false;
         currTurn.value = data.currTurn;
-        totalTurn.value++;
         await showOverlay('whoTurn');
         inProgress.value = true;
         break;
@@ -452,7 +452,6 @@ const setupConnection = (conn) => {
               currentPlayer.score -= 1;
               // 턴 종료 트리거 송신하기
               currTurn.value = (currTurn.value + 1) % participants.value.length;
-              totalTurn.value++;
               connectedPeers.value.forEach((peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
                   sendMessage(
@@ -460,6 +459,7 @@ const setupConnection = (conn) => {
                     {
                       currTurn: currTurn.value,
                       imageDelete: true,
+                      totalTurn: totalTurn.value,
                     },
                     peer.connection
                   )
@@ -507,6 +507,7 @@ const setupConnection = (conn) => {
                       {
                         currTurn: currTurn.value,
                         imageDelete: false,
+                        totalTurn: totalTurn.value,
                       },
                       p.connection
                     )
@@ -1172,7 +1173,7 @@ const nextTurn = async (data) => {
         gameId: gameID.value,
         userId: peerId.value,
         userPrompt: data.prompt,
-        turn: totalTurn.value,
+        turn: totalTurn.value++,
       });
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
       const imageBlob = URL.createObjectURL(responseImage.data);
@@ -1207,7 +1208,6 @@ const nextTurn = async (data) => {
 
     // 턴 종료 트리거 송신하기
     currTurn.value = (currTurn.value + 1) % participants.value.length;
-    totalTurn.value++;
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
@@ -1215,6 +1215,7 @@ const nextTurn = async (data) => {
           {
             currTurn: currTurn.value,
             isTimeout: true,
+            totalTurn: totalTurn.value,
           },
           peer.connection
         )
@@ -1281,7 +1282,6 @@ const voteEnd = async (data) => {
         currentPlayer.score -= 1;
         // 턴 종료 트리거 송신하기
         currTurn.value = (currTurn.value + 1) % participants.value.length;
-        totalTurn.value++;
         connectedPeers.value.forEach((peer) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             sendMessage(
@@ -1289,6 +1289,7 @@ const voteEnd = async (data) => {
               {
                 currTurn: currTurn.value,
                 imageDelete: true,
+                totalTurn: totalTurn.value,
               },
               peer.connection
             )
@@ -1337,6 +1338,7 @@ const voteEnd = async (data) => {
                 {
                   currTurn: currTurn.value,
                   imageDelete: false,
+                  totalTurn: totalTurn.value,
                 },
                 p.connection
               )
