@@ -58,8 +58,10 @@ const audioRef = ref(null);
 const toggleAudio = () => {
   if (audioRef.value) {
     if (audioStore.audioData) {
+      audioStore.audioPlay = true;
       audioRef.value.play();
     } else {
+      audioStore.audioPlay = false;
       audioRef.value.pause(); 
     }
   }
@@ -68,6 +70,14 @@ const toggleAudio = () => {
 watch(() => audioStore.audioVolume, () => {
   audioRef.value.volume = audioStore.audioVolume;
 });
+
+watch(() => audioStore.audioPlay,  () => {
+  if (audioStore.audioPlay) {
+    audioRef.value.play();
+  } else {
+    audioRef.value.pause();
+  }
+})
 
 watch(
   () => route.path,

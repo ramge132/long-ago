@@ -22,13 +22,16 @@
 
 <script setup>
 import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, voteResultSend } from "@/apis/game";
-import { currTurnImage, myTurnImage, startImage } from "@/assets";
+import { currTurnImage, myTurnImage, startImage, MessageMusic } from "@/assets";
 import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
+import { useAudioStore } from "@/stores/audio";
 import Peer from "peerjs";
 import { computed, nextTick, onMounted, ref, watch, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
+
+const audioStore = useAudioStore();
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
@@ -249,6 +252,10 @@ const setupConnection = (conn) => {
           message: data.message,
           form: data.form,
         });
+        if (audioStore.audioData) {
+          const messageMusic = new Audio(MessageMusic);
+          messageMusic.play();
+        }
         break;
 
       case "system":

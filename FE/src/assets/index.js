@@ -35,6 +35,10 @@ export { default as ShareIcon } from "./icons/share.png";
 export { default as LobbyMusic } from "./musics/backgroundMusic.mp3";
 export { default as RankingMusic } from "./musics/ranking.mp3";
 export { default as TurningPage } from "./musics/turning_page_2.mp3";
+export { default as LoadingMusic } from "./musics/loading.mp3";
+export { default as LoseMusic } from "./musics/lose.wav";
+export { default as WinningMusic } from "./musics/winning.mp3";
+export { default as MessageMusic } from "./musics/message.wav";
 
 // inGame
 export { default as myTurnImage } from "./images/inGame/myTurn.svg";
