@@ -242,16 +242,12 @@ public class GameService {
                         request.getRequestURI());
             }
 
-            if(bookCover.getImage_bytes() == null){
-                log.info(bookCover.toString());
-                log.error("이미지가 안왔음");
-            }
 
             //정상적인 게임 종료 시 책표지 생성
             SceneRedis scene = SceneRedis.builder()
                     .id(UUID.randomUUID().toString())
                     .gameId(deleteGameRequest.getGameId())
-                    .image(bookCover.getImage_bytes())  // 바이너리 이미지 데이터 저장
+                    .image(Base64.getDecoder().decode(Objects.requireNonNull(bookCover).getImage_bytes()))  // 바이너리 이미지 데이터 저장
                     .sceneOrder(0) //책 표지는 순서가 0
                     .build();
 
