@@ -100,7 +100,7 @@ public class FilteringService {
         }
 
         long keywordCnt = allVariants.stream()
-                .filter(variant -> tokenList.stream().anyMatch(token -> token.getMorph().equals(variant)))
+                .filter(variant -> tokenList.stream().anyMatch(token -> token.getMorph().contains(variant)))
                 .count();
 
         if (keywordCnt > 1) {
@@ -110,22 +110,19 @@ public class FilteringService {
         }
 
         // 사용한 카드 찾기
-        String usedKeyword = allVariants.stream()
-                .filter(variant -> filteringRequest.getUserPrompt().contains(variant))
+        Integer userCardId = storyCardVariantsList.stream()
+                .filter(variant -> tokenList.stream().anyMatch(token -> token.getMorph().contains(variant.getVariant())))
+                .map(variant -> variant.getStoryCard().getId())
                 .findFirst()
                 .orElse(null);
 
-
-        int userCardId = storyCardVariantsList.stream()
-                .filter(storyCardVariants -> storyCardVariants.getVariant().equals(usedKeyword))
-                .map(storyCardVariants -> storyCardVariants.getStoryCard().getId())
-                .findFirst()
-                .orElse(-1);
-
+        if (userCardId == null) {
+            return ApiResponseUtil.failure("사용한 카드가 정확하지 않습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
 
         log.info("[findCardVariantsByCardId] 사용자가 사용한 카드 ID: {}", userCardId);
 
-        // 성공 응답
         return ApiResponseUtil.success(userCardId, "필터링 성공", HttpStatus.OK, request.getRequestURI());
+
     }
 }
