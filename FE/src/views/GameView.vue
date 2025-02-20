@@ -158,9 +158,6 @@ function decompressUUID(compressedStr) {
 
 // 메시지 송신 함수
 const sendMessage = (type, payload, conn) => {
-  if (type != "heartBeat" || type != "heartBeat_back") {
-    console.log(type, payload);
-  }
   if (conn && conn.open) {
     conn.send({ type, ...payload });
   }
@@ -220,9 +217,6 @@ const setupConnection = (conn) => {
   }
 
   conn.on("data", async (data) => {
-    if (data.type != "heartbeat" && data.type != "heartbeat_back") {
-      console.log("수신데이터", data);
-    }
     switch (data.type) {
       case "newParticipant":
         // 현재 참가자 목록 전송
@@ -324,7 +318,7 @@ const setupConnection = (conn) => {
         break;
 
       case "gameStart":
-        console.log(data);
+        isPreview.value = data.isPreview;
         // 게임 관련 데이터 초기화
         participants.value = data.participants;
         receivedMessages.value = [];
@@ -353,7 +347,7 @@ const setupConnection = (conn) => {
             gameId: gameID.value,
           });
 
-          isPreview.value = response.data.data.isPreview;
+          // isPreview.value = response.data.data.isPreview;
           storyCards.value = response.data.data.storyCards;
           endingCard.value = response.data.data.endingCard;
 
@@ -568,7 +562,6 @@ const setupConnection = (conn) => {
             accepted: accepted,
             cardId: usedCard.value.id,
           });
-          console.log(response);
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
           }
@@ -602,12 +595,15 @@ const setupConnection = (conn) => {
 
       case "gameEnd":
         gameStarted.value = false;
-        bookCover.value = data.bookCover;
-        ISBN.value = data.isbn;
         gameEnd(true);
         // 우승자 쇼 오버레이
         isForceStopped.value = "champ";
         // router.push("/game/rank");
+        break;
+
+      case "bookCover":
+        bookCover.value = data.bookCover;
+        ISBN.value = data.ISBN;
         break;
 
       case "heartbeat":
@@ -734,7 +730,6 @@ const handleExistingParticipants = async (existingParticipants) => {
 // 방 참가
 const connectToRoom = async (roomID) => {
   const bossID = decompressUUID(roomID);
-  console.log("connectToRoom", peer.value);
   const conn = peer.value.connect(bossID);
 
   const MAX_RETRIES = 5; // 최대 재시도 횟수
@@ -1006,7 +1001,6 @@ const gameStart = async (data) => {
 
   // 게임 방 생성
   if(isPreview.value) {
-    console.log("preview test");
     try {
       const response = await testGame({
         bossId: peerId.value,
@@ -1038,7 +1032,6 @@ const gameStart = async (data) => {
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
   
-  console.log(isPreview.value);
   connectedPeers.value.forEach((peer) => {
     sendMessage(
       "gameStart",
@@ -1200,7 +1193,6 @@ const nextTurn = async (data) => {
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
     try {
-      console.log('totalTurn = ', totalTurn.value);
       const responseImage = await createImage({
         gameId: gameID.value,
         userId: peerId.value,
@@ -1346,17 +1338,11 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         // condition에서 다음 턴 or 게임 종료
         if (usedCard.value.isEnding) {
-          await gameEnd(true).then((res) => {
+          await gameEnd(true).then(() => {
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
                 sendMessage("gameEnd",
-                  {
-                    bookCover: {
-                      title: res.data.data.title,
-                      imageUrl: res.data.data.bookCover
-                    },
-                    isbn: res.data.data.bookId,
-                  },
+                  {},
                   p.connection
                 );
               };
@@ -1392,7 +1378,6 @@ const voteEnd = async (data) => {
             accepted: accepted,
             cardId: usedCard.value.id,
           });
-          console.log(response);
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
           }
@@ -1478,12 +1463,21 @@ const gameEnd = async (status) => {
         const response = await deleteGame({
           gameId: gameID.value,
           isForceStopped: false
-        })
-        ISBN.value = response.data.data.bookId;
-        bookCover.value.title = response.data.data.title;
-        bookCover.value.imageUrl = response.data.data.bookCover;
+        }).then((res) => {
+          ISBN.value = res.data.data.bookId;
+          bookCover.value.title = res.data.data.title;
+          bookCover.value.imageUrl = res.data.data.bookCover;
+        }).then(() => {
+          connectedPeers.value.forEach(async (p) => {
+            if (p.id !== peerId.value && p.connection.open) {
+              sendMessage("bookCover", {
+                bookCover: bookCover.value,
+                ISBN: ISBN.value,
+              }, p.connection);
+            }
+          });
+        });
 
-        return response;
       } catch (error) {
         console.log(error)
       }
@@ -1521,7 +1515,6 @@ const goLobby = () => {
 watch(
   () => [percentage.value, usedCard.value, isElected.value],
   ([newPercent, newUsedCard, newIsElected], [oldPercent, oldUsedCard, oldIsElected]) => {
-    console.log(newPercent, oldPercent, newUsedCard, oldUsedCard, newIsElected, oldIsElected);
     if (newPercent >= oldPercent && newPercent >= 100 && newUsedCard.isEnding == false && newIsElected) {
       gameEnd(false);
       // 전체 실패 쇼 오버레이
