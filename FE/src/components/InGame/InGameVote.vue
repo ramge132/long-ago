@@ -43,7 +43,7 @@ const contentRef = ref(null);
 const contentSizes = ref([
   "xl", "lg", "sm", "xs"
 ]);
-const duration = ref(10);
+const duration = ref(15);
 const emit = defineEmits(['voteEnd']);
 const startCount = () => {
   countStarted.value = true;
