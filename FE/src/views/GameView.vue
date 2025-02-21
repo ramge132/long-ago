@@ -416,7 +416,7 @@ const setupConnection = (conn) => {
             });
             isVoted.value = false;
           }
-        }, 12000);
+        }, 18000);
         break;
 
       case "sendImage":
@@ -1183,7 +1183,7 @@ const nextTurn = async (data) => {
             });
             isVoted.value = false;
           }
-        }, 12000);
+        }, 18000);
 
     addBookContent({ content: data.prompt, image: null });
 
