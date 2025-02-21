@@ -413,5 +413,5 @@ The storm above swirls violently, casting flickering shadows across the dense ju
 
 ## 2. ERD
 
-[![ERD](<image 6.png>)](
+[![ERD](<img/image 6.png>)](
 https://www.figma.com/board/0AFnvp8LXEE0GN5JbCR7X9/%EC%98%9B%EB%82%A0%EC%98%9B%EC%A0%81-DB?node-id=0-1&t=WoBzQUsxk9FLqW1K-1)
