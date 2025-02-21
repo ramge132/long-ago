@@ -1319,7 +1319,6 @@ const voteEnd = async (data) => {
             )
           }
         });
-        // inProgress.value = false;
         await showOverlay('whoTurn');
         inProgress.value = true;
       }
