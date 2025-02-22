@@ -420,10 +420,16 @@ const setupConnection = (conn) => {
         break;
 
       case "sendImage":
-        const receivedArrayBuffer = data.imageBlob;
-        const receivedBlob = new Blob([receivedArrayBuffer]);
-        const imageBlob = URL.createObjectURL(receivedBlob);
-        bookContents.value[bookContents.value.length - 1].image = imageBlob;
+        // const receivedArrayBuffer = data.imageBlob;
+        // const receivedBlob = new Blob([receivedArrayBuffer]);
+        // const imageBlob = URL.createObjectURL(receivedBlob);
+        // bookContents.value[bookContents.value.length - 1].image = imageBlob;
+
+        if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
+          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+        } else {
+          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+        }
         break;
 
       case "voteResult":
@@ -1124,31 +1130,60 @@ const nextTurn = async (data) => {
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
     try {
-      const responseImage = await createImage({
-        gameId: gameID.value,
-        userId: peerId.value,
-        userPrompt: data.prompt,
-        turn: totalTurn.value++,
-      });
-      // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-      const imageBlob = URL.createObjectURL(responseImage.data);
+      // const responseImage = await createImage({
+      //   gameId: gameID.value,
+      //   userId: peerId.value,
+      //   userPrompt: data.prompt,
+      //   turn: totalTurn.value++,
+      // });
+      // // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
+      // const imageBlob = URL.createObjectURL(responseImage.data);
 
-      // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
-      const arrayBuffer = await responseImage.data.arrayBuffer();
+      // // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
+      // const arrayBuffer = await responseImage.data.arrayBuffer();
       
+      // // 사람들에게 이미지 전송
+      // connectedPeers.value.forEach((peer) => {
+      //   if (peer.id !== peerId.value && peer.connection.open) {
+      //     sendMessage(
+      //       "sendImage",
+      //       { imageBlob: arrayBuffer },
+      //       peer.connection
+      //     )
+      //   }
+      // });
+      
+      // 나의 책에 이미지 넣기
+      // bookContents.value[bookContents.value.length - 1].image = imageBlob;
+
+
+      //////////////////////////////////////////////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////////////////////////////////////////////
+
+      // 책 페이지 길이 별 시나리오 내용의 이미지 책에 추가
+      setTimeout(() => {
+        if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
+          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+        } else {
+          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+        }
+      }, 3500);
+
       // 사람들에게 이미지 전송
       connectedPeers.value.forEach((peer) => {
         if (peer.id !== peerId.value && peer.connection.open) {
           sendMessage(
             "sendImage",
-            { imageBlob: arrayBuffer },
+            {},
             peer.connection
           )
         }
       });
-      
-      // 나의 책에 이미지 넣기
-      bookContents.value[bookContents.value.length - 1].image = imageBlob;
     } catch (error) {
       console.log(error);
     }
