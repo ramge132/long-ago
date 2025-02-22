@@ -1346,7 +1346,7 @@ const voteEnd = async (data) => {
             // 이미지 쓰레기통에 넣기
           }
         } catch (error) {
-          if (error.response.status === 409) {
+          if (error.response.status === 400) {
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
