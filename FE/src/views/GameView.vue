@@ -522,39 +522,6 @@ const setupConnection = (conn) => {
                 inProgress.value = true;
               };
             }
-            //   connectedPeers.value.forEach(async (peer) => {
-            //     if (peer.id !== peerId.value && peer.connection.open) {
-            //       if (usedCard.value.isEnding) {
-            //         // 게임 종료 송신
-            //         gameStarted.value = false;
-            //         sendMessage("gameEnd",
-            //           {
-            //             bookCover: bookCover.value,
-            //             isbn: ISBN.value,
-            //           },
-            //           peer.connection
-            //         );
-            //         // 랭킹 페이지 이동
-            //         // router.push('/game/rank');
-            //         // 우승자 쇼 오버레이
-            //         isForceStopped.value = "champ";
-            //       } else {
-            //         sendMessage(
-            //           "nextTurn",
-            //           {
-            //             currTurn: currTurn.value,
-            //             imageDelete: false,
-            //           },
-            //           peer.connection
-            //         )
-            //         // inProgress.value = false;
-            //         await showOverlay('whoTurn');
-            //         inProgress.value = true;
-            //       }
-            //     }
-            //   });
-            // }
-            // 투표 결과 전송 api
       try {
           const response = await voteResultSend({
             gameId: gameID.value,
@@ -753,30 +720,6 @@ const connectToRoom = async (roomID) => {
       );
     });
 
-    // conn.on("data", (data) => {
-    //   if (data.type != "heartbeat" && data.type != "heartbeat_back") {
-    //     console.log("수신데이터", data);
-    //   }
-    //   if (data.type === "currentParticipants") {
-    //     handleExistingParticipants(data.participants);
-    //     roomConfigs.value = data.roomConfigs;
-    //   } else if (data.type === "newParticipantJoined") {
-    //     participants.value.push(data.data);
-    //   }
-
-    //   const newParticipant = {
-    //     id: peerId.value,
-    //     name: userStore.userData.userNickname,
-    //     image: userStore.userData.userProfile,
-    //     score: 10,
-    //   };
-
-    //   // 중복 확인 후 추가
-    //   if (!participants.value.some((p) => p.id === newParticipant.id)) {
-    //     participants.value.push(newParticipant);
-    //   }
-    // });
-
     // 재시도 횟수를 추적할 객체 생성
     let retries = 0;
 
@@ -893,18 +836,6 @@ onMounted(async () => {
     console.error("Peer initialization failed:", error);
   }
 });
-
-// // 퇴장 관련
-// addEventListener("beforeunload", () => {
-//   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
-//   connectedPeers.value.forEach((peer) => {
-//     sendMessage(
-//       "system",
-//       { id: peerId.value, nickname: userStore.userData.userNickname },
-//       peer.connection,
-//     );
-//   });
-// });
 
 // 퇴장 관련
 addEventListener("beforeunload", () => {
@@ -1210,7 +1141,6 @@ const nextTurn = async (data) => {
         if (peer.id !== peerId.value && peer.connection.open) {
           sendMessage(
             "sendImage",
-            // { imageBlob: arrayBuffer },
             { imageBlob: arrayBuffer },
             peer.connection
           )
@@ -1222,7 +1152,6 @@ const nextTurn = async (data) => {
     } catch (error) {
       console.log(error);
     }
-    // const imageBlob = testImage;
   }
   // 프롬프트 입력 시간초과로 턴 넘기는 경우
   else if (currTurn.value === myTurn.value) {

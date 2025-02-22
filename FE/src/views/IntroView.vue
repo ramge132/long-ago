@@ -35,6 +35,10 @@
           </span>
         </div>
       </div>
+      <div v-if="gameStore.getBossId()" @click="start(false)" class="p-2 flex gap-x-2 font-katuri cursor-pointer">
+        <span>방 만들기</span>
+        <img :src="PlayIcon" alt="" class="w-3">
+      </div>
     </div>
     <div
       class="rounded-xl border flex flex-col justify-center p-5 bg-[#ffffffbb] my-10 mr-10"
@@ -94,7 +98,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/scrollbar";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import { StartIcon, rule1, rule2, rule3, rule4, rule5 } from "@/assets";
+import { PlayIcon, StartIcon, rule1, rule2, rule3, rule4, rule5 } from "@/assets";
 import Profile from "@/assets/images/profiles";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
@@ -163,7 +167,10 @@ const refresh = () => {
   }
 };
 
-const start = () => {
+const start = (bool) => {
+  if (bool == false) {
+    gameStore.clearGameData();
+  }
   userStore.setUserNickname(nickname);
   userStore.setUserProfile(currentProfile);
   sessionStorage.setItem("userNickname", nickname.value);
