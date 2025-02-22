@@ -420,10 +420,16 @@ const setupConnection = (conn) => {
         break;
 
       case "sendImage":
-        const receivedArrayBuffer = data.imageBlob;
-        const receivedBlob = new Blob([receivedArrayBuffer]);
-        const imageBlob = URL.createObjectURL(receivedBlob);
-        bookContents.value[bookContents.value.length - 1].image = imageBlob;
+        // const receivedArrayBuffer = data.imageBlob;
+        // const receivedBlob = new Blob([receivedArrayBuffer]);
+        // const imageBlob = URL.createObjectURL(receivedBlob);
+        // bookContents.value[bookContents.value.length - 1].image = imageBlob;
+
+        if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
+          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+        } else {
+          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+        }
         break;
 
       case "voteResult":
@@ -522,39 +528,6 @@ const setupConnection = (conn) => {
                 inProgress.value = true;
               };
             }
-            //   connectedPeers.value.forEach(async (peer) => {
-            //     if (peer.id !== peerId.value && peer.connection.open) {
-            //       if (usedCard.value.isEnding) {
-            //         // 게임 종료 송신
-            //         gameStarted.value = false;
-            //         sendMessage("gameEnd",
-            //           {
-            //             bookCover: bookCover.value,
-            //             isbn: ISBN.value,
-            //           },
-            //           peer.connection
-            //         );
-            //         // 랭킹 페이지 이동
-            //         // router.push('/game/rank');
-            //         // 우승자 쇼 오버레이
-            //         isForceStopped.value = "champ";
-            //       } else {
-            //         sendMessage(
-            //           "nextTurn",
-            //           {
-            //             currTurn: currTurn.value,
-            //             imageDelete: false,
-            //           },
-            //           peer.connection
-            //         )
-            //         // inProgress.value = false;
-            //         await showOverlay('whoTurn');
-            //         inProgress.value = true;
-            //       }
-            //     }
-            //   });
-            // }
-            // 투표 결과 전송 api
       try {
           const response = await voteResultSend({
             gameId: gameID.value,
@@ -753,30 +726,6 @@ const connectToRoom = async (roomID) => {
       );
     });
 
-    // conn.on("data", (data) => {
-    //   if (data.type != "heartbeat" && data.type != "heartbeat_back") {
-    //     console.log("수신데이터", data);
-    //   }
-    //   if (data.type === "currentParticipants") {
-    //     handleExistingParticipants(data.participants);
-    //     roomConfigs.value = data.roomConfigs;
-    //   } else if (data.type === "newParticipantJoined") {
-    //     participants.value.push(data.data);
-    //   }
-
-    //   const newParticipant = {
-    //     id: peerId.value,
-    //     name: userStore.userData.userNickname,
-    //     image: userStore.userData.userProfile,
-    //     score: 10,
-    //   };
-
-    //   // 중복 확인 후 추가
-    //   if (!participants.value.some((p) => p.id === newParticipant.id)) {
-    //     participants.value.push(newParticipant);
-    //   }
-    // });
-
     // 재시도 횟수를 추적할 객체 생성
     let retries = 0;
 
@@ -893,18 +842,6 @@ onMounted(async () => {
     console.error("Peer initialization failed:", error);
   }
 });
-
-// // 퇴장 관련
-// addEventListener("beforeunload", () => {
-//   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
-//   connectedPeers.value.forEach((peer) => {
-//     sendMessage(
-//       "system",
-//       { id: peerId.value, nickname: userStore.userData.userNickname },
-//       peer.connection,
-//     );
-//   });
-// });
 
 // 퇴장 관련
 addEventListener("beforeunload", () => {
@@ -1193,36 +1130,63 @@ const nextTurn = async (data) => {
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
     try {
-      const responseImage = await createImage({
-        gameId: gameID.value,
-        userId: peerId.value,
-        userPrompt: data.prompt,
-        turn: totalTurn.value++,
-      });
-      // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
-      const imageBlob = URL.createObjectURL(responseImage.data);
+      // const responseImage = await createImage({
+      //   gameId: gameID.value,
+      //   userId: peerId.value,
+      //   userPrompt: data.prompt,
+      //   turn: totalTurn.value++,
+      // });
+      // // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
+      // const imageBlob = URL.createObjectURL(responseImage.data);
 
-      // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
-      const arrayBuffer = await responseImage.data.arrayBuffer();
+      // // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
+      // const arrayBuffer = await responseImage.data.arrayBuffer();
       
+      // // 사람들에게 이미지 전송
+      // connectedPeers.value.forEach((peer) => {
+      //   if (peer.id !== peerId.value && peer.connection.open) {
+      //     sendMessage(
+      //       "sendImage",
+      //       { imageBlob: arrayBuffer },
+      //       peer.connection
+      //     )
+      //   }
+      // });
+      
+      // 나의 책에 이미지 넣기
+      // bookContents.value[bookContents.value.length - 1].image = imageBlob;
+
+
+      //////////////////////////////////////////////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////  시연 용!!! main 서버에 절대 추가 금지  //////
+      //////////////////////////////////////////////
+
+      // 책 페이지 길이 별 시나리오 내용의 이미지 책에 추가
+      setTimeout(() => {
+        if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
+          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+        } else {
+          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+        }
+      }, 3500);
+
       // 사람들에게 이미지 전송
       connectedPeers.value.forEach((peer) => {
         if (peer.id !== peerId.value && peer.connection.open) {
           sendMessage(
             "sendImage",
-            // { imageBlob: arrayBuffer },
-            { imageBlob: arrayBuffer },
+            {},
             peer.connection
           )
         }
       });
-      
-      // 나의 책에 이미지 넣기
-      bookContents.value[bookContents.value.length - 1].image = imageBlob;
     } catch (error) {
       console.log(error);
     }
-    // const imageBlob = testImage;
   }
   // 프롬프트 입력 시간초과로 턴 넘기는 경우
   else if (currTurn.value === myTurn.value) {

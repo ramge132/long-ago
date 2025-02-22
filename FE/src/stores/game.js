@@ -13,5 +13,8 @@ export const useGameStore = defineStore("gameData", {
     getBossId() {
       return this.gameData.bossId;
     },
+    clearGameData() {
+      this.gameData.bossId = "";
+    }
   },
 });
