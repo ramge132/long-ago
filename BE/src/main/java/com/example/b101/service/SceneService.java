@@ -135,15 +135,32 @@ public class SceneService {
             //sceene 데이터 삭제
             SceneRedis lastScene = scenes.get(scenes.size() - 1);
             redisSceneRepository.delete(lastScene);
+
+            // GPU 서버 요청을 위한 객체 생성
+            GenerateSceneRequest generateSceneRequest = GenerateSceneRequest.builder()
+                    .session_id(deleteSceneRequest.getGameId())            // 게임 아이디 (세션 식별자)
+                    .game_mode(1)                    // 작화 스타일 (예: 1: 기본 모드)
+                    .user_sentence("") // 사용자 프롬프트
+                    .status(3)                       // status 3은 데이터 삭제한다는 뜻
+                    .build();
+
+
+            webClient.post()
+                    .uri("/generate")
+                    .bodyValue(generateSceneRequest)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .subscribe();
+
+
             return ApiResponseUtil.success(lastScene, "투표 결과에 따라 삭제됨", HttpStatus.OK, request.getRequestURI());
         }
 
         //사용한 카드 삭제해야함
         PlayerStatus playerStatus = gameRepository.getPlayerStatus(deleteSceneRequest.getGameId(), deleteSceneRequest.getUserId());
 
-        Optional<StoryCard> storyCard = storyCardRepository.findById(deleteSceneRequest.getCardId());
-
-        storyCard.ifPresent(storyCard1 -> {playerStatus.getStoryCards().remove(storyCard1);});
+        storyCardRepository.findById(deleteSceneRequest.getCardId())
+                .ifPresent(playerStatus.getStoryCards()::remove);
 
 
         Game game = gameRepository.findById(deleteSceneRequest.getGameId());
@@ -157,6 +174,39 @@ public class SceneService {
         gameRepository.update(game);
         
         log.info("투표 결과 찬성");
+
+        return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
+
+    }
+
+
+    public ResponseEntity<?> deleteSceneTest(DeleteSceneRequest deleteSceneRequest, HttpServletRequest request) {
+
+        log.info("시연용 장면 삭제");
+        if(!deleteSceneRequest.isAccepted()){
+            log.info("투표 반대가 나오면 카드 사용 취소");
+            return ApiResponseUtil.success(null, "투표 결과에 따라 삭제됨", HttpStatus.OK, request.getRequestURI());
+        }
+
+
+        log.info("투표 찬성이 나오면 카드 사용됨");
+        //사용한 카드 삭제해야함
+        PlayerStatus playerStatus = gameRepository.getPlayerStatus(deleteSceneRequest.getGameId(), deleteSceneRequest.getUserId());
+
+        storyCardRepository.findById(deleteSceneRequest.getCardId())
+                .ifPresent(playerStatus.getStoryCards()::remove);
+
+
+        Game game = gameRepository.findById(deleteSceneRequest.getGameId());
+
+        game.getPlayerStatuses().stream()
+                .filter(ps -> ps.getUserId().equals(playerStatus.getUserId()))
+                .findFirst()
+                .ifPresent(ps -> ps.setStoryCards(playerStatus.getStoryCards()));
+
+
+        gameRepository.update(game);
+
 
         return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
 
