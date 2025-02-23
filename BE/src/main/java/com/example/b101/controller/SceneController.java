@@ -39,4 +39,11 @@ public class SceneController {
         return sceneService.deleteScene(deleteSceneRequest,request);
     }
 
+
+    //테스트용 투표
+    @PostMapping("/vote/test")
+    public ResponseEntity<?> deleteSceneTest(@RequestBody DeleteSceneRequest deleteSceneRequest, HttpServletRequest request) {
+        return sceneService.deleteSceneTest(deleteSceneRequest,request);
+    }
+
 }
