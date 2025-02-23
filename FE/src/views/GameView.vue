@@ -592,6 +592,7 @@ const setupConnection = (conn) => {
         ///////////////////////////////////////////
         bookCover.value.title = "부자의 선택";
         bookCover.value.imageUrl = ending;
+        ISBN.value = "14521f3d-50ea-41d3-a39d-271feb94siyeon";
         break;
 
       case "heartbeat":
@@ -1477,6 +1478,7 @@ const gameEnd = async (status) => {
         ///////////////////////////////////////////
         bookCover.value.title = "부자의 선택";
         bookCover.value.imageUrl = ending;
+        ISBN.value = "14521f3d-50ea-41d3-a39d-271feb94siyeon";
         connectedPeers.value.forEach(async (p) => {
           if (p.id !== peerId.value && p.connection.open) {
             sendMessage("bookCover", {}, p.connection);
