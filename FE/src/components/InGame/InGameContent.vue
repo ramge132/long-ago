@@ -163,6 +163,7 @@ watch(() => props.isElected,
 const runBookSequence = async () => {
   // 동기적으로 initVoices() 실행 (만약 비동기라면 await 사용)
   await initVoices();
+  await speakText("부자의 선택");
 
   // 책 내용을 순서대로 처리: 0,1 페이지, 그 다음 2,3 페이지, ...
   for (const [i, element] of props.bookContents.entries()) {
@@ -180,6 +181,7 @@ const runBookSequence = async () => {
   
   // 모든 작업이 완료되면 클릭 잠금 해제
   isClickLocked.value = false;
+  flippedPages.clear();
 }
 
 watch(

@@ -36,9 +36,9 @@
               </div>
             </div>
           </div>
-          <div class="absolute right-5 top-5 rounded-full border-4 border-[#E77DAF] flex justify-center items-center p-2 cursor-pointer" :class="isPreview ? 'bg-[#E77DAF]' : ''" @click="isPreview = !isPreview">
+          <!-- <div class="absolute right-5 top-5 rounded-full border-4 border-[#E77DAF] flex justify-center items-center p-2 cursor-pointer" :class="isPreview ? 'bg-[#E77DAF]' : ''" @click="isPreview = !isPreview">
             <img :src="unicon" alt="" class="w-10 h-10">
-          </div>
+          </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
             <label class="block mt-4">게임 모드</label>
             <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll p-5 pointer-events-auto">
@@ -236,14 +236,14 @@ const gameStart = () => {
     toast.warningToast("혼자서는 진행할 수 없습니다.");
   } else {
     let playerOrder;
-    if(isPreview.value) {
+    // if(isPreview.value) {
       playerOrder = Array.from({length: props.participants.length},(_, i) => i);
-    } else {
-      playerOrder = Array(props.participants.length)
-        .fill()
-        .map((value, index) => index)
-        .sort(() => Math.random() - 0.5);
-    }
+    // } else {
+    //   playerOrder = Array(props.participants.length)
+    //     .fill()
+    //     .map((value, index) => index)
+    //     .sort(() => Math.random() - 0.5);
+    // }
     emit("gameStart", {
       gameStarted: true,
       order: playerOrder,

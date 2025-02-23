@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend } from "@/apis/game";
+import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend, testVoteResultSend } from "@/apis/game";
 import { currTurnImage, myTurnImage, startImage, MessageMusic } from "@/assets";
 import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
@@ -30,6 +30,9 @@ import { useAudioStore } from "@/stores/audio";
 import Peer from "peerjs";
 import { computed, nextTick, onMounted, ref, watch, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import images, { ending } from "@/assets/images/inGame/forTest";
+
+const imageList = Object.values(images);
 
 const audioStore = useAudioStore();
 
@@ -102,7 +105,7 @@ const bookCover = ref({
 });
 const ISBN = ref("");
 // 시연 모드 on/off
-const isPreview = ref(false);
+const isPreview = ref(true);
 
 watch(isElected, (newValue) => {
   if (newValue === true) {
@@ -426,9 +429,13 @@ const setupConnection = (conn) => {
         // bookContents.value[bookContents.value.length - 1].image = imageBlob;
 
         if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
-          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
-        } else {
-          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+          bookContents.value[0].image = imageList[0];
+        }
+        else if (bookContents.value.length >= 4) {
+          bookContents.value[bookContents.value.length - 1].image = imageList[bookContents.value.length];
+        }
+        else {
+          bookContents.value[bookContents.value.length - 1].image = imageList[bookContents.value.length - 1];
         }
         break;
 
@@ -529,7 +536,8 @@ const setupConnection = (conn) => {
               };
             }
       try {
-          const response = await voteResultSend({
+          // const response = await voteResultSend({
+          const response = await testVoteResultSend({
             gameId: gameID.value,
             userId: peerId.value,
             accepted: accepted,
@@ -575,8 +583,16 @@ const setupConnection = (conn) => {
         break;
 
       case "bookCover":
-        bookCover.value = data.bookCover;
-        ISBN.value = data.ISBN;
+        // bookCover.value = data.bookCover;
+        // ISBN.value = data.ISBN;
+        ///////////////////////////////////////////
+        ////// 테스트 서버용!!! 메인에 넣으면 안됨!! //////
+        ////// 테스트 서버용!!! 메인에 넣으면 안됨!! //////
+        ////// 테스트 서버용!!! 메인에 넣으면 안됨!! //////
+        ///////////////////////////////////////////
+        bookCover.value.title = "부자의 선택";
+        bookCover.value.imageUrl = ending;
+        ISBN.value = "14521f3d-50ea-41d3-a39d-271feb94siyeon";
         break;
 
       case "heartbeat":
@@ -934,7 +950,7 @@ const gameStart = async (data) => {
   emit("startLoading", {value: true});
   
   // 시연 모드 확인
-  isPreview.value = data.isPreview;
+  // isPreview.value = data.isPreview;
 
   // 게임 방 생성
   if(isPreview.value) {
@@ -1168,22 +1184,26 @@ const nextTurn = async (data) => {
       // 책 페이지 길이 별 시나리오 내용의 이미지 책에 추가
       setTimeout(() => {
         if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
-          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
-        } else {
-          bookContents.value[bookContents.value.length - 1].image = "https://picsum.photos/512/512";
+          bookContents.value[0].image = imageList[0];
         }
-      }, 3500);
+        else if (bookContents.value.length >= 4) {
+          bookContents.value[bookContents.value.length - 1].image = imageList[bookContents.value.length];
+        }
+        else {
+          bookContents.value[bookContents.value.length - 1].image = imageList[bookContents.value.length - 1];
+        }
+        // 사람들에게 이미지 전송
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            sendMessage(
+              "sendImage",
+              {},
+              peer.connection
+            )
+          }
+        });
+      }, 5000);
 
-      // 사람들에게 이미지 전송
-      connectedPeers.value.forEach((peer) => {
-        if (peer.id !== peerId.value && peer.connection.open) {
-          sendMessage(
-            "sendImage",
-            {},
-            peer.connection
-          )
-        }
-      });
     } catch (error) {
       console.log(error);
     }
@@ -1255,6 +1275,7 @@ const voteEnd = async (data) => {
 
     if (currTurn.value === myTurn.value) {
       let accepted;
+      // 반대 된 경우
       if (upCount < downCount) {
         // 이미지 버리는 api
         accepted = false;
@@ -1287,6 +1308,7 @@ const voteEnd = async (data) => {
         await showOverlay('whoTurn');
         inProgress.value = true;
       }
+      // 찬성 된 경우
       else {
         isElected.value = true;
         accepted = true;
@@ -1297,6 +1319,12 @@ const voteEnd = async (data) => {
         } else {
           currentPlayer.score += 2;
         }
+
+        // storyCards.value.forEach((card, index) => {
+        //   if (card.id === usedCard.value.id) {
+        //     storyCards.value.splice(index, 1);
+        //   }
+        // });
 
         // 턴 종료 트리거 송신하기
         currTurn.value = (currTurn.value + 1) % participants.value.length;
@@ -1336,7 +1364,8 @@ const voteEnd = async (data) => {
       }
       // 투표 결과 전송 api
       try {
-          const response = await voteResultSend({
+          // const response = await voteResultSend({
+          const response = await testVoteResultSend({
             gameId: gameID.value,
             userId: peerId.value,
             accepted: accepted,
@@ -1424,22 +1453,36 @@ const gameEnd = async (status) => {
     if (participants.value[0].id == peerId.value) {
       // 정상 종료 api 들어가야함
       try {
-        const response = await deleteGame({
-          gameId: gameID.value,
-          isForceStopped: false
-        }).then((res) => {
-          ISBN.value = res.data.data.bookId;
-          bookCover.value.title = res.data.data.title;
-          bookCover.value.imageUrl = res.data.data.bookCover;
-        }).then(() => {
-          connectedPeers.value.forEach(async (p) => {
-            if (p.id !== peerId.value && p.connection.open) {
-              sendMessage("bookCover", {
-                bookCover: bookCover.value,
-                ISBN: ISBN.value,
-              }, p.connection);
-            }
-          });
+        // const response = await deleteGame({
+        //   gameId: gameID.value,
+        //   isForceStopped: false
+        // }).then((res) => {
+        //   ISBN.value = res.data.data.bookId;
+        //   bookCover.value.title = res.data.data.title;
+        //   bookCover.value.imageUrl = res.data.data.bookCover;
+        // }).then(() => {
+        //   connectedPeers.value.forEach(async (p) => {
+        //     if (p.id !== peerId.value && p.connection.open) {
+        //       sendMessage("bookCover", {
+        //         bookCover: bookCover.value,
+        //         ISBN: ISBN.value,
+        //       }, p.connection);
+        //     }
+        //   });
+        // });
+
+        ///////////////////////////////////////////
+        ////// 테스트 서버용!!! 메인에 넣으면 안됨!! //////
+        ////// 테스트 서버용!!! 메인에 넣으면 안됨!! //////
+        ////// 테스트 서버용!!! 메인에 넣으면 안됨!! //////
+        ///////////////////////////////////////////
+        bookCover.value.title = "부자의 선택";
+        bookCover.value.imageUrl = ending;
+        ISBN.value = "14521f3d-50ea-41d3-a39d-271feb94siyeon";
+        connectedPeers.value.forEach(async (p) => {
+          if (p.id !== peerId.value && p.connection.open) {
+            sendMessage("bookCover", {}, p.connection);
+          }
         });
 
       } catch (error) {
