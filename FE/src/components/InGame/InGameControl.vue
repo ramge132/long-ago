@@ -181,7 +181,8 @@ const sendprompt = () => {
       toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
     } else if (message.value.trim()) {
       emit("nextTurn", {
-        prompt: message.value
+        prompt: message.value,
+        isEnding: false,
       });
       message.value = "";
       chatRefs.value[currChatModeIdx.value].blur();

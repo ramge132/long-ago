@@ -106,3 +106,20 @@ export const testGame = async (data) => {
     throw error;
   }
 }
+
+
+//////////////////////////////////////////////
+////// 테스트 전용!! 메인에 절대 올리면 안됨!!! //////
+////// 테스트 전용!! 메인에 절대 올리면 안됨!!! //////
+////// 테스트 전용!! 메인에 절대 올리면 안됨!!! //////
+////// 테스트 전용!! 메인에 절대 올리면 안됨!!! //////
+//////////////////////////////////////////////
+export const testVoteResultSend = async (data) => {
+  try {
+    const response = await apiClient.post(import.meta.env.VITE_SCENE + import.meta.env.VITE_SCENE_VOTE + "/test", data);
+    return response;
+  } catch(error) {
+    console.log(error);
+    throw error;
+  }
+}
