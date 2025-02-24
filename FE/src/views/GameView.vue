@@ -431,9 +431,6 @@ const setupConnection = (conn) => {
         if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
           bookContents.value[0].image = imageList[0];
         }
-        else if (bookContents.value.length >= 4) {
-          bookContents.value[bookContents.value.length - 1].image = imageList[bookContents.value.length];
-        }
         else {
           bookContents.value[bookContents.value.length - 1].image = imageList[bookContents.value.length - 1];
         }
@@ -1185,9 +1182,6 @@ const nextTurn = async (data) => {
       setTimeout(() => {
         if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
           bookContents.value[0].image = imageList[0];
-        }
-        else if (bookContents.value.length >= 4) {
-          bookContents.value[bookContents.value.length - 1].image = imageList[bookContents.value.length];
         }
         else {
           bookContents.value[bookContents.value.length - 1].image = imageList[bookContents.value.length - 1];
