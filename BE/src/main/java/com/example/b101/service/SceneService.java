@@ -3,7 +3,7 @@ package com.example.b101.service;
 import com.example.b101.cache.Game;
 import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
-import com.example.b101.config.WebClientProperties;
+import com.example.b101.config.WebClientConfig;
 import com.example.b101.domain.PlayerStatus;
 import com.example.b101.dto.DeleteSceneRequest;
 import com.example.b101.dto.GenerateSceneRequest;
@@ -33,7 +33,7 @@ public class SceneService {
     private final GameRepository gameRepository;
     private final WebClient webClient;
     private final StoryCardRepository storyCardRepository;
-    private final WebClientProperties webClientProperties;
+    private final WebClientConfig webClientConfig;
 
 
     public ResponseEntity<?> createScene(SceneRequest sceneRequest, HttpServletRequest request) {
@@ -67,15 +67,14 @@ public class SceneService {
 
         log.info(generateSceneRequest.toString()+"GPU 서버로 보낼 객체 생성");
 
-        log.info(webClientProperties.getUrl().toString());
 
         // GPU 서버와 통신하여 이미지 바이너리 데이터 수신
         byte[] generateImage;
         try {
+            log.info(webClientConfig.getBaseUrls().get(generateSceneRequest.getGame_mode()));
             log.info("이미지 서버에 요청 보냄.");
-            log.info(webClientProperties.getUrl().get(generateSceneRequest.getGame_mode())+"/generate");
             generateImage = webClient.post()
-                    .uri(webClientProperties.getUrl().get(generateSceneRequest.getGame_mode())+"/generate")
+                    .uri(webClientConfig.getBaseUrls().get(generateSceneRequest.getGame_mode())+"/generate")
                     .accept(MediaType.IMAGE_PNG)
                     .bodyValue(generateSceneRequest)
                     .retrieve()
