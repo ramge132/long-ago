@@ -3,6 +3,7 @@ package com.example.b101.service;
 import com.example.b101.cache.Game;
 import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
+import com.example.b101.config.WebClientConfig;
 import com.example.b101.domain.*;
 import com.example.b101.dto.*;
 import com.example.b101.repository.BookRepository;
@@ -12,14 +13,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import reactor.core.publisher.Mono;
 
 import java.util.*;
 
@@ -34,6 +33,7 @@ public class GameService {
     private final WebClient webClient;
     private final S3service s3service;
     private final BookRepository bookRepository;
+    private final WebClientConfig webClientConfig;
 
 
     //시연용
@@ -231,7 +231,7 @@ public class GameService {
             BookCover bookCover;
             try {
                 bookCover = webClient.post()  //post형식으로 webClient의 요청을 보냄.
-                        .uri("/generate").accept(MediaType.APPLICATION_JSON)
+                        .uri(webClientConfig.getBaseUrls().get(generateSceneRequest.getGame_mode())+"/generate").accept(MediaType.APPLICATION_JSON)
                         .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
                         .retrieve()
                         .bodyToMono(BookCover.class) //응답의 본문(body)만 가져옴.

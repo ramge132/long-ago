@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
-@Getter
 public class WebClientConfig {
 
     @Value("${WEBCLIENT.BASE.URL_0}")
