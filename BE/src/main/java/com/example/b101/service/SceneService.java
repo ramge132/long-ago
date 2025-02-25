@@ -67,6 +67,8 @@ public class SceneService {
 
         log.info(generateSceneRequest.toString()+"GPU 서버로 보낼 객체 생성");
 
+        log.info(webClientProperties.getUrl().toString());
+
         // GPU 서버와 통신하여 이미지 바이너리 데이터 수신
         byte[] generateImage;
         try {
