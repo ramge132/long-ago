@@ -71,7 +71,6 @@ public class SceneService {
         // GPU 서버와 통신하여 이미지 바이너리 데이터 수신
         byte[] generateImage;
         try {
-            log.info(webClientConfig.getBaseUrls().get(generateSceneRequest.getGame_mode()));
             log.info("이미지 서버에 요청 보냄.");
             generateImage = webClient.post()
                     .uri(webClientConfig.getBaseUrls().get(generateSceneRequest.getGame_mode())+"/generate")
