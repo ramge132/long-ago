@@ -1,6 +1,5 @@
 package com.example.b101.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -12,9 +11,6 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${WEBCLIENT.BASE.URL:http://localhost:8080}")
-    private String baseUrl;
-
     @Bean
     public WebClient webClient(WebClient.Builder builder) {
 
@@ -23,7 +19,6 @@ public class WebClientConfig {
         //WebClient의 응답 제한 시간을 5분으로 지정 (기본 값은 30초)
         return builder
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
-                .baseUrl(baseUrl)
                 .clientConnector(new ReactorClientHttpConnector(HttpClient.create().responseTimeout(Duration.ofMinutes(5))))
                 .build();
     }

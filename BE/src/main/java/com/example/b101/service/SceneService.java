@@ -3,8 +3,8 @@ package com.example.b101.service;
 import com.example.b101.cache.Game;
 import com.example.b101.cache.SceneRedis;
 import com.example.b101.common.ApiResponseUtil;
+import com.example.b101.config.WebClientProperties;
 import com.example.b101.domain.PlayerStatus;
-import com.example.b101.domain.StoryCard;
 import com.example.b101.dto.DeleteSceneRequest;
 import com.example.b101.dto.GenerateSceneRequest;
 import com.example.b101.dto.SceneRequest;
@@ -22,7 +22,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -34,7 +33,7 @@ public class SceneService {
     private final GameRepository gameRepository;
     private final WebClient webClient;
     private final StoryCardRepository storyCardRepository;
-
+    private final WebClientProperties webClientProperties;
 
 
     public ResponseEntity<?> createScene(SceneRequest sceneRequest, HttpServletRequest request) {
@@ -72,9 +71,9 @@ public class SceneService {
         byte[] generateImage;
         try {
             log.info("이미지 서버에 요청 보냄.");
+            log.info(webClientProperties.getUrl().get(generateSceneRequest.getGame_mode())+"/generate");
             generateImage = webClient.post()
-                    .uri("/generate")
-                    .contentType(MediaType.APPLICATION_JSON)
+                    .uri(webClientProperties.getUrl().get(generateSceneRequest.getGame_mode())+"/generate")
                     .accept(MediaType.IMAGE_PNG)
                     .bodyValue(generateSceneRequest)
                     .retrieve()
@@ -164,7 +163,7 @@ public class SceneService {
 
 
         Game game = gameRepository.findById(deleteSceneRequest.getGameId());
-
+        
         game.getPlayerStatuses().stream()
                 .filter(ps -> ps.getUserId().equals(playerStatus.getUserId()))
                 .findFirst()
