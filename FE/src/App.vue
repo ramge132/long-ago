@@ -38,11 +38,15 @@
     <Transition name="fade">
       <EBook v-if="isEBookOpened" :ISBN="route.query.ISBN" @close-e-book="closeEBook" />
     </Transition>
+
+    <Transition name="fade">
+      <AnnouncementBox />
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { TigerAnimation } from "./components";
+import { AnnouncementBox, TigerAnimation } from "./components";
 import { ref, computed, Transition, watch } from "vue";
 import { useAudioStore } from "./stores/audio";
 import { useRoute } from "vue-router";
