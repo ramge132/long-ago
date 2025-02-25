@@ -1,5 +1,6 @@
 package com.example.b101.config;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -9,6 +10,7 @@ import reactor.netty.http.client.HttpClient;
 import java.time.Duration;
 
 @Configuration
+@EnableConfigurationProperties(WebClientProperties.class)
 public class WebClientConfig {
 
     @Bean
