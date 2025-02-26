@@ -15,6 +15,7 @@ import java.util.List;
 @Configuration
 public class WebClientConfig {
 
+
     @Value("${WEBCLIENT.BASE.URL_0}")
     private String baseUrl0;
 
