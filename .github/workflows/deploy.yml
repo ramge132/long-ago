@@ -1,0 +1,170 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+      # - FE/dev
+      # - BE/dev
+
+jobs:
+  # =======================================================
+  # JOB 1: Build Docker images for Front-End and Back-End
+  # =======================================================
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    
+    outputs:
+      fe_image_name: ${{ steps.set_fe_vars.outputs.image_name }}
+      be_image_name: ${{ steps.set_be_vars.outputs.image_name }}
+      commit_sha: ${{ steps.get_sha.outputs.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get commit SHA
+        id: get_sha
+        run: echo "sha=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+
+      # --- Front-End Build ---
+      - name: Set FE Environment Variables
+        id: set_fe_vars
+        run: |
+          if [ "${{ github.ref_name }}" == "main" ]; then
+            echo "image_name=${{ secrets.IMAGE_FE_MAIN }}" >> $GITHUB_OUTPUT
+            echo "server_url=${{ secrets.VITE_MAIN_API_SERVER_URL_MAIN }}" >> $GITHUB_OUTPUT
+          else
+            echo "image_name=${{ secrets.IMAGE_FE }}" >> $GITHUB_OUTPUT
+            echo "server_url=${{ secrets.VITE_MAIN_API_SERVER_URL }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create FE .env file
+        working-directory: ./FE
+        run: |
+          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}" > .env
+          echo "VITE_MAIN_API_SERVER_URL=${{ steps.set_fe_vars.outputs.server_url }}" >> .env
+          echo "VITE_TURN_ID=${{ secrets.VITE_TURN_ID }}" >> .env
+          echo "VITE_TURN_PW=${{ secrets.VITE_TURN_PW }}" >> .env
+          echo "VITE_USERS=${{ secrets.VITE_USERS }}" >> .env
+          echo "VITE_USERS_SIGNIN=${{ secrets.VITE_USERS_SIGNIN }}" >> .env
+          echo "VITE_GAME=${{ secrets.VITE_GAME }}" >> .env
+          echo "VITE_GAME_SHUFFLE=${{ secrets.VITE_GAME_SHUFFLE }}" >> .env
+          echo "VITE_SCENE=${{ secrets.VITE_SCENE }}" >> .env
+          echo "VITE_SCENE_FILTERING=${{ secrets.VITE_SCENE_FILTERING }}" >> .env
+          echo "VITE_SCENE_VOTE=${{ secrets.VITE_SCENE_VOTE }}" >> .env
+          
+      - name: Build FE Docker Image
+        run: |
+          docker build --no-cache -f ./FE/Dockerfile -t ${{ steps.set_fe_vars.outputs.image_name }}:${{ steps.get_sha.outputs.sha }} ./FE
+          docker tag ${{ steps.set_fe_vars.outputs.image_name }}:${{ steps.get_sha.outputs.sha }} ${{ steps.set_fe_vars.outputs.image_name }}:latest
+
+      # --- Back-End Build ---
+      - name: Set BE Environment Variables
+        id: set_be_vars
+        run: |
+          if [ "${{ github.ref_name }}" == "main" ]; then
+            echo "image_name=${{ secrets.IMAGE_BE_MAIN }}" >> $GITHUB_OUTPUT
+          else
+            echo "image_name=${{ secrets.IMAGE_BE }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build BE Docker Image
+        run: docker build --no-cache -f ./BE/Dockerfile -t ${{ steps.set_be_vars.outputs.image_name }}:${{ steps.get_sha.outputs.sha }} ./BE
+
+  # =======================================================
+  # JOB 2: Push Docker images to DockerHub
+  # =======================================================
+  push:
+    name: Push Docker Images
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set DockerHub Credentials
+        id: set_docker_credentials
+        run: |
+          if [ "${{ github.ref_name }}" == "main" ]; then
+            echo "username=${{ secrets.DOCKERHUB_USERNAME_MAIN }}" >> $GITHUB_OUTPUT
+            echo "password=${{ secrets.DOCKERHUB_PASSWORD_MAIN }}" >> $GITHUB_OUTPUT
+          else
+            echo "username=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_OUTPUT
+            echo "password=${{ secrets.DOCKERHUB_PASSWORD }}" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ steps.set_docker_credentials.outputs.username }}
+          password: ${{ steps.set_docker_credentials.outputs.password }}
+
+      - name: Push FE Image
+        if: github.ref_name == 'main' || startsWith(github.ref_name, 'FE/')
+        run: |
+          docker tag ${{ needs.build.outputs.fe_image_name }}:${{ needs.build.outputs.commit_sha }} ${{ needs.build.outputs.fe_image_name }}:latest
+          docker push ${{ needs.build.outputs.fe_image_name }}:${{ needs.build.outputs.commit_sha }}
+          docker push ${{ needs.build.outputs.fe_image_name }}:latest
+
+      - name: Push BE Image
+        if: github.ref_name == 'main' || startsWith(github.ref_name, 'BE/')
+        run: |
+          docker tag ${{ needs.build.outputs.be_image_name }}:${{ needs.build.outputs.commit_sha }} ${{ needs.build.outputs.be_image_name }}:latest
+          docker push ${{ needs.build.outputs.be_image_name }}:${{ needs.build.outputs.commit_sha }}
+          docker push ${{ needs.build.outputs.be_image_name }}:latest
+
+  # =======================================================
+  # JOB 3: Deploy to Servers
+  # =======================================================
+  deploy:
+    name: Deploy to Server
+    needs: push
+    runs-on: ubuntu-latest
+    
+    # 분기에 따라 다른 서버에 배포
+    steps:
+      - name: Deploy to Main Server
+        if: github.ref_name == 'main'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.MAIN_SERVER_URI }}
+          username: ubuntu
+          key: ${{ secrets.MAIN_SERVER_KEY }}
+          script: |
+            echo "DB_URL_MAIN=${{ secrets.DB_URL_MAIN }}" > .env
+            echo "DB_DRIVER=${{ secrets.DB_DRIVER }}" >> .env
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME_MAIN }}" >> .env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD_MAIN }}" >> .env
+            echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+            echo "WEBCLIENT_BASE_URL=${{ secrets.WEBCLIENT_BASE_URL }}" >> .env
+            echo "S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}" >> .env
+            echo "S3_REGION=${{ secrets.S3_REGION }}" >> .env
+            echo "S3_CREDENTIALS_ACCESS_KEY=${{ secrets.S3_CREDENTIALS_ACCESS_KEY }}" >> .env
+            echo "S3_CREDENTIALS_SECRET_KEY=${{ secrets.S3_CREDENTIALS_SECRET_KEY }}" >> .env
+            
+            docker compose down
+            docker rmi $(docker images -q) || true
+            docker compose up -d
+
+      # - name: Deploy to Test Server
+      #   if: startsWith(github.ref_name, 'FE/') || startsWith(github.ref_name, 'BE/')
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.TEST_SERVER_URI }}
+      #     username: ubuntu
+      #     key: ${{ secrets.TEST_SERVER_KEY }}
+      #     script: |
+      #       echo "DB_URL=${{ secrets.DB_URL_TEST }}" > .env
+      #       echo "DB_DRIVER=${{ secrets.DB_DRIVER }}" >> .env
+      #       echo "DB_USERNAME=${{ secrets.DB_USERNAME_TEST }}" >> .env
+      #       echo "DB_PASSWORD=${{ secrets.DB_PASSWORD_TEST }}" >> .env
+      #       echo "REDIS_HOST=${{ secrets.REDIS_HOST_TEST }}" >> .env
+      #       echo "WEBCLIENT_BASE_URL=${{ secrets.WEBCLIENT_BASE_URL }}" >> .env
+      #       echo "S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}" >> .env
+      #       echo "S3_REGION=${{ secrets.S3_REGION }}" >> .env
+      #       echo "S3_CREDENTIALS_ACCESS_KEY=${{ secrets.S3_CREDENTIALS_ACCESS_KEY }}" >> .env
+      #       echo "S3_CREDENTIALS_SECRET_KEY=${{ secrets.S3_CREDENTIALS_SECRET_KEY }}" >> .env
+
+      #       docker compose down
+      #       docker rmi $(docker images -q) || true
+      #       docker compose up -d
