@@ -46,6 +46,7 @@ jobs:
         run: |
           echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}" > .env
           echo "VITE_MAIN_API_SERVER_URL=${{ steps.set_vars.outputs.SERVER_URL }}" >> .env
+          echo "VITE_TURN_SERVER_URL=${{ secrets.VITE_TURN_SERVER_URL }}" >> .env
           echo "VITE_TURN_ID=${{ secrets.VITE_TURN_ID }}" >> .env
           echo "VITE_TURN_PW=${{ secrets.VITE_TURN_PW }}" >> .env
           echo "VITE_USERS=${{ secrets.VITE_USERS }}" >> .env
