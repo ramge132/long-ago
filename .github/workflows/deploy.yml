@@ -108,7 +108,7 @@ jobs:
           script: |
             echo "FE_IMAGE_NAME=${{ secrets.IMAGE_FE_MAIN }}" > .env
             echo "BE_IMAGE_NAME=${{ secrets.IMAGE_BE_MAIN }}" >> .env
-            echo "DB_URL_MAIN=${{ secrets.DB_URL_MAIN }}" >> .env
+            echo "DB_URL=${{ secrets.DB_URL_MAIN }}" >> .env
             echo "DB_DRIVER=${{ secrets.DB_DRIVER }}" >> .env
             echo "DB_USERNAME=${{ secrets.DB_USERNAME_MAIN }}" >> .env
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD_MAIN }}" >> .env
