@@ -362,5 +362,5 @@ HELP.md
 
 # EC2 RSA페어 프라이빗 키
 
-.pem
+*.pem
 ssh.txt
