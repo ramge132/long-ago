@@ -9,17 +9,11 @@ on:
 
 jobs:
   # =======================================================
-  # JOB 1: Build Docker images for Front-End and Back-End
+  # JOB 1: Build and Push Docker images
   # =======================================================
-  build:
-    name: Build Docker Images
+  build-and-push:
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
-    
-    outputs:
-      fe_image_name: ${{ steps.set_fe_vars.outputs.image_name }}
-      be_image_name: ${{ steps.set_be_vars.outputs.image_name }}
-      commit_sha: ${{ steps.get_sha.outputs.sha }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,23 +22,30 @@ jobs:
         id: get_sha
         run: echo "sha=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
 
-      # --- Front-End Build ---
-      - name: Set FE Environment Variables
-        id: set_fe_vars
+      # --- Determine Variables ---
+      - name: Set Environment Variables
+        id: set_vars
         run: |
           if [ "${{ github.ref_name }}" == "main" ]; then
-            echo "image_name=${{ secrets.IMAGE_FE_MAIN }}" >> $GITHUB_OUTPUT
-            echo "server_url=${{ secrets.VITE_MAIN_API_SERVER_URL_MAIN }}" >> $GITHUB_OUTPUT
+            echo "FE_IMAGE_NAME=${{ secrets.IMAGE_FE_MAIN }}" >> $GITHUB_OUTPUT
+            echo "BE_IMAGE_NAME=${{ secrets.IMAGE_BE_MAIN }}" >> $GITHUB_OUTPUT
+            echo "SERVER_URL=${{ secrets.VITE_MAIN_API_SERVER_URL_MAIN }}" >> $GITHUB_OUTPUT
+            echo "DOCKER_USER=${{ secrets.DOCKERHUB_USERNAME_MAIN }}" >> $GITHUB_OUTPUT
+            echo "DOCKER_PASS=${{ secrets.DOCKERHUB_PASSWORD_MAIN }}" >> $GITHUB_OUTPUT
           else
-            echo "image_name=${{ secrets.IMAGE_FE }}" >> $GITHUB_OUTPUT
-            echo "server_url=${{ secrets.VITE_MAIN_API_SERVER_URL }}" >> $GITHUB_OUTPUT
+            echo "FE_IMAGE_NAME=${{ secrets.IMAGE_FE }}" >> $GITHUB_OUTPUT
+            echo "BE_IMAGE_NAME=${{ secrets.IMAGE_BE }}" >> $GITHUB_OUTPUT
+            echo "SERVER_URL=${{ secrets.VITE_MAIN_API_SERVER_URL }}" >> $GITHUB_OUTPUT
+            echo "DOCKER_USER=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_OUTPUT
+            echo "DOCKER_PASS=${{ secrets.DOCKERHUB_PASSWORD }}" >> $GITHUB_OUTPUT
           fi
 
+      # --- Front-End Build ---
       - name: Create FE .env file
         working-directory: ./FE
         run: |
           echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}" > .env
-          echo "VITE_MAIN_API_SERVER_URL=${{ steps.set_fe_vars.outputs.server_url }}" >> .env
+          echo "VITE_MAIN_API_SERVER_URL=${{ steps.set_vars.outputs.SERVER_URL }}" >> .env
           echo "VITE_TURN_ID=${{ secrets.VITE_TURN_ID }}" >> .env
           echo "VITE_TURN_PW=${{ secrets.VITE_TURN_PW }}" >> .env
           echo "VITE_USERS=${{ secrets.VITE_USERS }}" >> .env
@@ -56,72 +57,45 @@ jobs:
           echo "VITE_SCENE_VOTE=${{ secrets.VITE_SCENE_VOTE }}" >> .env
           
       - name: Build FE Docker Image
+        if: github.ref_name == 'main' || startsWith(github.ref_name, 'FE/')
         run: |
-          docker build --no-cache -f ./FE/Dockerfile -t ${{ steps.set_fe_vars.outputs.image_name }}:${{ steps.get_sha.outputs.sha }} ./FE
-          docker tag ${{ steps.set_fe_vars.outputs.image_name }}:${{ steps.get_sha.outputs.sha }} ${{ steps.set_fe_vars.outputs.image_name }}:latest
+          docker build --no-cache -f ./FE/Dockerfile -t ${{ steps.set_vars.outputs.FE_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }} ./FE
+          docker tag ${{ steps.set_vars.outputs.FE_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }} ${{ steps.set_vars.outputs.FE_IMAGE_NAME }}:latest
 
       # --- Back-End Build ---
-      - name: Set BE Environment Variables
-        id: set_be_vars
-        run: |
-          if [ "${{ github.ref_name }}" == "main" ]; then
-            echo "image_name=${{ secrets.IMAGE_BE_MAIN }}" >> $GITHUB_OUTPUT
-          else
-            echo "image_name=${{ secrets.IMAGE_BE }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Build BE Docker Image
-        run: docker build --no-cache -f ./BE/Dockerfile -t ${{ steps.set_be_vars.outputs.image_name }}:${{ steps.get_sha.outputs.sha }} ./BE
-
-  # =======================================================
-  # JOB 2: Push Docker images to DockerHub
-  # =======================================================
-  push:
-    name: Push Docker Images
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Set DockerHub Credentials
-        id: set_docker_credentials
+        if: github.ref_name == 'main' || startsWith(github.ref_name, 'BE/')
         run: |
-          if [ "${{ github.ref_name }}" == "main" ]; then
-            echo "username=${{ secrets.DOCKERHUB_USERNAME_MAIN }}" >> $GITHUB_OUTPUT
-            echo "password=${{ secrets.DOCKERHUB_PASSWORD_MAIN }}" >> $GITHUB_OUTPUT
-          else
-            echo "username=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_OUTPUT
-            echo "password=${{ secrets.DOCKERHUB_PASSWORD }}" >> $GITHUB_OUTPUT
-          fi
-          
+          docker build --no-cache -f ./BE/Dockerfile -t ${{ steps.set_vars.outputs.BE_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }} ./BE
+          docker tag ${{ steps.set_vars.outputs.BE_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }} ${{ steps.set_vars.outputs.BE_IMAGE_NAME }}:latest
+
+      # --- Push to DockerHub ---
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ steps.set_docker_credentials.outputs.username }}
-          password: ${{ steps.set_docker_credentials.outputs.password }}
+          username: ${{ steps.set_vars.outputs.DOCKER_USER }}
+          password: ${{ steps.set_vars.outputs.DOCKER_PASS }}
 
       - name: Push FE Image
         if: github.ref_name == 'main' || startsWith(github.ref_name, 'FE/')
         run: |
-          docker tag ${{ needs.build.outputs.fe_image_name }}:${{ needs.build.outputs.commit_sha }} ${{ needs.build.outputs.fe_image_name }}:latest
-          docker push ${{ needs.build.outputs.fe_image_name }}:${{ needs.build.outputs.commit_sha }}
-          docker push ${{ needs.build.outputs.fe_image_name }}:latest
+          docker push ${{ steps.set_vars.outputs.FE_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }}
+          docker push ${{ steps.set_vars.outputs.FE_IMAGE_NAME }}:latest
 
       - name: Push BE Image
         if: github.ref_name == 'main' || startsWith(github.ref_name, 'BE/')
         run: |
-          docker tag ${{ needs.build.outputs.be_image_name }}:${{ needs.build.outputs.commit_sha }} ${{ needs.build.outputs.be_image_name }}:latest
-          docker push ${{ needs.build.outputs.be_image_name }}:${{ needs.build.outputs.commit_sha }}
-          docker push ${{ needs.build.outputs.be_image_name }}:latest
+          docker push ${{ steps.set_vars.outputs.BE_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }}
+          docker push ${{ steps.set_vars.outputs.BE_IMAGE_NAME }}:latest
 
   # =======================================================
-  # JOB 3: Deploy to Servers
+  # JOB 2: Deploy to Server
   # =======================================================
   deploy:
     name: Deploy to Server
-    needs: push
+    needs: build-and-push
     runs-on: ubuntu-latest
     
-    # 분기에 따라 다른 서버에 배포
     steps:
       - name: Deploy to Main Server
         if: github.ref_name == 'main'
