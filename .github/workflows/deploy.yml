@@ -114,13 +114,13 @@ jobs:
             echo "DB_PASSWORD_MAIN=${{ secrets.DB_PASSWORD_MAIN }}" >> .env
             echo "REDIS_HOST_MAIN=${{ secrets.REDIS_HOST }}" >> .env
             echo "WEBCLIENT_BASE_URL=${{ secrets.WEBCLIENT_BASE_URL }}" >> .env
+            echo "WEBCLIENT_BASE_URL0=${{ secrets.WEBCLIENT_BASE_URL }}" >> .env
             echo "S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}" >> .env
             echo "S3_REGION=${{ secrets.S3_REGION }}" >> .env
             echo "S3_CREDENTIALS_ACCESS_KEY=${{ secrets.S3_CREDENTIALS_ACCESS_KEY }}" >> .env
             echo "S3_CREDENTIALS_SECRET_KEY=${{ secrets.S3_CREDENTIALS_SECRET_KEY }}" >> .env
             echo "RUNPOD_API_KEY=${{ secrets.RUNPOD_API_KEY }}" >> .env
             echo "RUNPOD_ENDPOINT_ID=${{ secrets.RUNPOD_ENDPOINT_ID }}" >> .env
-            echo "WEBCLIENT_BASE_URL0=https://api.runpod.ai/v2/${{ secrets.RUNPOD_ENDPOINT_ID }}/run" >> .env
             
             docker compose down
             docker rmi $(docker images -q) || true
