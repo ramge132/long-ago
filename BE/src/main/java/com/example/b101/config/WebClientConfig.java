@@ -82,7 +82,6 @@ public class WebClientConfig {
                 .build();
     }
     
-    @Getter
     public String getRunpodApiKey() {
         return runpodApiKey;
     }
