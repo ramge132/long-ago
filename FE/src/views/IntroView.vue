@@ -2,7 +2,7 @@
   <div class="h-full grid grid-cols-2">
     <div class="flex flex-col items-center justify-center gap-y-6">
       <div class="flex items-center relative">
-        <img :src="currentProfile" alt="프로필" class="w-52 h-52" />
+        <img :src="currentProfile" alt="프로필" class="w-52 h-52" style="transition: none;" />
         <div
           class="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-gray-200 transition-all duration-200 hover:bg-gray-300 hover:scale-105 flex justify-center items-center cursor-pointer"
           @click="refresh"
@@ -153,14 +153,10 @@ const currentProfile = ref(Profile.cat_1);
 const currentIndex = ref(0);
 
 const refresh = () => {
-  while (true) {
-    const randomIndex = Math.floor(Math.random() * profiles.value.length);
-    if (currentIndex.value != randomIndex) {
-      currentIndex.value = randomIndex;
-      currentProfile.value = profiles.value[currentIndex.value];
-      break;
-    }
-  }
+  // 더 효율적인 다음 인덱스 계산 (while 루프 제거)
+  const nextIndex = (currentIndex.value + 1) % profiles.value.length;
+  currentIndex.value = nextIndex;
+  currentProfile.value = profiles.value[nextIndex];
 };
 
 const start = () => {
@@ -171,8 +167,22 @@ const start = () => {
   router.push("/game/lobby");
 };
 
+// 이미지 프리로딩 함수
+const preloadImages = () => {
+  profiles.value.forEach(profileSrc => {
+    const img = new Image();
+    img.src = profileSrc;
+  });
+};
+
 onMounted(() => {
-  currentProfile.value = profiles.value[Math.floor(Math.random() * profiles.value.length)];
+  // 이미지 프리로딩
+  preloadImages();
+  
+  const randomIndex = Math.floor(Math.random() * profiles.value.length);
+  currentIndex.value = randomIndex;
+  currentProfile.value = profiles.value[randomIndex];
+  
   const userData = JSON.parse(localStorage.getItem("userData"));
   if (userData && userData.nickname) {
     nickname.value = userData.nickname;
