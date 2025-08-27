@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -71,6 +73,14 @@ public class FilteringService {
                 .toList();
 
         log.info("[findCardVariantsByCardId] 플레이어가 가진 카드 변형어 리스트: {}", allVariants);
+        
+        // 디버깅: 매칭된 변형어들 확인
+        List<String> matchedVariants = storyCardVariantsList.stream()
+                .filter(variant -> playerStoryCardIds.contains(variant.getStoryCard().getId()) && 
+                        isVariantMatched(variant.getVariant(), tokenList, filteringRequest.getUserPrompt()))
+                .map(StoryCardVariants::getVariant)
+                .toList();
+        log.info("[findCardVariantsByCardId] 매칭된 변형어들: {}", matchedVariants);
 
 
         // 사용자 입력값(프롬프트)에서 욕설 필터링
@@ -95,28 +105,25 @@ public class FilteringService {
             log.info("형태소: {}, 품사: {}", token.getMorph(), token.getPos());
         }
         
-        // 개선된 매칭 알고리즘
-        long keywordCnt = allVariants.stream()
-                .filter(variant -> isVariantMatched(variant, tokenList, filteringRequest.getUserPrompt()))
-                .count();
+        // 개선된 매칭 알고리즘: 카드별로 그룹핑하여 중복 체크
+        Set<Integer> matchedCardIds = storyCardVariantsList.stream()
+                .filter(variant -> playerStoryCardIds.contains(variant.getStoryCard().getId()) && 
+                        isVariantMatched(variant.getVariant(), tokenList, filteringRequest.getUserPrompt()))
+                .map(variant -> variant.getStoryCard().getId())
+                .collect(Collectors.toSet());
+        
+        log.info("[findCardVariantsByCardId] 매칭된 카드 ID들: {}, 개수: {}", matchedCardIds, matchedCardIds.size());
 
-        if (keywordCnt > 1) {
+        if (matchedCardIds.size() > 1) {
             return ApiResponseUtil.failure("중복된 카드가 사용되었습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
-        } else if (keywordCnt < 1) {
+        } else if (matchedCardIds.size() < 1) {
             return ApiResponseUtil.failure("플레이어가 소유한 카드가 사용되지 않았습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
-        // 사용한 카드 찾기 (개선된 매칭 사용)
-        Integer userCardId = storyCardVariantsList.stream()
-                .filter(variant -> playerStoryCardIds.contains(variant.getStoryCard().getId()) && 
-                        isVariantMatched(variant.getVariant(), tokenList, filteringRequest.getUserPrompt()))
-                .map(storyCardVariants -> storyCardVariants.getStoryCard().getId())
-                .findFirst()
-                .orElse(null);
+        // 사용한 카드 찾기 (이미 매칭된 카드 ID 사용)
+        Integer userCardId = matchedCardIds.iterator().next(); // Set에 하나의 요소가 있음을 보장
 
-        if (userCardId == null) {
-            return ApiResponseUtil.failure("사용한 카드가 정확하지 않습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
-        }
+        // userCardId가 null일 수 없음 (이미 matchedCardIds.size() == 1 확인함)
 
         log.info("[findCardVariantsByCardId] 사용자가 사용한 카드 ID: {}", userCardId);
 
@@ -131,7 +138,7 @@ public class FilteringService {
      * @param originalText 원본 텍스트
      * @return 매칭 여부
      */
-    private boolean isVariantMatched(String variant, List<Token> tokenList, String originalText) {
+    private boolean isVariantMatchedStrict(String variant, List<Token> tokenList, String originalText) {
         if (variant == null || variant.trim().isEmpty()) {
             return false;
         }
@@ -198,5 +205,33 @@ public class FilteringService {
         }
         
         return true;
+    }
+    
+    /**
+     * 매우 엄격한 변형어 매칭 (디버깅용)
+     */
+    private boolean isVariantMatched(String variant, List<Token> tokenList, String originalText) {
+        if (variant == null || variant.trim().isEmpty()) {
+            return false;
+        }
+        
+        log.debug("변형어 매칭 체크: '{}' in '{}'", variant, originalText);
+        
+        // 1. 완전 매칭 (원본 텍스트에서 직접 찾기)
+        if (originalText.contains(variant)) {
+            log.info("완전 매칭 성공: '{}' 발견", variant);
+            return true;
+        }
+        
+        // 2. 형태소 완전 매칭 (형태소 분석 결과와 정확히 일치)
+        for (Token token : tokenList) {
+            if (token.getMorph().equals(variant)) {
+                log.info("형태소 완전 매칭 성공: '{}' = '{}'", token.getMorph(), variant);
+                return true;
+            }
+        }
+        
+        log.debug("매칭 실패: '{}'", variant);
+        return false;
     }
 }
