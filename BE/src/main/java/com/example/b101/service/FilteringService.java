@@ -73,14 +73,6 @@ public class FilteringService {
                 .toList();
 
         log.info("[findCardVariantsByCardId] 플레이어가 가진 카드 변형어 리스트: {}", allVariants);
-        
-        // 디버깅: 매칭된 변형어들 확인
-        List<String> matchedVariants = storyCardVariantsList.stream()
-                .filter(variant -> playerStoryCardIds.contains(variant.getStoryCard().getId()) && 
-                        isVariantMatched(variant.getVariant(), tokenList, filteringRequest.getUserPrompt()))
-                .map(StoryCardVariants::getVariant)
-                .toList();
-        log.info("[findCardVariantsByCardId] 매칭된 변형어들: {}", matchedVariants);
 
 
         // 사용자 입력값(프롬프트)에서 욕설 필터링
@@ -104,6 +96,14 @@ public class FilteringService {
         for (Token token : tokenList) {
             log.info("형태소: {}, 품사: {}", token.getMorph(), token.getPos());
         }
+        
+        // 디버깅: 매칭된 변형어들 확인
+        List<String> matchedVariants = storyCardVariantsList.stream()
+                .filter(variant -> playerStoryCardIds.contains(variant.getStoryCard().getId()) && 
+                        isVariantMatched(variant.getVariant(), tokenList, filteringRequest.getUserPrompt()))
+                .map(StoryCardVariants::getVariant)
+                .toList();
+        log.info("[findCardVariantsByCardId] 매칭된 변형어들: {}", matchedVariants);
         
         // 개선된 매칭 알고리즘: 카드별로 그룹핑하여 중복 체크
         Set<Integer> matchedCardIds = storyCardVariantsList.stream()
