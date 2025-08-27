@@ -19,6 +19,12 @@ public class WebClientConfig {
 
     @Value("${RUNPOD_API_KEY:}")
     private String runpodApiKey;
+    
+    @Value("${OPENAI_API_KEY:}")
+    private String openaiApiKey;
+    
+    @Value("${GEMINI_API_KEY:}")
+    private String geminiApiKey;
 
     @Value("${WEBCLIENT.BASE.URL_0}")
     private String baseUrl0;
@@ -82,7 +88,36 @@ public class WebClientConfig {
                 .build();
     }
     
+    @Bean
+    public WebClient openaiWebClient(WebClient.Builder builder) {
+        // OpenAI API 전용 WebClient
+        return builder
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + openaiApiKey)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().responseTimeout(Duration.ofMinutes(2))))
+                .build();
+    }
+    
+    @Bean
+    public WebClient geminiWebClient(WebClient.Builder builder) {
+        // Gemini API 전용 WebClient
+        return builder
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB for images
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().responseTimeout(Duration.ofMinutes(3))))
+                .build();
+    }
+    
     public String getRunpodApiKey() {
         return runpodApiKey;
+    }
+    
+    public String getOpenaiApiKey() {
+        return openaiApiKey;
+    }
+    
+    public String getGeminiApiKey() {
+        return geminiApiKey;
     }
 }

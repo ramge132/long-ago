@@ -42,6 +42,10 @@ public class SceneService {
     private final WebClient runpodWebClient;
     @Qualifier("webClient")
     private final WebClient webClient;
+    @Qualifier("openaiWebClient")
+    private final WebClient openaiWebClient;
+    @Qualifier("geminiWebClient")
+    private final WebClient geminiWebClient;
     private final StoryCardRepository storyCardRepository;
     private final WebClientConfig webClientConfig;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -67,103 +71,28 @@ public class SceneService {
                     request.getRequestURI());
         }
 
-        // RunPod API를 위한 요청 객체 생성
-        Map<String, Object> runpodRequest = new HashMap<>();
-        Map<String, Object> inputData = new HashMap<>();
-        inputData.put("session_id", sceneRequest.getGameId());
-        inputData.put("game_mode", game.getDrawingStyle());
-        inputData.put("user_sentence", sceneRequest.getUserPrompt());
-        inputData.put("status", 0);
-        inputData.put("character_cards", List.of()); // 캐릭터 카드 리스트 (필요시 추가)
-        runpodRequest.put("input", inputData);
+        // 새로운 API 시스템: OpenAI GPT + Gemini 이미지 생성
+        log.info("OpenAI GPT로 프롬프트 생성 및 Gemini로 이미지 생성 시작");
 
-        log.info("RunPod API 요청 객체 생성: {}", runpodRequest);
-
-        // RunPod API 호출
+        // 새로운 API 시스템: OpenAI GPT + Gemini
         byte[] generateImage = null;
         try {
-            log.info("RunPod 서버에 요청 보냄.");
+            // 1단계: OpenAI GPT로 프롬프트 생성
+            String enhancedPrompt = generatePromptWithGPT(sceneRequest.getUserPrompt(), game.getDrawingStyle());
+            log.info("GPT로 생성된 프롬프트: {}", enhancedPrompt);
             
-            // RunPod URL 사용 (baseUrl0이 RunPod URL)
-            String runpodUrl = webClientConfig.getBaseUrls().get(0);
-            
-            // RunPod API는 Authorization 헤더가 이미 runpodWebClient에 설정되어 있음
-            String responseBody = runpodWebClient.post()
-                    .uri(runpodUrl)
-                    .bodyValue(runpodRequest)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-            
-            log.info("RunPod 응답 받음");
-            
-            // RunPod 응답 파싱
-            if (responseBody != null) {
-                JsonNode responseJson = objectMapper.readTree(responseBody);
-                
-                // 비동기 처리 확인
-                if (responseJson.has("status") && "IN_QUEUE".equals(responseJson.get("status").asText())) {
-                    // 비동기 작업인 경우 job_id로 상태 확인 필요
-                    String jobId = responseJson.get("id").asText();
-                    log.info("RunPod 작업이 큐에 있음. Job ID: {}", jobId);
-                    
-                    // 상태 확인 (최대 5분 대기)
-                    int maxAttempts = 60; // 5초 간격으로 60번 시도 = 5분
-                    for (int i = 0; i < maxAttempts; i++) {
-                        Thread.sleep(5000); // 5초 대기
-                        
-                        String statusResponse = runpodWebClient.get()
-                                .uri(runpodUrl.replace("/run", "/status/" + jobId))
-                                .retrieve()
-                                .bodyToMono(String.class)
-                                .block();
-                        
-                        JsonNode statusJson = objectMapper.readTree(statusResponse);
-                        String status = statusJson.get("status").asText();
-                        
-                        if ("COMPLETED".equals(status)) {
-                            responseJson = statusJson.get("output");
-                            break;
-                        } else if ("FAILED".equals(status)) {
-                            log.error("RunPod 작업 실패");
-                            return ApiResponseUtil.failure("이미지 생성 실패",
-                                    HttpStatus.INTERNAL_SERVER_ERROR,
-                                    request.getRequestURI());
-                        }
-                    }
-                }
-                
-                // output에서 이미지 데이터 추출
-                if (responseJson.has("output")) {
-                    responseJson = responseJson.get("output");
-                }
-                
-                if (responseJson.has("image")) {
-                    String base64Image = responseJson.get("image").asText();
-                    generateImage = Base64.getDecoder().decode(base64Image);
-                    log.info("Base64 이미지 디코딩 완료. 크기: {} bytes", generateImage.length);
-                } else if (responseJson.has("s3_url")) {
-                    // S3 URL이 있는 경우 직접 다운로드 (선택적)
-                    String s3Url = responseJson.get("s3_url").asText();
-                    log.info("S3 URL 받음: {}", s3Url);
-                    
-                    // S3에서 이미지 다운로드
-                    generateImage = webClient.get()
-                            .uri(s3Url)
-                            .retrieve()
-                            .bodyToMono(byte[].class)
-                            .block();
-                }
-            }
+            // 2단계: Gemini로 이미지 생성
+            generateImage = generateImageWithGemini(enhancedPrompt);
+            log.info("Gemini로 생성된 이미지 크기: {} bytes", generateImage.length);
             
         } catch (WebClientException e) {
-            log.error("RunPod 서버 통신 에러: {}", e.getMessage());
-            return ApiResponseUtil.failure("RunPod 서버 통신 중 오류 발생",
+            log.error("API 서버 통신 에러: {}", e.getMessage());
+            return ApiResponseUtil.failure("이미지 생성 API 통신 중 오류 발생",
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     request.getRequestURI());
         } catch (Exception e) {
-            log.error("이미지 처리 중 에러: {}", e.getMessage());
-            return ApiResponseUtil.failure("이미지 처리 중 오류 발생",
+            log.error("이미지 생성 중 에러: {}", e.getMessage());
+            return ApiResponseUtil.failure("이미지 생성 중 오류 발생",
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     request.getRequestURI());
         }
@@ -188,7 +117,7 @@ public class SceneService {
         redisSceneRepository.save(scene);
 
         log.info("Redis에 저장된 scene 개수 : {}", redisSceneRepository.findAllByGameId(sceneRequest.getGameId()).size());
-        log.info("RunPod에서 온 이미지 크기 : {}", generateImage.length);
+        log.info("새로운 API에서 생성된 이미지 크기 : {}", generateImage.length);
         log.info("Redis에 저장된 이미지 크기 : {}", redisSceneRepository.findById(id).getImage().length);
 
         // 이미지 바이너리 데이터를 PNG 미디어 타입으로 반환
@@ -215,25 +144,8 @@ public class SceneService {
             SceneRedis lastScene = scenes.get(scenes.size() - 1);
             redisSceneRepository.delete(lastScene);
 
-            // RunPod API를 위한 요청 객체 생성 (status 3 = 삭제)
-            Map<String, Object> runpodRequest = new HashMap<>();
-            Map<String, Object> inputData = new HashMap<>();
-            inputData.put("session_id", deleteSceneRequest.getGameId());
-            inputData.put("game_mode", 1);
-            inputData.put("user_sentence", "");
-            inputData.put("status", 3);
-            inputData.put("character_cards", List.of());
-            runpodRequest.put("input", inputData);
-
-            // RunPod URL 사용
-            String runpodUrl = webClientConfig.getBaseUrls().get(0);
-            
-            runpodWebClient.post()
-                    .uri(runpodUrl)
-                    .bodyValue(runpodRequest)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .subscribe();
+            // 새로운 API 시스템에서는 삭제 알림이 필요하지 않음
+            log.info("장면 삭제됨 - 새로운 API 시스템에서는 별도 알림 불필요");
 
             return ApiResponseUtil.success(lastScene, "투표 결과에 따라 삭제됨", HttpStatus.OK, request.getRequestURI());
         }
@@ -284,5 +196,111 @@ public class SceneService {
         gameRepository.update(game);
 
         return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
+    }
+
+    /**
+     * OpenAI GPT를 사용하여 프롬프트 생성
+     */
+    private String generatePromptWithGPT(String userSentence, int gameMode) {
+        try {
+            // 그림체 모드에 따른 스타일 정의
+            String[] styles = {
+                "애니메이션 스타일", "3D 카툰 스타일", "코믹 스트립 스타일", "클레이메이션 스타일",
+                "크레용 드로잉 스타일", "픽셀 아트 스타일", "미니멀리스트 일러스트", "수채화 스타일", "스토리북 일러스트"
+            };
+            
+            String style = gameMode < styles.length ? styles[gameMode] : "애니메이션 스타일";
+            
+            // OpenAI GPT API 요청 구조
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", "gpt-4o-mini");
+            requestBody.put("max_tokens", 200);
+            requestBody.put("temperature", 0.7);
+            
+            // 메시지 구조
+            Map<String, Object> systemMessage = new HashMap<>();
+            systemMessage.put("role", "system");
+            systemMessage.put("content", "당신은 이미지 생성을 위한 프롬프트를 만드는 전문가입니다. 사용자의 한국어 문장을 받아서 " + style + " 스타일의 이미지 생성에 적합한 영어 프롬프트로 변환해주세요. 간결하고 명확하게 작성해주세요.");
+            
+            Map<String, Object> userMessage = new HashMap<>();
+            userMessage.put("role", "user");
+            userMessage.put("content", "다음 한국어 문장을 " + style + " 스타일의 이미지 생성 프롬프트로 변환해주세요: " + userSentence);
+            
+            requestBody.put("messages", List.of(systemMessage, userMessage));
+            
+            // OpenAI API 호출
+            String response = openaiWebClient.post()
+                    .uri("https://api.openai.com/v1/chat/completions")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            // 응답 파싱
+            JsonNode responseJson = objectMapper.readTree(response);
+            if (responseJson.has("choices") && responseJson.get("choices").size() > 0) {
+                return responseJson.get("choices").get(0).get("message").get("content").asText().trim();
+            }
+            
+            log.warn("GPT 응답에서 프롬프트 추출 실패, 원본 문장 사용");
+            return userSentence;
+            
+        } catch (Exception e) {
+            log.error("GPT API 호출 실패: {}", e.getMessage());
+            return userSentence; // 실패시 원본 문장 반환
+        }
+    }
+    
+    /**
+     * Gemini API를 사용하여 이미지 생성
+     */
+    private byte[] generateImageWithGemini(String prompt) {
+        try {
+            // Gemini API 요청 구조
+            Map<String, Object> requestBody = new HashMap<>();
+            
+            // contents 배열 구성
+            Map<String, Object> content = new HashMap<>();
+            Map<String, Object> part = new HashMap<>();
+            part.put("text", "Generate an image based on this description: " + prompt);
+            content.put("parts", List.of(part));
+            requestBody.put("contents", List.of(content));
+            
+            // 생성 설정
+            Map<String, Object> generationConfig = new HashMap<>();
+            generationConfig.put("maxOutputTokens", 1024);
+            generationConfig.put("temperature", 0.7);
+            requestBody.put("generationConfig", generationConfig);
+            
+            // Gemini API 호출 (API 키를 URL 파라미터로 전달)
+            String apiUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + webClientConfig.getGeminiApiKey();
+            
+            String response = geminiWebClient.post()
+                    .uri(apiUrl)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            // 응답 파싱
+            JsonNode responseJson = objectMapper.readTree(response);
+            if (responseJson.has("candidates") && responseJson.get("candidates").size() > 0) {
+                JsonNode candidate = responseJson.get("candidates").get(0);
+                if (candidate.has("content") && candidate.get("content").has("parts")) {
+                    JsonNode parts = candidate.get("content").get("parts");
+                    if (parts.size() > 0 && parts.get(0).has("inlineData")) {
+                        String base64Data = parts.get(0).get("inlineData").get("data").asText();
+                        return Base64.getDecoder().decode(base64Data);
+                    }
+                }
+            }
+            
+            log.error("Gemini에서 이미지 데이터를 찾을 수 없음");
+            throw new RuntimeException("Gemini API에서 이미지 생성 실패");
+            
+        } catch (Exception e) {
+            log.error("Gemini API 호출 실패: {}", e.getMessage());
+            throw new RuntimeException("이미지 생성 실패: " + e.getMessage());
+        }
     }
 }
