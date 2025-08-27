@@ -289,19 +289,19 @@ public class SceneService {
                 if (candidate.has("content") && candidate.get("content").has("parts")) {
                     JsonNode parts = candidate.get("content").get("parts");
                     for (int i = 0; i < parts.size(); i++) {
-                        JsonNode part = parts.get(i);
-                        log.info("Part {}: {}", i, part.toString());
+                        JsonNode currentPart = parts.get(i);
+                        log.info("Part {}: {}", i, currentPart.toString());
                         
                         // inlineData 방식 확인
-                        if (part.has("inlineData") && part.get("inlineData").has("data")) {
-                            String base64Data = part.get("inlineData").get("data").asText();
+                        if (currentPart.has("inlineData") && currentPart.get("inlineData").has("data")) {
+                            String base64Data = currentPart.get("inlineData").get("data").asText();
                             log.info("Base64 이미지 데이터 발견, 길이: {}", base64Data.length());
                             return Base64.getDecoder().decode(base64Data);
                         }
                         
                         // 다른 가능한 이미지 데이터 형식 확인
-                        if (part.has("image") || part.has("imageUrl")) {
-                            log.info("다른 이미지 형식 발견: {}", part.toString());
+                        if (currentPart.has("image") || currentPart.has("imageUrl")) {
+                            log.info("다른 이미지 형식 발견: {}", currentPart.toString());
                         }
                     }
                 }
