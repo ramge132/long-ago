@@ -1,0 +1,287 @@
+{
+  "8": {
+    "inputs": {
+      "samples": [
+        "34",
+        0
+      ],
+      "vae": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "10": {
+    "inputs": {
+      "vae_name": "Flux_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "11": {
+    "inputs": {
+      "clip_name1": "t5xxl_fp16.safetensors",
+      "clip_name2": "clip_l.safetensors",
+      "type": "flux",
+      "device": "default"
+    },
+    "class_type": "DualCLIPLoader",
+    "_meta": {
+      "title": "DualCLIPLoader"
+    }
+  },
+  "12": {
+    "inputs": {
+      "unet_name": "flux1-dev.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "26": {
+    "inputs": {
+      "lora_name": "0_MJanime_Flux_LoRa_v3_Final.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "36",
+        0
+      ],
+      "clip": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "32": {
+    "inputs": {
+      "clip_l": [
+        "56",
+        0
+      ],
+      "t5xxl": [
+        "56",
+        0
+      ],
+      "guidance": 5,
+      "clip": [
+        "76",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncodeFlux",
+    "_meta": {
+      "title": "CLIPTextEncodeFlux"
+    }
+  },
+  "34": {
+    "inputs": {
+      "seed": 233131849176469,
+      "steps": 25,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "beta",
+      "denoise": 1,
+      "model": [
+        "76",
+        0
+      ],
+      "positive": [
+        "32",
+        0
+      ],
+      "negative": [
+        "77",
+        0
+      ],
+      "latent_image": [
+        "35",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "35": {
+    "inputs": {
+      "width": 768,
+      "height": 768,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "36": {
+    "inputs": {
+      "max_shift": 1,
+      "base_shift": 0.5,
+      "width": 768,
+      "height": 768,
+      "model": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingFlux",
+    "_meta": {
+      "title": "ModelSamplingFlux"
+    }
+  },
+  "39": {
+    "inputs": {
+      "text": "",
+      "model": "Qwen2.5-14B-Instruct-1M-Q8_0.gguf",
+      "max_tokens": 4096,
+      "n_gpu_layers": -1,
+      "n_threads": 50,
+      "status": 0,
+      "session_id": "",
+      "ayl_api_node": [
+        "40",
+        0
+      ]
+    },
+    "class_type": "AYL_GGUF_Node",
+    "_meta": {
+      "title": "AYL_GGUF_Node"
+    }
+  },
+  "40": {
+    "inputs": {
+      "previous_prompt": "",
+      "summary_story": "",
+      "description": ""
+    },
+    "class_type": "AYL_API_Node",
+    "_meta": {
+      "title": "AYL_API_Node"
+    }
+  },
+  "53": {
+    "inputs": {
+      "text": [
+        "39",
+        0
+      ],
+      "text2": "best quality, a vibrant and lively park setting during the afternoon, with a colorful and trendy IXDYOZL, an idol woman in a red and white dress with red high heels standing in the center, wearing a bright, fashionable outfit with accessories like earrings and a headband. The IXDYOZL, an idol woman in a red and white dress with red high heels looks surprised and curious, holding a microphone in one hand. In the background, a few trees and benches add to the park atmosphere. \n\nStanding a few feet away from the IXDYOZL, an idol woman in a red and white dress with red high heels, a calm and composed NXIYNZJXA, a ninja man in a black ninja costume, He is wearing a black kimono with a hood and a brown belt around his waist. His face is partially obscured by a mask, giving him a mysterious and intimidating look is seen, dressed in a traditional black outfit with a mask covering the lower half of their face. The NXIYNZJXA, a ninja man in a black ninja costume, He is wearing a black kimono with a hood and a brown belt around his waist. His face is partially obscured by a mask, giving him a mysterious and intimidating look has a katana strapped to their back and a few shurikens at their belt. The NXIYNZJXA, a ninja man in a black ninja costume, He is wearing a black kimono with a hood and a brown belt around his waist. His face is partially obscured by a mask, giving him a mysterious and intimidating look appears slightly intrigued by the unexpected encounter with the IXDYOZL, an idol woman in a red and white dress with red high heels. The park is bustling with a few other people in the background, adding to the public setting. The IXDYOZL, an idol woman in a red and white dress with red high heels's eyes are wide with surprise, and the NXIYNZJXA, a ninja man in a black ninja costume, He is wearing a black kimono with a hood and a brown belt around his waist. His face is partially obscured by a mask, giving him a mysterious and intimidating look's expression is serene yet curious, as they both stand facing each other, the moment frozen in time."
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "output_prompt_text"
+    }
+  },
+  "54": {
+    "inputs": {
+      "text": [
+        "39",
+        1
+      ],
+      "text2": "In a surprising encounter, an idol met a ninja."
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "summary_story_text"
+    }
+  },
+  "55": {
+    "inputs": {
+      "text": [
+        "39",
+        2
+      ],
+      "text2": "### Main Subjects\n\n- **아이돌**\n  - Physical/External Features: The idol is likely wearing a trendy, fashionable outfit typical of an idol, possibly including a bright, colorful outfit with some accessories like earrings or a headband. They may have a microphone or some kind of stage prop with them.\n  - Emotional Expressions: The idol seems surprised and curious about meeting the ninja.\n  - Location: Standing in a public place, possibly a park or a street, where they encountered the ninja.\n\n- **닌자**\n  - Physical/External Features: The ninja is dressed in a traditional black outfit with a mask covering the lower half of their face. They have a katana strapped to their back and may have other ninja tools like shurikens or smoke bombs.\n  - Emotional Expressions: The ninja appears calm and composed, but also slightly intrigued by the encounter with the idol.\n  - Location: In the same public place as the idol, where they met unexpectedly."
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "description_text"
+    }
+  },
+  "56": {
+    "inputs": {
+      "delimiter": ", ",
+      "clean_whitespace": "true",
+      "text_n": [
+        "39",
+        0
+      ]
+    },
+    "class_type": "Text Concatenate",
+    "_meta": {
+      "title": "Text Concatenate"
+    }
+  },
+  "75": {
+    "inputs": {
+      "text": [
+        "56",
+        0
+      ],
+      "text2": "best quality, a vibrant and lively park setting during the afternoon, with a colorful and trendy IXDYOZL, an idol woman in a red and white dress with red high heels standing in the center, wearing a bright, fashionable outfit with accessories like earrings and a headband. The IXDYOZL, an idol woman in a red and white dress with red high heels looks surprised and curious, holding a microphone in one hand. In the background, a few trees and benches add to the park atmosphere. \n\nStanding a few feet away from the IXDYOZL, an idol woman in a red and white dress with red high heels, a calm and composed NXIYNZJXA, a ninja man in a black ninja costume, He is wearing a black kimono with a hood and a brown belt around his waist. His face is partially obscured by a mask, giving him a mysterious and intimidating look is seen, dressed in a traditional black outfit with a mask covering the lower half of their face. The NXIYNZJXA, a ninja man in a black ninja costume, He is wearing a black kimono with a hood and a brown belt around his waist. His face is partially obscured by a mask, giving him a mysterious and intimidating look has a katana strapped to their back and a few shurikens at their belt. The NXIYNZJXA, a ninja man in a black ninja costume, He is wearing a black kimono with a hood and a brown belt around his waist. His face is partially obscured by a mask, giving him a mysterious and intimidating look appears slightly intrigued by the unexpected encounter with the IXDYOZL, an idol woman in a red and white dress with red high heels. The park is bustling with a few other people in the background, adding to the public setting. The IXDYOZL, an idol woman in a red and white dress with red high heels's eyes are wide with surprise, and the NXIYNZJXA, a ninja man in a black ninja costume, He is wearing a black kimono with a hood and a brown belt around his waist. His face is partially obscured by a mask, giving him a mysterious and intimidating look's expression is serene yet curious, as they both stand facing each other, the moment frozen in time."
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Show Text 🐍"
+    }
+  },
+  "76": {
+    "inputs": {
+      "lora_name": "longago-v04/longago-v04-000004.safetensors",
+      "strength_model": 0.7000000000000001,
+      "strength_clip": 1,
+      "model": [
+        "26",
+        0
+      ],
+      "clip": [
+        "26",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "77": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "76",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  }
+}

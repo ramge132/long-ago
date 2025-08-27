@@ -1,0 +1,368 @@
+{
+  "8": {
+    "inputs": {
+      "samples": [
+        "34",
+        0
+      ],
+      "vae": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "10": {
+    "inputs": {
+      "vae_name": "Flux_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "11": {
+    "inputs": {
+      "clip_name1": "t5xxl_fp16.safetensors",
+      "clip_name2": "clip_l.safetensors",
+      "type": "flux",
+      "device": "default"
+    },
+    "class_type": "DualCLIPLoader",
+    "_meta": {
+      "title": "DualCLIPLoader"
+    }
+  },
+  "12": {
+    "inputs": {
+      "unet_name": "flux1-dev.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "26": {
+    "inputs": {
+      "lora_name": "",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "36",
+        0
+      ],
+      "clip": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "32": {
+    "inputs": {
+      "clip_l": [
+        "56",
+        0
+      ],
+      "t5xxl": [
+        "56",
+        0
+      ],
+      "guidance": 5,
+      "clip": [
+        "26",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncodeFlux",
+    "_meta": {
+      "title": "CLIPTextEncodeFlux"
+    }
+  },
+  "34": {
+    "inputs": {
+      "seed": 537812005310947,
+      "steps": 25,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "beta",
+      "denoise": 1,
+      "model": [
+        "26",
+        0
+      ],
+      "positive": [
+        "32",
+        0
+      ],
+      "negative": [
+        "32",
+        0
+      ],
+      "latent_image": [
+        "35",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "35": {
+    "inputs": {
+      "width": 768,
+      "height": 768,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "36": {
+    "inputs": {
+      "max_shift": 1.0,
+      "base_shift": 0.5,
+      "width": 768,
+      "height": 768,
+      "model": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingFlux",
+    "_meta": {
+      "title": "ModelSamplingFlux"
+    }
+  },
+  "39": {
+    "inputs": {
+      "text": "아주 먼 옛날 한 남자가 살았어요.",
+      "model": "Qwen2.5-14B-Instruct-1M-Q8_0.gguf",
+      "max_tokens": 4096,
+      "n_gpu_layers": -1,
+      "n_threads": 50,
+      "status": 0,
+      "session_id": "",
+      "ayl_api_node": [
+        "40",
+        0
+      ]
+    },
+    "class_type": "AYL_GGUF_Node",
+    "_meta": {
+      "title": "AYL_GGUF_Node"
+    }
+  },
+  "40": {
+    "inputs": {
+      "previous_prompt": "",
+      "summary_story": "",
+      "description": ""
+    },
+    "class_type": "AYL_API_Node",
+    "_meta": {
+      "title": "AYL_API_Node"
+    }
+  },
+  "53": {
+    "inputs": {
+      "text": [
+        "39",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "output_prompt_text"
+    }
+  },
+  "54": {
+    "inputs": {
+      "text": [
+        "39",
+        1
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "summary_story_text"
+    }
+  },
+  "55": {
+    "inputs": {
+      "text": [
+        "39",
+        2
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "description_text"
+    }
+  },
+  "56": {
+    "inputs": {
+      "delimiter": ", ",
+      "clean_whitespace": "true",
+      "text_a": [
+        "63",
+        0
+      ],
+      "text_b": [
+        "64",
+        0
+      ],
+      "text_c": [
+        "65",
+        0
+      ],
+      "text_d": [
+        "66",
+        0
+      ],
+      "text_e": [
+        "67",
+        0
+      ],
+      "text_f": [
+        "68",
+        0
+      ],
+      "text_g": [
+        "69",
+        0
+      ],
+      "text_h": [
+        "70",
+        0
+      ],
+      "text_i": [
+        "71",
+        0
+      ],
+      "text_n": [
+        "39",
+        0
+      ]
+    },
+    "class_type": "Text Concatenate",
+    "_meta": {
+      "title": "Text Concatenate"
+    }
+  },
+  "63": {
+    "inputs": {
+      "string": "Anime style"
+    },
+    "class_type": "String to Text",
+    "_meta": {
+      "title": "mode_0"
+    }
+  },
+  "64": {
+    "inputs": {
+      "string": ""
+    },
+    "class_type": "String to Text",
+    "_meta": {
+      "title": "mode_1"
+    }
+  },
+  "65": {
+    "inputs": {
+      "string": "comic strip style"
+    },
+    "class_type": "String to Text",
+    "_meta": {
+      "title": "mode_2"
+    }
+  },
+  "66": {
+    "inputs": {
+      "string": "claymation, claymation animation of"
+    },
+    "class_type": "String to Text",
+    "_meta": {
+      "title": "mode_3"
+    }
+  },
+  "67": {
+    "inputs": {
+      "string": "drawing, A colorful, whimsical drawing, depicting a simple, childlike illustration of"
+    },
+    "class_type": "String to Text",
+    "_meta": {
+      "title": "mode_4"
+    }
+  },
+  "68": {
+    "inputs": {
+      "string": "Pixel Art"
+    },
+    "class_type": "String to Text",
+    "_meta": {
+      "title": "mode_5"
+    }
+  },
+  "69": {
+    "inputs": {
+      "string": "ningraphix"
+    },
+    "class_type": "String to Text",
+    "_meta": {
+      "title": "mode_6"
+    }
+  },
+  "70": {
+    "inputs": {
+      "string": "illustration"
+    },
+    "class_type": "String to Text",
+    "_meta": {
+      "title": "mode_7"
+    }
+  },
+  "71": {
+    "inputs": {
+      "string": "ppstorybook"
+    },
+    "class_type": "String to Text",
+    "_meta": {
+      "title": "mode_8"
+    }
+  },
+  "75": {
+    "inputs": {
+      "text": [
+        "56",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Show Text 🐍"
+    }
+  }
+}

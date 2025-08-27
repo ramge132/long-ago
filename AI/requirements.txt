@@ -1,0 +1,31 @@
+# API 기반 이미지 생성 시스템 dependencies
+
+# OpenAI API for GPT-5-nano (현재는 gpt-4o-mini 사용)
+openai>=1.0.0
+
+# Google Gemini API for image generation
+google-generativeai>=0.3.0
+
+# FastAPI and server components
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.0.0
+
+# Image processing
+Pillow>=10.0.0
+
+# AWS S3 integration
+boto3>=1.29.0
+
+# HTTP requests
+requests>=2.31.0
+
+# Async support
+aiofiles>=23.0.0
+
+# Environment variable support
+python-dotenv>=1.0.0
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0

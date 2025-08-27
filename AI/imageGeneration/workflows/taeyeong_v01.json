@@ -1,0 +1,197 @@
+{
+  "8": {
+    "inputs": {
+      "samples": [
+        "34",
+        0
+      ],
+      "vae": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "10": {
+    "inputs": {
+      "vae_name": "Flux_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "11": {
+    "inputs": {
+      "clip_name1": "t5xxl_fp16.safetensors",
+      "clip_name2": "clip_l.safetensors",
+      "type": "flux",
+      "device": "default"
+    },
+    "class_type": "DualCLIPLoader",
+    "_meta": {
+      "title": "DualCLIPLoader"
+    }
+  },
+  "12": {
+    "inputs": {
+      "unet_name": "flux1-dev.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "26": {
+    "inputs": {
+      "lora_name": "claymation-000012.safetensors",
+      "strength_model": 0.8,
+      "strength_clip": 1,
+      "model": [
+        "36",
+        0
+      ],
+      "clip": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "28": {
+    "inputs": {
+      "text": "claymation, claymation animation of a cheerful tiger in a clay animation style, featuring bright colors and a whimsical, handcrafted look. The tiger is smiling with a playful expression, surrounded by a lush green jungle scene with flowers and trees crafted in clay. The overall atmosphere is joyful and creative, capturing the essence of a stop-motion animation. The tiger should have detailed clay textures, including visible hand-molded imperfections for authenticity.",
+      "random_seed": 1234567891,
+      "model": "qwen2.5-14b-instruct-q8_0.gguf",
+      "max_tokens": 4096,
+      "apply_instructions": true,
+      "instructions": "Generate a prompt from \"{prompt}\""
+    },
+    "class_type": "Searge_LLM_Node",
+    "_meta": {
+      "title": "Searge LLM Node"
+    }
+  },
+  "29": {
+    "inputs": {
+      "temperature": 1,
+      "top_p": 0.9,
+      "top_k": 50,
+      "repetition_penalty": 1.2
+    },
+    "class_type": "Searge_AdvOptionsNode",
+    "_meta": {
+      "title": "Searge Advanced Options Node"
+    }
+  },
+  "30": {
+    "inputs": {
+      "text": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "Searge_Output_Node",
+    "_meta": {
+      "title": "Searge Output Node"
+    }
+  },
+  "32": {
+    "inputs": {
+      "clip_l": [
+        "28",
+        0
+      ],
+      "t5xxl": [
+        "28",
+        0
+      ],
+      "guidance": 3.5,
+      "clip": [
+        "26",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncodeFlux",
+    "_meta": {
+      "title": "CLIPTextEncodeFlux"
+    }
+  },
+  "34": {
+    "inputs": {
+      "seed": 55502414257861,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "26",
+        0
+      ],
+      "positive": [
+        "32",
+        0
+      ],
+      "negative": [
+        "32",
+        0
+      ],
+      "latent_image": [
+        "35",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "35": {
+    "inputs": {
+      "width": 512,
+      "height": 512,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "36": {
+    "inputs": {
+      "max_shift": 1.1500000000000001,
+      "base_shift": 0.5,
+      "width": 512,
+      "height": 512,
+      "model": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingFlux",
+    "_meta": {
+      "title": "ModelSamplingFlux"
+    }
+  }
+}
