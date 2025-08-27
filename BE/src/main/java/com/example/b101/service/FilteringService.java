@@ -9,9 +9,6 @@ import com.example.b101.dto.FilteringRequest;
 import com.example.b101.repository.GameRepository;
 import com.vane.badwordfiltering.BadWordFiltering;
 import jakarta.servlet.http.HttpServletRequest;
-import kr.co.shineware.nlp.komoran.constant.DEFAULT_MODEL;
-import kr.co.shineware.nlp.komoran.core.Komoran;
-import kr.co.shineware.nlp.komoran.model.KomoranResult;
 import kr.co.shineware.nlp.komoran.model.Token;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +25,7 @@ public class FilteringService {
 
     private final GameRepository gameRepository;
     private final CachingService cachingService;
+    private final KomoranService komoranService;
     private final BadWordFiltering badWordFiltering = new BadWordFiltering();
 
 
@@ -89,18 +87,17 @@ public class FilteringService {
         }
 
 
-        Komoran komoran = new Komoran(DEFAULT_MODEL.LIGHT);
-
-        KomoranResult analyzeResultList = komoran.analyze(filteringRequest.getUserPrompt());
-
-        List<Token> tokenList = analyzeResultList.getTokenList();
-
+        // 형태소 분석 (최적화된 서비스 사용)
+        List<Token> tokenList = komoranService.analyze(filteringRequest.getUserPrompt());
+        
+        // 디버깅용 로그
         for (Token token : tokenList) {
-            log.info(token.getMorph());
+            log.info("형태소: {}, 품사: {}", token.getMorph(), token.getPos());
         }
-
+        
+        // 개선된 매칭 알고리즘
         long keywordCnt = allVariants.stream()
-                .filter(variant -> tokenList.stream().anyMatch(token -> token.getMorph().contains(variant)))
+                .filter(variant -> isVariantMatched(variant, tokenList, filteringRequest.getUserPrompt()))
                 .count();
 
         if (keywordCnt > 1) {
@@ -109,9 +106,10 @@ public class FilteringService {
             return ApiResponseUtil.failure("플레이어가 소유한 카드가 사용되지 않았습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
 
-        // 사용한 카드 찾기
+        // 사용한 카드 찾기 (개선된 매칭 사용)
         Integer userCardId = storyCardVariantsList.stream()
-                .filter(variant -> playerStoryCardIds.contains(variant.getStoryCard().getId()) && tokenList.stream().anyMatch(token -> token.getMorph().contains(variant.getVariant())))
+                .filter(variant -> playerStoryCardIds.contains(variant.getStoryCard().getId()) && 
+                        isVariantMatched(variant.getVariant(), tokenList, filteringRequest.getUserPrompt()))
                 .map(storyCardVariants -> storyCardVariants.getStoryCard().getId())
                 .findFirst()
                 .orElse(null);
@@ -123,6 +121,82 @@ public class FilteringService {
         log.info("[findCardVariantsByCardId] 사용자가 사용한 카드 ID: {}", userCardId);
 
         return ApiResponseUtil.success(userCardId, "필터링 성공", HttpStatus.OK, request.getRequestURI());
+    }
 
+    /**
+     * 개선된 변형어 매칭 알고리즘
+     * 
+     * @param variant 카드 변형어
+     * @param tokenList 형태소 분석 결과
+     * @param originalText 원본 텍스트
+     * @return 매칭 여부
+     */
+    private boolean isVariantMatched(String variant, List<Token> tokenList, String originalText) {
+        if (variant == null || variant.trim().isEmpty()) {
+            return false;
+        }
+        
+        // 1. 완전 매칭 (원본 텍스트에서 직접 찾기)
+        if (originalText.contains(variant)) {
+            log.debug("완전 매칭 성공: {}", variant);
+            return true;
+        }
+        
+        // 2. 형태소 완전 매칭 (형태소 분석 결과와 정확히 일치)
+        for (Token token : tokenList) {
+            if (token.getMorph().equals(variant)) {
+                log.debug("형태소 완전 매칭 성공: {} = {}", token.getMorph(), variant);
+                return true;
+            }
+        }
+        
+        // 3. 부분 매칭 (안전한 경우만)
+        for (Token token : tokenList) {
+            String morph = token.getMorph();
+            
+            // 3-1. 변형어가 형태소보다 긴 경우 (예: "들뜬"이 "들뜸"을 포함)
+            if (variant.length() > morph.length() && variant.contains(morph)) {
+                // 최소 길이 제한 (너무 짧은 부분 매칭 방지)
+                if (morph.length() >= 2) {
+                    log.debug("역방향 부분 매칭 성공: {} contains {}", variant, morph);
+                    return true;
+                }
+            }
+            
+            // 3-2. 형태소가 변형어보다 긴 경우 (예: "잘생긴"이 "잘생"을 포함)
+            if (morph.length() > variant.length() && morph.contains(variant)) {
+                // 안전한 부분 매칭: 변형어가 충분히 길고 어근이 확실한 경우
+                if (variant.length() >= 3 && !isSafePartialMatch(variant)) {
+                    continue; // 위험한 부분 매칭은 건너뛰기
+                }
+                log.debug("순방향 부분 매칭 성공: {} contains {}", morph, variant);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 안전한 부분 매칭인지 확인
+     * 
+     * @param variant 변형어
+     * @return 안전한 부분 매칭 여부
+     */
+    private boolean isSafePartialMatch(String variant) {
+        // 위험한 부분 매칭 패턴들 (예: "지루" -> "지루하다"의 다른 의미 방지)
+        String[] dangerousPatterns = {
+                "지루", "무료", "고요", "평온", "차분", "조용",
+                "시원", "따뜻", "차가", "뜨거", "새로", "예쁘"
+        };
+        
+        for (String dangerous : dangerousPatterns) {
+            if (variant.equals(dangerous)) {
+                log.debug("위험한 부분 매칭 차단: {}", variant);
+                return false;
+            }
+        }
+        
+        return true;
     }
 }
