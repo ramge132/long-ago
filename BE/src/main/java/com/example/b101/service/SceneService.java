@@ -252,28 +252,24 @@ public class SceneService {
     }
     
     /**
-     * Gemini API를 사용하여 이미지 생성
+     * Gemini 2.5 Flash Image Preview를 사용하여 이미지 생성
      */
     private byte[] generateImageWithGemini(String prompt) {
         try {
-            // Gemini API 요청 구조
+            // Gemini 2.5 Flash Image Preview API 요청 구조
             Map<String, Object> requestBody = new HashMap<>();
             
             // contents 배열 구성
             Map<String, Object> content = new HashMap<>();
             Map<String, Object> part = new HashMap<>();
-            part.put("text", "Generate an image based on this description: " + prompt);
+            part.put("text", "Generate an image: " + prompt);
             content.put("parts", List.of(part));
             requestBody.put("contents", List.of(content));
             
-            // 생성 설정
-            Map<String, Object> generationConfig = new HashMap<>();
-            generationConfig.put("maxOutputTokens", 1024);
-            generationConfig.put("temperature", 0.7);
-            requestBody.put("generationConfig", generationConfig);
+            // Gemini 2.5 Flash Image Preview API 호출
+            String apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=" + webClientConfig.getGeminiApiKey();
             
-            // Gemini API 호출 (API 키를 URL 파라미터로 전달)
-            String apiUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + webClientConfig.getGeminiApiKey();
+            log.info("Gemini 2.5 Flash Image Preview 호출: {}", apiUrl);
             
             String response = geminiWebClient.post()
                     .uri(apiUrl)
@@ -282,24 +278,42 @@ public class SceneService {
                     .bodyToMono(String.class)
                     .block();
             
+            log.info("Gemini API 응답 받음: {}", response != null ? "응답 있음" : "응답 없음");
+            
             // 응답 파싱
             JsonNode responseJson = objectMapper.readTree(response);
             if (responseJson.has("candidates") && responseJson.get("candidates").size() > 0) {
                 JsonNode candidate = responseJson.get("candidates").get(0);
+                log.info("후보 응답 구조: {}", candidate.toString());
+                
                 if (candidate.has("content") && candidate.get("content").has("parts")) {
                     JsonNode parts = candidate.get("content").get("parts");
-                    if (parts.size() > 0 && parts.get(0).has("inlineData")) {
-                        String base64Data = parts.get(0).get("inlineData").get("data").asText();
-                        return Base64.getDecoder().decode(base64Data);
+                    for (int i = 0; i < parts.size(); i++) {
+                        JsonNode part = parts.get(i);
+                        log.info("Part {}: {}", i, part.toString());
+                        
+                        // inlineData 방식 확인
+                        if (part.has("inlineData") && part.get("inlineData").has("data")) {
+                            String base64Data = part.get("inlineData").get("data").asText();
+                            log.info("Base64 이미지 데이터 발견, 길이: {}", base64Data.length());
+                            return Base64.getDecoder().decode(base64Data);
+                        }
+                        
+                        // 다른 가능한 이미지 데이터 형식 확인
+                        if (part.has("image") || part.has("imageUrl")) {
+                            log.info("다른 이미지 형식 발견: {}", part.toString());
+                        }
                     }
                 }
+            } else {
+                log.error("Gemini API 응답에서 candidates를 찾을 수 없음: {}", responseJson.toString());
             }
             
             log.error("Gemini에서 이미지 데이터를 찾을 수 없음");
-            throw new RuntimeException("Gemini API에서 이미지 생성 실패");
+            throw new RuntimeException("Gemini 2.5 Flash Image Preview에서 이미지 생성 실패");
             
         } catch (Exception e) {
-            log.error("Gemini API 호출 실패: {}", e.getMessage());
+            log.error("Gemini 2.5 Flash Image Preview API 호출 실패: {}", e.getMessage(), e);
             throw new RuntimeException("이미지 생성 실패: " + e.getMessage());
         }
     }
