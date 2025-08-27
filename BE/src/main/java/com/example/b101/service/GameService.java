@@ -9,9 +9,12 @@ import com.example.b101.dto.*;
 import com.example.b101.repository.BookRepository;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,7 @@ import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,9 +35,14 @@ public class GameService {
     private final CardService cardService;
     private final RedisSceneRepository sceneRepository;
     private final WebClient webClient;
+    @Qualifier("openaiWebClient")
+    private final WebClient openaiWebClient;
+    @Qualifier("geminiWebClient")
+    private final WebClient geminiWebClient;
     private final S3service s3service;
     private final BookRepository bookRepository;
     private final WebClientConfig webClientConfig;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
 
     //시연용
@@ -226,18 +235,22 @@ public class GameService {
         //정상적인 게임 종료 시 책 표지를 반환
         if(!deleteGameRequest.isForceStopped()){
 
-
-            // GPU 서버와 통신하여 데이터 받기
-            BookCover bookCover;
+            // 새로운 API 시스템: OpenAI GPT + Gemini로 표지 생성
+            String bookTitle;
+            byte[] coverImageBytes;
+            
             try {
-                bookCover = webClient.post()  //post형식으로 webClient의 요청을 보냄.
-                        .uri(webClientConfig.getBaseUrls().get(generateSceneRequest.getGame_mode())+"/generate").accept(MediaType.APPLICATION_JSON)
-                        .bodyValue(generateSceneRequest) //RequestBody로 보낼 객체
-                        .retrieve()
-                        .bodyToMono(BookCover.class) //응답의 본문(body)만 가져옴.
-                        .block(); //이미지를 다 받고 프론트에 보내야 하므로 동기방식 채택
-            } catch (WebClientException e) { //GPU 서버에서 에러 반환 시
-                return ApiResponseUtil.failure("GPU 서버 통신 중 오류 발생 : "+e.getMessage(),
+                // 1단계: 스토리 요약 및 제목 생성
+                bookTitle = generateBookTitle(sceneRedisList);
+                log.info("GPT로 생성된 책 제목: {}", bookTitle);
+                
+                // 2단계: 표지 이미지 생성 
+                coverImageBytes = generateCoverImage(bookTitle, game.getDrawingStyle());
+                log.info("Gemini로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
+                
+            } catch (Exception e) {
+                log.error("표지 생성 중 오류: {}", e.getMessage());
+                return ApiResponseUtil.failure("표지 생성 중 오류 발생: " + e.getMessage(),
                         HttpStatus.INTERNAL_SERVER_ERROR,
                         request.getRequestURI());
             }
@@ -247,7 +260,7 @@ public class GameService {
             SceneRedis scene = SceneRedis.builder()
                     .id(UUID.randomUUID().toString())
                     .gameId(deleteGameRequest.getGameId())
-                    .image(Base64.getDecoder().decode(Objects.requireNonNull(bookCover).getImage_bytes()))  // 바이너리 이미지 데이터 저장
+                    .image(coverImageBytes)  // 새 API로 생성된 바이너리 이미지 데이터 저장
                     .sceneOrder(0) //책 표지는 순서가 0
                     .build();
 
@@ -255,7 +268,7 @@ public class GameService {
 
             Book book = Book.builder()
                     .bookId(UUID.randomUUID().toString())
-                    .title(bookCover.getTitle())
+                    .title(bookTitle)
                     .build();
 
             //S3에 업로드
@@ -400,6 +413,129 @@ public class GameService {
                 "플레이어 카드 상태 반환 성공",
                 HttpStatus.OK,
                 request.getRequestURI());
+    }
+    
+    /**
+     * OpenAI GPT를 사용하여 스토리를 요약하고 책 제목 생성
+     */
+    private String generateBookTitle(List<SceneRedis> sceneRedisList) {
+        try {
+            // 스토리 요약 생성
+            String storyContent = sceneRedisList.stream()
+                    .filter(scene -> scene.getSceneOrder() > 0) // 표지(0번) 제외
+                    .sorted(Comparator.comparingInt(SceneRedis::getSceneOrder))
+                    .map(SceneRedis::getPrompt)
+                    .collect(Collectors.joining(". "));
+            
+            // OpenAI GPT API 요청 구조
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", "gpt-4o-mini");
+            requestBody.put("max_tokens", 50);
+            requestBody.put("temperature", 0.7);
+            
+            // 메시지 구조
+            Map<String, Object> systemMessage = new HashMap<>();
+            systemMessage.put("role", "system");
+            systemMessage.put("content", "당신은 스토리를 요약하고 매력적인 제목을 만드는 전문가입니다. 주어진 스토리 내용을 바탕으로 10자 이내의 간결하고 매력적인 한국어 제목을 만들어주세요. 제목만 답해주세요.");
+            
+            Map<String, Object> userMessage = new HashMap<>();
+            userMessage.put("role", "user");
+            userMessage.put("content", "다음 스토리를 요약하여 10자 이내의 제목을 만들어주세요: " + storyContent);
+            
+            requestBody.put("messages", List.of(systemMessage, userMessage));
+            
+            // OpenAI API 호출
+            String response = openaiWebClient.post()
+                    .uri("https://api.openai.com/v1/chat/completions")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            // 응답 파싱
+            JsonNode responseJson = objectMapper.readTree(response);
+            if (responseJson.has("choices") && responseJson.get("choices").size() > 0) {
+                return responseJson.get("choices").get(0).get("message").get("content").asText().trim();
+            }
+            
+            log.warn("GPT 응답에서 제목 추출 실패, 기본 제목 사용");
+            return "우리의 이야기";
+            
+        } catch (Exception e) {
+            log.error("GPT API 호출 실패: {}", e.getMessage());
+            return "우리의 이야기"; // 실패시 기본 제목 반환
+        }
+    }
+    
+    /**
+     * Gemini 2.5 Flash Image Preview를 사용하여 표지 이미지 생성
+     */
+    private byte[] generateCoverImage(String bookTitle, int drawingStyle) {
+        try {
+            // 그림체 모드에 따른 스타일 정의
+            String[] styles = {
+                "애니메이션 스타일", "3D 카툰 스타일", "코믹 스트립 스타일", "클레이메이션 스타일",
+                "크레용 드로잉 스타일", "픽셀 아트 스타일", "미니멀리스트 일러스트", "수채화 스타일", "스토리북 일러스트"
+            };
+            
+            String style = drawingStyle < styles.length ? styles[drawingStyle] : "애니메이션 스타일";
+            
+            // 표지 이미지 프롬프트 생성
+            String coverPrompt = "Create a beautiful book cover for a story titled '" + bookTitle + "'. " +
+                    "Style: " + style + ". The cover should be artistic, captivating, and suitable for a storybook. " +
+                    "Include the title text elegantly integrated into the design.";
+            
+            // Gemini 2.5 Flash Image Preview API 요청 구조
+            Map<String, Object> requestBody = new HashMap<>();
+            
+            // contents 배열 구성
+            Map<String, Object> content = new HashMap<>();
+            Map<String, Object> part = new HashMap<>();
+            part.put("text", "Generate an image: " + coverPrompt);
+            content.put("parts", List.of(part));
+            requestBody.put("contents", List.of(content));
+            
+            // Gemini 2.5 Flash Image Preview API 호출
+            String apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=" + webClientConfig.getGeminiApiKey();
+            
+            log.info("Gemini 표지 이미지 생성 호출: {}", apiUrl);
+            
+            String response = geminiWebClient.post()
+                    .uri(apiUrl)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            log.info("Gemini 표지 API 응답 받음: {}", response != null ? "응답 있음" : "응답 없음");
+            
+            // 응답 파싱
+            JsonNode responseJson = objectMapper.readTree(response);
+            if (responseJson.has("candidates") && responseJson.get("candidates").size() > 0) {
+                JsonNode candidate = responseJson.get("candidates").get(0);
+                
+                if (candidate.has("content") && candidate.get("content").has("parts")) {
+                    JsonNode parts = candidate.get("content").get("parts");
+                    for (int i = 0; i < parts.size(); i++) {
+                        JsonNode currentPart = parts.get(i);
+                        
+                        // inlineData 방식 확인
+                        if (currentPart.has("inlineData") && currentPart.get("inlineData").has("data")) {
+                            String base64Data = currentPart.get("inlineData").get("data").asText();
+                            log.info("표지 Base64 이미지 데이터 발견, 길이: {}", base64Data.length());
+                            return Base64.getDecoder().decode(base64Data);
+                        }
+                    }
+                }
+            }
+            
+            log.error("Gemini에서 표지 이미지 데이터를 찾을 수 없음");
+            throw new RuntimeException("Gemini 2.5 Flash Image Preview에서 표지 이미지 생성 실패");
+            
+        } catch (Exception e) {
+            log.error("Gemini 표지 이미지 생성 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("표지 이미지 생성 실패: " + e.getMessage());
+        }
     }
 
 

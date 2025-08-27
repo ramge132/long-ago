@@ -77,9 +77,22 @@ public class SceneService {
         // 새로운 API 시스템: OpenAI GPT + Gemini
         byte[] generateImage = null;
         try {
-            // 1단계: OpenAI GPT로 프롬프트 생성
-            String enhancedPrompt = generatePromptWithGPT(sceneRequest.getUserPrompt(), game.getDrawingStyle());
-            log.info("GPT로 생성된 프롬프트: {}", enhancedPrompt);
+            // 결말카드인지 확인 (턴이 높고 결말카드 내용으로 추정)
+            boolean isEndingCard = sceneRequest.getTurn() > 5 && 
+                    (sceneRequest.getUserPrompt().contains("결말") || 
+                     sceneRequest.getUserPrompt().contains("끝") ||
+                     sceneRequest.getUserPrompt().length() > 30); // 결말카드는 보통 길다
+            
+            String enhancedPrompt;
+            if (isEndingCard) {
+                // 결말카드는 직접 사용하되 결말 장면임을 명시
+                enhancedPrompt = generateEndingPromptWithGPT(sceneRequest.getUserPrompt(), game.getDrawingStyle());
+                log.info("결말카드용 GPT 프롬프트: {}", enhancedPrompt);
+            } else {
+                // 일반 장면은 기존 방식
+                enhancedPrompt = generatePromptWithGPT(sceneRequest.getUserPrompt(), game.getDrawingStyle());
+                log.info("일반 장면용 GPT 프롬프트: {}", enhancedPrompt);
+            }
             
             // 2단계: Gemini로 이미지 생성
             generateImage = generateImageWithGemini(enhancedPrompt);
@@ -248,6 +261,59 @@ public class SceneService {
         } catch (Exception e) {
             log.error("GPT API 호출 실패: {}", e.getMessage());
             return userSentence; // 실패시 원본 문장 반환
+        }
+    }
+    
+    /**
+     * 결말카드 전용 OpenAI GPT 프롬프트 생성
+     */
+    private String generateEndingPromptWithGPT(String endingCardContent, int gameMode) {
+        try {
+            // 그림체 모드에 따른 스타일 정의
+            String[] styles = {
+                "애니메이션 스타일", "3D 카툰 스타일", "코믹 스트립 스타일", "클레이메이션 스타일",
+                "크레용 드로잉 스타일", "픽셀 아트 스타일", "미니멀리스트 일러스트", "수채화 스타일", "스토리북 일러스트"
+            };
+            
+            String style = gameMode < styles.length ? styles[gameMode] : "애니메이션 스타일";
+            
+            // OpenAI GPT API 요청 구조
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", "gpt-4o-mini");
+            requestBody.put("max_tokens", 200);
+            requestBody.put("temperature", 0.8); // 결말은 더 창의적으로
+            
+            // 메시지 구조
+            Map<String, Object> systemMessage = new HashMap<>();
+            systemMessage.put("role", "system");
+            systemMessage.put("content", "당신은 스토리의 결말 장면을 위한 이미지 생성 프롬프트를 만드는 전문가입니다. 결말카드의 내용을 바탕으로 " + style + " 스타일의 감동적이고 인상적인 결말 장면 이미지 생성에 적합한 영어 프롬프트로 변환해주세요. 결말의 드라마틱한 느낌을 강조해주세요.");
+            
+            Map<String, Object> userMessage = new HashMap<>();
+            userMessage.put("role", "user");
+            userMessage.put("content", "다음 결말카드 내용을 " + style + " 스타일의 감동적인 결말 장면 이미지 생성 프롬프트로 변환해주세요: " + endingCardContent);
+            
+            requestBody.put("messages", List.of(systemMessage, userMessage));
+            
+            // OpenAI API 호출
+            String response = openaiWebClient.post()
+                    .uri("https://api.openai.com/v1/chat/completions")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            // 응답 파싱
+            JsonNode responseJson = objectMapper.readTree(response);
+            if (responseJson.has("choices") && responseJson.get("choices").size() > 0) {
+                return responseJson.get("choices").get(0).get("message").get("content").asText().trim();
+            }
+            
+            log.warn("결말 GPT 응답에서 프롬프트 추출 실패, 원본 내용 사용");
+            return endingCardContent;
+            
+        } catch (Exception e) {
+            log.error("결말 GPT API 호출 실패: {}", e.getMessage());
+            return endingCardContent; // 실패시 원본 결말카드 내용 반환
         }
     }
     
