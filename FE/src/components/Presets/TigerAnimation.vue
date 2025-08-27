@@ -33,16 +33,60 @@ import { ref, onMounted } from "vue";
 
 const isVisible = ref(true);
 const swing = ref(false);
+const imagesLoaded = ref(0);
+const totalImages = ref(0);
 
 const startSwing = () => {
   swing.value = true;
 }
 
-onMounted(() => { 
-  // 5초 후에 애니메이션을 적용하며 서서히 사라짐 
+// 이미지 로드 완료 체크
+const checkImagesLoaded = () => {
+  const images = document.querySelectorAll('img');
+  totalImages.value = images.length;
+  
+  if (totalImages.value === 0) {
+    // 이미지가 없으면 최소 2초 후 사라짐
+    setTimeout(() => {
+      isVisible.value = false;
+    }, 2000);
+    return;
+  }
+  
+  images.forEach(img => {
+    if (img.complete) {
+      imagesLoaded.value++;
+    } else {
+      img.onload = () => {
+        imagesLoaded.value++;
+        if (imagesLoaded.value >= totalImages.value) {
+          // 모든 이미지 로드 완료 후 0.5초 더 보여주기
+          setTimeout(() => {
+            isVisible.value = false;
+          }, 500);
+        }
+      };
+    }
+  });
+  
+  // 이미 로드된 이미지들 체크
+  if (imagesLoaded.value >= totalImages.value) {
+    setTimeout(() => {
+      isVisible.value = false;
+    }, 500);
+  }
+  
+  // 최대 4초 후 강제 종료 (기존 동작 유지)
   setTimeout(() => {
     isVisible.value = false;
   }, 4000);
+};
+
+onMounted(() => {
+  // 페이지 로드 후 이미지 로드 상태 확인
+  setTimeout(() => {
+    checkImagesLoaded();
+  }, 100);
 });
 </script>
 

@@ -23,7 +23,7 @@
   <script setup>
   import { ref } from "vue";
   
-  const isVisible = ref(true); // 공지 표시 여부
+  const isVisible = ref(false); // 공지사항 비활성화
   </script>
   
   <style scoped>
