@@ -9,7 +9,7 @@
       >
         <!-- 책 -->
         <div class="relative w-[600px] h-[400px]">
-          <InGameContent :bookContents="bookContents" :bookCover="bookCover" />
+          <InGameContent :bookContents="bookContents" :bookCover="bookCover" :isReadingMode="true" />
         </div>
 
         <div @click="closeEBook" class="bg-black rounded-xl cursor-pointer w-40 h-10">

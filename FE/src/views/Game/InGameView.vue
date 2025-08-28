@@ -71,6 +71,7 @@
         :gameStarted="gameStarted"
         :isElected="isElected"
         :bookCover="bookCover"
+        @narration-complete="onNarrationComplete"
       />
       <InGameControl
         @broadcast-message="broadcastMessage"
@@ -175,7 +176,7 @@
       </div>
     </Transition> -->
     <Transition name="fade">
-      <InGameEnding v-show="props.isForceStopped" :isForceStopped="isForceStopped" :participants="participants" />
+      <InGameEnding v-show="props.isForceStopped" :isForceStopped="isForceStopped" :participants="participants" @winner-shown="onWinnerShown" />
     </Transition>
   </div>
 </template>
@@ -203,7 +204,7 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "goLobby"]);
+const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "goLobby", "winner-shown", "narration-complete"]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
@@ -221,6 +222,16 @@ const voteEnd = (data) => {
 };
 const goLobby = () => {
   emit("goLobby");
+}
+
+// 승자 표시 완료 후 나레이션 시작을 위한 이벤트
+const onWinnerShown = () => {
+  emit("winner-shown");
+}
+
+// 나레이션 완료 후 표지 표시
+const onNarrationComplete = () => {
+  emit("narration-complete");
 }
 
 const props = defineProps({

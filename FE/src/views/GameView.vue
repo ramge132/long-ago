@@ -9,7 +9,7 @@
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
           :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" :isPreview="isPreview" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
-          @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" />
+          @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" @winner-shown="onWinnerShown" @narration-complete="onNarrationComplete" />
       </Transition>
     </RouterView>
     <div
@@ -500,8 +500,9 @@ const setupConnection = (conn) => {
                     };
                   });
                   
-                  gameStarted.value = false;
+                  // 먼저 승자를 표시
                   isForceStopped.value = "champ";
+                  // gameStarted는 승자 표시 후 onWinnerShown에서 처리
                 });
               } else {
                 connectedPeers.value.forEach(async (p) => {
@@ -594,9 +595,8 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
-        gameStarted.value = false;
         gameEnd(true);
-        // 우승자 쇼 오버레이
+        // 먼저 승자를 표시 (gameStarted는 onWinnerShown에서 처리)
         isForceStopped.value = "champ";
         // router.push("/game/rank");
         break;
@@ -1347,7 +1347,7 @@ const voteEnd = async (data) => {
               };
             });
             
-            gameStarted.value = false;
+            // 먼저 승자를 표시 (gameStarted는 onWinnerShown에서 처리)
             isForceStopped.value = "champ";
           });
         } else {
@@ -1484,6 +1484,19 @@ const gameEnd = async (status) => {
     // 우승자 쇼 오버레이
     // isForceStopped.value = "champ";
   }
+};
+
+// 승자 표시 완료 후 나레이션 시작
+const onWinnerShown = () => {
+  // 승자 표시가 완료되었으므로 이제 나레이션 시작
+  gameStarted.value = false;
+};
+
+// 나레이션 완료 후 승자 화면 제거 및 표지 표시
+const onNarrationComplete = () => {
+  // 승자 화면 제거
+  isForceStopped.value = null;
+  // 표지가 이미 표시되어 있으므로 추가 작업 없음
 };
 
 const goLobby = () => {

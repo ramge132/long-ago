@@ -307,8 +307,16 @@ onMounted(() => {
   });
 });
 
-onkeydown = () => {
-  chatRefs.value[currChatModeIdx.value].focus();
+onkeydown = (e) => {
+  // 입력창이 이미 포커스되어 있지 않고, 일반 문자 키인 경우에만
+  if (!e.target.matches('input, textarea, [contenteditable]') && 
+      e.key.length === 1 && 
+      !e.ctrlKey && !e.altKey && !e.metaKey) {
+    const chatInput = chatRefs.value[currChatModeIdx.value];
+    if (chatInput) {
+      chatInput.focus();
+    }
+  }
 };
 
 const copy = async () => {

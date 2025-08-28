@@ -28,6 +28,8 @@ const audioStore = useAudioStore();
 const winningMusic = new Audio(WinningMusic);
 const loseMusic = new Audio(LoseMusic);
 
+const emit = defineEmits(['winner-shown']);
+
 const props = defineProps({
     participants: {
         Type: Array,
@@ -53,6 +55,12 @@ watch(() => props.isForceStopped, () => {
         if (props.isForceStopped === "champ") {
             winningMusic.play();
             audioStore.audioPlay = false;
+            
+            // 승자 표시 후 5초 대기한 다음 나레이션 시작 신호 전송
+            setTimeout(() => {
+                emit('winner-shown');
+            }, 5000);
+            
         } else if (props.isForceStopped === "fail") {
             loseMusic.play();
             audioStore.audioPlay = false;

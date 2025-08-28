@@ -63,6 +63,10 @@ const props = defineProps({
   },
   bookCover: {
     Type: Object,
+  },
+  isReadingMode: {
+    Type: Boolean,
+    default: false
   }
 })
 // const test = ref({
@@ -159,10 +163,17 @@ watch(() => props.isElected,
   }
 })
 
+const emit = defineEmits(['narration-complete']);
+
 // tts
 const runBookSequence = async () => {
   // 동기적으로 initVoices() 실행 (만약 비동기라면 await 사용)
   await initVoices();
+
+  // 먼저 표지 제목을 읽어줌
+  if (props.bookCover.title) {
+    await speakText(props.bookCover.title);
+  }
 
   // 책 내용을 순서대로 처리: 0,1 페이지, 그 다음 2,3 페이지, ...
   for (const [i, element] of props.bookContents.entries()) {
@@ -178,8 +189,13 @@ const runBookSequence = async () => {
     await speakText(element.content);
   }
   
-  // 모든 작업이 완료되면 클릭 잠금 해제
+  // 모든 작업이 완료되면 표지로 되돌리기
+  // 모든 페이지를 다시 닫아서 표지만 보이게 함
+  flippedPages.clear();
+  
+  // 클릭 잠금 해제 및 나레이션 완료 신호 전송
   isClickLocked.value = false;
+  emit('narration-complete');
 }
 
 watch(
@@ -221,7 +237,12 @@ watch(
 
 onMounted(() => {
   updatePagesZIndex();
-  handlePageClick(0);
+  
+  // 읽기 모드가 아닐 때만 초기 페이지 클릭 (게임 중에는 페이지를 열어둠)
+  if (!props.isReadingMode) {
+    handlePageClick(0);
+  }
+  // 읽기 모드일 때는 표지만 보여줌 (flippedPages가 비어있으면 표지만 표시됨)
 });
 </script>
 
