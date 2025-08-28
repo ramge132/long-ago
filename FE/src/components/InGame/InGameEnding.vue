@@ -1,7 +1,7 @@
 <template>
     <div class="absolute z-50 w-full h-full flex justify-center items-center bg-[#00000095] backdrop-blur-md rounded-lg">
         <div v-if="props.isForceStopped === 'champ'" class="w-full h-full">
-            <img src="@/assets/result_champ.gif" alt="결과" class="w-full h-full rounded-lg">
+            <img src="@/assets/result_champ.gif" alt="결과" class="w-full h-full rounded-lg" ref="champGif" @load="onGifLoad">
             <div class="flex gap-x-8 absolute left-1/2 -translate-x-1/2 bottom-32">
                 <div v-for="topParticipant of topParticipants" class="flex flex-col justify-center items-center">
                     <img :src="topParticipant.image" class="w-36 h-36" alt="">
@@ -25,13 +25,14 @@
     </div>
 </template>
 <script setup>
-import { computed, watch } from "vue";
+import { computed, watch, ref } from "vue";
 import { useAudioStore } from "@/stores/audio";
 import { WinningMusic, LoseMusic } from "@/assets";
 
 const audioStore = useAudioStore();
 const winningMusic = new Audio(WinningMusic);
 const loseMusic = new Audio(LoseMusic);
+const champGif = ref(null);
 
 const emit = defineEmits(['winner-shown']);
 
@@ -43,6 +44,36 @@ const props = defineProps({
         Type: String,
     },
 });
+
+let gifDuration = 0;
+let gifAnimationStartTime = 0;
+
+const onGifLoad = () => {
+    console.log('result_champ.gif loaded');
+    
+    // GIF 애니메이션 지속 시간을 측정하기 위한 로직
+    // 일반적인 방법으로는 정확한 GIF 지속 시간을 얻기 어려우므로
+    // 실제 테스트를 통해 확인된 값 사용
+    
+    // 테스트를 위해 애니메이션 시작 시간 기록
+    gifAnimationStartTime = Date.now();
+    
+    // GIF가 반복되는 것을 감지하는 방법 (실험적)
+    const img = champGif.value;
+    if (img) {
+        // 브라우저에서 GIF 애니메이션 완료를 감지하는 것은 직접적으로 불가능
+        // 따라서 기존의 알려진 시간값을 사용하거나, 수동으로 측정해야 함
+        console.log('GIF 이미지 요소:', img);
+        
+        // result_champ.gif의 실제 지속 시간을 확인하기 위한 타이머
+        // (이 로그를 통해 실제 애니메이션이 언제 끝나는지 수동으로 확인 가능)
+        for (let i = 1; i <= 15; i++) {
+            setTimeout(() => {
+                console.log(`🎬 result_champ.gif ${i}초 경과`);
+            }, i * 1000);
+        }
+    }
+};
 
 // 가장 높은 점수를 가진 참가자 찾기
 const topParticipants = computed(() => {
@@ -62,10 +93,10 @@ watch(() => props.isForceStopped, () => {
             audioStore.audioPlay = false;
             
             // 승자 애니메이션 완료 후 1초 대기한 다음 나레이션 시작 신호 전송
-            // result_champ.gif는 약 4초 길이로 추정하여 4초 + 1초 = 5초 대기
+            // result_champ.gif는 약 7-8초 길이로 추정하여 8초 + 1초 = 9초 대기
             setTimeout(() => {
                 emit('winner-shown');
-            }, 5000);
+            }, 9000);
             
         } else if (props.isForceStopped === "fail") {
             loseMusic.play();

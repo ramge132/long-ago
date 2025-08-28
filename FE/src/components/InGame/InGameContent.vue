@@ -170,10 +170,13 @@ const runBookSequence = async () => {
   // 동기적으로 initVoices() 실행 (만약 비동기라면 await 사용)
   await initVoices();
 
+  console.log('📖 TTS 시작 - 표지 정보:', props.bookCover);
+  
   // 먼저 표지 제목을 읽어줌
-  if (props.bookCover.title) {
-    await speakText(props.bookCover.title);
-  }
+  const titleToRead = (props.bookCover && props.bookCover.title) ? props.bookCover.title : "아주 먼 옛날";
+  console.log('📖 표지 제목 읽기 시작:', titleToRead);
+  await speakText(titleToRead);
+  console.log('📖 표지 제목 읽기 완료');
 
   // 책 내용을 순서대로 처리: 0,1 페이지, 그 다음 2,3 페이지, ...
   for (const [i, element] of props.bookContents.entries()) {
