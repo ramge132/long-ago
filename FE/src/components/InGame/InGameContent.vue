@@ -203,33 +203,18 @@ watch(
   async (newValue) => {
     if (newValue === false) {
       isClickLocked.value = true;
-      setTimeout(async () => {
-        // flippedPages를 배열로 변환한 후 내림차순 정렬 (큰 수부터)
-        const pages = Array.from(flippedPages).sort((a, b) => b - a);
-        let index = 0;
-
-        // 0.3초마다 2개씩 삭제하는 인터벌 실행
-        const deleteInterval = setInterval(() => {
-          for (let i = 0; i < 2; i++) {
-            if (index < pages.length) {
-              flippedPages.delete(pages[index]);
-              index++;
-            }
-          }
-          // 모든 페이지 삭제되면 인터벌 정지 후 다음 단계 진행
-          if (index >= pages.length) {
-            clearInterval(deleteInterval);
-            // 후속 작업 실행 (비동기 함수 내에서 순차 처리)
-            // 음성 데이터가 있다면 TTS 실행 및 완료될 때까지 대기
-            if (audioStore.audioData) {
-              runBookSequence();
-            } else {
-              // 모든 작업이 완료되면 클릭 잠금 해제
-              isClickLocked.value = false;
-            }
-          }
-        }, 300);
-      }, 9000);
+      
+      // 즉시 표지로 이동 (페이지 닫기 애니메이션 없이)
+      // flippedPages를 모두 클리어하여 표지만 보이게 함
+      flippedPages.clear();
+      
+      // 즉시 나레이션 시작
+      if (audioStore.audioData) {
+        runBookSequence();
+      } else {
+        // 모든 작업이 완료되면 클릭 잠금 해제
+        isClickLocked.value = false;
+      }
     }
   }
 );

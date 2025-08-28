@@ -10,6 +10,11 @@
                     </div>
                 </div>
             </div>
+            <div class="absolute bottom-16 left-1/2 -translate-x-1/2 text-center">
+                <div class="narration-text font-katuri text-[#f1f1f1] text-3xl">
+                    이어서 책을 읽어드리겠습니다
+                </div>
+            </div>
         </div>
         <div v-else-if="props.isForceStopped === 'fail'" class="w-full h-full">
             <img src="@/assets/result_fail.gif" alt="결과" class="w-full h-full">
@@ -56,7 +61,8 @@ watch(() => props.isForceStopped, () => {
             winningMusic.play();
             audioStore.audioPlay = false;
             
-            // 승자 표시 후 5초 대기한 다음 나레이션 시작 신호 전송
+            // 승자 애니메이션 완료 후 1초 대기한 다음 나레이션 시작 신호 전송
+            // result_champ.gif는 약 4초 길이로 추정하여 4초 + 1초 = 5초 대기
             setTimeout(() => {
                 emit('winner-shown');
             }, 5000);
@@ -80,5 +86,20 @@ watch(() => props.isForceStopped, () => {
 }
 .loser {
     text-shadow: -2.5px 0px #777777, 0px 2.5px #777777, 2.5px 0px #777777, 0px -2.5px #777777;
+}
+.narration-text {
+    text-shadow: -2px 0px #333333, 0px 2px #333333, 2px 0px #333333, 0px -2px #333333;
+    animation: fadeInUp 1s ease-in-out 2s both;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>

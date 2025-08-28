@@ -115,7 +115,7 @@ public class FilteringService {
         log.info("[findCardVariantsByCardId] 매칭된 카드 ID들: {}, 개수: {}", matchedCardIds, matchedCardIds.size());
 
         if (matchedCardIds.size() > 1) {
-            return ApiResponseUtil.failure("중복된 카드가 사용되었습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
+            return ApiResponseUtil.failure("카드는 1장만 사용해야 합니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         } else if (matchedCardIds.size() < 1) {
             return ApiResponseUtil.failure("플레이어가 소유한 카드가 사용되지 않았습니다.", HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
