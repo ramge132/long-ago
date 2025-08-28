@@ -26,7 +26,7 @@
         class="w-80 h-16 font-semibold text-2xl rounded-xl bg-black text-white cursor-pointer flex justify-center items-center startBtn"
       >
         <div
-          @click="start"
+          @click="startWithAudio"
           class="w-full h-full flex justify-center items-center gap-x-2 hover:scale-110 transition-transform"
         >
           <img :src="StartIcon" alt="시작하기 아이콘" class="h-5 w-5">
@@ -165,6 +165,27 @@ const start = () => {
   sessionStorage.setItem("userNickname", nickname.value);
 
   router.push("/game/lobby");
+};
+
+// 사용자 상호작용으로 오디오 활성화
+const startWithAudio = async () => {
+  try {
+    // AudioContext 생성 및 활성화 시도
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+      console.log('오디오 컨텍스트 활성화 성공');
+    }
+    
+    // 오디오 설정 활성화
+    userStore.setAudioEnabled(true);
+    
+  } catch (error) {
+    console.log('오디오 컨텍스트 활성화 실패:', error);
+  }
+  
+  start();
 };
 
 // 이미지 프리로딩 함수

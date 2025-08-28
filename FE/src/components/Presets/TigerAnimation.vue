@@ -76,14 +76,21 @@ const checkImagesLoaded = () => {
     }, 500);
   }
   
-  // 최대 4초 후 강제 종료 (기존 동작 유지)
+  // 최대 3초 후 강제 종료 (성능 개선)
   setTimeout(() => {
     isVisible.value = false;
-  }, 4000);
+  }, 3000);
 };
 
 onMounted(() => {
-  // 페이지 로드 후 이미지 로드 상태 확인
+  // 페이지 로드 완료 이벤트 리스너
+  if (document.readyState === 'complete') {
+    checkImagesLoaded();
+  } else {
+    window.addEventListener('load', checkImagesLoaded);
+  }
+  
+  // 페이지 로드 후 이미지 로드 상태 확인 (백업)
   setTimeout(() => {
     checkImagesLoaded();
   }, 100);
