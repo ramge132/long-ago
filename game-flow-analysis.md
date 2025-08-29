@@ -48,18 +48,21 @@
 ## 최종 게임 플로우
 1. 결말카드 과반수 통과 → `gameEnd()` 호출
 2. `isForceStopped.value = "champ"` 설정 → 결과창 표시
-3. 우승자와 "이어서 책을 읽어드리겠습니다" 텍스트 표시
+3. 우승자와 "이어서 책을 읽어드립니다" 텍스트 표시
 4. 5초 대기
 5. `winner-shown` 이벤트 발생
 6. `onWinnerShown()`에서 `gameStarted.value = false` 설정
-7. InGameContent에서 TTS 시작
-8. TTS 완료 후 `narration-complete` 이벤트 발생
-9. `onNarrationComplete()`에서 결과창 제거
+7. 첫 페이지로 이동 (표지를 넘김)
+8. InGameContent에서 TTS 시작 (첫 페이지부터 읽기)
+9. TTS 완료 후 표지로 이동
+10. `narration-complete` 이벤트 발생
+11. `onNarrationComplete()`에서 결과창 제거
 
 ## 테스트 방법
 1. 게임을 시작하여 결말카드 제출
 2. 투표 과반수 통과
 3. 순서 확인:
    - 우승자 결과창이 먼저 표시되는지
-   - 5초 후 책 표지로 이동하는지
-   - TTS가 표지 이동 후 시작되는지
+   - 5초 후 첫 페이지로 이동하는지
+   - TTS가 첫 페이지부터 시작되는지
+   - TTS 완료 후 표지로 이동하는지

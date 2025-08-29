@@ -169,24 +169,22 @@ const emit = defineEmits(['narration-complete']);
 const runBookSequence = async () => {
   // 동기적으로 initVoices() 실행 (만약 비동기라면 await 사용)
   await initVoices();
-
-  console.log('📖 TTS 시작 - 표지 정보:', props.bookCover);
   
-  // 먼저 표지 제목을 읽어줌
-  const titleToRead = (props.bookCover && props.bookCover.title) ? props.bookCover.title : "아주 먼 옛날";
-  console.log('📖 표지 제목 읽기 시작:', titleToRead);
-  await speakText(titleToRead);
-  console.log('📖 표지 제목 읽기 완료');
-
+  // 표지 제목은 읽지 않고 바로 책 내용부터 시작
   // 책 내용을 순서대로 처리: 0,1 페이지, 그 다음 2,3 페이지, ...
   for (const [i, element] of props.bookContents.entries()) {
-    // 두 페이지씩 추가 (페이지 넘기는 효과)
-    flippedPages.add(i * 2);
-    flippedPages.add(i * 2 + 1);
+    // 첫 번째 페이지는 이미 열려있으므로 i > 0일 때만 페이지 넘김
+    if (i > 0) {
+      // 두 페이지씩 추가 (페이지 넘기는 효과)
+      flippedPages.add(i * 2);
+      flippedPages.add(i * 2 + 1);
 
-    // 페이지 넘기는 효과음 재생
-    const turningEffect = new Audio(TurningPage);
-    turningEffect.play();
+      // 페이지 넘기는 효과음 재생
+      if (audioStore.audioData) {
+        const turningEffect = new Audio(TurningPage);
+        turningEffect.play();
+      }
+    }
 
     // tts 함수(speakText)가 음성 재생 완료 후 resolve하는 프로미스를 반환한다고 가정합니다.
     await speakText(element.content);
@@ -195,6 +193,12 @@ const runBookSequence = async () => {
   // 모든 작업이 완료되면 표지로 되돌리기
   // 모든 페이지를 다시 닫아서 표지만 보이게 함
   flippedPages.clear();
+  
+  // 페이지 넘기는 효과음 재생 (표지로 돌아갈 때)
+  if (audioStore.audioData) {
+    const turningEffect = new Audio(TurningPage);
+    turningEffect.play();
+  }
   
   // 클릭 잠금 해제 및 나레이션 완료 신호 전송
   isClickLocked.value = false;
@@ -207,17 +211,26 @@ watch(
     if (newValue === false) {
       isClickLocked.value = true;
       
-      // 즉시 표지로 이동 (페이지 닫기 애니메이션 없이)
-      // flippedPages를 모두 클리어하여 표지만 보이게 함
+      // 첫 페이지로 이동 (표지를 넘김)
       flippedPages.clear();
+      flippedPages.add(0);
+      flippedPages.add(1);
       
-      // 즉시 나레이션 시작
+      // 페이지 넘기는 효과음 재생
       if (audioStore.audioData) {
-        runBookSequence();
-      } else {
-        // 모든 작업이 완료되면 클릭 잠금 해제
-        isClickLocked.value = false;
+        const turningEffect = new Audio(TurningPage);
+        turningEffect.play();
       }
+      
+      // 페이지 넘김 애니메이션이 완료되기를 기다린 후 나레이션 시작
+      setTimeout(async () => {
+        if (audioStore.audioData) {
+          await runBookSequence();
+        } else {
+          // 모든 작업이 완료되면 클릭 잠금 해제
+          isClickLocked.value = false;
+        }
+      }, 1500); // 페이지 넘김 애니메이션 시간
     }
   }
 );

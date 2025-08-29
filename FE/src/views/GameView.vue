@@ -192,10 +192,8 @@ const setupConnection = (conn) => {
   if (peerConnection) {
     peerConnection.oniceconnectionstatechange = () => {
       const state = peerConnection.iceConnectionState;
-      console.log(`ICE 연결 상태: ${state}`);
       
       if (state === 'failed' || state === 'disconnected') {
-        console.warn(`피어 ${conn.peer}와의 ICE 연결 실패`);
         handleReconnection(conn.peer);
       }
     };
@@ -395,8 +393,6 @@ const setupConnection = (conn) => {
         // 존재하지 않는 참가자만 추가
         if (!isExisting) {
           participants.value.push(data.data);
-        } else {
-          console.log("이미 존재하는 참가자:", data.data);
         }
         break;
 
@@ -595,10 +591,11 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
+        // 즉시 승자 표시 (1초 후)
+        setTimeout(() => {
+          isForceStopped.value = "champ";
+        }, 1000);
         gameEnd(true);
-        // 먼저 승자를 표시 (gameStarted는 onWinnerShown에서 처리)
-        isForceStopped.value = "champ";
-        // router.push("/game/rank");
         break;
 
       case "bookCover":
@@ -625,8 +622,6 @@ const setupConnection = (conn) => {
 
     clearInterval(heartbeatInterval);
 
-    
-    console.warn(`⚠️ ${conn.peer} 연결 종료됨. 재연결 시도 중...`);
     setTimeout(() => {
       connectToRoom(conn.peer);
     }, 3000);
@@ -650,14 +645,12 @@ const handleExistingParticipants = async (existingParticipants) => {
       if (connectedPeers.value.some((p) => p.id === participant.id
       &&
       participant.id !== peerId.value)) {
-        console.log("이미 연결되었지만, participants에는 없음", participant);
         participants.value.push(participant);
         resolve();
       } else if (
         participant.id !== peerId.value &&
         !connectedPeers.value.some((p) => p.id === participant.id)
       ) {
-        console.log("참가자 연결 시도", participant);
         let retries = 0;
 
         const tryConnecting = () => {
@@ -672,21 +665,14 @@ const handleExistingParticipants = async (existingParticipants) => {
 
             if (!isExisting) {
               participants.value.push(participant);
-            } else {
-              console.log("이미 존재하는 참가자:", participant);
             }
             resolve();
           });
 
           conn.on("error", (error) => {
-            console.error(participant.id, "와 연결 오류:", error);
-
             if (retries < MAX_RETRIES) {
               retries++;
-              console.log(`${participant.id} 연결 재시도 중... (${retries}/${MAX_RETRIES})`);
-
               setTimeout(() => {
-                console.log(`재시도 ${retries}번째: ${participant.id}`);
                 tryConnecting();
               }, RETRY_DELAY);
             } else {
@@ -723,7 +709,7 @@ const handleExistingParticipants = async (existingParticipants) => {
       participants.value.push(newParticipant);
     }
   } catch (error) {
-    console.error("참가자 연결 중 오류 발생:", error);
+    // 참가자 연결 중 오류 발생
   }
 };
 
@@ -736,7 +722,6 @@ const connectToRoom = async (roomID) => {
   const RETRY_DELAY = 2000; // 재시도 간격 (ms) 
 
   const attemptConnection = () => {
-    console.log("연결 시도", conn.peer);
     conn.on("open", () => {
       setupConnection(conn);
       sendMessage(
@@ -782,14 +767,10 @@ const connectToRoom = async (roomID) => {
 
     // 연결이 실패했을 때 재시도
     conn.on("error", (error) => {
-      console.error("연결 오류:", error);
-
       if (retries < MAX_RETRIES) {
-        console.log(`재시도 중... (${retries + 1}/${MAX_RETRIES})`);
         setTimeout(() => attemptConnection(retries + 1), RETRY_DELAY); // 일정 시간 후 재시도
       } else {
         toast.errorToast("최대 재시도 횟수를 초과했습니다. 연결에 실패했습니다.");
-        console.error("최대 재시도 횟수를 초과하여 연결에 실패했습니다.");
         throw error;
       }
     })
@@ -798,7 +779,6 @@ const connectToRoom = async (roomID) => {
   try {
     attemptConnection();
   } catch (error) {
-    console.error("연결 오류:", error);
     toast.errorToast("연결 오류가 발생했습니다. 다시 시도해주세요.");
     throw error;
   }
@@ -848,12 +828,10 @@ const initializePeer = () => {
 
       // 연결이 끊어졌을 때 다시 연결 유지 시도
       peer.value.on("disconnected", () => {
-        console.log("Peer 연결이 끊어짐. 다시 연결 시도...");
         peer.value.reconnect();
       });
 
       peer.value.on("error", (err) => {
-        console.error("Peer error:", err);
         reject(err);
       });
     } catch (error) {
@@ -890,7 +868,7 @@ onMounted(async () => {
         compressUUID(peerId.value);
     }
   } catch (error) {
-    console.error("Peer initialization failed:", error);
+    // Peer initialization failed
   }
 });
 
@@ -1011,7 +989,7 @@ const gameStart = async (data) => {
       storyCards.value = response.data.data.status.storyCards;
       endingCard.value = response.data.data.status.endingCard;
     } catch (error) {
-      console.log(error);
+      // 에러 처리
     }
   } else {
     try {
@@ -1024,8 +1002,7 @@ const gameStart = async (data) => {
       storyCards.value = response.data.data.status.storyCards;
       endingCard.value = response.data.data.status.endingCard;
     } catch (error) {
-      console.log(error);
-      // return;
+      // 에러 처리
     }
   }
 
@@ -1140,8 +1117,7 @@ const nextTurn = async (data) => {
           }
         })
       } catch (error) {
-        console.log(error);
-        toast.errorToast(error.response.data.message);
+        toast.errorToast(error.response?.data?.message || "프롬프트 필터링 중 오류가 발생했습니다.");
         return;
       }
     }
@@ -1220,7 +1196,7 @@ const nextTurn = async (data) => {
       // 나의 책에 이미지 넣기
       bookContents.value[bookContents.value.length - 1].image = imageBlob;
     } catch (error) {
-      console.log(error);
+      // 이미지 생성 실패 처리
     }
     // const imageBlob = testImage;
   }
@@ -1337,6 +1313,11 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         // condition에서 다음 턴 or 게임 종료
         if (usedCard.value.isEnding) {
+          // 즉시 승자 표시 (1초 후)
+          setTimeout(() => {
+            isForceStopped.value = "champ";
+          }, 1000);
+          
           await gameEnd(true).then(() => {
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
@@ -1346,9 +1327,6 @@ const voteEnd = async (data) => {
                 );
               };
             });
-            
-            // 먼저 승자를 표시 (gameStarted는 onWinnerShown에서 처리)
-            isForceStopped.value = "champ";
           });
         } else {
           connectedPeers.value.forEach(async (p) => {
@@ -1449,7 +1427,7 @@ const gameEnd = async (status) => {
           isForceStopped: true
         })
       } catch (error) {
-        console.log(error);
+        // 비정상 종료 처리 실패
       }
     }
     // 전체 실패 쇼 오버레이
@@ -1478,7 +1456,7 @@ const gameEnd = async (status) => {
         });
 
       } catch (error) {
-        console.log(error)
+        // 정상 종료 처리 실패
       }
     }
     // 우승자 쇼 오버레이
