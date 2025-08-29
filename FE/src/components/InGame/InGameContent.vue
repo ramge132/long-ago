@@ -29,8 +29,11 @@
             :class="{ flipped: isFlipped(index * 2 + 2) }"
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
-            <div class="ink-effect scale-[85%] rounded-lg" v-if="content.image">
-              <img :src="content.image" alt="이야기 이미지" class="w-full h-full object-contain">
+            <div class="ink-reveal-container scale-[85%] rounded-lg" v-if="content.image">
+              <div class="ink-mask-layer"></div>
+              <div class="ink-image-wrapper">
+                <img :src="content.image" alt="이야기 이미지" class="w-full h-full object-contain">
+              </div>
             </div>
           </div>
         </template>
@@ -353,6 +356,183 @@ p {
   backface-visibility: hidden;
 }
 
+/* 잉크 번짐 reveal 효과 */
+.ink-reveal-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ink-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.ink-mask-layer {
+  background-color: #fff;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
+  mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
+  -webkit-mask-size: 2300% 100%;
+  mask-size: 2300% 100%;
+  -webkit-mask-position: 0% 0%;
+  mask-position: 0% 0%;
+  z-index: 2;
+  -webkit-animation: ink-reveal 2.5s steps(22) forwards;
+  animation: ink-reveal 2.5s steps(22) forwards;
+  pointer-events: none;
+}
+
+/* 페이지가 펼쳐질 때 애니메이션 시작 */
+.page.flipped .ink-mask-layer {
+  animation-play-state: running;
+}
+
+/* 페이지가 닫혀있을 때는 애니메이션 대기 */
+.page:not(.flipped) .ink-mask-layer {
+  animation-play-state: paused;
+  -webkit-mask-position: 0% 0%;
+  mask-position: 0% 0%;
+}
+
+@keyframes ink-reveal {
+  from {
+    -webkit-mask-position: 0% 0%;
+    mask-position: 0% 0%;
+  }
+  to {
+    -webkit-mask-position: 100% 0%;
+    mask-position: 100% 0%;
+  }
+}
+
+/* 잉크 번짐 테두리 효과 */
+.ink-reveal-container img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* 잉크가 불규칙하게 번진 테두리 */
+  clip-path: polygon(
+    3% 2%, 15% 0%, 30% 3%, 45% 1%, 60% 2%, 75% 0%, 90% 3%, 98% 1%,
+    99% 10%, 100% 25%, 98% 40%, 99% 55%, 100% 70%, 98% 85%, 99% 95%,
+    95% 98%, 80% 100%, 65% 98%, 50% 99%, 35% 100%, 20% 98%, 5% 99%,
+    1% 96%, 0% 80%, 2% 65%, 0% 50%, 1% 35%, 0% 20%, 2% 8%
+  );
+  /* 이미지 내부 그림자로 가장자리 어둡게 */
+  box-shadow: 
+    inset 0 0 30px rgba(101, 67, 33, 0.3),
+    inset 0 0 60px rgba(139, 69, 19, 0.2),
+    inset 0 0 90px rgba(101, 67, 33, 0.1);
+  filter: contrast(1.05) saturate(1.1);
+}
+
+/* 잉크 번짐 배경 효과 */
+.ink-reveal-container:before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: -15px;
+  right: -15px;
+  bottom: -15px;
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(101, 67, 33, 0.4) 0%, transparent 25%),
+    radial-gradient(circle at 85% 15%, rgba(139, 69, 19, 0.3) 0%, transparent 30%),
+    radial-gradient(circle at 95% 85%, rgba(101, 67, 33, 0.35) 0%, transparent 25%),
+    radial-gradient(circle at 15% 90%, rgba(139, 69, 19, 0.3) 0%, transparent 30%),
+    radial-gradient(ellipse at 50% 5%, rgba(101, 67, 33, 0.25) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 95%, rgba(139, 69, 19, 0.25) 0%, transparent 40%);
+  filter: blur(3px);
+  z-index: -1;
+  animation: inkFlow 15s ease-in-out infinite;
+  transform: rotate(0.5deg);
+}
+
+/* 추가 잉크 번짐 레이어 */
+.ink-reveal-container:after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: 
+    conic-gradient(from 45deg at 20% 30%, transparent, rgba(139, 69, 19, 0.1) 10%, transparent 20%),
+    conic-gradient(from 135deg at 80% 70%, transparent, rgba(101, 67, 33, 0.1) 10%, transparent 20%),
+    conic-gradient(from 225deg at 70% 20%, transparent, rgba(139, 69, 19, 0.08) 10%, transparent 20%),
+    conic-gradient(from 315deg at 30% 80%, transparent, rgba(101, 67, 33, 0.08) 10%, transparent 20%);
+  filter: blur(2px);
+  mix-blend-mode: multiply;
+  z-index: -1;
+  animation: inkPulse 12s ease-in-out infinite reverse;
+}
+
+/* 잉크 번짐 애니메이션 */
+@keyframes inkFlow {
+  0%, 100% {
+    transform: rotate(0.5deg) scale(1);
+    filter: blur(3px);
+  }
+  25% {
+    transform: rotate(-0.3deg) scale(1.02);
+    filter: blur(2.5px);
+  }
+  50% {
+    transform: rotate(0.8deg) scale(1.01);
+    filter: blur(3.5px);
+  }
+  75% {
+    transform: rotate(-0.5deg) scale(1.03);
+    filter: blur(2.8px);
+  }
+}
+
+@keyframes inkPulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1) rotate(0deg);
+  }
+  33% {
+    opacity: 0.9;
+    transform: scale(1.04) rotate(1deg);
+  }
+  66% {
+    opacity: 0.8;
+    transform: scale(1.02) rotate(-0.5deg);
+  }
+}
+
+/* 호버 시 잉크 번짐 강조 */
+.ink-reveal-container:hover img {
+  clip-path: polygon(
+    2% 3%, 14% 1%, 31% 2%, 44% 0%, 61% 3%, 74% 1%, 91% 2%, 97% 0%,
+    100% 11%, 99% 26%, 100% 41%, 98% 56%, 99% 71%, 100% 86%, 98% 94%,
+    96% 99%, 81% 98%, 66% 100%, 51% 98%, 36% 99%, 21% 100%, 6% 98%,
+    0% 95%, 1% 81%, 0% 66%, 2% 51%, 0% 36%, 1% 21%, 0% 9%
+  );
+  filter: contrast(1.1) saturate(1.15);
+  box-shadow: 
+    inset 0 0 40px rgba(101, 67, 33, 0.35),
+    inset 0 0 80px rgba(139, 69, 19, 0.25),
+    inset 0 0 120px rgba(101, 67, 33, 0.15);
+}
+
+.ink-reveal-container:hover:before {
+  filter: blur(4px);
+  transform: rotate(-0.8deg) scale(1.05);
+}
+
+.ink-reveal-container:hover:after {
+  filter: blur(3px);
+  opacity: 0.9;
+}
+
+/* 기존 ink-effect 스타일 제거 */
 .ink-effect {
     display: inline-block;
     position: relative;
