@@ -30,14 +30,12 @@
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
             <div class="ink-reveal-container" v-if="content.image">
-              <!-- 이미지를 먼저 배치 -->
-              <img :src="content.image" alt="이야기 이미지" class="story-image">
-              <!-- 마스크 레이어를 이미지 위에 오버레이 -->
               <div 
                 v-if="!isAnimationComplete(index)" 
                 class="mask-layer"
                 :class="{ 'animating': isFlipped(index * 2 + 2) }"
                 @animationend="onAnimationEnd(index)">
+                <img :src="content.image" alt="이야기 이미지" class="story-image">
               </div>
             </div>
           </div>
@@ -403,12 +401,12 @@ p {
   z-index: 2;
   pointer-events: none;
   /* 마스크 초기 상태 - 전체를 덮음 */
-  -webkit-mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
-  mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
-  -webkit-mask-size: 2300% 100%;
-  mask-size: 2300% 100%;
-  -webkit-mask-position: 0% 0%;
-  mask-position: 0% 0%;
+  -webkit-mask-image: url("/src/assets/ink_mask.png");
+  mask-image: url("/src/assets/ink_mask.png");
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 /* 페이지가 열려있을 때 애니메이션 클래스가 추가되면 마스크 애니메이션 시작 */
