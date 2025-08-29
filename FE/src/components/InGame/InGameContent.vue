@@ -318,7 +318,7 @@ p {
   left: 0;
   right: 0;
   transition: background 0.7s;
-  z-index: 2;
+  z-index: -1;
 }
 .book .page:nth-child(odd) {
   transform: rotateY(0deg);
