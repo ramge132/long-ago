@@ -429,7 +429,7 @@ public class GameService {
             
             // OpenAI GPT API 요청 구조
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "gpt-4o-mini");
+            requestBody.put("model", "gpt-5-nano");
             requestBody.put("max_tokens", 50);
             requestBody.put("temperature", 0.7);
             

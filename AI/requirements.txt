@@ -1,6 +1,6 @@
 # API 기반 이미지 생성 시스템 dependencies
 
-# OpenAI API for GPT-5-nano (현재는 gpt-4o-mini 사용)
+# OpenAI API for GPT-5-nano
 openai>=1.0.0
 
 # Google Gemini API for image generation

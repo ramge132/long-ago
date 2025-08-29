@@ -62,7 +62,7 @@ S3_BUCKET_NAME=your_s3_bucket_name
 #### OpenAI API Key
 1. [OpenAI Platform](https://platform.openai.com)에 가입
 2. API Keys 섹션에서 새 키 생성
-3. 현재는 `gpt-4o-mini` 모델을 사용 (GPT-5-nano 출시 시 업데이트)
+3. 현재는 `gpt-5-nano` 모델을 사용
 
 #### Gemini API Key
 1. [Google AI Studio](https://makersuite.google.com/app/apikey)에 접속

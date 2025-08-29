@@ -186,7 +186,7 @@ Goal:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",  # GPT-5-nano가 아직 없으므로 gpt-4o-mini 사용
+                model="gpt-5-nano",
                 messages=[
                     {"role": "system", "content": self.story_prompt},
                     {"role": "user", "content": combined_input}
@@ -205,7 +205,7 @@ Goal:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-5-nano",
                 messages=[
                     {"role": "system", "content": self.description_prompt},
                     {"role": "user", "content": combined_input}

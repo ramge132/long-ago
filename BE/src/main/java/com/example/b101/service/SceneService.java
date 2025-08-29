@@ -226,7 +226,7 @@ public class SceneService {
             
             // OpenAI GPT API 요청 구조
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "gpt-4o-mini");
+            requestBody.put("model", "gpt-5-nano");
             requestBody.put("max_tokens", 200);
             requestBody.put("temperature", 0.7);
             
@@ -279,7 +279,7 @@ public class SceneService {
             
             // OpenAI GPT API 요청 구조
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "gpt-4o-mini");
+            requestBody.put("model", "gpt-5-nano");
             requestBody.put("max_tokens", 200);
             requestBody.put("temperature", 0.8); // 결말은 더 창의적으로
             
