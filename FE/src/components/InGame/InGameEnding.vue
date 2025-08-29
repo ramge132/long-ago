@@ -92,11 +92,10 @@ watch(() => props.isForceStopped, () => {
             winningMusic.play();
             audioStore.audioPlay = false;
             
-            // 승자 애니메이션 완료 후 1초 대기한 다음 나레이션 시작 신호 전송
-            // result_champ.gif는 약 7-8초 길이로 추정하여 8초 + 1초 = 9초 대기
+            // 결과창 표시 후 5초 대기한 다음 나레이션 시작 신호 전송
             setTimeout(() => {
                 emit('winner-shown');
-            }, 9000);
+            }, 5000);
             
         } else if (props.isForceStopped === "fail") {
             loseMusic.play();

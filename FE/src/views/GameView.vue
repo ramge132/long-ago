@@ -9,7 +9,7 @@
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
           :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" :isPreview="isPreview" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
-          @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" @winner-shown="onWinnerShown" @narration-complete="onNarrationComplete" />
+          @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" @winner-shown="onWinnerShown" @narration-complete="onNarrationComplete" @start-narration="onStartNarration" />
       </Transition>
     </RouterView>
     <div
@@ -1431,8 +1431,8 @@ if (currTurn.value === myTurn.value) {
 };
 
 const gameEnd = async (status) => {
-  // 게임 시작 상태 초기화
-  gameStarted.value = false;
+  // 게임 시작 상태는 onWinnerShown에서 처리 (TTS 타이밍 제어를 위해)
+  // gameStarted.value = false;  // 여기서 제거
   // 턴 초기화
   currTurn.value = -1;
   totalTurn.value = 1;
