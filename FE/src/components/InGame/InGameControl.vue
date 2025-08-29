@@ -258,7 +258,9 @@ const updateClass = () => {
 
 watch(() => props.currTurn, (newVal) => {
   if(newVal === props.myTurn) {
-    currChatModeIdx.value = 1;
+    currChatModeIdx.value = 1; // 내 턴이면 이야기 모드
+  } else {
+    currChatModeIdx.value = 0; // 내 턴이 아니면 대화 모드
   }
 }, {immediate: true});
 
