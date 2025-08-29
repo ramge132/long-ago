@@ -392,7 +392,7 @@ p {
 
 /* 마스크 레이어 - 잉크 번짐 효과 (위 레이어) */
 .mask-layer {
-  background-image: url("/src/assets/images/bookPage.jpg");
+  background-color: rgba(0, 0, 0, 1);
   background-size: cover;
   background-position: center;
   position: absolute;
