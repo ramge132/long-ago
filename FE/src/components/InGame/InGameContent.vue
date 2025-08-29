@@ -380,7 +380,7 @@ p {
 .story-image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
   position: absolute;
   top: 0;
@@ -390,7 +390,7 @@ p {
 
 /* 마스크 레이어 - 잉크 번짐 효과 (위 레이어) */
 .mask-layer {
-  background-image: url("/src/assets/images/bookPage.jpg");
+  /* background-image: url("/src/assets/images/bookPage.jpg"); */
   background-size: cover;
   background-position: center;
   position: absolute;
@@ -403,43 +403,26 @@ p {
   /* 마스크 초기 상태 - 전체를 덮음 */
   -webkit-mask-image: url("/src/assets/ink_mask.png");
   mask-image: url("/src/assets/ink_mask.png");
-  -webkit-mask-size: cover;
-  mask-size: cover;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
   -webkit-mask-position: center;
   mask-position: center;
 }
 
 /* 페이지가 열려있을 때 애니메이션 클래스가 추가되면 마스크 애니메이션 시작 */
 .mask-layer.animating {
-  -webkit-animation: mask-play 2.5s steps(22) forwards;
-  animation: mask-play 2.5s steps(22) forwards;
+  /* -webkit-animation: mask-play 2.5s steps(22) forwards; */
+  /* animation: mask-play 2.5s steps(22) forwards; */
 }
 
 /* 페이지가 닫혀있을 때 마스크가 전체를 덮음 */
 .page:not(.flipped) .mask-layer {
   -webkit-mask-position: 0% 0%;
   mask-position: 0% 0%;
-  -webkit-animation: none;
-  animation: none;
+  /* -webkit-animation: none; */
+  /* animation: none; */
 }
 
-@keyframes mask-play {
-  0% {
-    -webkit-mask-position: 0% 0%;
-    mask-position: 0% 0%;
-  }
-  99% {
-    -webkit-mask-position: 100% 0%;
-    mask-position: 100% 0%;
-  }
-  100% {
-    -webkit-mask-position: 100% 0%;
-    mask-position: 100% 0%;
-    display: none;
-    visibility: hidden;
-    opacity: 0;
-  }
-}
 
 /* 기존 ink-effect 스타일 제거 */
 .ink-effect {
