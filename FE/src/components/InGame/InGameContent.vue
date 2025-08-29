@@ -29,11 +29,8 @@
             :class="{ flipped: isFlipped(index * 2 + 2) }"
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
-            <div class="ink-reveal-container scale-[85%] rounded-lg" v-if="content.image">
-              <div class="ink-mask-layer"></div>
-              <div class="ink-image-wrapper">
-                <img :src="content.image" alt="이야기 이미지" class="w-full h-full object-contain">
-              </div>
+            <div class="ink-reveal-container scale-[85%] rounded-lg" v-if="content.image" :class="{ 'ink-animate': isFlipped(index * 2 + 2) }">
+              <img :src="content.image" alt="이야기 이미지" class="w-full h-full object-contain">
             </div>
           </div>
         </template>
@@ -361,54 +358,76 @@ p {
   position: relative;
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow: visible;
+  opacity: 0;
+  transform: scale(0.8);
 }
 
-.ink-image-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
+/* 페이지가 펼쳐질 때 잉크 애니메이션 시작 */
+.page.flipped .ink-reveal-container.ink-animate {
+  animation: inkSpread 2.5s ease-out forwards;
 }
 
-.ink-mask-layer {
-  background-color: #fff;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  -webkit-mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
-  mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
-  -webkit-mask-size: 2300% 100%;
-  mask-size: 2300% 100%;
-  -webkit-mask-position: 0% 0%;
-  mask-position: 0% 0%;
-  z-index: 2;
-  -webkit-animation: ink-reveal 2.5s steps(22) forwards;
-  animation: ink-reveal 2.5s steps(22) forwards;
-  pointer-events: none;
+/* 페이지가 닫혀있을 때는 초기 상태 */
+.page:not(.flipped) .ink-reveal-container {
+  opacity: 0;
+  transform: scale(0.8);
+  animation: none;
+  clip-path: circle(10% at 50% 50%);
 }
 
-/* 페이지가 펼쳐질 때 애니메이션 시작 */
-.page.flipped .ink-mask-layer {
-  animation-play-state: running;
-}
-
-/* 페이지가 닫혀있을 때는 애니메이션 대기 */
-.page:not(.flipped) .ink-mask-layer {
-  animation-play-state: paused;
-  -webkit-mask-position: 0% 0%;
-  mask-position: 0% 0%;
-}
-
-@keyframes ink-reveal {
-  from {
-    -webkit-mask-position: 0% 0%;
-    mask-position: 0% 0%;
+@keyframes inkSpread {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+    clip-path: circle(10% at 50% 50%);
+    filter: blur(5px) saturate(2);
   }
-  to {
-    -webkit-mask-position: 100% 0%;
-    mask-position: 100% 0%;
+  20% {
+    opacity: 0.3;
+    clip-path: polygon(
+      45% 40%, 55% 35%, 65% 42%, 70% 50%, 
+      65% 58%, 55% 65%, 45% 60%, 40% 50%
+    );
+  }
+  40% {
+    opacity: 0.6;
+    clip-path: polygon(
+      30% 25%, 50% 20%, 70% 25%, 85% 40%,
+      85% 60%, 70% 75%, 50% 80%, 30% 75%,
+      15% 60%, 15% 40%
+    );
+    filter: blur(2px) saturate(1.5);
+  }
+  60% {
+    opacity: 0.85;
+    transform: scale(0.95);
+    clip-path: polygon(
+      20% 15%, 40% 10%, 60% 12%, 80% 15%, 95% 30%,
+      98% 50%, 95% 70%, 80% 85%, 60% 88%, 40% 90%,
+      20% 85%, 5% 70%, 2% 50%, 5% 30%
+    );
+  }
+  80% {
+    opacity: 0.95;
+    filter: blur(0.5px) saturate(1.2);
+    clip-path: polygon(
+      10% 5%, 25% 2%, 40% 4%, 55% 2%, 70% 3%, 85% 5%, 95% 15%,
+      99% 30%, 98% 45%, 99% 60%, 98% 75%, 95% 85%, 85% 95%,
+      70% 97%, 55% 98%, 40% 96%, 25% 98%, 10% 95%, 2% 85%,
+      1% 70%, 0% 55%, 1% 40%, 0% 25%, 2% 15%
+    );
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px) saturate(1.1);
+    clip-path: polygon(
+      3% 2%, 15% 0%, 30% 3%, 45% 1%, 60% 2%, 75% 0%, 90% 3%, 98% 1%,
+      99% 10%, 100% 25%, 98% 40%, 99% 55%, 100% 70%, 98% 85%, 99% 95%,
+      95% 98%, 80% 100%, 65% 98%, 50% 99%, 35% 100%, 20% 98%, 5% 99%,
+      1% 96%, 0% 80%, 2% 65%, 0% 50%, 1% 35%, 0% 20%, 2% 8%
+    );
   }
 }
 
