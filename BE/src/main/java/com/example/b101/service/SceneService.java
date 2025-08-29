@@ -328,7 +328,7 @@ public class SceneService {
             // contents 배열 구성
             Map<String, Object> content = new HashMap<>();
             Map<String, Object> part = new HashMap<>();
-            part.put("text", "Generate an image: " + prompt);
+            part.put("text", "Generate an image: " + prompt + " portrait orientation, 9:16 aspect ratio, vertical format, 1080x1920 resolution");
             content.put("parts", List.of(part));
             requestBody.put("contents", List.of(content));
             

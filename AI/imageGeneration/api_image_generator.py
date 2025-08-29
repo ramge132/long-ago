@@ -261,7 +261,8 @@ class GeminiImageGenerator:
     
     def generate_text_to_image(self, prompt: str, art_style: str = "") -> bytes:
         """텍스트에서 이미지 생성 (캐릭터 없는 경우)"""
-        full_prompt = f"{prompt} {art_style}".strip()
+        # 9:16 비율 명시 (세로형, 1080x1920 해상도)
+        full_prompt = f"{prompt} {art_style} portrait orientation, 9:16 aspect ratio, vertical format, 1080x1920 resolution".strip()
         
         try:
             response = self.model.generate_content([
@@ -292,8 +293,8 @@ class GeminiImageGenerator:
             # 캐릭터 프롬프트들을 결합
             combined_character_prompt = " ".join(character_prompts)
             
-            # 전체 프롬프트 구성
-            full_prompt = f"Generate an image based on these reference images. {combined_character_prompt} {prompt} {art_style}".strip()
+            # 전체 프롬프트 구성 (9:16 비율 명시)
+            full_prompt = f"Generate an image based on these reference images. {combined_character_prompt} {prompt} {art_style} portrait orientation, 9:16 aspect ratio, vertical format, 1080x1920 resolution".strip()
             
             # 이미지와 텍스트를 함께 전달
             content = [full_prompt] + images

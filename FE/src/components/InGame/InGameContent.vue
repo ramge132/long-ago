@@ -1,5 +1,57 @@
 <template>
   <div class="row-span-3 w-full h-full flex items-center justify-center">
+    <!-- SVG 필터 정의 (잉크 번짐 효과) -->
+    <svg style="height: 0; width: 0; position: absolute;">
+      <defs>
+        <filter id="ink-bleed-effect">
+          <!-- 노이즈 생성으로 잉크의 불규칙한 번짐 표현 -->
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" result="turbulence" seed="2" />
+          
+          <!-- 변위 맵으로 가장자리 왜곡 -->
+          <feDisplacementMap in2="turbulence" in="SourceGraphic" scale="8" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+          
+          <!-- 가우시안 블러로 부드러운 번짐 효과 -->
+          <feGaussianBlur in="displaced" stdDeviation="1.5" result="blurred" />
+          
+          <!-- 모폴로지 필터로 잉크 확산 효과 -->
+          <feMorphology operator="dilate" radius="1" in="blurred" result="expanded" />
+          
+          <!-- 색상 매트릭스로 잉크 번짐의 투명도 조절 -->
+          <feColorMatrix in="expanded" type="matrix" 
+            values="1 0 0 0 0
+                    0 1 0 0 0
+                    0 0 1 0 0
+                    0 0 0 1.2 0" result="inked" />
+          
+          <!-- 원본 이미지와 합성 -->
+          <feComposite in="inked" in2="SourceGraphic" operator="over" />
+        </filter>
+        
+        <!-- 추가: 수채화 스타일 잉크 번짐 효과 -->
+        <filter id="watercolor-bleed">
+          <!-- 첫 번째 레이어: 큰 번짐 -->
+          <feTurbulence type="turbulence" baseFrequency="0.02" numOctaves="2" result="turbulence1" />
+          <feDisplacementMap in2="turbulence1" in="SourceGraphic" scale="20" result="displaced1" />
+          <feGaussianBlur in="displaced1" stdDeviation="2" result="blur1" />
+          
+          <!-- 두 번째 레이어: 세밀한 번짐 -->
+          <feTurbulence type="fractalNoise" baseFrequency="0.1" numOctaves="1" result="turbulence2" />
+          <feDisplacementMap in2="turbulence2" in="SourceGraphic" scale="5" result="displaced2" />
+          <feGaussianBlur in="displaced2" stdDeviation="0.5" result="blur2" />
+          
+          <!-- 레이어 합성 -->
+          <feMerge>
+            <feMergeNode in="blur1" />
+            <feMergeNode in="blur2" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+          
+          <!-- 최종 색상 조정 -->
+          <feColorMatrix type="saturate" values="1.2" />
+        </filter>
+      </defs>
+    </svg>
+    
     <div class="book absolute top-0">
       <div class="pages" ref="pagesRef">
         <div
@@ -29,8 +81,8 @@
             :class="{ flipped: isFlipped(index * 2 + 2) }"
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
-            <div class="bg-effect scale-[85%] rounded-lg overflow-hidden" v-if="content.image">
-              <img :src="content.image" alt="이야기 이미지" class="w-full h-full">
+            <div class="ink-effect scale-[85%] rounded-lg overflow-hidden" v-if="content.image">
+              <img :src="content.image" alt="이야기 이미지" class="w-full h-full ink-image">
             </div>
           </div>
         </template>
@@ -353,23 +405,67 @@ p {
   backface-visibility: hidden;
 }
 
-.bg-effect {
+.ink-effect {
     display: inline-block;
     position: relative;
     backface-visibility: hidden;
+    /* 기본 그림자로 깊이감 추가 */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
-.bg-effect:after {
+
+/* 잉크 번짐 효과 적용 */
+.ink-image {
+    filter: url('#watercolor-bleed');
+    /* 브라우저 호환성을 위한 폴백 */
+    -webkit-filter: url('#watercolor-bleed');
+}
+
+/* 잉크 테두리 효과 */
+.ink-effect:after {
     position: absolute;
     display: block;
     content: "";
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    box-shadow: 
-      inset 0 0 30px #EEEEF0 /* 배경과 같은 색 */,
-      inset 0 0 30px #EEEEF0,
-      inset 0 0 30px #EEEEF0,
-      inset 0 0 30px #EEEEF0;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    background: 
+      radial-gradient(circle at 20% 20%, transparent 30%, rgba(139, 69, 19, 0.05) 70%),
+      radial-gradient(circle at 80% 80%, transparent 40%, rgba(139, 69, 19, 0.03) 70%),
+      radial-gradient(circle at 50% 10%, transparent 40%, rgba(101, 67, 33, 0.05) 80%);
+    filter: url('#ink-bleed-effect');
+    -webkit-filter: url('#ink-bleed-effect');
+    z-index: -1;
+    /* 애니메이션으로 살아있는 느낌 */
+    animation: inkFlow 8s ease-in-out infinite;
+}
+
+/* 잉크 번짐 애니메이션 */
+@keyframes inkFlow {
+    0%, 100% {
+        opacity: 0.7;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.02);
+    }
+}
+
+/* 호버 시 잉크 번짐 강조 */
+.ink-effect:hover:after {
+    animation: inkFlowHover 0.5s ease-out;
+}
+
+@keyframes inkFlowHover {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1.02);
+    }
 }
 </style>
