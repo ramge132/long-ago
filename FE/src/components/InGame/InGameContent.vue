@@ -30,7 +30,11 @@
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
             <div class="ink-reveal-container scale-[85%]" v-if="content.image">
-              <div class="mask-layer"></div>
+              <div 
+                v-if="!isAnimationComplete(index)" 
+                class="mask-layer"
+                @animationend="onAnimationEnd(index)">
+              </div>
               <img :src="content.image" alt="이야기 이미지" class="w-full h-full object-contain">
             </div>
           </div>
@@ -51,6 +55,7 @@ const audioStore = useAudioStore();
 const pagesRef = ref(null);
 const flippedPages = reactive(new Set());
 const isClickLocked = ref(false);
+const animationCompleted = reactive(new Set());
 
 const props = defineProps({
   bookContents: {
@@ -99,6 +104,14 @@ const updatePagesZIndex = () => {
 
 const isFlipped = (pageIndex) => {
   return flippedPages.has(pageIndex);
+};
+
+const isAnimationComplete = (index) => {
+  return animationCompleted.has(index);
+};
+
+const onAnimationEnd = (index) => {
+  animationCompleted.add(index);
 };
 
 const handlePageClick = (pageIndex) => {
@@ -389,28 +402,39 @@ p {
   mask-position: 0% 0%;
   z-index: 2;
   pointer-events: none;
+  -webkit-animation: none;
+  animation: none;
 }
 
-/* 페이지가 열려있을 때 마스크 애니메이션 시작 */
+/* 페이지가 열려있을 때 마스크 애니메이션 시작하고 끝나면 사라짐 */
 .page.flipped .mask-layer {
   -webkit-animation: mask-play 2.5s steps(22) forwards;
   animation: mask-play 2.5s steps(22) forwards;
 }
 
-/* 페이지가 닫혀있을 때 마스크 초기화 */
+/* 페이지가 닫혀있을 때 마스크가 전체를 덮음 */
 .page:not(.flipped) .mask-layer {
   -webkit-mask-position: 0% 0%;
   mask-position: 0% 0%;
+  -webkit-animation: none;
+  animation: none;
 }
 
 @keyframes mask-play {
-  from {
+  0% {
     -webkit-mask-position: 0% 0%;
     mask-position: 0% 0%;
   }
-  to {
+  99% {
     -webkit-mask-position: 100% 0%;
     mask-position: 100% 0%;
+  }
+  100% {
+    -webkit-mask-position: 100% 0%;
+    mask-position: 100% 0%;
+    display: none;
+    visibility: hidden;
+    opacity: 0;
   }
 }
 
