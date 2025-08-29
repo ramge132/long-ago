@@ -29,7 +29,7 @@
             :class="{ flipped: isFlipped(index * 2 + 2) }"
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
-            <div class="ink-reveal-container scale-[85%]" v-if="content.image">
+            <div class="ink-reveal-container" v-if="content.image">
               <!-- 이미지를 먼저 배치 -->
               <img :src="content.image" alt="이야기 이미지" class="story-image">
               <!-- 마스크 레이어를 이미지 위에 오버레이 -->
