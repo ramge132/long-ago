@@ -2,9 +2,12 @@
   <div
     class="flex flex-col w-full h-full items-center justify-center p-5 gap-y-5"
   >
-    <RouterLink to="/">
-      <img :src="Logo" alt="로고" class="w-52" />
-    </RouterLink>
+    <img 
+      :src="Logo" 
+      alt="로고" 
+      class="w-52 cursor-pointer" 
+      @click="goToHome"
+    />
     <div class="w-full flex-1 grid grid-cols-3 gap-x-5">
       <LobbyUsers
         :participants="props.participants"
@@ -72,5 +75,10 @@ const onRoomConfiguration = (data) => {
 };
 const gameStart = (data) => {
   emit("gameStart", data);
+};
+
+// 메인페이지로 완전한 새로고침과 함께 이동
+const goToHome = () => {
+  window.location.href = '/';
 };
 </script>
