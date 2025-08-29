@@ -30,12 +30,15 @@
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
             <div class="ink-reveal-container scale-[85%]" v-if="content.image">
+              <!-- 이미지를 먼저 배치 -->
+              <img :src="content.image" alt="이야기 이미지" class="story-image">
+              <!-- 마스크 레이어를 이미지 위에 오버레이 -->
               <div 
                 v-if="!isAnimationComplete(index)" 
                 class="mask-layer"
+                :class="{ 'animating': isFlipped(index * 2 + 2) }"
                 @animationend="onAnimationEnd(index)">
               </div>
-              <img :src="content.image" alt="이야기 이미지" class="w-full h-full object-contain">
             </div>
           </div>
         </template>
@@ -375,16 +378,19 @@ p {
   overflow: hidden;
 }
 
-/* 이미지는 테두리 효과 없이 깔끔하게 */
-.ink-reveal-container img {
+/* 스토리 이미지 - 아래 레이어 */
+.story-image {
   width: 100%;
   height: 100%;
+  object-fit: contain;
   display: block;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   z-index: 1;
 }
 
-/* 마스크 레이어 - 잉크 번짐 효과 */
+/* 마스크 레이어 - 잉크 번짐 효과 (위 레이어) */
 .mask-layer {
   background-image: url("/src/assets/images/bookPage.jpg");
   background-size: cover;
@@ -394,20 +400,19 @@ p {
   left: 0;
   width: 100%;
   height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  /* 마스크 초기 상태 - 전체를 덮음 */
   -webkit-mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
   mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
   -webkit-mask-size: 2300% 100%;
   mask-size: 2300% 100%;
   -webkit-mask-position: 0% 0%;
   mask-position: 0% 0%;
-  z-index: 2;
-  pointer-events: none;
-  -webkit-animation: none;
-  animation: none;
 }
 
-/* 페이지가 열려있을 때 마스크 애니메이션 시작하고 끝나면 사라짐 */
-.page.flipped .mask-layer {
+/* 페이지가 열려있을 때 애니메이션 클래스가 추가되면 마스크 애니메이션 시작 */
+.mask-layer.animating {
   -webkit-animation: mask-play 2.5s steps(22) forwards;
   animation: mask-play 2.5s steps(22) forwards;
 }
