@@ -10,7 +10,7 @@
           :style="{ zIndex: calculateZIndex(0) }"
         >
         <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute -translate-y-150px font-title text-white" style="backface-visibility: hidden"></p>
-        <img :src="bookCover.imageUrl" alt="" v-if="bookCover.imageUrl" class="w-full h-full object-fill">
+        <img :src="bookCover.imageUrl" alt="" v-if="bookCover.imageUrl" class="w-full h-full object-cover">
         
         </div>
         <template
@@ -357,100 +357,130 @@ p {
     display: inline-block;
     position: relative;
     backface-visibility: hidden;
-    /* 잉크 번짐 효과 - CSS only */
-    border-radius: 8px;
-    overflow: hidden; /* 이미지가 테두리를 넘지 않도록 */
+    overflow: visible;
+    /* 잉크가 불규칙하게 번진 테두리 */
+    clip-path: polygon(
+      3% 2%, 15% 0%, 30% 3%, 45% 1%, 60% 2%, 75% 0%, 90% 3%, 98% 1%,
+      99% 10%, 100% 25%, 98% 40%, 99% 55%, 100% 70%, 98% 85%, 99% 95%,
+      95% 98%, 80% 100%, 65% 98%, 50% 99%, 35% 100%, 20% 98%, 5% 99%,
+      1% 96%, 0% 80%, 2% 65%, 0% 50%, 1% 35%, 0% 20%, 2% 8%
+    );
 }
 
-/* 잉크 번짐 테두리 효과 */
+/* 잉크 번짐 배경 효과 */
 .ink-effect:before {
     content: "";
     position: absolute;
-    top: -8px;
-    left: -8px;
-    right: -8px;
-    bottom: -8px;
+    top: -15px;
+    left: -15px;
+    right: -15px;
+    bottom: -15px;
     background: 
-      radial-gradient(ellipse at top left, rgba(139, 69, 19, 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at top right, rgba(101, 67, 33, 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom left, rgba(139, 69, 19, 0.05) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom right, rgba(101, 67, 33, 0.07) 0%, transparent 50%);
-    border-radius: 12px;
-    z-index: -2;
-    animation: inkPulse 10s ease-in-out infinite;
+      radial-gradient(circle at 10% 20%, rgba(101, 67, 33, 0.4) 0%, transparent 25%),
+      radial-gradient(circle at 85% 15%, rgba(139, 69, 19, 0.3) 0%, transparent 30%),
+      radial-gradient(circle at 95% 85%, rgba(101, 67, 33, 0.35) 0%, transparent 25%),
+      radial-gradient(circle at 15% 90%, rgba(139, 69, 19, 0.3) 0%, transparent 30%),
+      radial-gradient(ellipse at 50% 5%, rgba(101, 67, 33, 0.25) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 95%, rgba(139, 69, 19, 0.25) 0%, transparent 40%);
+    filter: blur(3px);
+    z-index: -1;
+    animation: inkFlow 15s ease-in-out infinite;
+    transform: rotate(0.5deg);
 }
 
-/* 내부 잉크 번짐 효과 */
+/* 추가 잉크 번짐 레이어 */
 .ink-effect:after {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, 
-      transparent 40%, 
-      rgba(139, 69, 19, 0.03) 50%, 
-      transparent 60%);
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background: 
+      conic-gradient(from 45deg at 20% 30%, transparent, rgba(139, 69, 19, 0.1) 10%, transparent 20%),
+      conic-gradient(from 135deg at 80% 70%, transparent, rgba(101, 67, 33, 0.1) 10%, transparent 20%),
+      conic-gradient(from 225deg at 70% 20%, transparent, rgba(139, 69, 19, 0.08) 10%, transparent 20%),
+      conic-gradient(from 315deg at 30% 80%, transparent, rgba(101, 67, 33, 0.08) 10%, transparent 20%);
+    filter: blur(2px);
     mix-blend-mode: multiply;
-    pointer-events: none;
-    z-index: 1;
-    border-radius: 8px;
+    z-index: -1;
+    animation: inkPulse 12s ease-in-out infinite reverse;
 }
 
-/* 이미지에 직접 적용되는 효과 */
+/* 이미지 자체에 적용되는 효과 */
 .ink-effect img {
-    border-radius: 8px;
-    /* 가장자리 부드럽게 */
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* 이미지 내부 그림자로 가장자리 어둡게 */
     box-shadow: 
-      inset 0 0 20px rgba(139, 69, 19, 0.1),
-      inset 0 0 40px rgba(139, 69, 19, 0.05),
-      0 4px 15px rgba(0, 0, 0, 0.2);
+      inset 0 0 30px rgba(101, 67, 33, 0.3),
+      inset 0 0 60px rgba(139, 69, 19, 0.2),
+      inset 0 0 90px rgba(101, 67, 33, 0.1);
+    /* 이미지 자체도 약간 불규칙한 형태로 */
+    filter: contrast(1.05) saturate(1.1);
 }
 
-/* 잉크 펄스 애니메이션 */
-@keyframes inkPulse {
+/* 잉크 번짐 애니메이션 */
+@keyframes inkFlow {
     0%, 100% {
-        opacity: 0.6;
-        transform: scale(1) rotate(0deg);
+        transform: rotate(0.5deg) scale(1);
+        filter: blur(3px);
     }
     25% {
-        opacity: 0.8;
-        transform: scale(1.02) rotate(0.5deg);
+        transform: rotate(-0.3deg) scale(1.02);
+        filter: blur(2.5px);
     }
     50% {
-        opacity: 0.7;
-        transform: scale(1.01) rotate(-0.3deg);
+        transform: rotate(0.8deg) scale(1.01);
+        filter: blur(3.5px);
     }
     75% {
-        opacity: 0.9;
-        transform: scale(1.03) rotate(0.2deg);
+        transform: rotate(-0.5deg) scale(1.03);
+        filter: blur(2.8px);
     }
 }
 
-/* 호버 시 효과 강조 */
+@keyframes inkPulse {
+    0%, 100% {
+        opacity: 0.7;
+        transform: scale(1) rotate(0deg);
+    }
+    33% {
+        opacity: 0.9;
+        transform: scale(1.04) rotate(1deg);
+    }
+    66% {
+        opacity: 0.8;
+        transform: scale(1.02) rotate(-0.5deg);
+    }
+}
+
+/* 호버 시 잉크 번짐 강조 */
+.ink-effect:hover {
+    clip-path: polygon(
+      2% 3%, 14% 1%, 31% 2%, 44% 0%, 61% 3%, 74% 1%, 91% 2%, 97% 0%,
+      100% 11%, 99% 26%, 100% 41%, 98% 56%, 99% 71%, 100% 86%, 98% 94%,
+      96% 99%, 81% 98%, 66% 100%, 51% 98%, 36% 99%, 21% 100%, 6% 98%,
+      0% 95%, 1% 81%, 0% 66%, 2% 51%, 0% 36%, 1% 21%, 0% 9%
+    );
+}
+
 .ink-effect:hover:before {
-    animation: inkHover 0.6s ease-out;
+    filter: blur(4px);
+    transform: rotate(-0.8deg) scale(1.05);
+}
+
+.ink-effect:hover:after {
+    filter: blur(3px);
+    opacity: 0.9;
 }
 
 .ink-effect:hover img {
+    filter: contrast(1.1) saturate(1.15);
     box-shadow: 
-      inset 0 0 25px rgba(139, 69, 19, 0.15),
-      inset 0 0 50px rgba(139, 69, 19, 0.08),
-      0 6px 20px rgba(0, 0, 0, 0.25);
-}
-
-@keyframes inkHover {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(1.02);
-        opacity: 0.8;
-    }
+      inset 0 0 40px rgba(101, 67, 33, 0.35),
+      inset 0 0 80px rgba(139, 69, 19, 0.25),
+      inset 0 0 120px rgba(101, 67, 33, 0.15);
 }
 </style>

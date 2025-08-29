@@ -224,7 +224,7 @@ Goal:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-5-nano",
                 messages=[
                     {"role": "system", "content": self.image_prompt},
                     {"role": "user", "content": combined_input}
