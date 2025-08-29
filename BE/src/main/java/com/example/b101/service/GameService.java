@@ -491,7 +491,7 @@ public class GameService {
             // contents 배열 구성
             Map<String, Object> content = new HashMap<>();
             Map<String, Object> part = new HashMap<>();
-            part.put("text", "Generate an image: " + coverPrompt + " portrait orientation, 9:16 aspect ratio, vertical format, 1080x1920 resolution");
+            part.put("text", "Generate an image: " + coverPrompt + " portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution");
             content.put("parts", List.of(part));
             requestBody.put("contents", List.of(content));
             
