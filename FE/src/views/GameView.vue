@@ -412,7 +412,7 @@ const setupConnection = (conn) => {
             });
             isVoted.value = false;
           }
-        }, 13000);  // 투표 시간 18초 -> 13초로 단축
+        }, 10000);  // 투표 시간 10초로 설정
         break;
 
       case "sendImage":
@@ -1159,7 +1159,7 @@ const nextTurn = async (data) => {
             });
             isVoted.value = false;
           }
-        }, 13000);  // 투표 시간 18초 -> 13초로 단축
+        }, 10000);  // 투표 시간 10초로 설정
 
     addBookContent({ content: data.prompt, image: null });
 
