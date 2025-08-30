@@ -87,20 +87,26 @@ const topParticipants = computed(() => {
 });
 
 watch(() => props.isForceStopped, () => {
-    if (audioStore.audioData) {
-        if (props.isForceStopped === "champ") {
+    if (props.isForceStopped === "champ") {
+        // 음성이 켜져있을 때만 음악 재생
+        if (audioStore.audioData) {
             winningMusic.play();
             audioStore.audioPlay = false;
-            
-            // 결과창 표시 후 5초 대기한 다음 나레이션 시작 신호 전송
-            setTimeout(() => {
-                emit('winner-shown');
-            }, 5000);
-            
-        } else if (props.isForceStopped === "fail") {
+        }
+        
+        // 결과창 표시 후 5초 대기한 다음 나레이션 시작 신호 전송 (sound off여도 실행)
+        setTimeout(() => {
+            emit('winner-shown');
+        }, 5000);
+        
+    } else if (props.isForceStopped === "fail") {
+        // 음성이 켜져있을 때만 음악 재생
+        if (audioStore.audioData) {
             loseMusic.play();
             audioStore.audioPlay = false;
-        } else {
+        }
+    } else {
+        if (audioStore.audioData) {
             audioStore.audioPlay = true;
             winningMusic.pause();
             loseMusic.pause();

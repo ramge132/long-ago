@@ -51,6 +51,7 @@ import { ref, onMounted, reactive, watch, defineProps } from "vue";
 import { useAudioStore } from "@/stores/audio";
 import { TurningPage } from "@/assets";
 import { initVoices, speakText } from "@/functions/tts";
+import { speakTextConcurrent, stopAllTTS } from "@/functions/cloudTts";
 
 const audioStore = useAudioStore();
 const pagesRef = ref(null);
@@ -201,8 +202,8 @@ const runBookSequence = async () => {
       }
     }
 
-    // tts 함수(speakText)가 음성 재생 완료 후 resolve하는 프로미스를 반환한다고 가정합니다.
-    await speakText(element.content);
+    // 새로운 동시 실행 가능한 TTS 함수 사용
+    await speakTextConcurrent(element.content);
   }
   
   // 모든 작업이 완료되면 표지로 되돌리기
