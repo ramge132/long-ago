@@ -65,13 +65,7 @@ const onGifLoad = () => {
         // 따라서 기존의 알려진 시간값을 사용하거나, 수동으로 측정해야 함
         console.log('GIF 이미지 요소:', img);
         
-        // result_champ.gif의 실제 지속 시간을 확인하기 위한 타이머
-        // (이 로그를 통해 실제 애니메이션이 언제 끝나는지 수동으로 확인 가능)
-        for (let i = 1; i <= 15; i++) {
-            setTimeout(() => {
-                console.log(`🎬 result_champ.gif ${i}초 경과`);
-            }, i * 1000);
-        }
+        // GIF 애니메이션 지속시간: 약 3초
     }
 };
 
