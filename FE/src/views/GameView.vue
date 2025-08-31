@@ -85,6 +85,8 @@ const isForceStopped = ref(null);
 // 부적절한 콘텐츠 경고 모달 관련
 const showWarningModal = ref(false);
 const warningModalMessage = ref("");
+// 투표 타이머 관리
+let voteTimer = null;
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -430,7 +432,14 @@ const setupConnection = (conn) => {
         inProgress.value = false;
         addBookContent({ content: data.prompt, image: null });
         votings.value = [];
-        setTimeout(async () => {
+        
+        // 기존 투표 타이머가 있으면 취소
+        if (voteTimer) {
+          clearTimeout(voteTimer);
+        }
+        
+        // 새로운 투표 타이머 설정
+        voteTimer = setTimeout(async () => {
           if(isVoted.value) {
             isVoted.value = false;
           } else {
@@ -452,6 +461,10 @@ const setupConnection = (conn) => {
 
       case "warningNotification":
         showInappropriateWarningModal(data);
+        break;
+
+      case "stopVotingAndShowWarning":
+        stopVotingAndShowWarning(data);
         break;
 
       case "voteResult":
@@ -913,6 +926,70 @@ const hideWarningModal = () => {
   warningModalMessage.value = "";
 };
 
+// 투표 중단 및 경고 표시 (모든 플레이어용)
+const stopVotingAndShowWarning = async (data) => {
+  console.log("=== 투표 중단 및 경고 표시 ===", data);
+  
+  // 1. 투표 즉시 중단 (InGameView에서 투표 UI 숨김)
+  inProgress.value = false;
+  isVoted.value = true;  // 투표 UI 즉시 숨김
+  prompt.value = "";     // 프롬프트도 초기화하여 완전히 투표 UI 제거
+  
+  // 투표 타이머 취소
+  if (voteTimer) {
+    clearTimeout(voteTimer);
+    voteTimer = null;
+    console.log("투표 타이머 취소됨");
+  }
+  
+  // 투표 관련 상태 초기화
+  votings.value = [];
+  usedCard.value = {};
+  
+  console.log("투표 진행 상태 비활성화 및 투표 UI 숨김");
+  
+  // 2. 점수 동기화 (다른 플레이어들)
+  if (data.isInappropriate) {
+    const affectedPlayerIndex = data.currTurn === 0 ? participants.value.length - 1 : data.currTurn - 1;
+    const affectedPlayer = participants.value[inGameOrder.value[affectedPlayerIndex]];
+    if (affectedPlayer) {
+      affectedPlayer.score -= 1;
+      console.log("부적절한 콘텐츠로 인한 점수 감소 동기화:", affectedPlayer.name, affectedPlayer.score);
+    }
+  }
+  
+  // 3. 책 내용 제거
+  if (data.imageDelete === true) {
+    console.log("책 내용 제거 전:", bookContents.value.length, bookContents.value);
+    if (bookContents.value.length === 1) {
+      bookContents.value = [{ content: "", image: null }];
+    } else {
+      bookContents.value = bookContents.value.slice(0, -1);
+    }
+    console.log("책 내용 제거 후:", bookContents.value.length, bookContents.value);
+  }
+  
+  // 4. 경고 모달 표시
+  showInappropriateWarningModal(data.warningData);
+  
+  // 5. 턴 정보 업데이트
+  totalTurn.value = data.totalTurn;
+  currTurn.value = data.currTurn;
+  
+  // 6. 3초 후 whoTurn 오버레이 표시 (경고 모달이 먼저 표시된 후)
+  setTimeout(async () => {
+    console.log("whoTurn 오버레이 표시");
+    await showOverlay('whoTurn');
+    
+    // 다음 턴을 위한 상태 리셋
+    isVoted.value = false;
+    inProgress.value = true;
+    console.log("게임 진행 상태 재활성화 및 투표 상태 리셋");
+  }, 3000);  // 경고 모달이 표시되는 시간과 동일
+  
+  console.log("투표 중단 및 경고 표시 완료");
+};
+
 // 컴포넌트 마운트
 onMounted(async () => {
   try {
@@ -1371,45 +1448,28 @@ const nextTurn = async (data) => {
           };
           console.log("경고 메시지 생성:", warningMessage);
           
-          // 모든 피어에게 경고 알림 전송
-          console.log("연결된 피어 수:", connectedPeers.value.length);
+          // 투표 중단 신호를 모든 플레이어에게 즉시 전송
+          console.log("모든 플레이어에게 투표 중단 및 경고 알림 전송");
+          const stopVotingMessage = {
+            type: "stopVotingAndShowWarning",
+            warningData: warningMessage,
+            currTurn: (currTurn.value + 1) % participants.value.length,
+            totalTurn: totalTurn.value,
+            imageDelete: true,
+            isInappropriate: true
+          };
+          
+          // 모든 피어에게 투표 중단 및 경고 알림 전송
           connectedPeers.value.forEach((peer) => {
             if (peer.id !== peerId.value && peer.connection.open) {
-              console.log("피어에게 경고 알림 전송:", peer.id);
-              sendMessage("warningNotification", warningMessage, peer.connection);
+              console.log("피어에게 투표 중단 및 경고 알림 전송:", peer.id);
+              sendMessage("stopVotingAndShowWarning", stopVotingMessage, peer.connection);
             }
           });
           
-          // 자신에게도 경고 표시 (새로운 모달 방식)
-          console.log("자신에게 경고 모달 표시");
-          showInappropriateWarningModal(warningMessage);
-          
-          // 턴 넘기기 (투표 탈락과 동일한 방식)
-          const oldTurn = currTurn.value;
-          currTurn.value = (currTurn.value + 1) % participants.value.length;
-          console.log("턴 변경:", oldTurn, "→", currTurn.value);
-          
-          connectedPeers.value.forEach((peer) => {
-            if (peer.id !== peerId.value && peer.connection.open) {
-              console.log("피어에게 nextTurn 메시지 전송:", peer.id);
-              sendMessage(
-                "nextTurn",
-                {
-                  currTurn: currTurn.value,
-                  imageDelete: true,
-                  totalTurn: totalTurn.value,
-                  isInappropriate: true
-                },
-                peer.connection
-              );
-            }
-          });
-          
-          // 오버레이 표시 후 게임 진행 (투표 부결과 동일)
-          console.log("whoTurn 오버레이 표시");
-          await showOverlay('whoTurn');
-          inProgress.value = true;
-          console.log("게임 진행 상태 활성화");
+          // 자신에게도 투표 중단 및 경고 표시
+          console.log("자신에게도 투표 중단 및 경고 모달 표시");
+          stopVotingAndShowWarning(stopVotingMessage);
           
           console.log("부적절한 콘텐츠 처리 완료. 플레이어 점수:", currentPlayer.score);
         } else {
