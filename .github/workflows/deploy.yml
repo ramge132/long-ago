@@ -123,6 +123,7 @@ jobs:
             echo "RUNPOD_ENDPOINT_ID=${{ secrets.RUNPOD_ENDPOINT_ID }}" >> .env
             echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+            echo "TTS_API_KEY=${{ secrets.TTS_API_KEY }}" >> .env
             
             docker compose down
             docker rmi $(docker images -q) || true

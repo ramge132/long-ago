@@ -22,8 +22,8 @@ public class TTSService {
     private final WebClient.Builder webClientBuilder;
     private final ObjectMapper objectMapper;
 
-    @Value("${gemini.api.key}")
-    private String googleApiKey;
+    @Value("${tts.api.key}")
+    private String ttsApiKey;
 
     private static final String GOOGLE_TTS_URL = "https://texttospeech.googleapis.com/v1beta1/text:synthesize";
 
@@ -51,7 +51,7 @@ public class TTSService {
             WebClient webClient = webClientBuilder.build();
             
             String response = webClient.post()
-                    .uri(GOOGLE_TTS_URL + "?key=" + googleApiKey)
+                    .uri(GOOGLE_TTS_URL + "?key=" + ttsApiKey)
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                     .bodyValue(payload)
                     .retrieve()
