@@ -4,7 +4,8 @@
       "WebFetch(domain:platform.openai.com)",
       "WebFetch(domain:ai.google.dev)",
       "WebSearch",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(ssh:*)"
     ],
     "deny": [],
     "ask": []

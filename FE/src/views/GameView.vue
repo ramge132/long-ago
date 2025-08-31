@@ -1168,6 +1168,13 @@ const nextTurn = async (data) => {
     prompt.value = data.prompt;
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
+    console.log("=== 이미지 생성 API 호출 시작 ===");
+    console.log("게임ID:", gameID.value);
+    console.log("사용자ID:", peerId.value);
+    console.log("사용자 프롬프트:", data.prompt);
+    console.log("턴:", totalTurn.value);
+    console.log("현재 턴 번호 (totalTurn):", totalTurn.value);
+    
     try {
       const responseImage = await createImage({
         gameId: gameID.value,
@@ -1175,28 +1182,55 @@ const nextTurn = async (data) => {
         userPrompt: data.prompt,
         turn: totalTurn.value++,
       });
+      
+      console.log("=== 이미지 생성 API 응답 수신 ===");
+      console.log("응답 상태:", responseImage?.status);
+      console.log("응답 데이터 타입:", typeof responseImage?.data);
+      console.log("응답 데이터 크기:", responseImage?.data?.size || "알 수 없음");
+      
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
       const imageBlob = URL.createObjectURL(responseImage.data);
+      console.log("이미지 Blob URL 생성 완료:", imageBlob);
 
       // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
       const arrayBuffer = await responseImage.data.arrayBuffer();
+      console.log("ArrayBuffer 변환 완료. 크기:", arrayBuffer.byteLength, "bytes");
       
       // 사람들에게 이미지 전송
-      connectedPeers.value.forEach((peer) => {
+      console.log("=== WebRTC 이미지 전송 시작 ===");
+      console.log("전송할 피어 수:", connectedPeers.value.length);
+      
+      connectedPeers.value.forEach((peer, index) => {
         if (peer.id !== peerId.value && peer.connection.open) {
+          console.log(`피어 ${index + 1}(${peer.id})에게 이미지 전송 중...`);
           sendMessage(
             "sendImage",
-            // { imageBlob: arrayBuffer },
             { imageBlob: arrayBuffer },
             peer.connection
           )
+        } else {
+          console.log(`피어 ${index + 1}(${peer.id}) 건너뜀 - 자신이거나 연결 닫힘`);
         }
       });
       
       // 나의 책에 이미지 넣기
+      console.log("=== 자신의 책에 이미지 추가 ===");
+      console.log("현재 책 페이지 수:", bookContents.value.length);
       bookContents.value[bookContents.value.length - 1].image = imageBlob;
+      console.log("이미지 추가 완료. 최종 책 페이지 수:", bookContents.value.length);
+      console.log("=== 이미지 생성 및 공유 완료 ===");
+      
     } catch (error) {
-      // 이미지 생성 실패 처리
+      console.error("=== 이미지 생성 API 호출 실패 ===");
+      console.error("에러 타입:", error?.constructor?.name);
+      console.error("에러 메시지:", error?.message);
+      console.error("HTTP 상태:", error?.response?.status);
+      console.error("HTTP 상태 텍스트:", error?.response?.statusText);
+      console.error("응답 데이터:", error?.response?.data);
+      console.error("전체 에러 객체:", error);
+      
+      // 사용자에게 에러 표시 (선택사항)
+      // toast.errorToast("이미지 생성에 실패했습니다: " + (error?.message || "알 수 없는 오류"));
     }
     // const imageBlob = testImage;
   }
