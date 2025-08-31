@@ -252,7 +252,7 @@ public class SceneService {
      * OpenAI GPT를 사용하여 프롬프트 생성
      */
     private String generatePromptWithGPT(String userSentence, int gameMode) {
-        return callGPTWithRetry(userSentence, gameMode, 3, false); // 3회 재시도
+        return callGPTWithRetry(userSentence, gameMode, 1, false); // 1회 재시도 (총 2번)
     }
     
     /**
@@ -336,8 +336,8 @@ public class SceneService {
                     return userSentence; // 최종 실패시 원본 문장 반환
                 }
                 
-                // 지수적 대기 (1초, 2초, 4초...)
-                long waitTime = 1000L * (long)Math.pow(2, attempt - 1);
+                // 짧은 대기 (500ms, 1초)
+                long waitTime = 500L * attempt; 
                 log.info("⏰ {}ms 대기 후 재시도...", waitTime);
                 
                 try {
@@ -357,14 +357,14 @@ public class SceneService {
      * 결말카드 전용 OpenAI GPT 프롬프트 생성
      */
     private String generateEndingPromptWithGPT(String endingCardContent, int gameMode) {
-        return callGPTWithRetry(endingCardContent, gameMode, 3, true); // 3회 재시도, 결말카드
+        return callGPTWithRetry(endingCardContent, gameMode, 1, true); // 1회 재시도, 결말카드
     }
     
     /**
      * Gemini 2.5 Flash Image Preview를 사용하여 이미지 생성
      */
     private byte[] generateImageWithGemini(String prompt) {
-        return callGeminiWithRetry(prompt, 3); // 3회 재시도
+        return callGeminiWithRetry(prompt, 1); // 1회 재시도 (총 2번)
     }
     
     /**
@@ -506,8 +506,8 @@ public class SceneService {
                     throw new RuntimeException("이미지 생성 최종 실패: " + e.getMessage(), e);
                 }
                 
-                // 지수적 대기 (1초, 2초, 4초...)
-                long waitTime = 1000L * (long)Math.pow(2, attempt - 1);
+                // 짧은 대기 (500ms, 1초)
+                long waitTime = 500L * attempt; 
                 log.info("⏰ {}ms 대기 후 재시도...", waitTime);
                 
                 try {
