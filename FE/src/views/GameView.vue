@@ -379,8 +379,10 @@ const setupConnection = (conn) => {
           currentPlayer.score -= 1;
         }
         if (data.isInappropriate) {
-          // 부적절한 콘텐츠로 인한 점수 -1 (이미 처리된 상태)
-          console.log("부적절한 콘텐츠로 인한 턴 넘김 처리됨");
+          // 부적절한 콘텐츠로 인한 점수 -1 처리 (다른 플레이어들에게도 동기화)
+          const currentPlayer = participants.value[inGameOrder.value[data.currTurn === 0 ? participants.value.length - 1 : data.currTurn - 1]];
+          currentPlayer.score -= 1;
+          console.log("부적절한 콘텐츠로 인한 점수 감소 처리됨:", currentPlayer.name, currentPlayer.score);
         }
         totalTurn.value = data.totalTurn;
         inProgress.value = false;
@@ -853,10 +855,17 @@ const showInappropriateWarning = (warningData) => {
   console.log("=== 부적절한 콘텐츠 경고 표시 ===", warningData);
   
   // 경고 토스트 메시지 표시 (모든 플레이어에게 보임)
-  const warningMessage = `⚠️ ${warningData.playerName}님의 ${warningData.message}`;
+  const warningMessage = `${warningData.playerName}님의 ${warningData.message}`;
   
-  // 경고 토스트 표시
-  toast.warningToast(warningMessage);
+  // warning.png와 함께 커스텀 토스트 표시  
+  toast.setToast({
+    msg: warningMessage,
+    type: "error",  // error 타입이 더 눈에 띄고 적절함
+    timeout: 6000,  // 6초간 표시하여 확실히 인지하도록
+    closeButton: "button",
+    position: "top-center",
+    icon: true
+  });
   
   console.log("경고 알림 표시 완료:", warningMessage);
 };
@@ -1261,57 +1270,59 @@ const nextTurn = async (data) => {
         
         console.log("=== 부적절한 콘텐츠로 인한 이미지 생성 거부 감지 ===");
         
-        // 투표 탈락과 동일한 처리: 점수 감소
-        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-        currentPlayer.score -= 1;
-        
-        // 경고 메시지와 아이콘을 모든 플레이어에게 전송
-        const warningMessage = {
-          type: "inappropriateContent",
-          playerName: currentPlayer.name,
-          message: "부적절한 이미지가 생성되었습니다"
-        };
-        
-        // 모든 피어에게 경고 알림 전송
-        connectedPeers.value.forEach((peer) => {
-          if (peer.id !== peerId.value && peer.connection.open) {
-            sendMessage("warningNotification", warningMessage, peer.connection);
+        // 자신의 턴일 때만 처리 (투표 부결과 동일한 조건)
+        if (currTurn.value === myTurn.value) {
+          // 투표 탈락과 동일한 처리: 점수 감소
+          const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+          currentPlayer.score -= 1;
+          
+          // 사용자 메시지가 이미 책에 추가된 상태이므로 제거 (투표 탈락과 동일)
+          if (bookContents.value.length === 1) {
+            bookContents.value = [{ content: "", image: null }];
+          } else {
+            bookContents.value = bookContents.value.slice(0, -1);
           }
-        });
-        
-        // 자신에게도 경고 표시
-        showInappropriateWarning(warningMessage);
-        
-        // 책에는 해당 콘텐츠가 추가되지 않음 (투표 탈락과 동일)
-        // 마지막 빈 페이지 제거 (투표 탈락과 동일한 로직)
-        if (bookContents.value.length === 1) {
-          bookContents.value = [{ content: "", image: null }];
-        } else {
-          bookContents.value = bookContents.value.slice(0, -1);
+          
+          // 경고 메시지와 아이콘을 모든 플레이어에게 전송
+          const warningMessage = {
+            type: "inappropriateContent",
+            playerName: currentPlayer.name,
+            message: "부적절한 이미지가 생성되었습니다"
+          };
+          
+          // 모든 피어에게 경고 알림 전송
+          connectedPeers.value.forEach((peer) => {
+            if (peer.id !== peerId.value && peer.connection.open) {
+              sendMessage("warningNotification", warningMessage, peer.connection);
+            }
+          });
+          
+          // 자신에게도 경고 표시
+          showInappropriateWarning(warningMessage);
+          
+          // 턴 넘기기 (투표 탈락과 동일한 방식)
+          currTurn.value = (currTurn.value + 1) % participants.value.length;
+          connectedPeers.value.forEach((peer) => {
+            if (peer.id !== peerId.value && peer.connection.open) {
+              sendMessage(
+                "nextTurn",
+                {
+                  currTurn: currTurn.value,
+                  imageDelete: true,
+                  totalTurn: totalTurn.value,
+                  isInappropriate: true
+                },
+                peer.connection
+              );
+            }
+          });
+          
+          // 오버레이 표시 후 게임 진행 (투표 부결과 동일)
+          await showOverlay('whoTurn');
+          inProgress.value = true;
+          
+          console.log("부적절한 콘텐츠 처리 완료. 플레이어 점수:", currentPlayer.score);
         }
-        
-        // 턴 넘기기 (투표 탈락과 동일한 방식)
-        currTurn.value = (currTurn.value + 1) % participants.value.length;
-        connectedPeers.value.forEach((peer) => {
-          if (peer.id !== peerId.value && peer.connection.open) {
-            sendMessage(
-              "nextTurn",
-              {
-                currTurn: currTurn.value,
-                imageDelete: true,
-                totalTurn: totalTurn.value,
-                isInappropriate: true  // 부적절한 콘텐츠임을 표시
-              },
-              peer.connection
-            );
-          }
-        });
-        
-        // 오버레이 표시 후 게임 진행
-        await showOverlay('whoTurn');
-        inProgress.value = true;
-        
-        console.log("부적절한 콘텐츠 처리 완료. 플레이어 점수:", currentPlayer.score);
       } else {
         // 일반적인 이미지 생성 실패
         toast.errorToast("이미지 생성에 실패했습니다: " + (error?.message || "알 수 없는 오류"));
