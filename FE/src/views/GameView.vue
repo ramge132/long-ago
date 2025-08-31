@@ -949,13 +949,15 @@ const stopVotingAndShowWarning = async (data) => {
   console.log("투표 진행 상태 비활성화 및 투표 UI 숨김");
   
   // 2. 점수 동기화 (다른 플레이어들)
-  if (data.isInappropriate) {
+  if (data.isInappropriate && !data.skipScoreDeduction) {
     const affectedPlayerIndex = data.currTurn === 0 ? participants.value.length - 1 : data.currTurn - 1;
     const affectedPlayer = participants.value[inGameOrder.value[affectedPlayerIndex]];
     if (affectedPlayer) {
       affectedPlayer.score -= 1;
       console.log("부적절한 콘텐츠로 인한 점수 감소 동기화:", affectedPlayer.name, affectedPlayer.score);
     }
+  } else if (data.skipScoreDeduction) {
+    console.log("점수 감소 중복 적용 방지: 이미 점수가 감소되었음");
   }
   
   // 3. 책 내용 제거
@@ -1467,9 +1469,10 @@ const nextTurn = async (data) => {
             }
           });
           
-          // 자신에게도 투표 중단 및 경고 표시
+          // 자신에게도 투표 중단 및 경고 표시 (하지만 점수는 이미 감소했으므로 중복 적용 방지)
           console.log("자신에게도 투표 중단 및 경고 모달 표시");
-          stopVotingAndShowWarning(stopVotingMessage);
+          const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true};
+          stopVotingAndShowWarning(selfStopVotingMessage);
           
           console.log("부적절한 콘텐츠 처리 완료. 플레이어 점수:", currentPlayer.score);
         } else {
