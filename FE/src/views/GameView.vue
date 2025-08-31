@@ -22,7 +22,7 @@
 
 <script setup>
 import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend } from "@/apis/game";
-import { currTurnImage, myTurnImage, startImage, MessageMusic } from "@/assets";
+import { currTurnImage, myTurnImage, startImage, MessageMusic, WarningIcon } from "@/assets";
 import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
@@ -378,6 +378,10 @@ const setupConnection = (conn) => {
           const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
           currentPlayer.score -= 1;
         }
+        if (data.isInappropriate) {
+          // 부적절한 콘텐츠로 인한 점수 -1 (이미 처리된 상태)
+          console.log("부적절한 콘텐츠로 인한 턴 넘김 처리됨");
+        }
         totalTurn.value = data.totalTurn;
         inProgress.value = false;
         currTurn.value = data.currTurn;
@@ -420,6 +424,10 @@ const setupConnection = (conn) => {
         const receivedBlob = new Blob([receivedArrayBuffer]);
         const imageBlob = URL.createObjectURL(receivedBlob);
         bookContents.value[bookContents.value.length - 1].image = imageBlob;
+        break;
+
+      case "warningNotification":
+        showInappropriateWarning(data);
         break;
 
       case "voteResult":
@@ -840,6 +848,19 @@ const initializePeer = () => {
   });
 };
 
+// 부적절한 콘텐츠 경고 표시
+const showInappropriateWarning = (warningData) => {
+  console.log("=== 부적절한 콘텐츠 경고 표시 ===", warningData);
+  
+  // 경고 토스트 메시지 표시 (모든 플레이어에게 보임)
+  const warningMessage = `⚠️ ${warningData.playerName}님의 ${warningData.message}`;
+  
+  // 경고 토스트 표시
+  toast.warningToast(warningMessage);
+  
+  console.log("경고 알림 표시 완료:", warningMessage);
+};
+
 // 컴포넌트 마운트
 onMounted(async () => {
   try {
@@ -1229,8 +1250,72 @@ const nextTurn = async (data) => {
       console.error("응답 데이터:", error?.response?.data);
       console.error("전체 에러 객체:", error);
       
-      // 사용자에게 에러 표시 (선택사항)
-      // toast.errorToast("이미지 생성에 실패했습니다: " + (error?.message || "알 수 없는 오류"));
+      // 콘텐츠 필터링으로 인한 이미지 생성 실패 처리
+      if (error?.response?.status === 503 && 
+          (error?.response?.data?.message?.includes("필터링") || 
+           error?.response?.data?.message?.includes("filter") ||
+           error?.response?.data?.message?.includes("blocked") ||
+           error?.response?.data?.message?.includes("safety") ||
+           error?.message?.includes("필터링") ||
+           error?.message?.includes("filter"))) {
+        
+        console.log("=== 부적절한 콘텐츠로 인한 이미지 생성 거부 감지 ===");
+        
+        // 투표 탈락과 동일한 처리: 점수 감소
+        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        currentPlayer.score -= 1;
+        
+        // 경고 메시지와 아이콘을 모든 플레이어에게 전송
+        const warningMessage = {
+          type: "inappropriateContent",
+          playerName: currentPlayer.name,
+          message: "부적절한 이미지가 생성되었습니다"
+        };
+        
+        // 모든 피어에게 경고 알림 전송
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            sendMessage("warningNotification", warningMessage, peer.connection);
+          }
+        });
+        
+        // 자신에게도 경고 표시
+        showInappropriateWarning(warningMessage);
+        
+        // 책에는 해당 콘텐츠가 추가되지 않음 (투표 탈락과 동일)
+        // 마지막 빈 페이지 제거 (투표 탈락과 동일한 로직)
+        if (bookContents.value.length === 1) {
+          bookContents.value = [{ content: "", image: null }];
+        } else {
+          bookContents.value = bookContents.value.slice(0, -1);
+        }
+        
+        // 턴 넘기기 (투표 탈락과 동일한 방식)
+        currTurn.value = (currTurn.value + 1) % participants.value.length;
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            sendMessage(
+              "nextTurn",
+              {
+                currTurn: currTurn.value,
+                imageDelete: true,
+                totalTurn: totalTurn.value,
+                isInappropriate: true  // 부적절한 콘텐츠임을 표시
+              },
+              peer.connection
+            );
+          }
+        });
+        
+        // 오버레이 표시 후 게임 진행
+        await showOverlay('whoTurn');
+        inProgress.value = true;
+        
+        console.log("부적절한 콘텐츠 처리 완료. 플레이어 점수:", currentPlayer.score);
+      } else {
+        // 일반적인 이미지 생성 실패
+        toast.errorToast("이미지 생성에 실패했습니다: " + (error?.message || "알 수 없는 오류"));
+      }
     }
     // const imageBlob = testImage;
   }
