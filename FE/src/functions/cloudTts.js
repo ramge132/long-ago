@@ -64,7 +64,14 @@ async function fetchTTSAudio(text) {
       throw new Error(`TTS API 호출 실패: ${response.status}`);
     }
 
-    return await response.arrayBuffer();
+    const audioData = await response.arrayBuffer();
+    
+    // 빈 오디오 데이터인 경우 에러 처리
+    if (audioData.byteLength === 0) {
+      throw new Error('TTS 서비스 일시 비활성화됨');
+    }
+    
+    return audioData;
   } catch (error) {
     console.error('TTS API 호출 오류:', error);
     throw error;
@@ -128,8 +135,9 @@ export async function speakTextConcurrent(text) {
     console.log(`✅ Cloud TTS 재생 완료: ${text}`);
   } catch (error) {
     console.error(`❌ Cloud TTS API 실패: ${text}`, error);
-    // 에러 발생 시 재생하지 않음 (브라우저 TTS 사용하지 않음)
-    throw error;
+    // 에러 발생 시 재생하지 않음 (게임 진행은 계속)
+    console.log(`⏭️ TTS 실패로 인해 음성 건너뜀: ${text}`);
+    // throw 하지 않아서 게임 진행이 중단되지 않도록 함
   }
 }
 
