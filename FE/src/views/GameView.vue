@@ -17,6 +17,25 @@
       <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
+    
+    <!-- 부적절한 콘텐츠 경고 모달 -->
+    <div
+      v-if="showWarningModal"
+      class="warning-modal fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+      @click="hideWarningModal">
+      <div 
+        class="warning-content bg-white rounded-lg p-8 max-w-md mx-4 text-center transform transition-all duration-300"
+        @click.stop>
+        <img :src="WarningIcon" alt="경고" class="w-20 h-20 mx-auto mb-4">
+        <h3 class="text-xl font-bold text-red-600 mb-2">부적절한 콘텐츠 감지</h3>
+        <p class="text-gray-700 mb-4">{{ warningModalMessage }}</p>
+        <button 
+          @click="hideWarningModal"
+          class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+          확인
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -63,6 +82,9 @@ const InviteLink = ref("");
 const gameStarted = ref(false);
 // 게임 정상 종료 : "champ" 비정상 종료 : "fail" 디폴트 : null
 const isForceStopped = ref(null);
+// 부적절한 콘텐츠 경고 모달 관련
+const showWarningModal = ref(false);
+const warningModalMessage = ref("");
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -429,7 +451,7 @@ const setupConnection = (conn) => {
         break;
 
       case "warningNotification":
-        showInappropriateWarning(data);
+        showInappropriateWarningModal(data);
         break;
 
       case "voteResult":
@@ -870,6 +892,27 @@ const showInappropriateWarning = (warningData) => {
   console.log("경고 알림 표시 완료:", warningMessage);
 };
 
+// 부적절한 콘텐츠 경고 모달 표시
+const showInappropriateWarningModal = (warningData) => {
+  console.log("=== 부적절한 콘텐츠 경고 모달 표시 ===", warningData);
+  
+  warningModalMessage.value = `${warningData.playerName}님이 ${warningData.message}`;
+  showWarningModal.value = true;
+  
+  // 3초 후 자동으로 모달 닫기
+  setTimeout(() => {
+    hideWarningModal();
+  }, 3000);
+  
+  console.log("경고 모달 표시 완료:", warningModalMessage.value);
+};
+
+// 경고 모달 숨기기
+const hideWarningModal = () => {
+  showWarningModal.value = false;
+  warningModalMessage.value = "";
+};
+
 // 컴포넌트 마운트
 onMounted(async () => {
   try {
@@ -1259,51 +1302,96 @@ const nextTurn = async (data) => {
       console.error("응답 데이터:", error?.response?.data);
       console.error("전체 에러 객체:", error);
       
+      // Blob 응답 데이터를 텍스트로 변환하여 실제 에러 메시지 확인
+      let errorMessage = "";
+      let isInappropriateContent = false;
+      
+      if (error?.response?.data instanceof Blob) {
+        try {
+          const errorText = await error.response.data.text();
+          console.error("Blob 에러 데이터 내용:", errorText);
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || "";
+          console.error("파싱된 에러 메시지:", errorMessage);
+        } catch (parseError) {
+          console.error("Blob 데이터 파싱 실패:", parseError);
+        }
+      }
+      
+      // 콘텐츠 필터링 감지 로직 개선 (테스트를 위해 503 에러는 모두 부적절한 콘텐츠로 처리)
+      isInappropriateContent = error?.response?.status === 503;
+      
+      // 더 구체적인 감지가 필요한 경우를 위한 키워드 체크 (향후 사용)
+      const hasFilteringKeywords = (
+        errorMessage.includes("필터링") || 
+        errorMessage.includes("filter") ||
+        errorMessage.includes("blocked") ||
+        errorMessage.includes("safety") ||
+        errorMessage.includes("콘텐츠") ||
+        errorMessage.includes("부적절") ||
+        errorMessage.includes("inappropriate") ||
+        errorMessage.includes("content policy") ||
+        errorMessage.includes("safety policy") ||
+        error?.message?.includes("필터링") ||
+        error?.message?.includes("filter")
+      );
+      
+      console.log("부적절한 콘텐츠 감지 여부:", isInappropriateContent);
+      
       // 콘텐츠 필터링으로 인한 이미지 생성 실패 처리
-      if (error?.response?.status === 503 && 
-          (error?.response?.data?.message?.includes("필터링") || 
-           error?.response?.data?.message?.includes("filter") ||
-           error?.response?.data?.message?.includes("blocked") ||
-           error?.response?.data?.message?.includes("safety") ||
-           error?.message?.includes("필터링") ||
-           error?.message?.includes("filter"))) {
+      if (isInappropriateContent) {
         
         console.log("=== 부적절한 콘텐츠로 인한 이미지 생성 거부 감지 ===");
         
         // 자신의 턴일 때만 처리 (투표 부결과 동일한 조건)
+        console.log("현재 턴:", currTurn.value, "내 턴:", myTurn.value, "턴 비교:", currTurn.value === myTurn.value);
         if (currTurn.value === myTurn.value) {
+          console.log("=== 자신의 턴이므로 부적절한 콘텐츠 처리 시작 ===");
+          
           // 투표 탈락과 동일한 처리: 점수 감소
           const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+          console.log("현재 플레이어:", currentPlayer, "기존 점수:", currentPlayer.score);
           currentPlayer.score -= 1;
+          console.log("점수 감소 후:", currentPlayer.score);
           
           // 사용자 메시지가 이미 책에 추가된 상태이므로 제거 (투표 탈락과 동일)
+          console.log("책 내용 제거 전:", bookContents.value.length, bookContents.value);
           if (bookContents.value.length === 1) {
             bookContents.value = [{ content: "", image: null }];
           } else {
             bookContents.value = bookContents.value.slice(0, -1);
           }
+          console.log("책 내용 제거 후:", bookContents.value.length, bookContents.value);
           
           // 경고 메시지와 아이콘을 모든 플레이어에게 전송
           const warningMessage = {
             type: "inappropriateContent",
             playerName: currentPlayer.name,
-            message: "부적절한 이미지가 생성되었습니다"
+            message: "부적절한 이미지를 생성하려 했습니다"
           };
+          console.log("경고 메시지 생성:", warningMessage);
           
           // 모든 피어에게 경고 알림 전송
+          console.log("연결된 피어 수:", connectedPeers.value.length);
           connectedPeers.value.forEach((peer) => {
             if (peer.id !== peerId.value && peer.connection.open) {
+              console.log("피어에게 경고 알림 전송:", peer.id);
               sendMessage("warningNotification", warningMessage, peer.connection);
             }
           });
           
-          // 자신에게도 경고 표시
-          showInappropriateWarning(warningMessage);
+          // 자신에게도 경고 표시 (새로운 모달 방식)
+          console.log("자신에게 경고 모달 표시");
+          showInappropriateWarningModal(warningMessage);
           
           // 턴 넘기기 (투표 탈락과 동일한 방식)
+          const oldTurn = currTurn.value;
           currTurn.value = (currTurn.value + 1) % participants.value.length;
+          console.log("턴 변경:", oldTurn, "→", currTurn.value);
+          
           connectedPeers.value.forEach((peer) => {
             if (peer.id !== peerId.value && peer.connection.open) {
+              console.log("피어에게 nextTurn 메시지 전송:", peer.id);
               sendMessage(
                 "nextTurn",
                 {
@@ -1318,10 +1406,14 @@ const nextTurn = async (data) => {
           });
           
           // 오버레이 표시 후 게임 진행 (투표 부결과 동일)
+          console.log("whoTurn 오버레이 표시");
           await showOverlay('whoTurn');
           inProgress.value = true;
+          console.log("게임 진행 상태 활성화");
           
           console.log("부적절한 콘텐츠 처리 완료. 플레이어 점수:", currentPlayer.score);
+        } else {
+          console.log("=== 자신의 턴이 아니므로 부적절한 콘텐츠 처리 건너뜀 ===");
         }
       } else {
         // 일반적인 이미지 생성 실패
