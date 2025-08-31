@@ -5,6 +5,8 @@
  * 동시 실행을 위한 새로운 TTS 시스템
  */
 
+// Cloud TTS API 전용 - 브라우저 TTS 사용하지 않음
+
 // 글로벌 AudioContext 인스턴스
 let audioContext = null;
 
@@ -25,6 +27,19 @@ function initAudioContext() {
 }
 
 /**
+ * 환경에 맞는 API URL 생성
+ */
+function getApiUrl() {
+  const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (isDevelopment) {
+    return 'http://localhost:8080';
+  } else {
+    // 프로덕션 환경에서는 상대 경로 사용 (같은 도메인의 백엔드)
+    return '';
+  }
+}
+
+/**
  * 백엔드 TTS API 호출하여 오디오 데이터 가져오기
  * @param {string} text - 읽을 텍스트
  * @returns {Promise<ArrayBuffer>} - 오디오 데이터
@@ -33,7 +48,8 @@ async function fetchTTSAudio(text) {
   try {
     console.log(`🔊 TTS API 호출: ${text}`);
     
-    const response = await fetch('http://localhost:8080/tts/synthesize', {
+    const apiUrl = getApiUrl();
+    const response = await fetch(`${apiUrl}/tts/synthesize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -93,7 +109,7 @@ function playAudioBuffer(audioData) {
 }
 
 /**
- * 새로운 동시 실행 가능한 TTS 함수
+ * Cloud TTS API 전용 동시 실행 함수 (fallback 없음)
  * @param {string} text - 읽을 텍스트
  * @returns {Promise} - 재생 완료 시 resolve
  */
@@ -101,18 +117,19 @@ export async function speakTextConcurrent(text) {
   if (!text) return;
 
   try {
-    console.log(`🔊 동시 TTS 시작: ${text}`);
+    console.log(`🔊 Cloud TTS API 호출: ${text}`);
     
-    // TTS API 호출하여 오디오 데이터 가져오기
+    // Cloud TTS API 호출하여 오디오 데이터 가져오기
     const audioData = await fetchTTSAudio(text);
     
     // Web Audio API로 재생 (동시 실행 가능)
     await playAudioBuffer(audioData);
     
-    console.log(`✅ 동시 TTS 완료: ${text}`);
+    console.log(`✅ Cloud TTS 재생 완료: ${text}`);
   } catch (error) {
-    console.error('TTS 실행 실패:', error);
-    // 에러 발생해도 진행을 멈추지 않음
+    console.error(`❌ Cloud TTS API 실패: ${text}`, error);
+    // 에러 발생 시 재생하지 않음 (브라우저 TTS 사용하지 않음)
+    throw error;
   }
 }
 

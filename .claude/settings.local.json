@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:platform.openai.com)",
       "WebFetch(domain:ai.google.dev)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

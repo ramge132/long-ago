@@ -35,7 +35,7 @@ public class TTSService {
 
             Map<String, Object> voice = new HashMap<>();
             voice.put("languageCode", "ko-KR");
-            voice.put("name", "ko-KR-Chirp3-HD-Aoede"); // 고품질 Chirp3 HD 음성 (여성)
+            voice.put("name", "ko-KR-Chirp3-HD-Sadachbia"); // 고품질 Chirp3 HD 음성
 
             Map<String, Object> audioConfig = new HashMap<>();
             audioConfig.put("audioEncoding", "MP3");
