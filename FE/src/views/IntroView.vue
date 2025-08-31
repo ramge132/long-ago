@@ -98,9 +98,11 @@ import { StartIcon, rule1, rule2, rule3, rule4, rule5 } from "@/assets";
 import Profile from "@/assets/images/profiles";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
+import { useAudioStore } from "@/stores/audio";
 
 const userStore = useUserStore();
 const gameStore = useGameStore();
+const audioStore = useAudioStore();
 const router = useRouter();
 const route = useRoute();
 const nickname = ref("닉네임");
@@ -179,7 +181,7 @@ const startWithAudio = async () => {
     }
     
     // 오디오 설정 활성화
-    userStore.setAudioEnabled(true);
+    audioStore.audioData = true;
     
   } catch (error) {
     console.log('오디오 컨텍스트 활성화 실패:', error);

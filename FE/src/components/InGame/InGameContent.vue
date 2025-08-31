@@ -10,7 +10,7 @@
           :style="{ zIndex: calculateZIndex(0) }"
         >
         <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute -translate-y-150px font-title text-white" style="backface-visibility: hidden"></p>
-        <img :src="bookCover.imageUrl" alt="" v-if="bookCover.imageUrl" class="w-full h-full object-cover">
+        <img :src="bookCover.imageUrl" alt="" v-if="bookCover.imageUrl && bookCover.imageUrl !== 'null'" class="w-full h-full object-cover">
         
         </div>
         <template
@@ -29,7 +29,7 @@
             :class="{ flipped: isFlipped(index * 2 + 2) }"
             @click="handlePageClick(index * 2 + 2)"
             :style="{ zIndex: calculateZIndex(index * 2 + 2) }">
-            <div class="ink-reveal-container" v-if="content.image">
+            <div class="ink-reveal-container" v-if="content.image && content.image !== 'null'">
               <div 
                 v-if="!isAnimationComplete(index)" 
                 class="mask-layer"
