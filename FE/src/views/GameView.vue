@@ -26,7 +26,7 @@
       <div 
         class="warning-content bg-white rounded-lg p-8 max-w-md mx-4 text-center transform transition-all duration-300"
         @click.stop>
-        <img :src="WarningIcon" alt="경고" class="w-20 h-20 mx-auto mb-4">
+        <img :src="WarningIcon" alt="경고" class="w-20 h-20 mx-auto mb-4 object-contain">
         <h3 class="text-xl font-bold text-red-600 mb-2">부적절한 콘텐츠 감지</h3>
         <p class="text-gray-700 mb-4">{{ warningModalMessage }}</p>
         <button 
