@@ -416,55 +416,146 @@ public class GameService {
     }
     
     /**
-     * OpenAI GPT를 사용하여 스토리를 요약하고 책 제목 생성
+     * OpenAI GPT를 사용하여 스토리를 요약하고 책 제목 생성 (재시도 로직 포함)
      */
     private String generateBookTitle(List<SceneRedis> sceneRedisList) {
-        try {
-            // 스토리 요약 생성
-            String storyContent = sceneRedisList.stream()
-                    .filter(scene -> scene.getSceneOrder() > 0) // 표지(0번) 제외
-                    .sorted(Comparator.comparingInt(SceneRedis::getSceneOrder))
-                    .map(SceneRedis::getPrompt)
-                    .collect(Collectors.joining(". "));
-            
-            // OpenAI GPT API 요청 구조
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "gpt-5-nano");
-            requestBody.put("max_tokens", 50);
-            requestBody.put("temperature", 0.7);
-            
-            // 메시지 구조
-            Map<String, Object> systemMessage = new HashMap<>();
-            systemMessage.put("role", "system");
-            systemMessage.put("content", "당신은 스토리를 요약하고 매력적인 제목을 만드는 전문가입니다. 주어진 스토리 내용을 바탕으로 10자 이내의 간결하고 매력적인 한국어 제목을 만들어주세요. 제목만 답해주세요.");
-            
-            Map<String, Object> userMessage = new HashMap<>();
-            userMessage.put("role", "user");
-            userMessage.put("content", "다음 스토리를 요약하여 10자 이내의 제목을 만들어주세요: " + storyContent);
-            
-            requestBody.put("messages", List.of(systemMessage, userMessage));
-            
-            // OpenAI API 호출
-            String response = openaiWebClient.post()
-                    .uri("https://api.openai.com/v1/chat/completions")
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-            
-            // 응답 파싱
-            JsonNode responseJson = objectMapper.readTree(response);
-            if (responseJson.has("choices") && responseJson.get("choices").size() > 0) {
-                return responseJson.get("choices").get(0).get("message").get("content").asText().trim();
+        log.info("=== 책 제목 생성 시작 ===");
+        
+        // 스토리 요약 생성
+        String storyContent = sceneRedisList.stream()
+                .filter(scene -> scene.getSceneOrder() > 0) // 표지(0번) 제외
+                .sorted(Comparator.comparingInt(SceneRedis::getSceneOrder))
+                .map(SceneRedis::getPrompt)
+                .collect(Collectors.joining(". "));
+        
+        log.info("스토리 내용 길이: {} 글자", storyContent.length());
+        log.info("스토리 내용 미리보기: {}...", storyContent.substring(0, Math.min(100, storyContent.length())));
+        
+        // 재시도 로직 (최대 2번 시도)
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            try {
+                log.info("🔄 책 제목 생성 시도 {}/2", attempt);
+                
+                // OpenAI GPT API 요청 구조
+                Map<String, Object> requestBody = new HashMap<>();
+                requestBody.put("model", "gpt-5-nano");
+                requestBody.put("max_tokens", 50);
+                requestBody.put("temperature", 0.7);
+                
+                // 메시지 구조
+                Map<String, Object> systemMessage = new HashMap<>();
+                systemMessage.put("role", "system");
+                systemMessage.put("content", "당신은 스토리를 요약하고 매력적인 제목을 만드는 전문가입니다. 주어진 스토리 내용을 바탕으로 10자 이내의 간결하고 매력적인 한국어 제목을 만들어주세요. 제목만 답해주세요.");
+                
+                Map<String, Object> userMessage = new HashMap<>();
+                userMessage.put("role", "user");
+                userMessage.put("content", "다음 스토리를 요약하여 10자 이내의 제목을 만들어주세요: " + storyContent);
+                
+                requestBody.put("messages", List.of(systemMessage, userMessage));
+                
+                log.info("GPT API 요청 전송 중... (시도 {})", attempt);
+                
+                // OpenAI API 호출
+                String response = openaiWebClient.post()
+                        .uri("https://api.openai.com/v1/chat/completions")
+                        .bodyValue(requestBody)
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block();
+                
+                log.info("GPT API 응답 수신: {}", response != null ? "응답 있음" : "응답 없음");
+                
+                if (response == null) {
+                    throw new RuntimeException("GPT API null 응답");
+                }
+                
+                // 응답 파싱
+                JsonNode responseJson = objectMapper.readTree(response);
+                log.info("응답 JSON 구조: {}", responseJson.toString());
+                
+                if (responseJson.has("choices") && responseJson.get("choices").size() > 0) {
+                    String generatedTitle = responseJson.get("choices").get(0).get("message").get("content").asText().trim();
+                    log.info("✅ 책 제목 생성 성공 (시도 {}): [{}]", attempt, generatedTitle);
+                    return generatedTitle;
+                }
+                
+                log.warn("⚠️ GPT 응답에서 choices 필드 없음 (시도 {})", attempt);
+                if (attempt < 2) {
+                    Thread.sleep(1000); // 1초 대기 후 재시도
+                }
+                
+            } catch (Exception e) {
+                log.error("❌ 책 제목 생성 시도 {} 실패: {}", attempt, e.getMessage());
+                if (attempt == 2) {
+                    log.error("🚨 책 제목 생성 최종 실패 - 기본 제목 사용");
+                    log.error("상세 에러:", e);
+                } else {
+                    try {
+                        Thread.sleep(1000); // 1초 대기 후 재시도
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
             }
-            
-            log.warn("GPT 응답에서 제목 추출 실패, 기본 제목 사용");
-            return "우리의 이야기";
-            
-        } catch (Exception e) {
-            log.error("GPT API 호출 실패: {}", e.getMessage());
-            return "우리의 이야기"; // 실패시 기본 제목 반환
         }
+        
+        // GPT 실패시 스토리 키워드 기반 제목 생성
+        log.info("📝 GPT 실패로 인한 키워드 기반 제목 생성 시도");
+        String fallbackTitle = generateFallbackTitle(storyContent);
+        log.info("✅ Fallback 제목 생성: [{}]", fallbackTitle);
+        return fallbackTitle;
+    }
+    
+    /**
+     * 스토리 키워드를 기반으로 제목 생성 (GPT 실패시 사용)
+     */
+    private String generateFallbackTitle(String storyContent) {
+        if (storyContent == null || storyContent.trim().isEmpty()) {
+            return "우리의 이야기";
+        }
+        
+        // 일반적인 한국어 키워드들
+        String[] fantasyKeywords = {"마법", "용", "공주", "왕자", "마녀", "요정", "마법사", "성"};
+        String[] adventureKeywords = {"모험", "여행", "탐험", "발견", "보물", "숲", "산", "바다"};
+        String[] friendshipKeywords = {"친구", "우정", "도움", "협력", "사랑", "가족", "만남"};
+        String[] mysteryKeywords = {"비밀", "수수께끼", "신비", "미스터리", "발견", "숨겨진"};
+        
+        // 스토리에서 키워드 찾기
+        String lowerContent = storyContent.toLowerCase();
+        
+        if (containsAny(lowerContent, fantasyKeywords)) {
+            return "마법의 모험";
+        } else if (containsAny(lowerContent, adventureKeywords)) {
+            return "신나는 여행";
+        } else if (containsAny(lowerContent, friendshipKeywords)) {
+            return "따뜻한 이야기";
+        } else if (containsAny(lowerContent, mysteryKeywords)) {
+            return "신비한 이야기";
+        }
+        
+        // 첫 번째 단어 기반 제목 생성
+        String[] words = storyContent.split("[.\\s]+");
+        if (words.length > 0 && !words[0].trim().isEmpty()) {
+            String firstWord = words[0].trim();
+            if (firstWord.length() <= 6) {
+                return firstWord + "의 이야기";
+            }
+        }
+        
+        // 모든 방법 실패시 기본 제목
+        return "우리의 이야기";
+    }
+    
+    /**
+     * 문자열에 키워드 중 하나라도 포함되어 있는지 확인
+     */
+    private boolean containsAny(String text, String[] keywords) {
+        for (String keyword : keywords) {
+            if (text.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
