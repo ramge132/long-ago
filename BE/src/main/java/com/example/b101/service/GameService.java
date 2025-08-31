@@ -250,9 +250,22 @@ public class GameService {
                 
             } catch (Exception e) {
                 log.error("표지 생성 중 오류: {}", e.getMessage());
-                return ApiResponseUtil.failure("표지 생성 중 오류 발생: " + e.getMessage(),
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        request.getRequestURI());
+                log.error("상세 에러:", e);
+                
+                // 제목 생성 실패와 이미지 생성 실패를 구분
+                if (e.getMessage().contains("GPT 제목 생성 필수")) {
+                    return ApiResponseUtil.failure("AI 제목 생성 서비스가 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.",
+                            HttpStatus.SERVICE_UNAVAILABLE,
+                            request.getRequestURI());
+                } else if (e.getMessage().contains("이미지 생성")) {
+                    return ApiResponseUtil.failure("AI 표지 이미지 생성 서비스가 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.",
+                            HttpStatus.SERVICE_UNAVAILABLE,
+                            request.getRequestURI());
+                } else {
+                    return ApiResponseUtil.failure("책 표지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+                            HttpStatus.SERVICE_UNAVAILABLE,
+                            request.getRequestURI());
+                }
             }
 
 
@@ -431,10 +444,10 @@ public class GameService {
         log.info("스토리 내용 길이: {} 글자", storyContent.length());
         log.info("스토리 내용 미리보기: {}...", storyContent.substring(0, Math.min(100, storyContent.length())));
         
-        // 재시도 로직 (최대 2번 시도)
-        for (int attempt = 1; attempt <= 2; attempt++) {
+        // 재시도 로직 (최대 5번 시도 - 제목 생성은 필수)
+        for (int attempt = 1; attempt <= 5; attempt++) {
             try {
-                log.info("🔄 책 제목 생성 시도 {}/2", attempt);
+                log.info("🔄 책 제목 생성 시도 {}/5", attempt);
                 
                 // OpenAI GPT API 요청 구조
                 Map<String, Object> requestBody = new HashMap<>();
@@ -480,82 +493,30 @@ public class GameService {
                 }
                 
                 log.warn("⚠️ GPT 응답에서 choices 필드 없음 (시도 {})", attempt);
-                if (attempt < 2) {
+                if (attempt < 5) {
                     Thread.sleep(1000); // 1초 대기 후 재시도
                 }
                 
             } catch (Exception e) {
                 log.error("❌ 책 제목 생성 시도 {} 실패: {}", attempt, e.getMessage());
-                if (attempt == 2) {
-                    log.error("🚨 책 제목 생성 최종 실패 - 기본 제목 사용");
+                if (attempt == 5) {
+                    log.error("🚨 책 제목 생성 최종 실패 - RuntimeException 던짐");
                     log.error("상세 에러:", e);
+                    throw new RuntimeException("GPT 제목 생성 필수 - 5회 시도 모두 실패", e);
                 } else {
                     try {
                         Thread.sleep(1000); // 1초 대기 후 재시도
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
+                        throw new RuntimeException("제목 생성 중 인터럽트 발생", ie);
                     }
                 }
             }
         }
         
-        // GPT 실패시 스토리 키워드 기반 제목 생성
-        log.info("📝 GPT 실패로 인한 키워드 기반 제목 생성 시도");
-        String fallbackTitle = generateFallbackTitle(storyContent);
-        log.info("✅ Fallback 제목 생성: [{}]", fallbackTitle);
-        return fallbackTitle;
-    }
-    
-    /**
-     * 스토리 키워드를 기반으로 제목 생성 (GPT 실패시 사용)
-     */
-    private String generateFallbackTitle(String storyContent) {
-        if (storyContent == null || storyContent.trim().isEmpty()) {
-            return "우리의 이야기";
-        }
-        
-        // 일반적인 한국어 키워드들
-        String[] fantasyKeywords = {"마법", "용", "공주", "왕자", "마녀", "요정", "마법사", "성"};
-        String[] adventureKeywords = {"모험", "여행", "탐험", "발견", "보물", "숲", "산", "바다"};
-        String[] friendshipKeywords = {"친구", "우정", "도움", "협력", "사랑", "가족", "만남"};
-        String[] mysteryKeywords = {"비밀", "수수께끼", "신비", "미스터리", "발견", "숨겨진"};
-        
-        // 스토리에서 키워드 찾기
-        String lowerContent = storyContent.toLowerCase();
-        
-        if (containsAny(lowerContent, fantasyKeywords)) {
-            return "마법의 모험";
-        } else if (containsAny(lowerContent, adventureKeywords)) {
-            return "신나는 여행";
-        } else if (containsAny(lowerContent, friendshipKeywords)) {
-            return "따뜻한 이야기";
-        } else if (containsAny(lowerContent, mysteryKeywords)) {
-            return "신비한 이야기";
-        }
-        
-        // 첫 번째 단어 기반 제목 생성
-        String[] words = storyContent.split("[.\\s]+");
-        if (words.length > 0 && !words[0].trim().isEmpty()) {
-            String firstWord = words[0].trim();
-            if (firstWord.length() <= 6) {
-                return firstWord + "의 이야기";
-            }
-        }
-        
-        // 모든 방법 실패시 기본 제목
-        return "우리의 이야기";
-    }
-    
-    /**
-     * 문자열에 키워드 중 하나라도 포함되어 있는지 확인
-     */
-    private boolean containsAny(String text, String[] keywords) {
-        for (String keyword : keywords) {
-            if (text.contains(keyword)) {
-                return true;
-            }
-        }
-        return false;
+        // 이 지점에 도달하면 안 됨 (모든 재시도 실패)
+        log.error("🚨 CRITICAL: 책 제목 생성 로직 오류 - 이 지점에 도달하면 안 됨");
+        throw new RuntimeException("책 제목 생성 로직 오류");
     }
     
     /**
