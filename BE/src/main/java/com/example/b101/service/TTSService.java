@@ -67,7 +67,9 @@ public class TTSService {
 
         } catch (Exception e) {
             log.error("Google TTS API 호출 실패: {}", e.getMessage(), e);
-            throw new RuntimeException("TTS 생성 중 오류 발생", e);
+            // TTS 실패 시 빈 배열 반환 (게임 진행 중단 방지)
+            log.warn("TTS 서비스 실패 - 빈 오디오 데이터 반환");
+            return new byte[0];
         }
     }
 }

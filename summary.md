@@ -84,10 +84,70 @@
   - `REDIS_HOST`: Redis 서버 호스트
 
 - **AI API**
-  - `GEMINI_API_KEY`: Google Gemini API 키 (TTS 및 이미지 생성)
+  - `GEMINI_API_KEY`: Google Gemini API 키 (이미지 생성)
+  - `TTS_API_KEY`: Google TTS API 키 (음성 합성 - 별도 키 필요)
   - `OPENAI_API_KEY`: OpenAI API 키
   - `RUNPOD_API_KEY`: RunPod API 키
   - `RUNPOD_ENDPOINT_ID`: RunPod 엔드포인트 ID
+
+**⚠️ 중요: 새로운 API 키 추가 시 주의사항**
+- GitHub Secrets에 새 API 키를 추가할 때는 반드시 `.github/workflows/deploy.yml` 파일의 배포 스크립트도 함께 수정해야 합니다.
+- 예: `TTS_API_KEY` 추가 시 → `echo "TTS_API_KEY=${{ secrets.TTS_API_KEY }}" >> .env` 라인을 배포 스크립트에 추가
+
+## 8. 배포 아키텍처 및 Docker 관리
+
+### 8.1. Docker Compose 파일 관리 방식
+이 프로젝트는 **서버 중심 Docker 관리 방식**을 사용합니다:
+
+- **로컬 저장소**: docker-compose.yml 파일이 존재하지 않음
+- **EC2 서버**: `/home/ubuntu/docker-compose.yml` 파일을 직접 관리
+- **배포 방식**: GitHub Actions에서 환경변수만 `.env` 파일에 설정하고, 기존 docker-compose.yml 사용
+
+### 8.2. 환경변수 주입 방식
+```yaml
+# 서버의 docker-compose.yml 구조
+app:
+  image: ${BE_IMAGE_NAME}:latest
+  environment:
+    - DB_URL=${DB_URL_MAIN}
+    - GEMINI_API_KEY=${GEMINI_API_KEY}
+    - TTS_API_KEY=${TTS_API_KEY}  # 수동으로 추가 필요
+    # ... 기타 환경변수들
+```
+
+### 8.3. 새로운 환경변수 추가 절차
+1. **GitHub Secrets 추가**: 저장소 Settings → Secrets → Actions에서 새 변수 추가
+2. **배포 스크립트 수정**: `.github/workflows/deploy.yml`에서 `.env` 파일 생성 부분에 추가
+3. **⚠️ 서버 Docker Compose 수정**: SSH로 서버 접속하여 `docker-compose.yml`의 `environment` 섹션에 수동 추가
+4. **컨테이너 재시작**: `docker-compose up -d app` 실행
+
+### 8.4. 일반적인 배포 문제 해결
+
+#### 문제 1: Spring Boot 컨테이너 시작 실패
+**증상**: `docker ps`에서 백엔드 컨테이너가 `Exited (1)` 상태
+**원인**: 환경변수 누락으로 인한 Spring Boot 시작 실패
+```bash
+# 해결 방법
+ssh -i ".\long-ago-main-key.pem" ubuntu@16.176.206.134 "docker logs ubuntu-app-1 --tail=20"
+# 로그에서 "Could not resolve placeholder" 에러 확인
+# docker-compose.yml에 누락된 환경변수 추가 후 재시작
+```
+
+#### 문제 2: API 엔드포인트 404 오류
+**증상**: 백엔드는 실행되지만 `https://longago.io/rooms` 등이 404 반환
+**원인**: Nginx 설정에서 API 경로 라우팅 누락
+```nginx
+# nginx/default.conf에 추가 필요한 설정들
+location /rooms {
+    proxy_pass http://app:8080/rooms;
+    proxy_set_header Host $host;
+    # ... 기타 헤더들
+}
+```
+
+#### 문제 3: 환경변수 불일치
+**현상**: 로컬에서는 작동하지만 서버에서만 실패
+**해결**: 서버의 `.env` 파일과 `docker-compose.yml`의 `environment` 섹션 동기화 확인
 
 - **AWS 서비스**
   - `S3_BUCKET_NAME`: S3 버킷 이름
