@@ -422,9 +422,30 @@ public class SceneService {
                     log.error("❌ Gemini API 응답에 'candidates' 필드 없음! (시도 {})", attempt);
                     log.error("사용 가능한 필드들: {}", responseJson.fieldNames());
                     
-                    // 에러 정보 확인
+                    // 에러 정보 상세 분석
                     if (responseJson.has("error")) {
-                        log.error("Gemini API 에러: {}", responseJson.get("error").toString());
+                        JsonNode error = responseJson.get("error");
+                        String errorCode = error.has("code") ? error.get("code").asText() : "UNKNOWN";
+                        String errorMessage = error.has("message") ? error.get("message").asText() : "No message";
+                        String errorStatus = error.has("status") ? error.get("status").asText() : "UNKNOWN_STATUS";
+                        
+                        log.error("🚨 Gemini API 에러 상세 정보:");
+                        log.error("  - 에러 코드: {}", errorCode);
+                        log.error("  - 에러 메시지: {}", errorMessage);
+                        log.error("  - 상태: {}", errorStatus);
+                        log.error("  - 전체 에러: {}", error.toString());
+                        
+                        // 필터링 관련 에러 감지
+                        if (errorMessage.toLowerCase().contains("blocked") || 
+                            errorMessage.toLowerCase().contains("filter") ||
+                            errorMessage.toLowerCase().contains("safety") ||
+                            errorMessage.toLowerCase().contains("inappropriate") ||
+                            errorMessage.toLowerCase().contains("policy")) {
+                            
+                            log.error("🔒 콘텐츠 필터링으로 인한 생성 거부 감지!");
+                            log.error("사용자 입력 프롬프트: [{}]", prompt);
+                            throw new RuntimeException("콘텐츠 필터링으로 인한 이미지 생성 거부: " + errorMessage);
+                        }
                     }
                     
                     throw new RuntimeException("Gemini API candidates 필드 누락");
@@ -433,17 +454,86 @@ public class SceneService {
                 JsonNode candidates = responseJson.get("candidates");
                 if (candidates.size() == 0) {
                     log.error("❌ candidates 배열이 비어있음! (시도 {})", attempt);
-                    throw new RuntimeException("Gemini API candidates 배열 비어있음");
+                    log.error("🔍 빈 candidates 배열 원인 분석:");
+                    
+                    // promptFeedback 확인 (필터링 정보)
+                    if (responseJson.has("promptFeedback")) {
+                        JsonNode promptFeedback = responseJson.get("promptFeedback");
+                        log.error("  - promptFeedback: {}", promptFeedback.toString());
+                        
+                        if (promptFeedback.has("blockReason")) {
+                            String blockReason = promptFeedback.get("blockReason").asText();
+                            log.error("🔒 프롬프트가 안전 필터에 의해 차단됨!");
+                            log.error("  - 차단 이유 (blockReason): {}", blockReason);
+                            
+                            // blockReason 종류별 설명 추가
+                            String reasonDescription = getBlockReasonDescription(blockReason);
+                            log.error("  - 차단 설명: {}", reasonDescription);
+                            
+                            log.error("사용자 입력 프롬프트: [{}]", prompt);
+                            throw new RuntimeException("프롬프트 안전 필터 차단: " + blockReason + " (" + reasonDescription + ")");
+                        }
+                        
+                        if (promptFeedback.has("safetyRatings")) {
+                            log.error("  - 안전성 등급: {}", promptFeedback.get("safetyRatings").toString());
+                        }
+                    }
+                    
+                    log.error("사용자 입력 프롬프트: [{}]", prompt);
+                    throw new RuntimeException("Gemini API candidates 배열 비어있음 - 필터링 가능성");
                 }
                 
                 log.info("candidates 개수: {}", candidates.size());
                 JsonNode candidate = candidates.get(0);
                 log.info("첫 번째 candidate: {}", candidate.toString());
                 
+                // candidate의 필터링 상태 확인
+                if (candidate.has("finishReason")) {
+                    String finishReason = candidate.get("finishReason").asText();
+                    log.info("finishReason: {}", finishReason);
+                    
+                    // 필터링으로 인한 중단 감지 (공식 API 문서 기준)
+                    if ("SAFETY".equals(finishReason)) {
+                        log.error("🔒 콘텐츠가 안전 필터에 의해 차단됨!");
+                        log.error("finishReason: SAFETY - 유해 콘텐츠로 분류됨");
+                        
+                        if (candidate.has("safetyRatings")) {
+                            JsonNode safetyRatings = candidate.get("safetyRatings");
+                            log.error("📊 상세 안전성 등급:");
+                            for (JsonNode rating : safetyRatings) {
+                                String category = rating.has("category") ? rating.get("category").asText() : "UNKNOWN";
+                                String probability = rating.has("probability") ? rating.get("probability").asText() : "UNKNOWN";
+                                log.error("  - 카테고리: {}, 확률: {}", category, probability);
+                            }
+                        }
+                        
+                        log.error("사용자 입력 프롬프트: [{}]", prompt);
+                        throw new RuntimeException("SAFETY 필터 차단 - 유해 콘텐츠 감지: " + finishReason);
+                    }
+                    
+                    // 기타 중단 이유들도 로깅
+                    if ("RECITATION".equals(finishReason)) {
+                        log.warn("⚠️ RECITATION 감지 - 저작권 위험 콘텐츠");
+                        log.warn("사용자 입력 프롬프트: [{}]", prompt);
+                    } else if ("MAX_TOKENS".equals(finishReason)) {
+                        log.warn("⚠️ MAX_TOKENS - 최대 토큰 수 도달");
+                    } else if ("OTHER".equals(finishReason)) {
+                        log.warn("⚠️ OTHER - 기타 중단 이유: {}", finishReason);
+                    }
+                }
+                
                 // content 및 parts 확인
                 if (!candidate.has("content")) {
                     log.error("❌ candidate에 'content' 필드 없음!");
-                    throw new RuntimeException("Gemini API candidate content 누락");
+                    
+                    // content가 없는 이유 분석
+                    if (candidate.has("finishReason")) {
+                        String finishReason = candidate.get("finishReason").asText();
+                        log.error("content 없음의 원인 - finishReason: {}", finishReason);
+                    }
+                    
+                    log.error("전체 candidate 구조: {}", candidate.toString());
+                    throw new RuntimeException("Gemini API candidate content 누락 - 필터링 가능성");
                 }
                 
                 JsonNode candidateContent = candidate.get("content");
@@ -521,5 +611,21 @@ public class SceneService {
         }
         
         throw new RuntimeException("Gemini API 재시도 로직 오류"); // fallback
+    }
+    
+    /**
+     * blockReason 코드에 대한 설명을 반환
+     */
+    private String getBlockReasonDescription(String blockReason) {
+        switch (blockReason) {
+            case "BLOCK_REASON_UNSPECIFIED":
+                return "특정되지 않은 차단 이유";
+            case "SAFETY":
+                return "안전성 우려로 인한 차단";
+            case "OTHER":
+                return "기타 이유로 인한 차단";
+            default:
+                return "알 수 없는 차단 이유: " + blockReason;
+        }
     }
 }
