@@ -12,7 +12,7 @@
             </div>
             <div class="absolute bottom-16 left-1/2 -translate-x-1/2 text-center">
                 <div class="narration-text font-katuri text-[#f1f1f1] text-3xl">
-                    이어서 책을 읽어드리겠습니다
+                    잠시 후 책을 읽어드리겠습니다
                 </div>
             </div>
         </div>
@@ -88,10 +88,11 @@ watch(() => props.isForceStopped, () => {
             audioStore.audioPlay = false;
         }
         
-        // 결과창 표시 후 5초 대기한 다음 나레이션 시작 신호 전송 (sound off여도 실행)
+        // 결과창 표시 후 3-7초 사이 랜덤 대기한 다음 나레이션 시작 신호 전송 (각 플레이어 개별 타이밍)
+        const randomDelay = Math.floor(Math.random() * 4000) + 3000; // 3000-6999ms (3-7초)
         setTimeout(() => {
             emit('winner-shown');
-        }, 5000);
+        }, randomDelay);
         
     } else if (props.isForceStopped === "fail") {
         // 음성이 켜져있을 때만 음악 재생

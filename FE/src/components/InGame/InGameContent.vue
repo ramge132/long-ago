@@ -202,8 +202,8 @@ const runBookSequence = async () => {
       }
     }
 
-    // 새로운 동시 실행 가능한 TTS 함수 사용 (병렬 처리)
-    speakTextConcurrent(element.content); // await 제거하여 각 플레이어 독립적으로 실행
+    // TTS를 순차적으로 재생 (한 페이지씩)
+    await speakTextConcurrent(element.content);
   }
   
   // 모든 작업이 완료되면 표지로 되돌리기
