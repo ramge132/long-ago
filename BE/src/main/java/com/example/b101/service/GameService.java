@@ -562,71 +562,192 @@ public class GameService {
      * Gemini 2.5 Flash Image Preview를 사용하여 표지 이미지 생성
      */
     private byte[] generateCoverImage(String bookTitle, int drawingStyle) {
-        try {
-            // 그림체 모드에 따른 스타일 정의
-            String[] styles = {
-                "애니메이션 스타일", "3D 카툰 스타일", "코믹 스트립 스타일", "클레이메이션 스타일",
-                "크레용 드로잉 스타일", "픽셀 아트 스타일", "미니멀리스트 일러스트", "수채화 스타일", "스토리북 일러스트"
-            };
-            
-            String style = drawingStyle < styles.length ? styles[drawingStyle] : "애니메이션 스타일";
-            
-            // 표지 이미지 프롬프트 생성
-            String coverPrompt = "Create a beautiful book cover for a story titled '" + bookTitle + "'. " +
-                    "Style: " + style + ". The cover should be artistic, captivating, and suitable for a storybook. " +
-                    "Include the title text elegantly integrated into the design.";
-            
-            // Gemini 2.5 Flash Image Preview API 요청 구조
-            Map<String, Object> requestBody = new HashMap<>();
-            
-            // contents 배열 구성
-            Map<String, Object> content = new HashMap<>();
-            Map<String, Object> part = new HashMap<>();
-            part.put("text", "Generate an image: " + coverPrompt + " portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution");
-            content.put("parts", List.of(part));
-            requestBody.put("contents", List.of(content));
-            
-            // Gemini 2.5 Flash Image Preview API 호출
-            String apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=" + webClientConfig.getGeminiApiKey();
-            
-            log.info("Gemini 표지 이미지 생성 호출: {}", apiUrl);
-            
-            String response = geminiWebClient.post()
-                    .uri(apiUrl)
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-            
-            log.info("Gemini 표지 API 응답 받음: {}", response != null ? "응답 있음" : "응답 없음");
-            
-            // 응답 파싱
-            JsonNode responseJson = objectMapper.readTree(response);
-            if (responseJson.has("candidates") && responseJson.get("candidates").size() > 0) {
-                JsonNode candidate = responseJson.get("candidates").get(0);
+        // 그림체 모드에 따른 스타일 정의
+        String[] styles = {
+            "애니메이션 스타일", "3D 카툰 스타일", "코믹 스트립 스타일", "클레이메이션 스타일",
+            "크레용 드로잉 스타일", "픽셀 아트 스타일", "미니멀리스트 일러스트", "수채화 스타일", "스토리북 일러스트"
+        };
+        
+        String style = drawingStyle < styles.length ? styles[drawingStyle] : "애니메이션 스타일";
+        
+        // 표지 이미지 프롬프트 생성
+        String coverPrompt = "Create a beautiful book cover for a story titled '" + bookTitle + "'. " +
+                "Style: " + style + ". The cover should be artistic, captivating, and suitable for a storybook. " +
+                "Include the title text elegantly integrated into the design.";
+        
+        // SceneService와 동일한 재시도 로직 사용
+        return callGeminiWithRetryForCover(coverPrompt, 1); // 1회 재시도 (총 2번)
+    }
+    
+    /**
+     * 재시도 로직이 포함된 Gemini API 호출 (책 표지용)
+     * SceneService의 callGeminiWithRetry와 동일한 로직
+     */
+    private byte[] callGeminiWithRetryForCover(String prompt, int maxRetries) {
+        log.info("=== Gemini 2.5 Flash Image Preview API 호출 시작 (최대 {}회 시도) - 책 표지 ===", maxRetries + 1);
+        log.info("입력 프롬프트: [{}] (길이: {}자)", prompt, prompt.length());
+        
+        for (int attempt = 1; attempt <= maxRetries + 1; attempt++) {
+            try {
+                log.info("🔄 Gemini API 시도 {}/{} - 책 표지", attempt, maxRetries + 1);
                 
-                if (candidate.has("content") && candidate.get("content").has("parts")) {
-                    JsonNode parts = candidate.get("content").get("parts");
-                    for (int i = 0; i < parts.size(); i++) {
-                        JsonNode currentPart = parts.get(i);
+                // Gemini 2.5 Flash Image Preview API 요청 구조
+                Map<String, Object> requestBody = new HashMap<>();
+                
+                // contents 배열 구성
+                Map<String, Object> content = new HashMap<>();
+                Map<String, Object> part = new HashMap<>();
+                String fullPrompt = "Generate an image: " + prompt + " portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution";
+                part.put("text", fullPrompt);
+                content.put("parts", List.of(part));
+                requestBody.put("contents", List.of(content));
+                
+                log.info("Gemini API 전송 프롬프트: [{}] (길이: {}자)", fullPrompt, fullPrompt.length());
+                
+                // Gemini 2.5 Flash Image Preview API 호출
+                String apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=" + webClientConfig.getGeminiApiKey();
+                
+                log.info("Gemini API URL: {}", apiUrl.substring(0, apiUrl.lastIndexOf("key=") + 4) + "***");
+                log.info("Gemini API 요청 전송 중...");
+                
+                String response = geminiWebClient.post()
+                        .uri(apiUrl)
+                        .bodyValue(requestBody)
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block();
+                
+                log.info("=== Gemini API 응답 수신 ===");
+                log.info("응답 상태: {}", response != null ? "응답 있음" : "응답 없음");
+                
+                if (response == null) {
+                    log.error("Gemini API에서 null 응답 수신");
+                    throw new RuntimeException("Gemini API null 응답");
+                }
+                
+                // 응답 파싱
+                JsonNode responseJson = objectMapper.readTree(response);
+                log.info("=== Gemini API 응답 JSON 분석 ===");
+                
+                // candidates 확인
+                if (!responseJson.has("candidates")) {
+                    log.error("❌ Gemini API 응답에 'candidates' 필드 없음! (시도 {})", attempt);
+                    
+                    // 에러 정보 상세 분석
+                    if (responseJson.has("error")) {
+                        JsonNode error = responseJson.get("error");
+                        String errorMessage = error.has("message") ? error.get("message").asText() : "No message";
+                        log.error("🚨 Gemini API 에러: {}", errorMessage);
                         
-                        // inlineData 방식 확인
-                        if (currentPart.has("inlineData") && currentPart.get("inlineData").has("data")) {
-                            String base64Data = currentPart.get("inlineData").get("data").asText();
-                            log.info("표지 Base64 이미지 데이터 발견, 길이: {}", base64Data.length());
-                            return Base64.getDecoder().decode(base64Data);
+                        // 필터링 관련 에러 감지
+                        if (errorMessage.toLowerCase().contains("blocked") || 
+                            errorMessage.toLowerCase().contains("filter") ||
+                            errorMessage.toLowerCase().contains("safety")) {
+                            log.error("🔒 콘텐츠 필터링으로 인한 생성 거부 감지!");
+                            throw new RuntimeException("콘텐츠 필터링으로 인한 이미지 생성 거부: " + errorMessage);
+                        }
+                    }
+                    
+                    throw new RuntimeException("Gemini API candidates 필드 누락");
+                }
+                
+                JsonNode candidates = responseJson.get("candidates");
+                if (candidates.size() == 0) {
+                    log.error("❌ candidates 배열이 비어있음! (시도 {})", attempt);
+                    
+                    // promptFeedback 확인 (필터링 정보)
+                    if (responseJson.has("promptFeedback")) {
+                        JsonNode promptFeedback = responseJson.get("promptFeedback");
+                        log.error("  - promptFeedback: {}", promptFeedback.toString());
+                        
+                        if (promptFeedback.has("blockReason")) {
+                            String blockReason = promptFeedback.get("blockReason").asText();
+                            log.error("🔒 프롬프트가 안전 필터에 의해 차단됨: {}", blockReason);
+                            throw new RuntimeException("프롬프트 안전 필터 차단: " + blockReason);
+                        }
+                    }
+                    
+                    throw new RuntimeException("Gemini API candidates 배열 비어있음");
+                }
+                
+                log.info("candidates 개수: {}", candidates.size());
+                JsonNode candidate = candidates.get(0);
+                
+                // candidate의 필터링 상태 확인
+                if (candidate.has("finishReason")) {
+                    String finishReason = candidate.get("finishReason").asText();
+                    log.info("finishReason: {}", finishReason);
+                    
+                    // 필터링으로 인한 중단 감지
+                    if ("SAFETY".equals(finishReason)) {
+                        log.error("🔒 콘텐츠가 안전 필터에 의해 차단됨!");
+                        throw new RuntimeException("SAFETY 필터 차단 - 유해 콘텐츠 감지");
+                    }
+                }
+                
+                // content 및 parts 확인
+                if (!candidate.has("content")) {
+                    log.error("❌ candidate에 'content' 필드 없음!");
+                    throw new RuntimeException("Gemini API candidate content 누락");
+                }
+                
+                JsonNode candidateContent = candidate.get("content");
+                if (!candidateContent.has("parts")) {
+                    log.error("❌ content에 'parts' 필드 없음!");
+                    throw new RuntimeException("Gemini API content parts 누락");
+                }
+                
+                JsonNode parts = candidateContent.get("parts");
+                log.info("parts 개수: {}", parts.size());
+                
+                // 각 part 검사
+                for (int i = 0; i < parts.size(); i++) {
+                    JsonNode currentPart = parts.get(i);
+                    
+                    // inlineData 방식 확인
+                    if (currentPart.has("inlineData")) {
+                        JsonNode inlineData = currentPart.get("inlineData");
+                        
+                        if (inlineData.has("data")) {
+                            String base64Data = inlineData.get("data").asText();
+                            log.info("✅ SUCCESS: Base64 이미지 데이터 발견!");
+                            log.info("Base64 데이터 길이: {} 글자", base64Data.length());
+                            
+                            byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+                            log.info("✅ Gemini API 성공 (시도 {}) - 책 표지 ===", attempt);
+                            log.info("최종 이미지 크기: {} bytes", imageBytes.length);
+                            return imageBytes;
                         }
                     }
                 }
+                
+                log.error("❌ 모든 parts를 검사했지만 이미지 데이터를 찾을 수 없음! (시도 {})", attempt);
+                throw new RuntimeException("Gemini에서 이미지 데이터를 찾을 수 없음");
+                
+            } catch (Exception e) {
+                log.error("❌ Gemini API 시도 {} 실패 - 책 표지: {}", attempt, e.getMessage());
+                
+                if (attempt == maxRetries + 1) {
+                    log.error("🚨 Gemini API 최종 실패 - 책 표지 - RuntimeException 던짐");
+                    log.error("상세 스택 트레이스:", e);
+                    throw new RuntimeException("표지 이미지 생성 최종 실패: " + e.getMessage(), e);
+                }
+                
+                // 짧은 대기 (500ms * attempt)
+                long waitTime = 500L * attempt; 
+                log.info("⏰ {}ms 대기 후 재시도...", waitTime);
+                
+                try {
+                    Thread.sleep(waitTime);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    log.error("대기 중 인터럽트 발생");
+                    throw new RuntimeException("표지 이미지 생성 인터럽트: " + ie.getMessage(), ie);
+                }
             }
-            
-            log.error("Gemini에서 표지 이미지 데이터를 찾을 수 없음");
-            throw new RuntimeException("Gemini 2.5 Flash Image Preview에서 표지 이미지 생성 실패");
-            
-        } catch (Exception e) {
-            log.error("Gemini 표지 이미지 생성 실패: {}", e.getMessage(), e);
-            throw new RuntimeException("표지 이미지 생성 실패: " + e.getMessage());
         }
+        
+        throw new RuntimeException("Gemini API 재시도 로직 오류 - 책 표지"); // fallback
     }
 
 
