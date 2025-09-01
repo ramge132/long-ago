@@ -1473,29 +1473,54 @@ const nextTurn = async (data) => {
           };
           console.log("경고 메시지 생성:", warningMessage);
           
-          // 투표 중단 신호를 모든 플레이어에게 즉시 전송
-          console.log("모든 플레이어에게 투표 중단 및 경고 알림 전송");
-          const stopVotingMessage = {
-            type: "stopVotingAndShowWarning",
-            warningData: warningMessage,
-            currTurn: (currTurn.value + 1) % participants.value.length,
-            totalTurn: totalTurn.value,
-            imageDelete: true,
-            isInappropriate: true
-          };
+          // 턴 넘기기
+          currTurn.value = (currTurn.value + 1) % participants.value.length;
           
-          // 모든 피어에게 투표 중단 및 경고 알림 전송
-          connectedPeers.value.forEach((peer) => {
-            if (peer.id !== peerId.value && peer.connection.open) {
-              console.log("피어에게 투표 중단 및 경고 알림 전송:", peer.id);
-              sendMessage("stopVotingAndShowWarning", stopVotingMessage, peer.connection);
-            }
-          });
-          
-          // 자신에게도 투표 중단 및 경고 표시 (하지만 점수와 책 내용은 이미 처리했으므로 중복 적용 방지)
-          console.log("자신에게도 투표 중단 및 경고 모달 표시");
-          const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true, skipBookContentRemoval: true};
-          stopVotingAndShowWarning(selfStopVotingMessage);
+          // condition에서 다음 턴 or 게임 종료 (투표 거부와 동일한 로직)
+          if (usedCard.value.isEnding) {
+            console.log("부적절한 컨텐츠 처리 후 게임 종료 조건 감지");
+            await gameEnd(true).then((res) => {
+              connectedPeers.value.forEach(async (p) => {
+                if (p.id !== peerId.value && p.connection.open) {
+                  sendMessage("gameEnd", {
+                    bookCover: {
+                      title: res.data.data.title,
+                      imageUrl: res.data.data.bookCover
+                    },
+                    isbn: res.data.data.bookId,
+                  }, p.connection);
+                }
+              });
+              
+              // 먼저 승자를 표시
+              isForceStopped.value = "champ";
+              // gameStarted는 승자 표시 후 onWinnerShown에서 처리
+            });
+          } else {
+            // 게임이 계속되는 경우에만 투표 중단 신호 전송
+            console.log("모든 플레이어에게 투표 중단 및 경고 알림 전송");
+            const stopVotingMessage = {
+              type: "stopVotingAndShowWarning",
+              warningData: warningMessage,
+              currTurn: currTurn.value,
+              totalTurn: totalTurn.value,
+              imageDelete: true,
+              isInappropriate: true
+            };
+            
+            // 모든 피어에게 투표 중단 및 경고 알림 전송
+            connectedPeers.value.forEach((peer) => {
+              if (peer.id !== peerId.value && peer.connection.open) {
+                console.log("피어에게 투표 중단 및 경고 알림 전송:", peer.id);
+                sendMessage("stopVotingAndShowWarning", stopVotingMessage, peer.connection);
+              }
+            });
+            
+            // 자신에게도 투표 중단 및 경고 표시 (하지만 점수와 책 내용은 이미 처리했으므로 중복 적용 방지)
+            console.log("자신에게도 투표 중단 및 경고 모달 표시");
+            const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true, skipBookContentRemoval: true};
+            stopVotingAndShowWarning(selfStopVotingMessage);
+          }
           
           console.log("부적절한 콘텐츠 처리 완료. 플레이어 점수:", currentPlayer.score);
         } else {
