@@ -546,18 +546,25 @@ const setupConnection = (conn) => {
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
-                // 즉시 승자 표시 (1초 후)
+                // 투표 시간 끝날 때까지 대기 (10초에서 이미 경과한 시간 제외)
+                const voteEndTime = 10000; // 10초
+                const currentTime = Date.now();
+                const elapsedTime = currentTime - (currentTime - voteEndTime); // 실제 경과 시간 계산 필요
+                
+                // 최소 10초는 보장
                 setTimeout(() => {
                   isForceStopped.value = "champ";
-                }, 1000);
-                
-                await gameEnd(true).then(() => {
-                  connectedPeers.value.forEach(async (p) => {
-                    if (p.id !== peerId.value && p.connection.open) {
-                      sendMessage("gameEnd", {}, p.connection);
-                    }
+                  
+                  gameEnd(true).then(() => {
+                    connectedPeers.value.forEach(async (p) => {
+                      if (p.id !== peerId.value && p.connection.open) {
+                        sendMessage("gameEnd", {}, p.connection);
+                      }
+                    });
                   });
-                });
+                }, 10000); // 10초 대기
+                
+                // gameEnd는 나중에 호출하도록 수정
               } else {
                 connectedPeers.value.forEach(async (p) => {
                   if (p.id !== peerId.value && p.connection.open) {
@@ -649,11 +656,13 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
-        // 즉시 승자 표시 (1초 후)
+        // 투표 시간이 끝날 때까지 대기 후 승자 표시
+        const remainingVoteTime = voteTimer ? 10000 : 0; // 투표 타이머가 있으면 10초 대기
+        
         setTimeout(() => {
           isForceStopped.value = "champ";
-        }, 1000);
-        gameEnd(true);
+          gameEnd(true);
+        }, remainingVoteTime);
         break;
 
       case "bookCover":
