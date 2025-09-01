@@ -550,11 +550,6 @@ public class GameService {
                     }
                 }
                 
-                String generatedTitle = ""; // fallback
-                    log.info("✅ 책 제목 생성 성공 (시도 {}): [{}]", attempt, generatedTitle);
-                    return generatedTitle;
-                }
-                
                 log.warn("⚠️ GPT 응답에서 choices 필드 없음 (시도 {})", attempt);
                 if (attempt < 5) {
                     Thread.sleep(1000); // 1초 대기 후 재시도

@@ -333,12 +333,6 @@ public class SceneService {
                         }
                     }
                 }
-
-                String generatedPrompt = userSentence; // fallback
-                    log.info("✅ {} GPT API 성공 (시도 {}) ===", cardType, attempt);
-                    log.info("생성된 프롬프트: [{}]", generatedPrompt);
-                    return generatedPrompt;
-                }
                 
                 log.warn("⚠️ {} GPT API 응답 파싱 실패 (시도 {})", cardType, attempt);
                 log.warn("choices 필드가 없거나 비어있음");
