@@ -212,16 +212,31 @@ public class GameService {
 
 
     public ResponseEntity<?> finishGame(DeleteGameRequest deleteGameRequest, HttpServletRequest request) {
+        log.info("🎮🎮🎮 === finishGame 시작 ===");
+        log.info("🎮🎮🎮 gameId: {}", deleteGameRequest.getGameId());
+        log.info("🎮🎮🎮 isForceStopped: {}", deleteGameRequest.isForceStopped());
+        
         //해당 gameId의 게임을 조회
         Game game = gameRepository.findById(deleteGameRequest.getGameId());
 
         if (game == null) {
+            log.error("🎮🎮🎮 게임을 찾을 수 없음: {}", deleteGameRequest.getGameId());
             return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다."
                     , HttpStatus.BAD_REQUEST, request.getRequestURI());
         }
+        
+        log.info("🎮🎮🎮 게임 조회 성공. drawingStyle: {}", game.getDrawingStyle());
 
         List<SceneRedis> sceneRedisList = sceneRepository.findAllByGameId(deleteGameRequest.getGameId());
-
+        log.info("🎮🎮🎮 sceneRedisList 크기: {}", sceneRedisList.size());
+        
+        if (sceneRedisList.isEmpty()) {
+            log.warn("🎮🎮🎮 경고: sceneRedisList가 비어있음!");
+        } else {
+            log.info("🎮🎮🎮 첫 번째 scene order: {}, prompt: {}", 
+                    sceneRedisList.get(0).getSceneOrder(), 
+                    sceneRedisList.get(0).getPrompt());
+        }
 
         int status = deleteGameRequest.isForceStopped() ? 2 : 1;
 
@@ -234,34 +249,58 @@ public class GameService {
 
         //정상적인 게임 종료 시 책 표지를 반환
         if(!deleteGameRequest.isForceStopped()){
+            log.info("🎮🎮🎮 정상 종료 처리 시작");
+            
+            // API 키 확인
+            log.info("🎮🎮🎮 OpenAI API 키 설정됨: {}", openaiWebClient != null);
+            log.info("🎮🎮🎮 Gemini API 키 설정됨: {}", geminiWebClient != null);
+            log.info("🎮🎮🎮 Gemini API 키 길이: {}", 
+                    webClientConfig.getGeminiApiKey() != null ? webClientConfig.getGeminiApiKey().length() : "null");
 
             // 새로운 API 시스템: OpenAI GPT + Gemini로 표지 생성
             String bookTitle;
             byte[] coverImageBytes;
             
             try {
+                log.info("🎮🎮🎮 === 1단계: 스토리 요약 및 제목 생성 시작 ===");
                 // 1단계: 스토리 요약 및 제목 생성
                 bookTitle = generateBookTitle(sceneRedisList);
-                log.info("GPT로 생성된 책 제목: {}", bookTitle);
+                log.info("🎮🎮🎮 GPT로 생성된 책 제목: [{}]", bookTitle);
                 
+                if (bookTitle == null || bookTitle.trim().isEmpty()) {
+                    log.error("🎮🎮🎮 제목이 null이거나 비어있음!");
+                    throw new RuntimeException("제목 생성 실패 - 빈 제목");
+                }
+                
+                log.info("🎮🎮🎮 === 2단계: 표지 이미지 생성 시작 ===");
                 // 2단계: 표지 이미지 생성 
                 coverImageBytes = generateCoverImage(bookTitle, game.getDrawingStyle());
-                log.info("Gemini로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
+                log.info("🎮🎮🎮 Gemini로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
+                
+                if (coverImageBytes == null || coverImageBytes.length == 0) {
+                    log.error("🎮🎮🎮 이미지가 null이거나 크기가 0!");
+                    throw new RuntimeException("이미지 생성 실패 - 빈 이미지");
+                }
                 
             } catch (Exception e) {
-                log.error("표지 생성 중 오류: {}", e.getMessage());
-                log.error("상세 에러:", e);
+                log.error("🎮🎮🎮 ❌❌❌ 표지 생성 중 오류 발생 ❌❌❌");
+                log.error("🎮🎮🎮 에러 타입: {}", e.getClass().getName());
+                log.error("🎮🎮🎮 에러 메시지: {}", e.getMessage());
+                log.error("🎮🎮🎮 스택 트레이스:", e);
                 
                 // 제목 생성 실패와 이미지 생성 실패를 구분
-                if (e.getMessage().contains("GPT 제목 생성 필수")) {
+                if (e.getMessage() != null && e.getMessage().contains("GPT 제목 생성 필수")) {
+                    log.error("🎮🎮🎮 GPT 제목 생성 실패로 판단");
                     return ApiResponseUtil.failure("AI 제목 생성 서비스가 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.",
                             HttpStatus.SERVICE_UNAVAILABLE,
                             request.getRequestURI());
-                } else if (e.getMessage().contains("이미지 생성")) {
+                } else if (e.getMessage() != null && e.getMessage().contains("이미지 생성")) {
+                    log.error("🎮🎮🎮 Gemini 이미지 생성 실패로 판단");
                     return ApiResponseUtil.failure("AI 표지 이미지 생성 서비스가 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.",
                             HttpStatus.SERVICE_UNAVAILABLE,
                             request.getRequestURI());
                 } else {
+                    log.error("🎮🎮🎮 기타 오류로 판단");
                     return ApiResponseUtil.failure("책 표지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
                             HttpStatus.SERVICE_UNAVAILABLE,
                             request.getRequestURI());

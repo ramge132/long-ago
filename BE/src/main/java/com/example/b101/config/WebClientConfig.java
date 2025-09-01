@@ -17,13 +17,13 @@ import java.util.List;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${RUNPOD_API_KEY:}")
+    @Value("${runpod.api.key:}")
     private String runpodApiKey;
     
-    @Value("${OPENAI_API_KEY:}")
+    @Value("${openai.api.key:}")
     private String openaiApiKey;
     
-    @Value("${GEMINI_API_KEY:}")
+    @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
     @Value("${WEBCLIENT.BASE.URL_0}")
