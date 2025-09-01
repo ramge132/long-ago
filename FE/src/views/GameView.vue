@@ -546,25 +546,20 @@ const setupConnection = (conn) => {
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
-                // 투표 시간 끝날 때까지 대기 (10초에서 이미 경과한 시간 제외)
-                const voteEndTime = 10000; // 10초
-                const currentTime = Date.now();
-                const elapsedTime = currentTime - (currentTime - voteEndTime); // 실제 경과 시간 계산 필요
-                
-                // 최소 10초는 보장
-                setTimeout(() => {
-                  isForceStopped.value = "champ";
-                  
-                  gameEnd(true).then(() => {
-                    connectedPeers.value.forEach(async (p) => {
-                      if (p.id !== peerId.value && p.connection.open) {
-                        sendMessage("gameEnd", {}, p.connection);
-                      }
-                    });
-                  });
-                }, 10000); // 10초 대기
-                
-                // gameEnd는 나중에 호출하도록 수정
+                // 모든 클라이언트가 즉시 결과창 표시
+                isForceStopped.value = "champ";
+
+                // 방장만 표지 생성 API 호출
+                if (participants.value[0].id == peerId.value) {
+                  gameEnd(true);
+                }
+
+                // 다른 클라이언트에게 게임 종료 알림 (결과창 표시 트리거)
+                connectedPeers.value.forEach(async (p) => {
+                  if (p.id !== peerId.value && p.connection.open) {
+                    sendMessage("gameEnd", {}, p.connection);
+                  }
+                });
               } else {
                 connectedPeers.value.forEach(async (p) => {
                   if (p.id !== peerId.value && p.connection.open) {
@@ -656,13 +651,7 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
-        // 투표 시간이 끝날 때까지 대기 후 승자 표시
-        const remainingVoteTime = voteTimer ? 10000 : 0; // 투표 타이머가 있으면 10초 대기
-        
-        setTimeout(() => {
-          isForceStopped.value = "champ";
-          gameEnd(true);
-        }, remainingVoteTime);
+        isForceStopped.value = "champ";
         break;
 
       case "bookCover":
@@ -1861,9 +1850,12 @@ const onWinnerShown = () => {
 
 // 나레이션 완료 후 승자 화면 제거 및 표지 표시
 const onNarrationComplete = () => {
-  // 승자 화면 제거
   isForceStopped.value = null;
-  // 표지가 이미 표시되어 있으므로 추가 작업 없음
+  // ResultView에서 표지를 보여주도록 라우터 이동 또는 상태 변경이 필요하지만,
+  // 우선
+  nextTick(() => {
+    router.push({ name: 'ResultView' }); // ResultView로 라우팅하여 표지 표시
+  });
 };
 
 const goLobby = () => {

@@ -533,9 +533,24 @@ public class GameService {
                 // 응답 파싱
                 JsonNode responseJson = objectMapper.readTree(response);
                 log.info("응답 JSON 구조: {}", responseJson.toString());
+
+                if (responseJson.has("output") && responseJson.get("output").isArray()) {
+                    for (JsonNode outputNode : responseJson.get("output")) {
+                        if ("message".equals(outputNode.path("type").asText()) && outputNode.has("content")) {
+                            JsonNode contentArray = outputNode.get("content");
+                            if (contentArray.isArray() && !contentArray.isEmpty()) {
+                                JsonNode firstContent = contentArray.get(0);
+                                if ("output_text".equals(firstContent.path("type").asText())) {
+                                    String generatedTitle = firstContent.path("text").asText().trim();
+                                    log.info("✅ 책 제목 생성 성공 (시도 {}): [{}]", attempt, generatedTitle);
+                                    return generatedTitle;
+                                }
+                            }
+                        }
+                    }
+                }
                 
-                if (responseJson.has("output_text")) {
-                    String generatedTitle = responseJson.get("output_text").asText().trim();
+                String generatedTitle = ""; // fallback
                     log.info("✅ 책 제목 생성 성공 (시도 {}): [{}]", attempt, generatedTitle);
                     return generatedTitle;
                 }

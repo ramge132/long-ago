@@ -316,9 +316,25 @@ public class SceneService {
                 // 응답 파싱
                 JsonNode responseJson = objectMapper.readTree(response);
                 log.info("응답 JSON 구조: {}", responseJson.toString());
-                
-                if (responseJson.has("output_text")) {
-                    String generatedPrompt = responseJson.get("output_text").asText().trim();
+
+                if (responseJson.has("output") && responseJson.get("output").isArray()) {
+                    for (JsonNode outputNode : responseJson.get("output")) {
+                        if ("message".equals(outputNode.path("type").asText()) && outputNode.has("content")) {
+                            JsonNode contentArray = outputNode.get("content");
+                            if (contentArray.isArray() && !contentArray.isEmpty()) {
+                                JsonNode firstContent = contentArray.get(0);
+                                if ("output_text".equals(firstContent.path("type").asText())) {
+                                    String generatedPrompt = firstContent.path("text").asText().trim();
+                                    log.info("✅ {} GPT API 성공 (시도 {}) ===", cardType, attempt);
+                                    log.info("생성된 프롬프트: [{}]", generatedPrompt);
+                                    return generatedPrompt;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                String generatedPrompt = userSentence; // fallback
                     log.info("✅ {} GPT API 성공 (시도 {}) ===", cardType, attempt);
                     log.info("생성된 프롬프트: [{}]", generatedPrompt);
                     return generatedPrompt;
