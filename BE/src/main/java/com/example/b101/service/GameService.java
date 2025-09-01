@@ -480,9 +480,9 @@ public class GameService {
                 .map(SceneRedis::getPrompt)
                 .collect(Collectors.joining(". "));
 
-        // 길이 제한 (1000자) - nano 모델의 input 길이 제한 가능성 테스트
-        if (storyContent.length() > 1000) {
-            storyContent = storyContent.substring(0, 1000);
+        // 길이 제한 (200자) - nano 모델의 input 길이 제한 가능성 테스트
+        if (storyContent.length() > 200) {
+            storyContent = storyContent.substring(0, 200);
         }
         
         log.info("스토리 내용 길이: {} 글자", storyContent.length());
