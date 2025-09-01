@@ -18,21 +18,42 @@
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
     
-    <!-- 부적절한 콘텐츠 경고 모달 -->
+    <!-- 부적절한 콘텐츠 경고 모달 - 게임 테마 맞춤 디자인 -->
     <div
       v-if="showWarningModal"
-      class="warning-modal fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+      class="warning-modal fixed inset-0 bg-[#00000050] backdrop-blur-sm flex items-center justify-center z-50"
       @click="hideWarningModal">
       <div 
-        class="warning-content bg-white rounded-lg p-8 max-w-md mx-4 text-center transform transition-all duration-300"
+        class="warning-content bg-[#ffffff85] backdrop-blur-[20px] border-[1px] border-[#ffffff60] rounded-2xl p-8 max-w-md mx-4 text-center transform transition-all duration-500 shadow-2xl"
+        style="animation: gentleBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
         @click.stop>
-        <img :src="WarningIcon" alt="경고" class="w-20 h-20 mx-auto mb-4 object-contain">
-        <h3 class="text-xl font-bold text-red-600 mb-2">부적절한 콘텐츠 감지</h3>
-        <p class="text-gray-700 mb-4">{{ warningModalMessage }}</p>
+        
+        <!-- Warning Icon with Glow Effect -->
+        <div class="relative mb-6">
+          <div class="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
+          <div class="relative w-20 h-20 mx-auto bg-gradient-to-br from-orange-100 to-red-100 rounded-full p-4 shadow-lg">
+            <img :src="WarningIcon" alt="경고" class="w-full h-full object-contain filter drop-shadow-md">
+          </div>
+        </div>
+
+        <!-- Title with Game Font -->
+        <h3 class="text-2xl font-katuri font-bold text-[#8B4513] mb-3 drop-shadow-sm">
+          🚨 부적절한 이야기 감지
+        </h3>
+        
+        <!-- Message -->
+        <p class="text-[#5D4E37] font-katuri text-lg mb-6 leading-relaxed">
+          {{ warningModalMessage }}
+        </p>
+        
+        <!-- Decorative Line -->
+        <div class="w-16 h-1 bg-gradient-to-r from-orange-300 to-red-400 rounded-full mx-auto mb-6"></div>
+        
+        <!-- Confirm Button -->
         <button 
           @click="hideWarningModal"
-          class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-          확인
+          class="bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white font-katuri px-8 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95">
+          알겠습니다 ✨
         </button>
       </div>
     </div>
@@ -1800,17 +1821,32 @@ watch(
 )
 </script>
 <style>
-/* Enter 애니메이션 (슬라이드 없이 나타남) */
+@keyframes gentleBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-100px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-10px);
+  }
+  70% {
+    transform: scale(0.95) translateY(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease-in-out;
-  /* opacity로 부드럽게 나타남 */
+  transition: opacity 0.3s ease;
 }
 
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-  /* 컴포넌트가 처음에는 안 보이게 설정 */
 }
 
 .overlay {
