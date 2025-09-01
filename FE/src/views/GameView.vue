@@ -1729,6 +1729,10 @@ if (currTurn.value === myTurn.value) {
 };
 
 const gameEnd = async (status) => {
+  console.log("🎮 === gameEnd 함수 시작 ===");
+  console.log("🎮 status:", status);
+  console.log("🎮 현재 bookCover 초기 상태:", bookCover.value);
+  
   // 게임 시작 상태는 onWinnerShown에서 처리 (TTS 타이밍 제어를 위해)
   // gameStarted.value = false;  // 여기서 제거
   // 턴 초기화
@@ -1737,6 +1741,7 @@ const gameEnd = async (status) => {
   
   // 비정상 종료인 경우 (긴장감 100 초과)
   if (!status) {
+    console.log("🎮 비정상 종료 처리");
     // 책 비우기
     // 방장인 경우 게임실패 송신
     if (participants.value[0].id == peerId.value) {
@@ -1753,33 +1758,62 @@ const gameEnd = async (status) => {
     // 전체 실패 쇼 오버레이
     // isForceStopped.value = "fail";
   } else {
+    console.log("🎮 정상 종료 처리");
+    console.log("🎮 방장인가?:", participants.value[0].id == peerId.value);
+    
     // 정상 종료인 경우
     if (participants.value[0].id == peerId.value) {
       // 정상 종료 api 들어가야함
       try {
-        console.log("=== 게임 정상 종료 API 호출 시작 ===");
+        console.log("🎮 === 게임 정상 종료 API 호출 시작 ===");
+        console.log("🎮 gameID:", gameID.value);
+        
         return await deleteGame({
           gameId: gameID.value,
           isForceStopped: false
         }).then((res) => {
-          console.log("=== 게임 종료 응답 수신 ===");
-          console.log("전체 응답:", res.data);
-          console.log("응답 데이터:", res.data.data);
-          console.log("bookId:", res.data.data.bookId);
-          console.log("title:", res.data.data.title);
-          console.log("bookCover URL:", res.data.data.bookCover);
+          console.log("🎮 === 게임 종료 응답 수신 ===");
+          console.log("🎮 전체 응답 객체:", res);
+          console.log("🎮 응답 상태:", res.status);
+          console.log("🎮 응답 데이터 타입:", typeof res.data);
+          console.log("🎮 응답 data:", res.data);
           
-          ISBN.value = res.data.data.bookId;
-          bookCover.value.title = res.data.data.title;
-          bookCover.value.imageUrl = res.data.data.bookCover;
-          
-          console.log("=== bookCover 객체 업데이트 완료 ===");
-          console.log("bookCover.value:", bookCover.value);
+          if (res.data && res.data.data) {
+            console.log("🎮 응답 data.data:", res.data.data);
+            console.log("🎮 bookId:", res.data.data.bookId);
+            console.log("🎮 title:", res.data.data.title);
+            console.log("🎮 bookCover URL:", res.data.data.bookCover);
+            
+            // 각 필드의 타입 체크
+            console.log("🎮 bookId 타입:", typeof res.data.data.bookId);
+            console.log("🎮 title 타입:", typeof res.data.data.title);
+            console.log("🎮 bookCover 타입:", typeof res.data.data.bookCover);
+            
+            // null/undefined 체크
+            console.log("🎮 bookCover가 null?:", res.data.data.bookCover === null);
+            console.log("🎮 bookCover가 undefined?:", res.data.data.bookCover === undefined);
+            console.log("🎮 bookCover가 'null' 문자열?:", res.data.data.bookCover === 'null');
+            
+            ISBN.value = res.data.data.bookId;
+            bookCover.value.title = res.data.data.title;
+            bookCover.value.imageUrl = res.data.data.bookCover;
+            
+            console.log("🎮 === bookCover 객체 업데이트 완료 ===");
+            console.log("🎮 업데이트된 bookCover.value:", JSON.stringify(bookCover.value));
+            console.log("🎮 bookCover.value.title:", bookCover.value.title);
+            console.log("🎮 bookCover.value.imageUrl:", bookCover.value.imageUrl);
+          } else {
+            console.error("🎮 ❌ 응답 데이터 구조 이상!");
+            console.error("🎮 res.data:", res.data);
+          }
         }).then(() => {
-          console.log("=== 다른 플레이어들에게 표지 정보 전송 ===");
+          console.log("🎮 === 다른 플레이어들에게 표지 정보 전송 ===");
+          console.log("🎮 전송할 bookCover:", bookCover.value);
+          console.log("🎮 전송할 ISBN:", ISBN.value);
+          
           connectedPeers.value.forEach(async (p) => {
             if (p.id !== peerId.value && p.connection.open) {
-              console.log(`플레이어 ${p.id}에게 표지 정보 전송`);
+              console.log(`🎮 플레이어 ${p.id}에게 표지 정보 전송`);
               sendMessage("bookCover", {
                 bookCover: bookCover.value,
                 ISBN: ISBN.value,
@@ -1789,15 +1823,25 @@ const gameEnd = async (status) => {
         });
 
       } catch (error) {
-        console.error("=== 게임 정상 종료 처리 실패 ===");
-        console.error("에러:", error);
-        console.error("에러 응답:", error.response);
+        console.error("🎮 === 게임 정상 종료 처리 실패 ===");
+        console.error("🎮 에러 객체:", error);
+        console.error("🎮 에러 메시지:", error.message);
+        console.error("🎮 에러 응답:", error.response);
+        if (error.response) {
+          console.error("🎮 에러 응답 상태:", error.response.status);
+          console.error("🎮 에러 응답 데이터:", error.response.data);
+        }
         // 정상 종료 처리 실패
       }
+    } else {
+      console.log("🎮 방장이 아니므로 API 호출 건너뜀");
     }
     // 우승자 쇼 오버레이
     // isForceStopped.value = "champ";
   }
+  
+  console.log("🎮 === gameEnd 함수 종료 ===");
+  console.log("🎮 최종 bookCover 상태:", bookCover.value);
 };
 
 // 승자 표시 완료 후 나레이션 시작

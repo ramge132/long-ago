@@ -79,6 +79,45 @@ const props = defineProps({
     default: false
   }
 })
+
+// bookCover prop 모니터링
+watch(() => props.bookCover, (newValue, oldValue) => {
+  console.log("=== 🎨 InGameContent: bookCover prop 변경 감지 ===");
+  console.log("이전 값:", oldValue);
+  console.log("새 값:", newValue);
+  
+  if (newValue) {
+    console.log("📚 bookCover.title:", newValue.title);
+    console.log("🖼️ bookCover.imageUrl:", newValue.imageUrl);
+    console.log("imageUrl 타입:", typeof newValue.imageUrl);
+    console.log("imageUrl이 null인가?:", newValue.imageUrl === null);
+    console.log("imageUrl이 'null' 문자열인가?:", newValue.imageUrl === 'null');
+    console.log("imageUrl이 undefined인가?:", newValue.imageUrl === undefined);
+    console.log("imageUrl이 빈 문자열인가?:", newValue.imageUrl === '');
+    
+    // URL 유효성 검사
+    if (newValue.imageUrl && newValue.imageUrl !== 'null' && newValue.imageUrl !== null) {
+      console.log("✅ imageUrl이 유효한 것으로 판단됨");
+      console.log("URL 길이:", newValue.imageUrl.length);
+      console.log("URL 시작 부분:", newValue.imageUrl.substring(0, 50));
+      
+      // 이미지 로드 테스트
+      const testImg = new Image();
+      testImg.onload = () => {
+        console.log("✅ 이미지 로드 성공!");
+      };
+      testImg.onerror = (error) => {
+        console.error("❌ 이미지 로드 실패:", error);
+        console.error("실패한 URL:", newValue.imageUrl);
+      };
+      testImg.src = newValue.imageUrl;
+    } else {
+      console.log("⚠️ imageUrl이 유효하지 않음");
+    }
+  } else {
+    console.log("⚠️ bookCover가 null 또는 undefined");
+  }
+}, { deep: true, immediate: true });
 // const test = ref({
 //   imageUrl: rule4,
 //   title: "해리포터의 악행을 밝힙니다."
