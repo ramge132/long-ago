@@ -303,6 +303,14 @@ public class SceneService {
                         .uri("https://api.openai.com/v1/chat/completions")
                         .bodyValue(requestBody)
                         .retrieve()
+                        .onStatus(
+                            status -> status.is4xxClientError() || status.is5xxServerError(),
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                .map(errorBody -> {
+                                    log.error("🚨 OpenAI API 에러 응답 본문: {}", errorBody);
+                                    return new RuntimeException("OpenAI API 에러: " + errorBody);
+                                })
+                        )
                         .bodyToMono(String.class)
                         .block();
                 
