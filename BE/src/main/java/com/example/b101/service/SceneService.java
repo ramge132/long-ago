@@ -281,8 +281,8 @@ public class SceneService {
                 requestBody.put("model", "gpt-5-nano");
                 
                 String promptInstruction = isEndingCard ?
-                    "다음 스토리의 결말을 " + style + " 스타일의 이미지로 생성하기 위한, 상세하고 창의적인 영어 프롬프트를 만들어주세요. 다른 설명 없이 프롬프트만 말해주세요. 결말: " + userSentence :
-                    "다음 문장을 " + style + " 스타일의 이미지로 생성하기 위한, 상세하고 창의적인 영어 프롬프트를 만들어주세요. 다른 설명 없이 프롬프트만 말해주세요. 문장: " + userSentence;
+                    "결말: " + userSentence + ". 이 문장을 " + style + " 스타일의 이미지로 만들기 위한 핵심 영어 키워드를 나열해줘." :
+                    "문장: " + userSentence + ". 이 문장을 " + style + " 스타일의 이미지로 만들기 위한 핵심 영어 키워드를 나열해줘.";
                 requestBody.put("input", promptInstruction);
 
                 Map<String, String> reasoning = new HashMap<>();
