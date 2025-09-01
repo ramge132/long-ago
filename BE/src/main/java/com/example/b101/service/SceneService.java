@@ -280,10 +280,10 @@ public class SceneService {
                 Map<String, Object> requestBody = new HashMap<>();
                 requestBody.put("model", "gpt-5-nano");
                 
-                String prompt = isEndingCard ? 
-                    "다음은 스토리의 결말 내용입니다. " + style + " 스타일의 극적이고 완결성 있는 이미지 생성 프롬프트로 변환해주세요: " + userSentence :
-                    "다음 한국어 문장을 " + style + " 스타일의 이미지 생성 프롬프트로 변환해주세요: " + userSentence;
-                requestBody.put("input", prompt);
+                String promptInstruction = isEndingCard ?
+                    "다음 스토리의 결말을 " + style + " 스타일의 이미지로 생성하기 위한, 상세하고 창의적인 영어 프롬프트를 만들어주세요. 다른 설명 없이 프롬프트만 말해주세요. 결말: " + userSentence :
+                    "다음 문장을 " + style + " 스타일의 이미지로 생성하기 위한, 상세하고 창의적인 영어 프롬프트를 만들어주세요. 다른 설명 없이 프롬프트만 말해주세요. 문장: " + userSentence;
+                requestBody.put("input", promptInstruction);
 
                 Map<String, String> reasoning = new HashMap<>();
                 reasoning.put("effort", "low");

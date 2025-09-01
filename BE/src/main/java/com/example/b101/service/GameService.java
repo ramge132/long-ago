@@ -498,9 +498,7 @@ public class GameService {
                 requestBody.put("model", "gpt-5-nano");
                 requestBody.put("input", "다음 스토리를 요약하여 10자 이내의 제목을 만들어주세요: " + storyContent);
 
-                Map<String, String> reasoning = new HashMap<>();
-                reasoning.put("effort", "low");
-                requestBody.put("reasoning", reasoning);
+                requestBody.put("input", "다음 스토리를 10자 이내의 창의적인 제목으로 만들어주세요. 다른 설명 없이 제목만 말해주세요. 스토리: " + storyContent);
 
                 Map<String, String> text = new HashMap<>();
                 text.put("verbosity", "low");
