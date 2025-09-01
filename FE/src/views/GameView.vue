@@ -981,8 +981,8 @@ const stopVotingAndShowWarning = async (data) => {
     console.log("점수 감소 중복 적용 방지: 이미 점수가 감소되었음");
   }
   
-  // 3. 책 내용 제거
-  if (data.imageDelete === true) {
+  // 3. 책 내용 제거 (중복 제거 방지)
+  if (data.imageDelete === true && !data.skipBookContentRemoval) {
     console.log("책 내용 제거 전:", bookContents.value.length, bookContents.value);
     if (bookContents.value.length === 1) {
       bookContents.value = [{ content: "", image: null }];
@@ -990,6 +990,8 @@ const stopVotingAndShowWarning = async (data) => {
       bookContents.value = bookContents.value.slice(0, -1);
     }
     console.log("책 내용 제거 후:", bookContents.value.length, bookContents.value);
+  } else if (data.skipBookContentRemoval) {
+    console.log("책 내용 제거 중복 적용 방지: 이미 책 내용이 제거되었음");
   }
   
   // 4. 경고 모달 표시
@@ -1490,9 +1492,9 @@ const nextTurn = async (data) => {
             }
           });
           
-          // 자신에게도 투표 중단 및 경고 표시 (하지만 점수는 이미 감소했으므로 중복 적용 방지)
+          // 자신에게도 투표 중단 및 경고 표시 (하지만 점수와 책 내용은 이미 처리했으므로 중복 적용 방지)
           console.log("자신에게도 투표 중단 및 경고 모달 표시");
-          const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true};
+          const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true, skipBookContentRemoval: true};
           stopVotingAndShowWarning(selfStopVotingMessage);
           
           console.log("부적절한 콘텐츠 처리 완료. 플레이어 점수:", currentPlayer.score);
