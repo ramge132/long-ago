@@ -1757,16 +1757,29 @@ const gameEnd = async (status) => {
     if (participants.value[0].id == peerId.value) {
       // 정상 종료 api 들어가야함
       try {
+        console.log("=== 게임 정상 종료 API 호출 시작 ===");
         return await deleteGame({
           gameId: gameID.value,
           isForceStopped: false
         }).then((res) => {
+          console.log("=== 게임 종료 응답 수신 ===");
+          console.log("전체 응답:", res.data);
+          console.log("응답 데이터:", res.data.data);
+          console.log("bookId:", res.data.data.bookId);
+          console.log("title:", res.data.data.title);
+          console.log("bookCover URL:", res.data.data.bookCover);
+          
           ISBN.value = res.data.data.bookId;
           bookCover.value.title = res.data.data.title;
           bookCover.value.imageUrl = res.data.data.bookCover;
+          
+          console.log("=== bookCover 객체 업데이트 완료 ===");
+          console.log("bookCover.value:", bookCover.value);
         }).then(() => {
+          console.log("=== 다른 플레이어들에게 표지 정보 전송 ===");
           connectedPeers.value.forEach(async (p) => {
             if (p.id !== peerId.value && p.connection.open) {
+              console.log(`플레이어 ${p.id}에게 표지 정보 전송`);
               sendMessage("bookCover", {
                 bookCover: bookCover.value,
                 ISBN: ISBN.value,
@@ -1776,6 +1789,9 @@ const gameEnd = async (status) => {
         });
 
       } catch (error) {
+        console.error("=== 게임 정상 종료 처리 실패 ===");
+        console.error("에러:", error);
+        console.error("에러 응답:", error.response);
         // 정상 종료 처리 실패
       }
     }

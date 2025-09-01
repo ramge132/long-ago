@@ -9,8 +9,10 @@
           style="text-shadow: -2px 0px black, 0px 2px black, 2px 0px black, 0px -2px black;"
           :style="{ zIndex: calculateZIndex(0) }"
         >
-        <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute -translate-y-150px font-title text-white" style="backface-visibility: hidden"></p>
-        <img :src="bookCover.imageUrl" alt="" v-if="bookCover.imageUrl && bookCover.imageUrl !== 'null'" class="w-full h-full object-cover">
+        <!-- 표지 이미지 먼저 렌더링 (배경) -->
+        <img :src="bookCover.imageUrl" alt="책 표지" v-if="bookCover.imageUrl && bookCover.imageUrl !== null && bookCover.imageUrl !== 'null'" class="absolute inset-0 w-full h-full object-cover" style="backface-visibility: hidden">
+        <!-- 제목 텍스트 (전경, 이미지 위에 표시) -->
+        <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute top-1/3 -translate-y-1/2 font-title text-white text-5xl z-10" style="backface-visibility: hidden; text-shadow: 2px 2px 4px rgba(0,0,0,0.8)"></p>
         
         </div>
         <template
