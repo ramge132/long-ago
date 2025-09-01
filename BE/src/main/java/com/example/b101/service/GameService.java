@@ -488,28 +488,24 @@ public class GameService {
             try {
                 log.info("🔄 책 제목 생성 시도 {}/5", attempt);
                 
-                // OpenAI GPT API 요청 구조
+                // GPT-5 Responses API 요청 구조
                 Map<String, Object> requestBody = new HashMap<>();
-                requestBody.put("model", "gpt-5-nano");  // gpt-5-nano 사용
-                requestBody.put("max_tokens", 50);
-                requestBody.put("temperature", 0.7);
+                requestBody.put("model", "gpt-5-nano");
+                requestBody.put("input", "다음 스토리를 요약하여 10자 이내의 제목을 만들어주세요: " + storyContent);
+
+                Map<String, String> reasoning = new HashMap<>();
+                reasoning.put("effort", "low");
+                requestBody.put("reasoning", reasoning);
+
+                Map<String, String> text = new HashMap<>();
+                text.put("verbosity", "low");
+                requestBody.put("text", text);
                 
-                // 메시지 구조
-                Map<String, Object> systemMessage = new HashMap<>();
-                systemMessage.put("role", "system");
-                systemMessage.put("content", "당신은 스토리를 요약하고 매력적인 제목을 만드는 전문가입니다. 주어진 스토리 내용을 바탕으로 10자 이내의 간결하고 매력적인 한국어 제목을 만들어주세요. 제목만 답해주세요.");
+                log.info("GPT-5 Responses API 요청 전송 중... (시도 {})", attempt);
                 
-                Map<String, Object> userMessage = new HashMap<>();
-                userMessage.put("role", "user");
-                userMessage.put("content", "다음 스토리를 요약하여 10자 이내의 제목을 만들어주세요: " + storyContent);
-                
-                requestBody.put("messages", List.of(systemMessage, userMessage));
-                
-                log.info("GPT API 요청 전송 중... (시도 {})", attempt);
-                
-                // OpenAI API 호출
+                // OpenAI Responses API 호출
                 String response = openaiWebClient.post()
-                        .uri("https://api.openai.com/v1/chat/completions")
+                        .uri("https://api.openai.com/v1/responses")
                         .bodyValue(requestBody)
                         .retrieve()
                         .onStatus(
@@ -533,8 +529,8 @@ public class GameService {
                 JsonNode responseJson = objectMapper.readTree(response);
                 log.info("응답 JSON 구조: {}", responseJson.toString());
                 
-                if (responseJson.has("choices") && responseJson.get("choices").size() > 0) {
-                    String generatedTitle = responseJson.get("choices").get(0).get("message").get("content").asText().trim();
+                if (responseJson.has("output_text")) {
+                    String generatedTitle = responseJson.get("output_text").asText().trim();
                     log.info("✅ 책 제목 생성 성공 (시도 {}): [{}]", attempt, generatedTitle);
                     return generatedTitle;
                 }

@@ -276,31 +276,28 @@ public class SceneService {
                 String style = gameMode < styles.length ? styles[gameMode] : "애니메이션 스타일";
                 log.info("선택된 스타일: {}", style);
                 
-                // OpenAI GPT API 요청 구조
+                // GPT-5 Responses API 요청 구조
                 Map<String, Object> requestBody = new HashMap<>();
                 requestBody.put("model", "gpt-5-nano");
-                requestBody.put("max_tokens", 200);
-                requestBody.put("temperature", isEndingCard ? 0.8 : 0.7); // 결말카드는 0.8, 일반카드는 0.7
                 
-                // 메시지 구조
-                Map<String, Object> systemMessage = new HashMap<>();
-                systemMessage.put("role", "system");
-                systemMessage.put("content", "당신은 이미지 생성을 위한 프롬프트를 만드는 전문가입니다. 사용자의 한국어 문장을 받아서 " + style + " 스타일의 이미지 생성에 적합한 영어 프롬프트로 변환해주세요. 간결하고 명확하게 작성해주세요.");
-                
-                Map<String, Object> userMessage = new HashMap<>();
-                userMessage.put("role", "user");
                 String prompt = isEndingCard ? 
                     "다음은 스토리의 결말 내용입니다. " + style + " 스타일의 극적이고 완결성 있는 이미지 생성 프롬프트로 변환해주세요: " + userSentence :
                     "다음 한국어 문장을 " + style + " 스타일의 이미지 생성 프롬프트로 변환해주세요: " + userSentence;
-                userMessage.put("content", prompt);
+                requestBody.put("input", prompt);
+
+                Map<String, String> reasoning = new HashMap<>();
+                reasoning.put("effort", "low");
+                requestBody.put("reasoning", reasoning);
+
+                Map<String, String> text = new HashMap<>();
+                text.put("verbosity", "low");
+                requestBody.put("text", text);
                 
-                requestBody.put("messages", List.of(systemMessage, userMessage));
+                log.info("GPT-5 Responses API 요청 전송 중... (시도 {})", attempt);
                 
-                log.info("OpenAI API 요청 전송 중... (model: gpt-5-nano, temperature: {})", isEndingCard ? 0.8 : 0.7);
-                
-                // OpenAI API 호출
+                // OpenAI Responses API 호출
                 String response = openaiWebClient.post()
-                        .uri("https://api.openai.com/v1/chat/completions")
+                        .uri("https://api.openai.com/v1/responses")
                         .bodyValue(requestBody)
                         .retrieve()
                         .onStatus(
@@ -320,8 +317,8 @@ public class SceneService {
                 JsonNode responseJson = objectMapper.readTree(response);
                 log.info("응답 JSON 구조: {}", responseJson.toString());
                 
-                if (responseJson.has("choices") && responseJson.get("choices").size() > 0) {
-                    String generatedPrompt = responseJson.get("choices").get(0).get("message").get("content").asText().trim();
+                if (responseJson.has("output_text")) {
+                    String generatedPrompt = responseJson.get("output_text").asText().trim();
                     log.info("✅ {} GPT API 성공 (시도 {}) ===", cardType, attempt);
                     log.info("생성된 프롬프트: [{}]", generatedPrompt);
                     return generatedPrompt;
