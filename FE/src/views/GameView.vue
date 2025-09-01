@@ -546,25 +546,17 @@ const setupConnection = (conn) => {
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
-                await gameEnd(true).then((res) => {
+                // 즉시 승자 표시 (1초 후)
+                setTimeout(() => {
+                  isForceStopped.value = "champ";
+                }, 1000);
+                
+                await gameEnd(true).then(() => {
                   connectedPeers.value.forEach(async (p) => {
                     if (p.id !== peerId.value && p.connection.open) {
-                      sendMessage("gameEnd",
-                        {
-                          bookCover: {
-                            title: res.data.data.title,
-                            imageUrl: res.data.data.bookCover
-                          },
-                          isbn: res.data.data.bookId,
-                        },
-                        p.connection
-                      );
-                    };
+                      sendMessage("gameEnd", {}, p.connection);
+                    }
                   });
-                  
-                  // 먼저 승자를 표시
-                  isForceStopped.value = "champ";
-                  // gameStarted는 승자 표시 후 onWinnerShown에서 처리
                 });
               } else {
                 connectedPeers.value.forEach(async (p) => {
@@ -1479,22 +1471,17 @@ const nextTurn = async (data) => {
           // condition에서 다음 턴 or 게임 종료 (투표 거부와 동일한 로직)
           if (usedCard.value.isEnding) {
             console.log("부적절한 컨텐츠 처리 후 게임 종료 조건 감지");
-            await gameEnd(true).then((res) => {
+            // 즉시 승자 표시 (1초 후)
+            setTimeout(() => {
+              isForceStopped.value = "champ";
+            }, 1000);
+            
+            await gameEnd(true).then(() => {
               connectedPeers.value.forEach(async (p) => {
                 if (p.id !== peerId.value && p.connection.open) {
-                  sendMessage("gameEnd", {
-                    bookCover: {
-                      title: res.data.data.title,
-                      imageUrl: res.data.data.bookCover
-                    },
-                    isbn: res.data.data.bookId,
-                  }, p.connection);
+                  sendMessage("gameEnd", {}, p.connection);
                 }
               });
-              
-              // 먼저 승자를 표시
-              isForceStopped.value = "champ";
-              // gameStarted는 승자 표시 후 onWinnerShown에서 처리
             });
           } else {
             // 게임이 계속되는 경우에만 투표 중단 신호 전송
@@ -1770,7 +1757,7 @@ const gameEnd = async (status) => {
     if (participants.value[0].id == peerId.value) {
       // 정상 종료 api 들어가야함
       try {
-        const response = await deleteGame({
+        return await deleteGame({
           gameId: gameID.value,
           isForceStopped: false
         }).then((res) => {
