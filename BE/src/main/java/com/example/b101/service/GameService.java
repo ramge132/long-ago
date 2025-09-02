@@ -347,7 +347,7 @@ public class GameService {
                         Scene scene1 = new Scene(
                                 sceneRedis.getSceneOrder(),
                                 sceneRedis.getPrompt(),
-                                baseUrl + "/images/s3/downloadFromS3?objectKey=" + book.getBookId() + "/" + sceneRedis.getSceneOrder() + ".png"
+                                sceneRedis.getImageUrl() // Python 서비스에서 생성한 S3 직접 URL 사용
                         );
                         scene1.setBook(book);
                         return scene1;

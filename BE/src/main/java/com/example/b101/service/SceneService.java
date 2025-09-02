@@ -139,6 +139,7 @@ public class SceneService {
                 .gameId(sceneRequest.getGameId())
                 .prompt(sceneRequest.getUserPrompt())
                 .image(null)  // Python 서비스에서 S3에 직접 저장하므로 바이너리 데이터는 저장하지 않음
+                .imageUrl(imageUrl)  // Python 서비스에서 반환받은 S3 이미지 URL 저장
                 .sceneOrder(sceneRequest.getTurn())
                 .userId(sceneRequest.getUserId())
                 .build();

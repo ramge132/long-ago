@@ -26,5 +26,7 @@ public class SceneRedis implements Serializable {
     private String prompt; //사용자가 생성한 프롬포트
 
     private byte[] image; //바이너리 형태로 저장된 이미지
+    
+    private String imageUrl; //S3에 저장된 이미지 URL (Python 서비스 사용시)
 
 }
