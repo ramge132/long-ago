@@ -621,6 +621,14 @@ const setupConnection = (conn) => {
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
           }
+          // 투표 찬성 시 카드 제거
+          if (accepted) {
+            storyCards.value.forEach((card, index) => {
+              if (card.id === usedCard.value.id) {
+                storyCards.value.splice(index, 1);
+              }
+            });
+          }
         } catch (error) {
           if (error.response.status === 409) {
             storyCards.value.forEach((card, index) => {
@@ -1655,6 +1663,14 @@ const voteEnd = async (data) => {
           });
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
+          }
+          // 투표 찬성 시 카드 제거
+          if (accepted) {
+            storyCards.value.forEach((card, index) => {
+              if (card.id === usedCard.value.id) {
+                storyCards.value.splice(index, 1);
+              }
+            });
           }
         } catch (error) {
           if (error.response.status === 409) {
