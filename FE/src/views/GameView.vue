@@ -688,6 +688,25 @@ const setupConnection = (conn) => {
         console.log("🎮 게스트 결과창 표시 완료 (표지 정보 포함)");
         break;
 
+      case "bookCoverUpdate":
+        console.log("🎮 표지 정보 업데이트 수신");
+        console.log("🎮 업데이트할 표지 정보:", data.bookCover);
+        console.log("🎮 업데이트할 ISBN:", data.ISBN);
+        
+        // 표지 정보 업데이트 (결과창은 이미 표시된 상태)
+        if (data.bookCover) {
+          console.log("🎮 기존 표지:", bookCover.value);
+          bookCover.value = data.bookCover;
+          console.log("🎮 업데이트된 표지:", bookCover.value);
+        }
+        if (data.ISBN) {
+          console.log("🎮 기존 ISBN:", ISBN.value);
+          ISBN.value = data.ISBN;
+          console.log("🎮 업데이트된 ISBN:", ISBN.value);
+        }
+        console.log("🎮 게스트 표지 정보 업데이트 완료");
+        break;
+
       case "bookCover":
         console.log("🎮 구버전 bookCover 메시지 수신 (더 이상 사용되지 않음)");
         console.log("🎮 수신한 bookCover:", data.bookCover);
@@ -1670,22 +1689,31 @@ const voteEnd = async (data) => {
         if (usedCard.value.isEnding) {
           console.log("🎮 === 엔딩 카드 투표 통과 - 게임 종료 처리 시작 ===");
           
-          // 1단계: 즉시 모든 플레이어에게 게임 종료 알림 (결과창은 아직 표시하지 않음)
-          connectedPeers.value.forEach(async (p) => {
-            if (p.id !== peerId.value && p.connection.open) {
-              console.log(`🎮 플레이어 ${p.id}에게 게임 종료 알림 전송`);
-              sendMessage("gameEndPrepare", {}, p.connection);
-            }
-          });
+          // 1단계: 백그라운드로 책 표지 생성 요청 시작 (응답을 기다리지 않음)
+          console.log("🎮 백그라운드로 책 표지 생성 요청 시작");
+          gameEnd(true); // await 제거 - 백그라운드 실행
           
-          // 2단계: 방장이 책 표지 생성 시작
-          console.log("🎮 방장이 책 표지 생성 시작");
-          await gameEnd(true);
-          
-          // 3단계: 방장 승자 표시 (다른 플레이어들은 gameEnd 함수에서 showResultsWithCover 메시지로 처리됨)
+          // 2단계: 1초 후 모든 플레이어에게 결과창 표시
           setTimeout(() => {
+            console.log("🎮 === 1초 후 모든 플레이어에게 결과창 표시 ===");
+            
+            // 방장 결과창 표시
             console.log("🎮 방장 승자 화면 표시");
             isForceStopped.value = "champ";
+            
+            // 게스트들에게도 결과창 표시 (기본값으로 먼저 표시, 표지는 나중에 업데이트)
+            connectedPeers.value.forEach(async (p) => {
+              if (p.id !== peerId.value && p.connection.open) {
+                console.log(`🎮 플레이어 ${p.id}에게 결과창 표시 (기본값)`);
+                sendMessage("showResultsWithCover", {
+                  bookCover: {
+                    title: "아주 먼 옛날", // 기본값
+                    imageUrl: "" // 기본값 (빈 문자열)
+                  },
+                  ISBN: "generating..." // 생성 중 표시
+                }, p.connection);
+              }
+            });
           }, 1000);
         } else {
           connectedPeers.value.forEach(async (p) => {
@@ -1850,44 +1878,36 @@ const gameEnd = async (status) => {
           console.log("🎮 전송할 bookCover:", bookCover.value);
           console.log("🎮 전송할 ISBN:", ISBN.value);
           
-          // 표지 정보와 결과창 표시 명령을 함께 전송
-          setTimeout(() => {
-            console.log("🎮 === 모든 플레이어에게 표지 정보 + 결과창 표시 명령 전송 ===");
+          // 표지 생성 완료 후 실제 표지 정보로 업데이트
+          console.log("🎮 === 표지 생성 완료 후 실제 표지 정보로 업데이트 ===");
+          console.log("🎮 생성된 표지 정보:", bookCover.value);
+          console.log("🎮 생성된 ISBN:", ISBN.value);
+          
+          // 방장의 표지 정보는 이미 gameEnd 함수에서 설정됨
+          // 게스트들에게 실제 표지 정보로 업데이트 메시지 전송
+          console.log("🎮 연결된 피어 수:", connectedPeers.value.length);
+          
+          connectedPeers.value.forEach(async (p, index) => {
+            console.log(`🎮 피어 ${index}: ID=${p.id}, open=${p.connection.open}`);
             
-            // 방장 결과창 표시는 voteEnd 함수에서 별도로 처리됨
-            console.log("🎮 방장 결과창은 voteEnd에서 처리됨");
-            console.log("🎮 방장 표지 정보:", bookCover.value);
-            
-            // 다른 플레이어들에게 표지 정보와 함께 결과창 표시 명령
-            console.log("🎮 연결된 피어 수:", connectedPeers.value.length);
-            console.log("🎮 현재 피어 ID:", peerId.value);
-            
-            if (connectedPeers.value.length === 0) {
-              console.warn("🎮 ⚠️ 연결된 피어가 없음!");
-            }
-            
-            connectedPeers.value.forEach(async (p, index) => {
-              console.log(`🎮 피어 ${index}: ID=${p.id}, open=${p.connection.open}, 내 ID와 다름=${p.id !== peerId.value}`);
+            if (p.id !== peerId.value && p.connection.open) {
+              console.log(`🎮 ✅ 플레이어 ${p.id}에게 실제 표지 정보 업데이트 전송`);
+              console.log(`🎮 업데이트할 표지 정보:`, bookCover.value);
+              console.log(`🎮 업데이트할 ISBN:`, ISBN.value);
               
-              if (p.id !== peerId.value && p.connection.open) {
-                console.log(`🎮 ✅ 플레이어 ${p.id}에게 표지 정보 + 결과창 표시 명령 전송`);
-                console.log(`🎮 전송할 표지 정보:`, bookCover.value);
-                console.log(`🎮 전송할 ISBN:`, ISBN.value);
-                
-                try {
-                  sendMessage("showResultsWithCover", {
-                    bookCover: bookCover.value,
-                    ISBN: ISBN.value,
-                  }, p.connection);
-                  console.log(`🎮 ✅ 메시지 전송 성공: ${p.id}`);
-                } catch (error) {
-                  console.error(`🎮 ❌ 메시지 전송 실패: ${p.id}`, error);
-                }
-              } else {
-                console.log(`🎮 ⏭️ 피어 ${p.id} 건너뜀 - 본인이거나 연결 끊어짐`);
+              try {
+                sendMessage("bookCoverUpdate", {
+                  bookCover: bookCover.value,
+                  ISBN: ISBN.value,
+                }, p.connection);
+                console.log(`🎮 ✅ 표지 업데이트 메시지 전송 성공: ${p.id}`);
+              } catch (error) {
+                console.error(`🎮 ❌ 표지 업데이트 메시지 전송 실패: ${p.id}`, error);
               }
-            });
-          }, 100); // 표지 생성 완료 후 짧은 딜레이
+            } else {
+              console.log(`🎮 ⏭️ 피어 ${p.id} 건너뜀 - 본인이거나 연결 끊어짐`);
+            }
+          });
         });
 
       } catch (error) {
