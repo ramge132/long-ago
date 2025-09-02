@@ -105,10 +105,15 @@ public class BookService {
         BookResponse bookResponse = BookResponse.builder()
                 .title(book.getTitle())
                 .sceneResponseList(book.getScenes().stream()
-                        .map(scene -> new SceneResponse(scene.getSceneOrder(), scene.getImageUrl(), scene.getUserPrompt()))
+                        .map(scene -> {
+                            log.info("Scene 이미지 URL: {} (순서: {})", scene.getImageUrl(), scene.getSceneOrder());
+                            return new SceneResponse(scene.getSceneOrder(), scene.getImageUrl(), scene.getUserPrompt());
+                        })
                         .toList())
                 .bookCover(book.getImageUrl())
                 .build();
+        
+        log.info("Book 표지 URL: {}", book.getImageUrl());
 
         return ApiResponseUtil.success(bookResponse, "book 데이터 반환 성공", HttpStatus.OK, request.getRequestURI());
     }
