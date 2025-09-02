@@ -13,8 +13,4 @@ import java.util.List;
 public class CachingVariants {
 
     private List<StoryCardVariants> storyCardVariants;
-    
-    public CachingVariants(List<StoryCardVariants> storyCardVariants) {
-        this.storyCardVariants = storyCardVariants;
-    }
 }

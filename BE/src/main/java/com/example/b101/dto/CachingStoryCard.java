@@ -13,8 +13,4 @@ import java.util.List;
 public class CachingStoryCard {
 
     List<StoryCard> storyCards;
-    
-    public CachingStoryCard(List<StoryCard> storyCards) {
-        this.storyCards = storyCards;
-    }
 }

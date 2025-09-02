@@ -13,8 +13,4 @@ import java.util.List;
 public class CachingEndingCard {
 
     List<EndingCard> endingCards;
-    
-    public CachingEndingCard(List<EndingCard> endingCards) {
-        this.endingCards = endingCards;
-    }
 }
