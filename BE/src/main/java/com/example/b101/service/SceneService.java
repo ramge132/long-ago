@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.time.Duration;
 
 @Slf4j
 @Service
@@ -46,6 +47,8 @@ public class SceneService {
     private final WebClient openaiWebClient;
     @Qualifier("geminiWebClient")
     private final WebClient geminiWebClient;
+    @Qualifier("pythonImageServiceClient")
+    private final WebClient pythonImageServiceClient;
     private final StoryCardRepository storyCardRepository;
     private final WebClientConfig webClientConfig;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -77,39 +80,21 @@ public class SceneService {
 
         log.info("게임 유효성 검사 통과. 그림체 모드: {}", game.getDrawingStyle());
 
-        // 새로운 API 시스템: OpenAI GPT + Gemini
-        byte[] generateImage = null;
+        // Python 통합 이미지 생성 서비스 호출
+        String imageUrl = null;
         try {
-            // 결말카드인지 확인 (턴이 높고 결말카드 내용으로 추정)
+            // 결말카드인지 확인 (기존 로직과 동일)
             boolean isEndingCard = sceneRequest.getTurn() > 5 && 
                     (sceneRequest.getUserPrompt().contains("결말") || 
                      sceneRequest.getUserPrompt().contains("끝") ||
-                     sceneRequest.getUserPrompt().length() > 30); // 결말카드는 보통 길다
+                     sceneRequest.getUserPrompt().length() > 30);
             
-            log.info("=== 결말카드 탐지 결과 ===");
-            log.info("턴 > 5: {}, '결말' 포함: {}, '끝' 포함: {}, 길이 > 30: {}", 
-                    sceneRequest.getTurn() > 5,
-                    sceneRequest.getUserPrompt().contains("결말"),
-                    sceneRequest.getUserPrompt().contains("끝"),
-                    sceneRequest.getUserPrompt().length() > 30);
-            log.info("최종 판정: {} 카드", isEndingCard ? "결말" : "일반");
+            log.info("=== Python 이미지 생성 서비스 호출 시작 ===");
+            log.info("결말카드 여부: {}, 그림체 모드: {}", isEndingCard, game.getDrawingStyle());
             
-            String enhancedPrompt;
-            if (isEndingCard) {
-                log.info("=== 결말카드 GPT 프롬프트 생성 시작 ===");
-                enhancedPrompt = generateEndingPromptWithGPT(sceneRequest.getUserPrompt(), game.getDrawingStyle());
-                log.info("결말카드용 GPT 프롬프트 생성 완료: [{}]", enhancedPrompt);
-            } else {
-                log.info("=== 일반카드 GPT 프롬프트 생성 시작 ===");
-                enhancedPrompt = generatePromptWithGPT(sceneRequest.getUserPrompt(), game.getDrawingStyle());
-                log.info("일반카드용 GPT 프롬프트 생성 완료: [{}]", enhancedPrompt);
-            }
-            
-            // 2단계: Gemini로 이미지 생성
-            log.info("=== Gemini 이미지 생성 시작 ===");
-            generateImage = generateImageWithGemini(enhancedPrompt);
-            log.info("=== Gemini 이미지 생성 성공 ===");
-            log.info("생성된 이미지 크기: {} bytes", generateImage.length);
+            imageUrl = callPythonImageService(sceneRequest, game.getDrawingStyle(), isEndingCard);
+            log.info("=== Python 이미지 생성 성공 ===");
+            log.info("생성된 이미지 URL: {}", imageUrl);
             
         } catch (WebClientException e) {
             log.error("=== API 서버 통신 에러 ===");
@@ -153,27 +138,24 @@ public class SceneService {
 
         log.info("=== Redis 저장 시작 ===");
 
-        // Redis 등 저장소에 이미지 데이터와 함께 Scene 정보 저장
+        // Redis에 Scene 정보 저장 (이미지는 이미 S3에 저장됨)
         String id = UUID.randomUUID().toString();
         SceneRedis scene = SceneRedis.builder()
                 .id(id)
                 .gameId(sceneRequest.getGameId())
                 .prompt(sceneRequest.getUserPrompt())
-                .image(generateImage)  // 바이너리 이미지 데이터 저장
+                .image(null)  // Python 서비스에서 S3에 직접 저장하므로 바이너리 데이터는 저장하지 않음
                 .sceneOrder(sceneRequest.getTurn())
                 .userId(sceneRequest.getUserId())
                 .build();
 
         redisSceneRepository.save(scene);
 
-        log.info("Redis에 저장된 scene 개수 : {}", redisSceneRepository.findAllByGameId(sceneRequest.getGameId()).size());
-        log.info("새로운 API에서 생성된 이미지 크기 : {}", generateImage.length);
-        log.info("Redis에 저장된 이미지 크기 : {}", redisSceneRepository.findById(id).getImage().length);
+        log.info("Redis에 저장된 scene 개수: {}", redisSceneRepository.findAllByGameId(sceneRequest.getGameId()).size());
+        log.info("Python 서비스에서 생성된 이미지 URL: {}", imageUrl);
 
-        // 이미지 바이너리 데이터를 PNG 미디어 타입으로 반환
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .contentType(MediaType.IMAGE_PNG)
-                .body(generateImage);
+        // 성공 응답 반환 (이미지 URL 포함)
+        return ApiResponseUtil.success(imageUrl, "이미지 생성 성공", HttpStatus.CREATED, request.getRequestURI());
     }
 
 
@@ -217,7 +199,7 @@ public class SceneService {
         
         log.info("투표 결과 찬성");
 
-        return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
+        return ApiResponseUtil.success(null, "투표 결과 찬성으로 장면이 승인됨", HttpStatus.OK, request.getRequestURI());
     }
 
 
@@ -245,7 +227,7 @@ public class SceneService {
 
         gameRepository.update(game);
 
-        return ApiResponseUtil.failure("투표 결과 찬성으로 삭제되지 않음",HttpStatus.CONFLICT,request.getRequestURI());
+        return ApiResponseUtil.success(null, "투표 결과 찬성으로 장면이 승인됨", HttpStatus.OK, request.getRequestURI());
     }
 
     /**
@@ -641,6 +623,58 @@ public class SceneService {
                 return "기타 이유로 인한 차단";
             default:
                 return "알 수 없는 차단 이유: " + blockReason;
+        }
+    }
+    
+    /**
+     * Python 통합 이미지 생성 서비스 호출
+     */
+    private String callPythonImageService(SceneRequest sceneRequest, int drawingStyle, boolean isEnding) {
+        try {
+            // Python 서비스 요청 데이터 구성
+            HashMap<String, Object> requestBody = new HashMap<>();
+            requestBody.put("gameId", sceneRequest.getGameId());
+            requestBody.put("userId", sceneRequest.getUserId());
+            requestBody.put("userPrompt", sceneRequest.getUserPrompt());
+            requestBody.put("turn", sceneRequest.getTurn());
+            requestBody.put("drawingStyle", drawingStyle);
+            requestBody.put("isEnding", isEnding);
+            
+            log.info("Python 서비스 호출 요청: {}", requestBody);
+            
+            // Python 서비스 호출 (재시도 로직 포함)
+            String response = pythonImageServiceClient
+                .post()
+                .uri("/generate-scene")
+                .bodyValue(requestBody)
+                .retrieve()
+                .onStatus(
+                    status -> status.is4xxClientError() || status.is5xxServerError(),
+                    clientResponse -> clientResponse.bodyToMono(String.class)
+                        .map(errorBody -> new RuntimeException("Python 서비스 에러: " + errorBody))
+                )
+                .bodyToMono(String.class)
+                .timeout(Duration.ofMinutes(5))  // 5분 타임아웃
+                .block();
+            
+            // 응답 파싱
+            JsonNode responseNode = objectMapper.readTree(response);
+            
+            if (responseNode.get("success").asBoolean()) {
+                String imageUrl = responseNode.get("imageUrl").asText();
+                String gptPrompt = responseNode.has("gptPrompt") ? responseNode.get("gptPrompt").asText() : "";
+                
+                log.info("Python 이미지 생성 성공. URL: {}, GPT 프롬프트: {}", imageUrl, gptPrompt);
+                return imageUrl;
+            } else {
+                String errorMessage = responseNode.get("message").asText();
+                log.error("Python 이미지 생성 실패: {}", errorMessage);
+                throw new RuntimeException(errorMessage);
+            }
+            
+        } catch (Exception e) {
+            log.error("Python 이미지 서비스 호출 실패: {}", e.getMessage());
+            throw new RuntimeException("이미지 생성 서비스 호출 실패: " + e.getMessage(), e);
         }
     }
 }

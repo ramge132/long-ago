@@ -25,6 +25,9 @@ public class WebClientConfig {
     
     @Value("${gemini.api.key:}")
     private String geminiApiKey;
+    
+    @Value("${python.image.service.url:http://localhost:8190}")
+    private String pythonImageServiceUrl;
 
     @Value("${WEBCLIENT.BASE.URL_0}")
     private String baseUrl0;
@@ -119,5 +122,16 @@ public class WebClientConfig {
     
     public String getGeminiApiKey() {
         return geminiApiKey;
+    }
+    
+    @Bean
+    public WebClient pythonImageServiceClient(WebClient.Builder builder) {
+        // Python 이미지 생성 서비스 전용 WebClient
+        return builder
+                .baseUrl(pythonImageServiceUrl)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().responseTimeout(Duration.ofMinutes(5))))
+                .build();
     }
 }

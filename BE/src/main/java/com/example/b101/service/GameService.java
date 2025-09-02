@@ -23,6 +23,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,8 @@ public class GameService {
     private final WebClient webClient;
     @Qualifier("openaiWebClient")
     private final WebClient openaiWebClient;
+    @Qualifier("pythonImageServiceClient")
+    private final WebClient pythonImageServiceClient;
     @Qualifier("geminiWebClient")
     private final WebClient geminiWebClient;
     private final S3service s3service;
@@ -257,29 +260,28 @@ public class GameService {
             log.info("🎮🎮🎮 Gemini API 키 길이: {}", 
                     webClientConfig.getGeminiApiKey() != null ? webClientConfig.getGeminiApiKey().length() : "null");
 
-            // 새로운 API 시스템: OpenAI GPT + Gemini로 표지 생성
+            // Python 통합 서비스로 표지 생성
             String bookTitle = "아주 먼 옛날"; // 기본값
-            byte[] coverImageBytes = null; // 기본값
+            BookCoverResponse coverResponse = null; // Python 서비스 응답
             
             try {
-                log.info("🎮🎮🎮 === 1단계: 스토리 요약 및 제목 생성 시작 ===");
-                // 1단계: 스토리 요약 및 제목 생성
-                bookTitle = generateBookTitle(sceneRedisList);
-                log.info("🎮🎮🎮 GPT로 생성된 책 제목: [{}]", bookTitle);
+                log.info("🎮🎮🎮 === Python 서비스를 통한 책 표지 통합 생성 시작 ===");
+                // Python 서비스로 제목 + 이미지 통합 생성
+                coverResponse = callPythonCoverService(sceneRedisList, game);
+                
+                bookTitle = coverResponse.getTitle();
+                String coverImageUrl = coverResponse.getImageUrl();
+                
+                log.info("🎮🎮🎮 Python 서비스 생성 완료 - 제목: [{}], URL: [{}]", bookTitle, coverImageUrl);
                 
                 if (bookTitle == null || bookTitle.trim().isEmpty()) {
                     log.error("🎮🎮🎮 제목이 null이거나 비어있음!");
                     throw new RuntimeException("제목 생성 실패 - 빈 제목");
                 }
                 
-                log.info("🎮🎮🎮 === 2단계: 표지 이미지 생성 시작 ===");
-                // 2단계: 표지 이미지 생성 
-                coverImageBytes = generateCoverImage(bookTitle, game.getDrawingStyle());
-                log.info("🎮🎮🎮 Gemini로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
-                
-                if (coverImageBytes == null || coverImageBytes.length == 0) {
-                    log.error("🎮🎮🎮 이미지가 null이거나 크기가 0!");
-                    throw new RuntimeException("이미지 생성 실패 - 빈 이미지");
+                if (coverImageUrl == null || coverImageUrl.trim().isEmpty()) {
+                    log.error("🎮🎮🎮 이미지 URL이 null이거나 비어있음!");
+                    throw new RuntimeException("이미지 생성 실패 - 빈 URL");
                 }
                 
             } catch (Exception e) {
@@ -310,7 +312,7 @@ public class GameService {
             SceneRedis scene = SceneRedis.builder()
                     .id(UUID.randomUUID().toString())
                     .gameId(deleteGameRequest.getGameId())
-                    .image(coverImageBytes)  // 새 API로 생성된 바이너리 이미지 데이터 저장
+                    .image(new byte[0])  // Python 서비스에서 S3에 직접 저장하므로 바이너리 데이터는 비움
                     .sceneOrder(0) //책 표지는 순서가 0
                     .build();
 
@@ -334,6 +336,7 @@ public class GameService {
 
             String baseUrl = ServletUriComponentsBuilder.fromRequestUri(request)
                     .replacePath(null)
+                    .scheme("https") // HTTPS 강제 적용
                     .build()
                     .toUriString();
 
@@ -351,7 +354,8 @@ public class GameService {
                     })
                     .toList();
 
-            book.setImageUrl(baseUrl+"/images/s3/downloadFromS3?objectKey="+book.getBookId()+"/0.png"); //책 표지 url
+            // Python 서비스에서 이미 생성된 표지 URL 사용
+            book.setImageUrl(coverResponse.getImageUrl()); // Python에서 생성된 표지 URL
             book.setScenes(sceneList);
 
 
@@ -820,6 +824,92 @@ public class GameService {
         }
         
         throw new RuntimeException("Gemini API 재시도 로직 오류 - 책 표지"); // fallback
+    }
+    
+    /**
+     * Python 통합 이미지 생성 서비스로 책 표지 생성 요청
+     */
+    private BookCoverResponse callPythonCoverService(List<SceneRedis> sceneRedisList, Game game) {
+        log.info("=== Python 서비스로 책 표지 생성 요청 시작 ===");
+        
+        try {
+            // 스토리 내용 요약
+            String storyContent = sceneRedisList.stream()
+                    .filter(scene -> scene.getSceneOrder() > 0) // 표지(0번) 제외
+                    .sorted(Comparator.comparingInt(SceneRedis::getSceneOrder))
+                    .map(SceneRedis::getPrompt)
+                    .collect(Collectors.joining(". "));
+            
+            // 요청 데이터 구성
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("storyContent", storyContent);
+            requestBody.put("gameId", game.getGameId());
+            requestBody.put("drawingStyle", game.getDrawingStyle());
+            
+            log.info("Python 서비스 요청 데이터: gameId={}, drawingStyle={}, storyContent 길이={}", 
+                    game.getGameId(), game.getDrawingStyle(), storyContent.length());
+            
+            // Python 서비스 호출
+            String response = pythonImageServiceClient
+                    .post()
+                    .uri("/generate-cover")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.ofMinutes(5))
+                    .block();
+            
+            if (response == null) {
+                throw new RuntimeException("Python 서비스에서 null 응답");
+            }
+            
+            log.info("Python 서비스 응답 수신: {}", response.substring(0, Math.min(200, response.length())));
+            
+            // JSON 응답 파싱
+            JsonNode responseJson = objectMapper.readTree(response);
+            
+            boolean success = responseJson.path("success").asBoolean();
+            if (!success) {
+                String errorMessage = responseJson.path("message").asText("알 수 없는 오류");
+                log.error("Python 서비스에서 실패 응답: {}", errorMessage);
+                throw new RuntimeException("Python 서비스 실패: " + errorMessage);
+            }
+            
+            String title = responseJson.path("title").asText();
+            String imageUrl = responseJson.path("imageUrl").asText();
+            String message = responseJson.path("message").asText();
+            
+            log.info("✅ Python 서비스 성공: title=[{}], imageUrl=[{}], message=[{}]", 
+                    title, imageUrl, message);
+            
+            return new BookCoverResponse(success, title, imageUrl, message);
+            
+        } catch (Exception e) {
+            log.error("❌ Python 서비스 호출 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("Python 서비스 호출 실패: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Python 서비스 책 표지 생성 응답 클래스
+     */
+    public static class BookCoverResponse {
+        private boolean success;
+        private String title;
+        private String imageUrl;
+        private String message;
+        
+        public BookCoverResponse(boolean success, String title, String imageUrl, String message) {
+            this.success = success;
+            this.title = title;
+            this.imageUrl = imageUrl;
+            this.message = message;
+        }
+        
+        public boolean isSuccess() { return success; }
+        public String getTitle() { return title; }
+        public String getImageUrl() { return imageUrl; }
+        public String getMessage() { return message; }
     }
 
 
