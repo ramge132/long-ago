@@ -1,181 +1,386 @@
-# 아주 먼 옛날 프로젝트 요약 (v1.0)
+# 🎨 Long Ago - 실시간 협동 스토리텔링 게임
 
-## 1. 프로젝트 개요
-- **서비스명:** 아주 먼 옛날 (A Long Time Ago)
-- **핵심 기능:** 여러 사용자가 한 문장씩 이어가며 실시간으로 이야기를 만들고, 각 문장에 맞춰 AI가 삽화를 생성해주는 웹 기반 협업 스토리텔링 게임
-- **목표:** LLM과 이미지 생성 AI를 활용한 독창적이고 창의적인 게임 경험 제공
+## 📖 프로젝트 개요
 
-## 2. 주요 기술 스택
-- **Frontend (FE):** Vue.js, Vite, Tailwind CSS
-- **Backend (BE):** Spring Boot, Java, Spring Security, JPA
-- **AI:**
-    - **언어 모델(LLM):** OpenAI GPT-5-Nano
-    - **이미지 생성:** Google Gemini 2.5 Flash Image Preview
-- **인프라:** Docker, Nginx, AWS (EC2, S3), Redis
-- **데이터베이스:** PostgreSQL (JPA 연동), Redis (캐싱 및 실시간 데이터)
+**Long Ago**는 LLM(GPT-5-nano)과 이미지 생성 AI(Gemini 2.5 Flash Image Preview)를 활용한 실시간 협동 스토리텔링 웹게임입니다. 사용자들이 순서대로 한 문장씩 이야기를 이어가며 하나의 완성된 이야기책을 만들어가는 게임입니다.
 
-## 3. 핵심 아키텍처 및 플로우
+### 핵심 기능
+- 사용자가 입력한 문장을 GPT-5-nano를 통해 이미지 생성용 프롬프트로 변환
+- Gemini 2.5 Flash Image Preview API로 실시간 삽화 생성
+- WebRTC P2P 통신을 통한 실시간 멀티플레이어 지원
+- 9가지 다양한 그림 스타일 모드 지원
+- 완성된 이야기는 책으로 저장되어 갤러리에서 열람 가능
 
-### 3.1. 게임 로직 (BE)
-1. **게임 생성:** 사용자들이 로비에 모여 게임을 시작하면, `GameService`가 고유한 `gameId`와 함께 게임 세션을 생성합니다.
-2. **카드 분배:** `CardService`를 통해 각 플레이어에게 이야기 카드(4장)와 결말 카드(1장)를 무작위로 분배합니다.
-3. **게임 데이터 관리:** 게임 상태, 플레이어 정보, 카드 등은 빠른 접근을 위해 **Redis**에 저장 및 관리됩니다.
-4. **이야기 제출 및 투표:**
-    - 플레이어는 자신의 턴에 카드를 사용해 문장을 제출합니다.
-    - `FilteringService`가 제출된 문장의 카드 키워드 포함 여부 및 부적절한 단어를 검증합니다.
-    - 다른 플레이어들은 제출된 문장의 개연성을 투표하고, 과반수 찬성 시 이야기가 공식적으로 채택됩니다.
-5. **게임 종료:**
-    - 결말 카드가 사용되거나 특정 조건이 충족되면 게임이 종료됩니다.
-    - `GameService`는 Redis에 저장된 장면(scene)들을 취합하여 S3에 최종 이미지들을 업로드하고, 책(Book) 정보를 DB에 저장합니다.
+## 🏗️ 시스템 아키텍처
 
-### 3.2. AI 이미지 생성 파이프라인
-- **통합 API (`AI/imageGeneration/api_image_generator.py`):**
-    - 백엔드로부터 사용자 문장, 게임 모드(그림체), 세션 데이터를 받습니다.
-    - **GPT-5-Nano**를 사용하여 다음 3단계 프롬프트를 생성합니다.
-        1. **스토리 요약 (Story Summary):** 이전 내용과 현재 문장을 합쳐 전체 줄거리를 요약합니다.
-        2. **장면 묘사 (Description):** 요약된 스토리와 캐릭터 정보를 바탕으로 현재 장면에 대한 구체적인 묘사를 생성합니다.
-        3. **이미지 프롬프트 (Image Prompt):** 장면 묘사를 기반으로 이미지 생성을 위한 최종 프롬프트를 만듭니다.
-    - **Gemini 2.5 Flash Image Preview**를 사용하여 최종 프롬프트와 참조 이미지(캐릭터가 있을 경우)를 기반으로 **720x1280 (9:16)** 크기의 삽화를 생성합니다.
+### 기술 스택
 
-### 3.3. 프론트엔드 (FE)
-- **상태 관리:** Pinia (`stores/game.js`, `stores/auth.js`)
-- **라우팅:** Vue Router (`router/index.js`)
-- **핵심 컴포넌트:**
-    - `App.vue`: 최상위 컴포넌트로, 라우팅 및 전역 UI(로딩, 팝업 등)를 관리합니다.
-    - `InGameContent.vue`: 게임의 핵심인 동화책 UI를 담당합니다.
-        - **책 UI:** CSS `transform`과 `perspective`를 이용해 3D 책 넘김 효과를 구현합니다.
-        - **페이지 크기:** 각 페이지는 **300x400 (3:4)** 크기로 고정되어 있습니다.
-        - **이미지 마스킹:** 생성된 삽화(`story-image`)는 `object-fit: cover`로 페이지를 꽉 채우고, `ink_mask.png`를 이용해 **잉크 테두리 효과**가 적용됩니다.
+#### Backend (Spring Boot)
+- **Framework**: Spring Boot 3.x
+- **Language**: Java 17+
+- **Database**: MySQL (영구 저장) + Redis (임시 게임 데이터)
+- **Storage**: AWS S3 (이미지 저장)
+- **API Client**: WebClient (OpenAI, Google Gemini API 호출)
 
-## 4. 주요 변경 및 결정 사항 (v1.0)
-- **이미지 로딩 방식:** 과거 CDN 방식에서 벗어나, 현재는 백엔드가 S3에 저장된 이미지를 직접 스트리밍하는 방식으로 변경되었습니다.
-- **이미지 생성 서버:** Vast.ai/Runpod 기반의 자체 서버 운영에서, **OpenAI와 Gemini API를 직접 호출**하는 방식으로 전환하여 안정성과 확장성을 확보했습니다.
-- **이미지-마스크 크기 문제 해결:**
-    - AI가 생성하는 9:16 이미지가 웹의 3:4 페이지에 표시될 때 발생하는 비율 불일치 문제를 해결했습니다.
-    - 이미지에 `object-fit: cover`를 적용해 페이지를 꽉 채우고, 마스크 크기(`mask-size: 100% 100%`)를 조정하여 **이미지와 마스크가 완벽히 정렬**되도록 수정했습니다.
-    - 기존의 복잡했던 잉크 효과 애니메이션은 제거하고, `ink_mask.png`를 이용한 단순하고 명확한 마스킹 방식으로 변경했습니다.
+#### Frontend (Vue.js)
+- **Framework**: Vue.js 3 (Composition API)
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **State Management**: Pinia
+- **P2P Communication**: PeerJS (WebRTC)
+- **Routing**: Vue Router
 
-## 5. 프로젝트 구조 (주요 파일)
-- **`AI/imageGeneration/api_image_generator.py`**: 이미지 생성의 모든 로직(LLM 프롬프트 생성, Gemini API 호출)을 담당하는 핵심 AI 파일.
-- **`BE/src/main/java/com/example/b101/service/GameService.java`**: 게임의 생성, 진행, 종료 등 핵심 비즈니스 로직을 처리.
-- **`FE/src/components/InGame/InGameContent.vue`**: 사용자가 보는 동화책의 시각적 요소와 인터랙션을 모두 구현한 컴포넌트.
-- **`summary.md`**: 프로젝트의 현재 상태와 아키텍처를 요약한 문서 (바로 이 파일).
+#### AI/Image Generation
+- **LLM**: OpenAI GPT-5-nano (프롬프트 생성 및 책 제목 생성)
+- **Image Generation**: Google Gemini 2.5 Flash Image Preview
+- **Python FastAPI**: API 서버 (포트 8190)
+- **Character System**: 14종의 캐릭터 프리셋
 
-## 6. 서버 접속 정보
-- **EC2 메인 서버 접속:** `ssh -i ".\long-ago-main-key.pem" ubuntu@16.176.206.134`
-- **서버 환경:** AWS EC2 (Ubuntu)
-- **배포된 서비스:** 백엔드 Spring Boot 애플리케이션 (포트 8080)
+## 📂 프로젝트 구조
 
-## 7. CI/CD 및 환경변수 관리
-- **자동 배포:** GitHub Actions를 통한 자동 CI/CD 파이프라인
-- **환경변수:** GitHub Secrets를 통해 자동 할당
-
-### GitHub Secrets 목록
-- **서버 관련**
-  - `MAIN_SERVER_KEY`: EC2 SSH 프라이빗 키
-  - `MAIN_SERVER_URI`: EC2 서버 주소
-  - `CLOUDFRONT_DISTRIBUTION_ID`: CloudFront 배포 ID
-
-- **데이터베이스**
-  - `DB_DRIVER`: 데이터베이스 드라이버
-  - `DB_PASSWORD_MAIN`: PostgreSQL 비밀번호
-  - `DB_URL_MAIN`: PostgreSQL 연결 URL
-  - `DB_USERNAME_MAIN`: PostgreSQL 사용자명
-  - `REDIS_HOST`: Redis 서버 호스트
-
-- **AI API**
-  - `GEMINI_API_KEY`: Google Gemini API 키 (이미지 생성)
-  - `TTS_API_KEY`: Google TTS API 키 (음성 합성 - 별도 키 필요)
-  - `OPENAI_API_KEY`: OpenAI API 키
-  - `RUNPOD_API_KEY`: RunPod API 키
-  - `RUNPOD_ENDPOINT_ID`: RunPod 엔드포인트 ID
-
-**⚠️ 중요: 새로운 API 키 추가 시 주의사항**
-- GitHub Secrets에 새 API 키를 추가할 때는 반드시 `.github/workflows/deploy.yml` 파일의 배포 스크립트도 함께 수정해야 합니다.
-- 예: `TTS_API_KEY` 추가 시 → `echo "TTS_API_KEY=${{ secrets.TTS_API_KEY }}" >> .env` 라인을 배포 스크립트에 추가
-
-## 8. 배포 아키텍처 및 Docker 관리
-
-### 8.1. Docker Compose 파일 관리 방식
-이 프로젝트는 **서버 중심 Docker 관리 방식**을 사용합니다:
-
-- **로컬 저장소**: docker-compose.yml 파일이 존재하지 않음
-- **EC2 서버**: `/home/ubuntu/docker-compose.yml` 파일을 직접 관리
-- **배포 방식**: GitHub Actions에서 환경변수만 `.env` 파일에 설정하고, 기존 docker-compose.yml 사용
-
-### 8.2. 환경변수 주입 방식
-```yaml
-# 서버의 docker-compose.yml 구조
-app:
-  image: ${BE_IMAGE_NAME}:latest
-  environment:
-    - DB_URL=${DB_URL_MAIN}
-    - GEMINI_API_KEY=${GEMINI_API_KEY}
-    - TTS_API_KEY=${TTS_API_KEY}  # 수동으로 추가 필요
-    # ... 기타 환경변수들
+```
+long-ago/
+├── BE/                         # Spring Boot Backend
+│   ├── src/main/java/com/example/b101/
+│   │   ├── controller/         # REST API 컨트롤러
+│   │   │   ├── GameController.java      # 게임 관리 API
+│   │   │   ├── SceneController.java     # 장면 생성 API
+│   │   │   └── BookController.java      # 책 조회 API
+│   │   ├── service/           # 비즈니스 로직
+│   │   │   ├── GameService.java         # 게임 로직
+│   │   │   ├── SceneService.java        # 장면 생성 로직
+│   │   │   ├── BookService.java         # 책 관리 로직
+│   │   │   ├── S3service.java           # AWS S3 업로드
+│   │   │   └── FilteringService.java    # 프롬프트 필터링
+│   │   ├── domain/            # JPA 엔티티
+│   │   │   ├── Book.java                # 책 엔티티
+│   │   │   └── Scene.java               # 장면 엔티티
+│   │   ├── dto/               # 데이터 전송 객체
+│   │   └── config/            # 설정 클래스
+│   │       └── WebClientConfig.java     # WebClient 설정
+│   └── resources/
+│       └── application.properties       # 애플리케이션 설정
+│
+├── FE/                         # Vue.js Frontend
+│   ├── src/
+│   │   ├── views/             # 페이지 컴포넌트
+│   │   │   ├── IntroView.vue           # 시작 화면
+│   │   │   ├── GameView.vue            # 메인 게임 화면
+│   │   │   ├── ResultView.vue          # 결과 화면
+│   │   │   └── Game/
+│   │   │       └── LobbyView.vue       # 게임 로비
+│   │   ├── components/        # 재사용 컴포넌트
+│   │   │   ├── InGame/                 # 게임 내 컴포넌트
+│   │   │   │   ├── InGameContent.vue   # 게임 콘텐츠
+│   │   │   │   └── InGameEnding.vue    # 엔딩 카드
+│   │   │   └── Lobby/                  # 로비 컴포넌트
+│   │   │       ├── LobbyUsers.vue      # 참가자 목록
+│   │   │       └── LobbySettings.vue   # 게임 설정
+│   │   ├── stores/            # Pinia 스토어
+│   │   │   ├── auth.js                 # 사용자 정보
+│   │   │   ├── game.js                 # 게임 상태
+│   │   │   └── audio.js                # 오디오 관리
+│   │   ├── apis/              # API 호출 함수
+│   │   └── router/            # 라우터 설정
+│
+└── AI/                         # AI/이미지 생성 시스템
+    └── imageGeneration/
+        ├── api_main.py                  # FastAPI 서버
+        ├── api_image_generator.py       # 이미지 생성 로직
+        └── characters/                  # 캐릭터 프리셋
+            ├── boy.png/.txt
+            ├── girl.png/.txt
+            └── ... (14종 캐릭터)
 ```
 
-### 8.3. 새로운 환경변수 추가 절차
-1. **GitHub Secrets 추가**: 저장소 Settings → Secrets → Actions에서 새 변수 추가
-2. **배포 스크립트 수정**: `.github/workflows/deploy.yml`에서 `.env` 파일 생성 부분에 추가
-3. **⚠️ 서버 Docker Compose 수정**: SSH로 서버 접속하여 `docker-compose.yml`의 `environment` 섹션에 수동 추가
-4. **컨테이너 재시작**: `docker-compose up -d app` 실행
+## 🎮 게임 플로우
 
-### 8.4. 일반적인 배포 문제 해결
+### 1. 게임 준비
+1. **프로필 선택**: 42종의 동물 프로필 중 선택
+2. **닉네임 입력**: 기본값 "이야기꾼_XXXXX"
+3. **로비 입장**: 방장이 방을 생성하거나 기존 방에 참여
 
-#### 문제 1: Spring Boot 컨테이너 시작 실패
-**증상**: `docker ps`에서 백엔드 컨테이너가 `Exited (1)` 상태
-**원인**: 환경변수 누락으로 인한 Spring Boot 시작 실패
+### 2. 게임 설정
+- **턴당 시간**: 30-40초 (2초 단위)
+- **게임 모드**: 9가지 그림 스타일
+  - 기본 모드
+  - 3D 모드
+  - 코믹북 모드
+  - 클레이 모드
+  - 유치원 모드
+  - 픽셀 모드
+  - PS1 모드
+  - 동화책 모드
+  - 일러스트 모드
+
+### 3. 게임 진행
+1. **카드 배분**: 이야기 카드 4장, 결말 카드 1장
+2. **이야기 전개**: 
+   - 차례대로 이야기 카드 제출
+   - LLM이 문장을 이미지 프롬프트로 변환
+   - AI가 삽화 생성
+   - 다른 플레이어들이 찬성/반대 투표
+3. **결말 맺기**: 
+   - 긴장감이 충분히 쌓이면 결말 카드 사용
+   - 결말 투표 통과 시 게임 종료
+4. **결과**: 
+   - 점수 집계 및 우승자 발표
+   - 완성된 이야기책 표지 생성
+   - 갤러리에 저장
+
+### 4. 점수 시스템
+- 이야기 카드 통과: +10점
+- 이야기 카드 실패: -5점
+- 결말 카드 성공: +30점
+- 결말 카드 실패: -15점
+
+## 🔧 주요 기능 구현
+
+### Backend 주요 기능
+
+#### GameService.java
+- `saveGame()`: 게임 생성 및 Redis 저장
+- `finishGame()`: 게임 종료 처리 및 책 생성
+- `generateBookTitle()`: GPT-5-nano로 책 제목 생성 (5회 재시도)
+- `generateCoverImage()`: Gemini API로 표지 생성 (1회 재시도)
+- `shuffleEndingCard()`: 결말 카드 리롤
+
+#### SceneService.java
+- `createScene()`: 장면 생성 메인 로직
+- `callGPTWithRetry()`: GPT API 호출 (1회 재시도)
+- `callGeminiWithRetry()`: Gemini API 호출 (1회 재시도)
+- `parseGeminiResponse()`: Gemini 응답 파싱 및 에러 처리
+- `uploadImageToS3()`: S3 이미지 업로드
+
+#### BookService.java
+- `getBooksByPageSort()`: 조회수/최신순 정렬 페이지네이션
+- `getBookById()`: 특정 책 조회 및 조회수 증가
+- `findBook1to3()`: 상위 3개 책 조회
+- `autoDeleteBook()`: 7일 지난 책 자동 삭제 (매일 정오)
+
+### Frontend 주요 기능
+
+#### GameView.vue
+- **WebRTC P2P 통신**: PeerJS를 통한 실시간 통신
+- **게임 상태 관리**: 턴 관리, 투표 처리, 카드 관리
+- **타이머 관리**: 턴별 제한 시간 카운트다운
+- **메시지 처리**: 
+  - `cardSubmit`: 카드 제출
+  - `voteResult`: 투표 결과
+  - `gameEnd`: 게임 종료
+  - `bookCover`: 표지 데이터 전송
+
+#### InGameContent.vue
+- **카드 선택/제출**: 드래그 앤 드롭 인터페이스
+- **실시간 삽화 표시**: 생성된 이미지 즉시 렌더링
+- **투표 UI**: 찬성/반대 버튼 및 결과 표시
+- **TTS 지원**: 제출된 문장 음성 재생
+
+#### LobbyView.vue
+- **방 생성/참여**: 방장/참가자 구분
+- **실시간 참가자 목록**: WebRTC 연결 상태 표시
+- **게임 설정**: 모드, 시간 설정
+- **초대 링크**: 클립보드 복사 기능
+
+### AI/이미지 생성 시스템
+
+#### api_main.py (FastAPI)
+- `/generate`: 이미지 생성 엔드포인트
+- 세션별 컨텍스트 유지
+- S3 업로드 통합
+- 캐릭터 시스템 관리
+
+#### api_image_generator.py
+- **프롬프트 생성**: GPT-5-nano 활용
+- **이미지 생성**: Gemini 2.5 Flash 호출
+- **스타일 적용**: 9가지 모드별 프롬프트 조정
+- **캐릭터 일관성**: 14종 캐릭터 프리셋 활용
+
+## 🔐 환경 설정
+
+### Backend (.env)
+```properties
+# Database
+spring.datasource.url=jdbc:mysql://localhost:3306/longago
+spring.datasource.username=
+spring.datasource.password=
+
+# Redis
+spring.redis.host=localhost
+spring.redis.port=6379
+
+# API Keys
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+
+# AWS S3
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+S3_BUCKET_NAME=
+```
+
+### AI Server (.env)
 ```bash
-# 해결 방법
-ssh -i ".\long-ago-main-key.pem" ubuntu@16.176.206.134 "docker logs ubuntu-app-1 --tail=20"
-# 로그에서 "Could not resolve placeholder" 에러 확인
-# docker-compose.yml에 누락된 환경변수 추가 후 재시작
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+S3_BUCKET_NAME=
 ```
 
-#### 문제 2: API 엔드포인트 404 오류
-**증상**: 백엔드는 실행되지만 `https://longago.io/rooms` 등이 404 반환
-**원인**: Nginx 설정에서 API 경로 라우팅 누락
-```nginx
-# nginx/default.conf에 추가 필요한 설정들
-location /rooms {
-    proxy_pass http://app:8080/rooms;
-    proxy_set_header Host $host;
-    # ... 기타 헤더들
-}
+## 🚀 실행 방법
+
+### Backend
+```bash
+cd BE
+./gradlew build
+java -jar build/libs/b101-0.0.1-SNAPSHOT.jar
 ```
 
-#### 문제 3: 환경변수 불일치
-**현상**: 로컬에서는 작동하지만 서버에서만 실패
-**해결**: 서버의 `.env` 파일과 `docker-compose.yml`의 `environment` 섹션 동기화 확인
+### Frontend
+```bash
+cd FE
+npm install
+npm run dev  # 개발 모드
+npm run build  # 프로덕션 빌드
+```
 
-- **AWS 서비스**
-  - `S3_BUCKET_NAME`: S3 버킷 이름
-  - `S3_CREDENTIALS_ACCESS_KEY`: AWS Access Key
-  - `S3_CREDENTIALS_SECRET_KEY`: AWS Secret Key
-  - `S3_REGION`: S3 리전
+### AI Server
+```bash
+cd AI/imageGeneration
+pip install -r requirements.txt
+python api_main.py  # 포트 8190
+```
 
-- **Docker Hub**
-  - `DOCKERHUB_PASSWORD_MAIN`: Docker Hub 비밀번호
-  - `DOCKERHUB_USERNAME_MAIN`: Docker Hub 사용자명
-  - `IMAGE_BE_MAIN`: 백엔드 이미지명
-  - `IMAGE_FE_MAIN`: 프론트엔드 이미지명
+## 📊 데이터베이스 스키마
 
-- **프론트엔드 환경변수**
-  - `VITE_ASSETS_PATH`: 에셋 경로
-  - `VITE_CDN_URL`: CDN URL
-  - `VITE_GAME`: 게임 API 엔드포인트
-  - `VITE_GAME_SHUFFLE`: 게임 셔플 API 엔드포인트
-  - `VITE_GOOGLE_CLIENT_ID`: Google OAuth 클라이언트 ID
-  - `VITE_MAIN_API_SERVER_URL_MAIN`: 메인 API 서버 URL
-  - `VITE_SCENE`: 장면 API 엔드포인트
-  - `VITE_SCENE_FILTERING`: 장면 필터링 API 엔드포인트
-  - `VITE_SCENE_VOTE`: 장면 투표 API 엔드포인트
-  - `VITE_TURN_ID`: TURN 서버 ID
-  - `VITE_TURN_PW`: TURN 서버 비밀번호
-  - `VITE_TURN_SERVER_URL`: TURN 서버 URL
-  - `VITE_USERS`: 사용자 API 엔드포인트
-  - `VITE_USERS_SIGNIN`: 로그인 API 엔드포인트
+### Book 테이블
+- `id`: INT (PK, AUTO_INCREMENT)
+- `book_id`: VARCHAR (UNIQUE, NOT NULL)
+- `book_title`: VARCHAR (NOT NULL)
+- `image_url`: VARCHAR (표지 이미지 URL)
+- `view_count`: INT (조회수)
+- `created_at`: DATETIME
 
-- **기타**
-  - `WEBCLIENT_BASE_URL`: WebClient 기본 URL
+### Scene 테이블
+- `id`: INT (PK, AUTO_INCREMENT)
+- `book_id`: INT (FK → Book)
+- `scene_order`: INT (장면 순서)
+- `prompt`: TEXT (사용자 입력 문장)
+- `image_url`: VARCHAR (장면 이미지 URL)
+
+## 🎯 주요 API 엔드포인트
+
+### Game API
+- `POST /game`: 게임 생성
+- `DELETE /game`: 게임 종료 및 책 생성
+- `PATCH /game/shuffle`: 결말 카드 리롤
+- `GET /game`: 플레이어 상태 조회
+
+### Scene API
+- `POST /scene`: 장면 생성 (이미지 생성)
+- `POST /scene/filtering`: 프롬프트 필터링
+- `POST /scene/vote`: 투표 결과 처리
+
+### Book API
+- `GET /book/{page}`: 책 목록 조회 (페이지네이션)
+- `GET /book?id={id}`: 특정 책 조회
+- `GET /book/top3`: 상위 3개 책 조회
+
+### AI Image Generation API
+- `POST /generate`: 이미지 생성
+- `GET /health`: 서버 상태 확인
+- `GET /characters`: 캐릭터 목록 조회
+
+## 🔍 알려진 이슈 및 해결 방법
+
+### 1. 책 표지 로딩 문제
+- **문제**: 책 표지만 404 에러 발생 (일반 장면은 정상)
+- **원인**: 게임 종료 시점과 표지 생성 타이밍 불일치
+- **해결**: 
+  - GameService에 retry 로직 추가
+  - 10초 대기 후 결과 화면 전환
+  - WebRTC로 표지 데이터 브로드캐스트
+
+### 2. API 키 설정
+- **문제**: GPT/Gemini API 키 미설정
+- **해결**: 환경변수 또는 application.properties에 설정
+
+### 3. CORS 설정
+- **문제**: 프론트엔드-백엔드 통신 차단
+- **해결**: WebConfig에서 CORS 허용 설정
+
+## 📈 성능 최적화
+
+### 이미지 생성 최적화
+- 재시도 로직으로 안정성 향상
+- 세션별 컨텍스트 유지로 일관성 개선
+- S3 업로드로 서버 부하 감소
+
+### 프론트엔드 최적화
+- 이미지 프리로딩
+- 컴포넌트 lazy loading
+- WebRTC 연결 풀 관리
+
+### 백엔드 최적화
+- Redis 캐싱으로 응답 속도 개선
+- 비동기 처리 (@Async)
+- 데이터베이스 인덱싱
+
+## 🔄 업데이트 이력
+
+### Version 2.0.0 (2025-01-27) - P2P 동기화 개선 및 게임 플로우 최적화
+
+#### 🚀 주요 개선사항
+1. **P2P 메시지 타이밍 최적화**
+   - 게스트 플레이어의 결과창 지연 표시 문제 해결
+   - 방장과 게스트의 동기화된 게임 종료 플로우 구현
+   - 중복 결과창 표시 문제 완전 해결
+
+2. **비동기 책 표지 생성 구현**
+   - 표지 생성 응답 대기 → 요청 후 즉시 진행으로 변경
+   - 게임 종료 후 1초 내에 모든 플레이어가 결과창 확인 가능
+   - 백그라운드 표지 생성 완료 시 자동 업데이트
+
+#### 🔧 기술적 개선사항
+
+**Frontend (GameView.vue)**
+- `voteEnd()` 함수 리팩토링: 동기화된 게임 종료 처리
+- `gameEnd()` 함수 최적화: 비동기 표지 생성 구현
+- 새로운 P2P 메시지 타입 추가:
+  - `gameEndPrepare`: 게임 종료 준비 알림
+  - `showResultsWithCover`: 표지 정보와 함께 결과창 표시
+  - `bookCoverUpdate`: 실제 표지 생성 완료 후 업데이트
+
+**Backend (GameService.java)**
+- GPT-5 Responses API 구조 개선
+- 중복 `input` 필드 제거로 API 호출 오류 해결
+- 응답 파싱 로직 강화 및 fallback 처리 개선
+- 에러 복원력 향상으로 게임 블로킹 방지
+
+#### 🎮 게임 플로우 개선
+1. **투표 통과 즉시**: 백그라운드 표지 생성 요청 시작
+2. **1초 후**: 모든 플레이어에게 기본값으로 결과창 표시
+3. **표지 완성 시**: 실제 표지로 자동 업데이트
+
+#### 🐛 해결된 주요 버그
+- ❌ 게스트 플레이어 결과창 지연 표시
+- ❌ 방장 중복 결과창 표시  
+- ❌ 표지 생성 대기로 인한 긴 로딩 시간
+- ❌ P2P 메시지 타이밍 불일치
+- ❌ GPT-5 API 요청 구조 오류
+
+### Version 1.0.0 (2025-09-02) - 기본 기능 구현
+- GPT-3.5-turbo → GPT-5-nano 마이그레이션
+- CDN 제거, 정적 이미지 로딩으로 변경
+- Vast.ai/Runpod → API 방식으로 전환
+- 책 표지 생성 retry 로직 추가
+
+## 📝 라이선스
+
+이 프로젝트는 비공개 프로젝트입니다.
+
+---
+
+**Last Updated**: 2025-01-27  
+**Version**: 2.0.0
