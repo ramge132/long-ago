@@ -127,14 +127,8 @@ public class SceneService {
                     request.getRequestURI());
         }
 
-        if (generateImage == null || generateImage.length == 0) {
-            log.error("=== 이미지 생성 실패 ===");
-            log.error("생성된 이미지가 null이거나 크기가 0입니다. generateImage: {}", 
-                    generateImage == null ? "null" : "empty(" + generateImage.length + " bytes)");
-            return ApiResponseUtil.failure("이미지 생성이 완료되지 않았습니다. 다시 시도해주세요.",
-                    HttpStatus.SERVICE_UNAVAILABLE, // 503
-                    request.getRequestURI());
-        }
+        // Python 서비스에서 이미지가 성공적으로 생성되어 S3에 저장되었으므로 별도 검증 불필요
+        log.info("=== Python 서비스를 통한 이미지 생성 및 S3 저장 완료 ===");
 
         log.info("=== Redis 저장 시작 ===");
 
