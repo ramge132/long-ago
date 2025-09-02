@@ -141,6 +141,7 @@ jobs:
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
             echo "TTS_API_KEY=${{ secrets.TTS_API_KEY }}" >> .env
             
+            cd infra
             docker compose down
             docker rmi $(docker images -q) || true
             docker compose up -d
