@@ -267,18 +267,20 @@ public class GameService {
             try {
                 log.info("🎮🎮🎮 === 1단계: 스토리 요약 및 제목 생성 시작 ===");
                 // 1단계: 스토리 요약 및 제목 생성
-                bookTitle = generateBookTitle(sceneRedisList);
-                log.info("🎮🎮🎮 GPT로 생성된 책 제목: [{}]", bookTitle);
+                // Python 서비스로 제목과 이미지 통합 생성
+                log.info("🎮🎮🎮 === Python 서비스로 표지 통합 생성 시작 ===");
+                CoverResult coverResult = generateBookCover(sceneRedisList, game.getDrawingStyle());
+                
+                bookTitle = coverResult.getTitle();
+                coverImageBytes = coverResult.getImageBytes();
+                
+                log.info("🎮🎮🎮 Python로 생성된 책 제목: [{}]", bookTitle);
+                log.info("🎮🎮🎮 Python로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
                 
                 if (bookTitle == null || bookTitle.trim().isEmpty()) {
                     log.error("🎮🎮🎮 제목이 null이거나 비어있음!");
                     throw new RuntimeException("제목 생성 실패 - 빈 제목");
                 }
-                
-                log.info("🎮🎮🎮 === 2단계: 표지 이미지 생성 시작 ===");
-                // 2단계: 표지 이미지 생성 
-                coverImageBytes = generateCoverImage(bookTitle, game.getDrawingStyle());
-                log.info("🎮🎮🎮 Gemini로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
                 
                 if (coverImageBytes == null || coverImageBytes.length == 0) {
                     log.error("🎮🎮🎮 이미지가 null이거나 크기가 0!");
@@ -825,8 +827,92 @@ public class GameService {
         
         throw new RuntimeException("Gemini API 재시도 로직 오류 - 책 표지"); // fallback
     }
-    
-    
 
+    /**
+     * Python 서비스를 사용하여 책 표지 제목과 이미지를 통합 생성
+     */
+    private CoverResult generateBookCover(List<SceneRedis> sceneRedisList, int drawingStyle) {
+        log.info("🎮🎮🎮 generateBookCover 시작 - drawingStyle: {}", drawingStyle);
+        
+        // 장면 데이터를 하나의 스토리 문자열로 결합 (Python 서비스가 기대하는 형식)
+        String storyContent = sceneRedisList.stream()
+            .map(scene -> scene.getUserPrompt())
+            .collect(Collectors.joining(" "));
+        
+        // gameId 생성 (현재 타임스탬프 사용)
+        String gameId = "game_" + System.currentTimeMillis();
+        
+        // Python 서비스 요청 데이터 구성 (Python API와 일치)
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("storyContent", storyContent);
+        requestBody.put("gameId", gameId);
+        requestBody.put("drawingStyle", drawingStyle);
+        
+        log.info("🎮🎮🎮 Python 서비스로 표지 생성 요청 전송 중...");
+        log.info("스토리 길이: {}, 그림체: {}, gameId: {}", storyContent.length(), drawingStyle, gameId);
+        
+        try {
+            // Python 서비스 /generate-cover 엔드포인트 호출
+            String response = pythonImageServiceClient
+                .post()
+                .uri("/generate-cover")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofMinutes(5))
+                .block();
+            
+            if (response == null || response.trim().isEmpty()) {
+                throw new RuntimeException("Python 서비스에서 빈 응답");
+            }
+            
+            log.info("🎮🎮🎮 Python 서비스 응답 받음 (길이: {})", response.length());
+            
+            // JSON 응답 파싱
+            JsonNode responseJson = objectMapper.readTree(response);
+            
+            // 제목 추출
+            String title = null;
+            if (responseJson.has("title")) {
+                title = responseJson.get("title").asText();
+            }
+            
+            if (title == null || title.trim().isEmpty()) {
+                throw new RuntimeException("Python 서비스에서 제목을 받지 못함");
+            }
+            
+            // 이미지 데이터 추출 (Base64)
+            byte[] imageBytes = null;
+            if (responseJson.has("image_data")) {
+                String base64Data = responseJson.get("image_data").asText();
+                imageBytes = Base64.getDecoder().decode(base64Data);
+            }
+            
+            if (imageBytes == null || imageBytes.length == 0) {
+                throw new RuntimeException("Python 서비스에서 이미지 데이터를 받지 못함");
+            }
+            
+            log.info("✅ Python 서비스로부터 표지 생성 완료");
+            log.info("제목: [{}]", title);
+            log.info("이미지 크기: {} bytes", imageBytes.length);
+            
+            return new CoverResult(title, imageBytes);
+            
+        } catch (Exception e) {
+            log.error("❌ Python 서비스 표지 생성 실패: {}", e.getMessage());
+            throw new RuntimeException("표지 생성 실패: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 책 표지 생성 결과를 담는 내부 클래스
+     */
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    public static class CoverResult {
+        private String title;
+        private byte[] imageBytes;
+    }
 
 }
