@@ -260,6 +260,11 @@ const setupConnection = (conn) => {
   }
 
   conn.on("data", async (data) => {
+    // 중요한 메시지들은 로그 출력
+    if (["showResultsWithCover", "bookCover", "gameEnd", "showResults"].includes(data.type)) {
+      console.log(`🎮 [메시지 수신] 타입: ${data.type}, 발신자: ${conn.peer}, 데이터:`, data);
+    }
+    
     switch (data.type) {
       case "newParticipant":
         // 현재 참가자 목록 전송
@@ -553,7 +558,11 @@ const setupConnection = (conn) => {
                   console.log("🎮 방장이 표지 생성 진행");
                   gameEnd(true);
                 } else {
-                  console.log("🎮 게스트는 표지 생성 대기");
+                  console.log("🎮 게스트는 표지 생성 대기 - 게임 상태 초기화");
+                  // 게스트도 게임 종료 상태로 전환 (결과창은 메시지로 받아서 표시)
+                  currTurn.value = -1;
+                  totalTurn.value = 1;
+                  console.log("🎮 게스트 게임 상태 초기화 완료 - 메시지 대기 중");
                 }
               } else {
                 connectedPeers.value.forEach(async (p) => {
@@ -652,6 +661,13 @@ const setupConnection = (conn) => {
       case "showResults":
         console.log("🎮 구버전 결과창 표시 명령 수신 (더 이상 사용되지 않음)");
         isForceStopped.value = "champ";
+        break;
+
+      case "gameEndPrepare":
+        console.log("🎮 게임 종료 준비 알림 수신 - 방장이 책 표지 생성 중");
+        console.log("🎮 게스트는 대기 상태로 전환");
+        // 게스트들은 showResultsWithCover 메시지를 기다리는 상태로 전환
+        // 특별한 처리는 필요없고, 로그만 출력
         break;
 
       case "showResultsWithCover":
@@ -1652,21 +1668,25 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         // condition에서 다음 턴 or 게임 종료
         if (usedCard.value.isEnding) {
-          // 즉시 승자 표시 (1초 후)
+          console.log("🎮 === 엔딩 카드 투표 통과 - 게임 종료 처리 시작 ===");
+          
+          // 1단계: 즉시 모든 플레이어에게 게임 종료 알림 (결과창은 아직 표시하지 않음)
+          connectedPeers.value.forEach(async (p) => {
+            if (p.id !== peerId.value && p.connection.open) {
+              console.log(`🎮 플레이어 ${p.id}에게 게임 종료 알림 전송`);
+              sendMessage("gameEndPrepare", {}, p.connection);
+            }
+          });
+          
+          // 2단계: 방장이 책 표지 생성 시작
+          console.log("🎮 방장이 책 표지 생성 시작");
+          await gameEnd(true);
+          
+          // 3단계: 방장 승자 표시 (다른 플레이어들은 gameEnd 함수에서 showResultsWithCover 메시지로 처리됨)
           setTimeout(() => {
+            console.log("🎮 방장 승자 화면 표시");
             isForceStopped.value = "champ";
           }, 1000);
-          
-          await gameEnd(true).then(() => {
-            connectedPeers.value.forEach(async (p) => {
-              if (p.id !== peerId.value && p.connection.open) {
-                sendMessage("gameEnd",
-                  {},
-                  p.connection
-                );
-              };
-            });
-          });
         } else {
           connectedPeers.value.forEach(async (p) => {
             if (p.id !== peerId.value && p.connection.open) {
@@ -1834,20 +1854,37 @@ const gameEnd = async (status) => {
           setTimeout(() => {
             console.log("🎮 === 모든 플레이어에게 표지 정보 + 결과창 표시 명령 전송 ===");
             
-            // 방장도 결과창 표시
-            isForceStopped.value = "champ";
-            console.log("🎮 방장 결과창 표시 완료");
+            // 방장 결과창 표시는 voteEnd 함수에서 별도로 처리됨
+            console.log("🎮 방장 결과창은 voteEnd에서 처리됨");
             console.log("🎮 방장 표지 정보:", bookCover.value);
             
             // 다른 플레이어들에게 표지 정보와 함께 결과창 표시 명령
-            connectedPeers.value.forEach(async (p) => {
+            console.log("🎮 연결된 피어 수:", connectedPeers.value.length);
+            console.log("🎮 현재 피어 ID:", peerId.value);
+            
+            if (connectedPeers.value.length === 0) {
+              console.warn("🎮 ⚠️ 연결된 피어가 없음!");
+            }
+            
+            connectedPeers.value.forEach(async (p, index) => {
+              console.log(`🎮 피어 ${index}: ID=${p.id}, open=${p.connection.open}, 내 ID와 다름=${p.id !== peerId.value}`);
+              
               if (p.id !== peerId.value && p.connection.open) {
-                console.log(`🎮 플레이어 ${p.id}에게 표지 정보 + 결과창 표시 명령 전송`);
+                console.log(`🎮 ✅ 플레이어 ${p.id}에게 표지 정보 + 결과창 표시 명령 전송`);
                 console.log(`🎮 전송할 표지 정보:`, bookCover.value);
-                sendMessage("showResultsWithCover", {
-                  bookCover: bookCover.value,
-                  ISBN: ISBN.value,
-                }, p.connection);
+                console.log(`🎮 전송할 ISBN:`, ISBN.value);
+                
+                try {
+                  sendMessage("showResultsWithCover", {
+                    bookCover: bookCover.value,
+                    ISBN: ISBN.value,
+                  }, p.connection);
+                  console.log(`🎮 ✅ 메시지 전송 성공: ${p.id}`);
+                } catch (error) {
+                  console.error(`🎮 ❌ 메시지 전송 실패: ${p.id}`, error);
+                }
+              } else {
+                console.log(`🎮 ⏭️ 피어 ${p.id} 건너뜀 - 본인이거나 연결 끊어짐`);
               }
             });
           }, 100); // 표지 생성 완료 후 짧은 딜레이
@@ -1870,17 +1907,25 @@ const gameEnd = async (status) => {
         bookCover.value.title = "아주 먼 옛날";
         bookCover.value.imageUrl = "";
         
-        // 방장도 결과창 표시
-        isForceStopped.value = "champ";
+        // 방장 결과창 표시는 voteEnd 함수에서 별도로 처리됨 (에러 상황에서도)
         
         // 다른 플레이어들에게도 기본값으로 결과창 표시 명령 (에러 상황에서도)
+        console.log("🎮 [에러 처리] 연결된 피어 수:", connectedPeers.value.length);
+        
         connectedPeers.value.forEach(async (p) => {
           if (p.id !== peerId.value && p.connection.open) {
             console.log(`🎮 [에러 처리] 플레이어 ${p.id}에게 기본값으로 결과창 표시`);
-            sendMessage("showResultsWithCover", {
-              bookCover: bookCover.value, // 기본값 포함
-              ISBN: ISBN.value,
-            }, p.connection);
+            console.log(`🎮 [에러 처리] 전송할 기본 표지:`, bookCover.value);
+            
+            try {
+              sendMessage("showResultsWithCover", {
+                bookCover: bookCover.value, // 기본값 포함
+                ISBN: ISBN.value,
+              }, p.connection);
+              console.log(`🎮 [에러 처리] ✅ 메시지 전송 성공: ${p.id}`);
+            } catch (msgError) {
+              console.error(`🎮 [에러 처리] ❌ 메시지 전송 실패: ${p.id}`, msgError);
+            }
           }
         });
       }
