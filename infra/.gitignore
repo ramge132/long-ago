@@ -1,0 +1,21 @@
+# 민감한 정보가 포함된 파일들
+.env
+*.pem
+*.key
+
+# SSL 인증서 (실제 인증서는 백업하지 않음)
+certbot/conf/
+certbot/data/
+
+# 런타임 데이터
+*/data/
+data/
+logs/
+
+# 캐시 파일
+image_cache/
+cache/
+
+# 백업 파일
+*.backup
+*.bak

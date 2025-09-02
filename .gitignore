@@ -361,6 +361,13 @@ nbdist/
 HELP.md
 
 # EC2 RSA페어 프라이빗 키
-
 *.pem
 ssh.txt
+
+# 인프라 설정 - 민감한 파일들
+infra/certbot/conf/
+infra/certbot/data/
+infra/*/data/
+infra/data/
+infra/*.backup
+infra/*.bak
