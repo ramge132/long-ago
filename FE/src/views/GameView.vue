@@ -546,20 +546,15 @@ const setupConnection = (conn) => {
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
-                // 모든 클라이언트가 즉시 결과창 표시
-                isForceStopped.value = "champ";
-
-                // 방장만 표지 생성 API 호출
+                console.log("🎮 결말카드 투표 통과 - 표지 생성 시작");
+                
+                // 방장만 표지 생성 API 호출 (결과창은 아직 표시하지 않음)
                 if (participants.value[0].id == peerId.value) {
+                  console.log("🎮 방장이 표지 생성 진행");
                   gameEnd(true);
+                } else {
+                  console.log("🎮 게스트는 표지 생성 대기");
                 }
-
-                // 다른 클라이언트에게 게임 종료 알림 (결과창 표시 트리거)
-                connectedPeers.value.forEach(async (p) => {
-                  if (p.id !== peerId.value && p.connection.open) {
-                    sendMessage("gameEnd", {}, p.connection);
-                  }
-                });
               } else {
                 connectedPeers.value.forEach(async (p) => {
                   if (p.id !== peerId.value && p.connection.open) {
@@ -651,6 +646,11 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
+        console.log("🎮 구버전 gameEnd 메시지 수신 (더 이상 사용되지 않음)");
+        break;
+
+      case "showResults":
+        console.log("🎮 결과창 표시 명령 수신");
         isForceStopped.value = "champ";
         break;
 
@@ -1809,6 +1809,7 @@ const gameEnd = async (status) => {
           console.log("🎮 전송할 bookCover:", bookCover.value);
           console.log("🎮 전송할 ISBN:", ISBN.value);
           
+          // 1단계: 모든 플레이어에게 표지 정보 전송
           connectedPeers.value.forEach(async (p) => {
             if (p.id !== peerId.value && p.connection.open) {
               console.log(`🎮 플레이어 ${p.id}에게 표지 정보 전송`);
@@ -1818,6 +1819,23 @@ const gameEnd = async (status) => {
               }, p.connection);
             }
           });
+          
+          // 2단계: 모든 플레이어에게 결과창 표시 명령 전송 (표지 생성 완료 후)
+          setTimeout(() => {
+            console.log("🎮 === 모든 플레이어에게 결과창 표시 명령 전송 ===");
+            
+            // 방장도 결과창 표시
+            isForceStopped.value = "champ";
+            console.log("🎮 방장 결과창 표시 완료");
+            
+            // 다른 플레이어들에게도 결과창 표시 명령
+            connectedPeers.value.forEach(async (p) => {
+              if (p.id !== peerId.value && p.connection.open) {
+                console.log(`🎮 플레이어 ${p.id}에게 결과창 표시 명령 전송`);
+                sendMessage("showResults", {}, p.connection);
+              }
+            });
+          }, 100); // 표지 정보 전송 후 짧은 딜레이
         });
 
       } catch (error) {
@@ -1829,7 +1847,24 @@ const gameEnd = async (status) => {
           console.error("🎮 에러 응답 상태:", error.response.status);
           console.error("🎮 에러 응답 데이터:", error.response.data);
         }
-        // 정상 종료 처리 실패
+        
+        // 에러 발생해도 모든 플레이어에게 결과창 표시 (기본값 사용)
+        console.warn("🎮 에러 발생으로 기본값으로 결과창 표시");
+        
+        // 기본 표지 정보 설정
+        bookCover.value.title = "아주 먼 옛날";
+        bookCover.value.imageUrl = "";
+        
+        // 방장도 결과창 표시
+        isForceStopped.value = "champ";
+        
+        // 다른 플레이어들에게도 결과창 표시 명령 (에러 상황에서도)
+        connectedPeers.value.forEach(async (p) => {
+          if (p.id !== peerId.value && p.connection.open) {
+            console.log(`🎮 [에러 처리] 플레이어 ${p.id}에게 기본값으로 결과창 표시`);
+            sendMessage("showResults", {}, p.connection);
+          }
+        });
       }
     } else {
       console.log("🎮 방장이 아니므로 API 호출 건너뜀");
@@ -1842,19 +1877,29 @@ const gameEnd = async (status) => {
   console.log("🎮 최종 bookCover 상태:", bookCover.value);
 };
 
-// 승자 표시 완료 후 나레이션 시작
+// 승자 표시 완료 후 나레이션 시작 (각 플레이어 개별 진행)
 const onWinnerShown = () => {
-  // 승자 표시가 완료되었으므로 이제 나레이션 시작
+  console.log("🎮 === 승자 표시 완료 - 개별 TTS 시작 ===");
+  console.log("🎮 현재 플레이어:", peerId.value);
+  
+  // 각 플레이어가 개별적으로 TTS 시작
   gameStarted.value = false;
+  console.log("🎮 TTS 시작됨 (개별 진행)");
 };
 
-// 나레이션 완료 후 승자 화면 제거 및 표지 표시
+// 나레이션 완료 후 승자 화면 제거 및 표지 표시 (각 플레이어 개별 진행)
 const onNarrationComplete = () => {
+  console.log("🎮 === TTS 완료 - 개별 표지 화면 전환 ===");
+  console.log("🎮 현재 플레이어:", peerId.value);
+  console.log("🎮 표지 정보:", bookCover.value);
+  
+  // 결과창 제거하고 표지로 전환
   isForceStopped.value = null;
-  // ResultView에서 표지를 보여주도록 라우터 이동 또는 상태 변경이 필요하지만,
-  // 우선
+  
+  // ResultView로 라우팅하여 표지 표시 (각 플레이어 개별)
   nextTick(() => {
-    router.push({ name: 'ResultView' }); // ResultView로 라우팅하여 표지 표시
+    console.log("🎮 ResultView로 라우팅 (개별 진행)");
+    router.push({ name: 'ResultView' }); 
   });
 };
 

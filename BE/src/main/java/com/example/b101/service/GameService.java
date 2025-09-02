@@ -258,8 +258,8 @@ public class GameService {
                     webClientConfig.getGeminiApiKey() != null ? webClientConfig.getGeminiApiKey().length() : "null");
 
             // 새로운 API 시스템: OpenAI GPT + Gemini로 표지 생성
-            String bookTitle;
-            byte[] coverImageBytes;
+            String bookTitle = "아주 먼 옛날"; // 기본값
+            byte[] coverImageBytes = null; // 기본값
             
             try {
                 log.info("🎮🎮🎮 === 1단계: 스토리 요약 및 제목 생성 시작 ===");
@@ -288,25 +288,23 @@ public class GameService {
                 log.error("🎮🎮🎮 에러 메시지: {}", e.getMessage());
                 log.error("🎮🎮🎮 스택 트레이스:", e);
                 
-                // 제목 생성 실패와 이미지 생성 실패를 구분
-                if (e.getMessage() != null && e.getMessage().contains("GPT 제목 생성 필수")) {
-                    log.error("🎮🎮🎮 GPT 제목 생성 실패로 판단");
-                    return ApiResponseUtil.failure("AI 제목 생성 서비스가 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.",
-                            HttpStatus.SERVICE_UNAVAILABLE,
-                            request.getRequestURI());
-                } else if (e.getMessage() != null && e.getMessage().contains("이미지 생성")) {
-                    log.error("🎮🎮🎮 Gemini 이미지 생성 실패로 판단");
-                    return ApiResponseUtil.failure("AI 표지 이미지 생성 서비스가 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.",
-                            HttpStatus.SERVICE_UNAVAILABLE,
-                            request.getRequestURI());
-                } else {
-                    log.error("🎮🎮🎮 기타 오류로 판단");
-                    return ApiResponseUtil.failure("책 표지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
-                            HttpStatus.SERVICE_UNAVAILABLE,
-                            request.getRequestURI());
+                // 단계별로 어디서 실패했는지 확인
+                String errorLocation = "알 수 없는 위치";
+                if (e.getMessage() != null) {
+                    if (e.getMessage().contains("GPT") || e.getMessage().contains("제목")) {
+                        errorLocation = "제목 생성 단계";
+                    } else if (e.getMessage().contains("Gemini") || e.getMessage().contains("이미지") || e.getMessage().contains("표지")) {
+                        errorLocation = "이미지 생성 단계";
+                    }
                 }
+                
+                log.error("🎮🎮🎮 실패 위치: {}", errorLocation);
+                
+                // 실패 시에도 기본값으로 처리하여 게임이 완료되도록 함
+                log.warn("🎮🎮🎮 표지 생성 실패 - 기본값으로 게임 완료 진행");
+                log.info("🎮🎮🎮 기본값으로 책 생성 계속 진행: 제목=[{}], 이미지=null", bookTitle);
+                // bookTitle과 coverImageBytes는 이미 기본값으로 초기화됨
             }
-
 
             //정상적인 게임 종료 시 책표지 생성
             SceneRedis scene = SceneRedis.builder()
@@ -496,13 +494,15 @@ public class GameService {
                 // GPT-5 Responses API 요청 구조
                 Map<String, Object> requestBody = new HashMap<>();
                 requestBody.put("model", "gpt-5-nano");
-                requestBody.put("input", "다음 스토리를 요약하여 10자 이내의 제목을 만들어주세요: " + storyContent);
-
                 requestBody.put("input", "다음 스토리를 10자 이내의 창의적인 제목으로 만들어주세요. 다른 설명 없이 제목만 말해주세요. 스토리: " + storyContent);
 
                 Map<String, String> text = new HashMap<>();
                 text.put("verbosity", "low");
                 requestBody.put("text", text);
+                
+                Map<String, String> reasoning = new HashMap<>();
+                reasoning.put("effort", "minimal");
+                requestBody.put("reasoning", reasoning);
                 
                 log.info("GPT-5 Responses API 요청 전송 중... (시도 {})", attempt);
                 
@@ -528,24 +528,68 @@ public class GameService {
                     throw new RuntimeException("GPT API null 응답");
                 }
                 
-                // 응답 파싱
+                // 응답 파싱 - GPT-5 Responses API
                 JsonNode responseJson = objectMapper.readTree(response);
-                log.info("응답 JSON 구조: {}", responseJson.toString());
+                log.info("응답 JSON 키들: {}", responseJson.fieldNames().hasNext() ? 
+                    String.join(", ", () -> responseJson.fieldNames()) : "없음");
+                log.info("전체 응답: {}", responseJson.toString());
 
-                if (responseJson.has("output") && responseJson.get("output").isArray()) {
-                    for (JsonNode outputNode : responseJson.get("output")) {
+                String generatedTitle = null;
+
+                // 1. output_text 직접 확인
+                if (responseJson.has("output_text")) {
+                    generatedTitle = responseJson.get("output_text").asText().trim();
+                    log.info("✅ output_text에서 제목 발견: [{}]", generatedTitle);
+                }
+                // 2. output 배열 확인
+                else if (responseJson.has("output") && responseJson.get("output").isArray()) {
+                    JsonNode outputArray = responseJson.get("output");
+                    log.info("output 배열 크기: {}", outputArray.size());
+                    
+                    for (int i = 0; i < outputArray.size(); i++) {
+                        JsonNode outputNode = outputArray.get(i);
+                        log.info("output[{}] 타입: {}", i, outputNode.path("type").asText());
+                        
+                        // 메시지 타입인 경우
                         if ("message".equals(outputNode.path("type").asText()) && outputNode.has("content")) {
                             JsonNode contentArray = outputNode.get("content");
-                            if (contentArray.isArray() && !contentArray.isEmpty()) {
-                                JsonNode firstContent = contentArray.get(0);
-                                if ("output_text".equals(firstContent.path("type").asText())) {
-                                    String generatedTitle = firstContent.path("text").asText().trim();
-                                    log.info("✅ 책 제목 생성 성공 (시도 {}): [{}]", attempt, generatedTitle);
-                                    return generatedTitle;
+                            if (contentArray.isArray()) {
+                                for (int j = 0; j < contentArray.size(); j++) {
+                                    JsonNode content = contentArray.get(j);
+                                    log.info("content[{}] 타입: {}", j, content.path("type").asText());
+                                    
+                                    if ("output_text".equals(content.path("type").asText()) && content.has("text")) {
+                                        generatedTitle = content.get("text").asText().trim();
+                                        log.info("✅ content에서 제목 발견: [{}]", generatedTitle);
+                                        break;
+                                    }
                                 }
                             }
                         }
+                        // 직접 텍스트가 있는 경우
+                        else if (outputNode.has("text")) {
+                            generatedTitle = outputNode.get("text").asText().trim();
+                            log.info("✅ output 노드에서 제목 발견: [{}]", generatedTitle);
+                        }
+                        
+                        if (generatedTitle != null) break;
                     }
+                }
+                // 3. choices 배열 확인 (Chat Completions 스타일)
+                else if (responseJson.has("choices") && responseJson.get("choices").isArray()) {
+                    JsonNode choices = responseJson.get("choices");
+                    if (choices.size() > 0) {
+                        JsonNode firstChoice = choices.get(0);
+                        if (firstChoice.has("message") && firstChoice.get("message").has("content")) {
+                            generatedTitle = firstChoice.get("message").get("content").asText().trim();
+                            log.info("✅ choices에서 제목 발견: [{}]", generatedTitle);
+                        }
+                    }
+                }
+
+                if (generatedTitle != null && !generatedTitle.isEmpty()) {
+                    log.info("✅ 책 제목 생성 성공 (시도 {}): [{}]", attempt, generatedTitle);
+                    return generatedTitle;
                 }
                 
                 log.warn("⚠️ GPT 응답에서 choices 필드 없음 (시도 {})", attempt);
