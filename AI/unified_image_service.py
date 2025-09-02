@@ -30,7 +30,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2")
+S3_REGION = os.getenv("S3_REGION", "ap-northeast-2")
 
 # API 클라이언트 초기화
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
@@ -39,7 +39,7 @@ s3_client = boto3.client(
     's3',
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_REGION
+    region_name=S3_REGION
 ) if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY else None
 
 # 스타일 정의 (Java와 동일)
