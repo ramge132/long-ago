@@ -90,7 +90,6 @@ const validation = ref({
 const emit = defineEmits(["signIn"]);
 
 // const kakaoRegister = () => {
-//   console.log("카카오 로그인");
 // };
 
 const authValidation = () => {
@@ -111,7 +110,6 @@ const authValidation = () => {
 
 const handleGoogleLogin = (response) => {
   const data = jwtDecode(response.credential);
-  console.log("Google User Data:", data);
 };
 
 const jwtDecode = (token) => {
@@ -135,9 +133,7 @@ const signin = async () => {
       });
       toast.successToast(`반갑습니다. ${id.value}님!`);
       emit("signIn", id.value);
-      console.log(response);
     } catch (error) {
-      console.log("에러", error);
       toast.errorToast("error");
     }
   }

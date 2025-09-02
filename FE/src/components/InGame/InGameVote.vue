@@ -47,7 +47,6 @@ const duration = ref(10);
 const emit = defineEmits(['voteEnd']);
 const startCount = () => {
   countStarted.value = true;
-  console.log(props.usedCard);
 };
 const props = defineProps({
   prompt: {

@@ -67,7 +67,6 @@ const startLoading = (data) => {
     if (data.value) {
       loadingMusic.play();
       audioStore.audioPlay = false;
-      console.log(audioStore.audioData);
     } else {
       loadingMusic.pause();
       loadingMusic.currentTime = 0;

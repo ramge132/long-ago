@@ -16,7 +16,6 @@ export const getBook = async (data) => {
         const response = await apiClient.get("/apis/book", {params});
         return response;
     } catch (error) {
-        console.log(error);
         throw error;
     }
 }

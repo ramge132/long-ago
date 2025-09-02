@@ -17,7 +17,6 @@ export const postRegister = async (data) => {
     const response = await apiClient.post(import.meta.env.VITE_USERS, data);
     return response;
   } catch (error) {
-    console.log("API 요청 에러:", error);
     throw error;
   }
 };
@@ -37,7 +36,6 @@ export const postSignIn = async (data) => {
     );
     return response;
   } catch (error) {
-    console.log("API 요청 에러:", error);
     throw error;
   }
 };

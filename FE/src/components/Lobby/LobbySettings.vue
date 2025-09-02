@@ -225,7 +225,6 @@ const copy = async () => {
     toast.successToast("클립보드에 복사되었습니다.");
   } catch (error) {
     toast.errorToast("복사 실패");
-    console.log(error);
   }
 };
 

@@ -177,14 +177,12 @@ const startWithAudio = async () => {
     
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
-      console.log('오디오 컨텍스트 활성화 성공');
     }
     
     // 오디오 설정 활성화
     audioStore.audioData = true;
     
   } catch (error) {
-    console.log('오디오 컨텍스트 활성화 실패:', error);
   }
   
   start();

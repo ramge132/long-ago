@@ -49,7 +49,6 @@ let gifDuration = 0;
 let gifAnimationStartTime = 0;
 
 const onGifLoad = () => {
-    console.log('result_champ.gif loaded');
     
     // GIF 애니메이션 지속 시간을 측정하기 위한 로직
     // 일반적인 방법으로는 정확한 GIF 지속 시간을 얻기 어려우므로
@@ -63,7 +62,6 @@ const onGifLoad = () => {
     if (img) {
         // 브라우저에서 GIF 애니메이션 완료를 감지하는 것은 직접적으로 불가능
         // 따라서 기존의 알려진 시간값을 사용하거나, 수동으로 측정해야 함
-        console.log('GIF 이미지 요소:', img);
         
         // GIF 애니메이션 지속시간: 약 3초
     }

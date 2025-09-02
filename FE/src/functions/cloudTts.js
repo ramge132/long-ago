@@ -46,7 +46,6 @@ function getApiUrl() {
  */
 async function fetchTTSAudio(text) {
   try {
-    console.log(`🔊 TTS API 호출: ${text}`);
     
     const apiUrl = getApiUrl();
     const response = await fetch(`${apiUrl}/tts/synthesize`, {
@@ -73,7 +72,6 @@ async function fetchTTSAudio(text) {
     
     return audioData;
   } catch (error) {
-    console.error('TTS API 호출 오류:', error);
     throw error;
   }
 }
@@ -99,17 +97,14 @@ function playAudioBuffer(audioData) {
         
         // 재생 완료 이벤트
         source.onended = () => {
-          console.log('✅ TTS 재생 완료');
           resolve();
         };
         
         // 재생 시작
         source.start();
-        console.log('🎙️ TTS 재생 시작');
         
       })
       .catch(error => {
-        console.error('오디오 디코딩 실패:', error);
         reject(error);
       });
   });
@@ -124,7 +119,6 @@ export async function speakTextConcurrent(text) {
   if (!text) return;
 
   try {
-    console.log(`🔊 Cloud TTS API 호출: ${text}`);
     
     // Cloud TTS API 호출하여 오디오 데이터 가져오기
     const audioData = await fetchTTSAudio(text);
@@ -132,11 +126,8 @@ export async function speakTextConcurrent(text) {
     // Web Audio API로 재생 (동시 실행 가능)
     await playAudioBuffer(audioData);
     
-    console.log(`✅ Cloud TTS 재생 완료: ${text}`);
   } catch (error) {
-    console.error(`❌ Cloud TTS API 실패: ${text}`, error);
     // 에러 발생 시 재생하지 않음 (게임 진행은 계속)
-    console.log(`⏭️ TTS 실패로 인해 음성 건너뜀: ${text}`);
     // throw 하지 않아서 게임 진행이 중단되지 않도록 함
   }
 }
@@ -149,7 +140,6 @@ export function stopAllTTS() {
     // 모든 오디오 소스를 중지하려면 새로운 AudioContext를 생성
     audioContext.close();
     audioContext = null;
-    console.log('🛑 모든 TTS 중지됨');
   }
 }
 
@@ -163,7 +153,6 @@ export async function speakTextWithVolume(text, volume = 1.0) {
   if (!text) return;
 
   try {
-    console.log(`🔊 볼륨 조절 TTS 시작: ${text}, 볼륨: ${volume}`);
     
     const audioData = await fetchTTSAudio(text);
     const context = initAudioContext();
@@ -185,6 +174,5 @@ export async function speakTextWithVolume(text, volume = 1.0) {
     });
     
   } catch (error) {
-    console.error('볼륨 조절 TTS 실행 실패:', error);
   }
 }

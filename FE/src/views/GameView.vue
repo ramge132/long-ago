@@ -262,7 +262,7 @@ const setupConnection = (conn) => {
   conn.on("data", async (data) => {
     // 중요한 메시지들은 로그 출력
     if (["showResultsWithCover", "bookCover", "gameEnd", "showResults"].includes(data.type)) {
-      console.log(`🎮 [메시지 수신] 타입: ${data.type}, 발신자: ${conn.peer}, 데이터:`, data);
+      
     }
     
     switch (data.type) {
@@ -432,7 +432,6 @@ const setupConnection = (conn) => {
           // 부적절한 콘텐츠로 인한 점수 -1 처리 (다른 플레이어들에게도 동기화)
           const currentPlayer = participants.value[inGameOrder.value[data.currTurn === 0 ? participants.value.length - 1 : data.currTurn - 1]];
           currentPlayer.score -= 1;
-          console.log("부적절한 콘텐츠로 인한 점수 감소 처리됨:", currentPlayer.name, currentPlayer.score);
         }
         totalTurn.value = data.totalTurn;
         inProgress.value = false;
@@ -551,18 +550,14 @@ const setupConnection = (conn) => {
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
-                console.log("🎮 결말카드 투표 통과 - 표지 생성 시작");
                 
                 // 방장만 표지 생성 API 호출 (결과창은 아직 표시하지 않음)
                 if (participants.value[0].id == peerId.value) {
-                  console.log("🎮 방장이 표지 생성 진행");
                   gameEnd(true);
                 } else {
-                  console.log("🎮 게스트는 표지 생성 대기 - 게임 상태 초기화");
                   // 게스트도 게임 종료 상태로 전환 (결과창은 메시지로 받아서 표시)
                   currTurn.value = -1;
                   totalTurn.value = 1;
-                  console.log("🎮 게스트 게임 상태 초기화 완료 - 메시지 대기 중");
                 }
               } else {
                 connectedPeers.value.forEach(async (p) => {
@@ -655,25 +650,18 @@ const setupConnection = (conn) => {
         break;
 
       case "gameEnd":
-        console.log("🎮 구버전 gameEnd 메시지 수신 (더 이상 사용되지 않음)");
         break;
 
       case "showResults":
-        console.log("🎮 구버전 결과창 표시 명령 수신 (더 이상 사용되지 않음)");
         isForceStopped.value = "champ";
         break;
 
       case "gameEndPrepare":
-        console.log("🎮 게임 종료 준비 알림 수신 - 방장이 책 표지 생성 중");
-        console.log("🎮 게스트는 대기 상태로 전환");
         // 게스트들은 showResultsWithCover 메시지를 기다리는 상태로 전환
         // 특별한 처리는 필요없고, 로그만 출력
         break;
 
       case "showResultsWithCover":
-        console.log("🎮 표지 정보와 함께 결과창 표시 명령 수신");
-        console.log("🎮 수신한 표지 정보:", data.bookCover);
-        console.log("🎮 수신한 ISBN:", data.ISBN);
         
         // 표지 정보 설정
         if (data.bookCover) {
@@ -685,32 +673,20 @@ const setupConnection = (conn) => {
         
         // 결과창 표시
         isForceStopped.value = "champ";
-        console.log("🎮 게스트 결과창 표시 완료 (표지 정보 포함)");
         break;
 
       case "bookCoverUpdate":
-        console.log("🎮 표지 정보 업데이트 수신");
-        console.log("🎮 업데이트할 표지 정보:", data.bookCover);
-        console.log("🎮 업데이트할 ISBN:", data.ISBN);
         
         // 표지 정보 업데이트 (결과창은 이미 표시된 상태)
         if (data.bookCover) {
-          console.log("🎮 기존 표지:", bookCover.value);
           bookCover.value = data.bookCover;
-          console.log("🎮 업데이트된 표지:", bookCover.value);
         }
         if (data.ISBN) {
-          console.log("🎮 기존 ISBN:", ISBN.value);
           ISBN.value = data.ISBN;
-          console.log("🎮 업데이트된 ISBN:", ISBN.value);
         }
-        console.log("🎮 게스트 표지 정보 업데이트 완료");
         break;
 
       case "bookCover":
-        console.log("🎮 구버전 bookCover 메시지 수신 (더 이상 사용되지 않음)");
-        console.log("🎮 수신한 bookCover:", data.bookCover);
-        console.log("🎮 수신한 ISBN:", data.ISBN);
         bookCover.value = data.bookCover;
         ISBN.value = data.ISBN;
         break;
@@ -852,7 +828,7 @@ const connectToRoom = async (roomID) => {
 
     // conn.on("data", (data) => {
     //   if (data.type != "heartbeat" && data.type != "heartbeat_back") {
-    //     console.log("수신데이터", data);
+    //     
     //   }
     //   if (data.type === "currentParticipants") {
     //     handleExistingParticipants(data.participants);
@@ -954,7 +930,6 @@ const initializePeer = () => {
 
 // 부적절한 콘텐츠 경고 표시
 const showInappropriateWarning = (warningData) => {
-  console.log("=== 부적절한 콘텐츠 경고 표시 ===", warningData);
   
   // 경고 토스트 메시지 표시 (모든 플레이어에게 보임)
   const warningMessage = `${warningData.playerName}님의 ${warningData.message}`;
@@ -969,12 +944,10 @@ const showInappropriateWarning = (warningData) => {
     icon: true
   });
   
-  console.log("경고 알림 표시 완료:", warningMessage);
 };
 
 // 부적절한 콘텐츠 경고 모달 표시
 const showInappropriateWarningModal = (warningData) => {
-  console.log("=== 부적절한 콘텐츠 경고 모달 표시 ===", warningData);
   
   warningModalMessage.value = `${warningData.playerName}님이 ${warningData.message}`;
   showWarningModal.value = true;
@@ -984,7 +957,6 @@ const showInappropriateWarningModal = (warningData) => {
     hideWarningModal();
   }, 3000);
   
-  console.log("경고 모달 표시 완료:", warningModalMessage.value);
 };
 
 // 경고 모달 숨기기
@@ -995,7 +967,6 @@ const hideWarningModal = () => {
 
 // 투표 중단 및 경고 표시 (모든 플레이어용)
 const stopVotingAndShowWarning = async (data) => {
-  console.log("=== 투표 중단 및 경고 표시 ===", data);
   
   // 1. 투표 즉시 중단 (InGameView에서 투표 UI 숨김)
   inProgress.value = false;
@@ -1006,14 +977,12 @@ const stopVotingAndShowWarning = async (data) => {
   if (voteTimer) {
     clearTimeout(voteTimer);
     voteTimer = null;
-    console.log("투표 타이머 취소됨");
   }
   
   // 투표 관련 상태 초기화
   votings.value = [];
   usedCard.value = {};
   
-  console.log("투표 진행 상태 비활성화 및 투표 UI 숨김");
   
   // 2. 점수 동기화 (다른 플레이어들)
   if (data.isInappropriate && !data.skipScoreDeduction) {
@@ -1021,23 +990,18 @@ const stopVotingAndShowWarning = async (data) => {
     const affectedPlayer = participants.value[inGameOrder.value[affectedPlayerIndex]];
     if (affectedPlayer) {
       affectedPlayer.score -= 1;
-      console.log("부적절한 콘텐츠로 인한 점수 감소 동기화:", affectedPlayer.name, affectedPlayer.score);
     }
   } else if (data.skipScoreDeduction) {
-    console.log("점수 감소 중복 적용 방지: 이미 점수가 감소되었음");
   }
   
   // 3. 책 내용 제거 (중복 제거 방지)
   if (data.imageDelete === true && !data.skipBookContentRemoval) {
-    console.log("책 내용 제거 전:", bookContents.value.length, bookContents.value);
     if (bookContents.value.length === 1) {
       bookContents.value = [{ content: "", image: null }];
     } else {
       bookContents.value = bookContents.value.slice(0, -1);
     }
-    console.log("책 내용 제거 후:", bookContents.value.length, bookContents.value);
   } else if (data.skipBookContentRemoval) {
-    console.log("책 내용 제거 중복 적용 방지: 이미 책 내용이 제거되었음");
   }
   
   // 4. 경고 모달 표시
@@ -1049,16 +1013,13 @@ const stopVotingAndShowWarning = async (data) => {
   
   // 6. 3초 후 whoTurn 오버레이 표시 (경고 모달이 먼저 표시된 후)
   setTimeout(async () => {
-    console.log("whoTurn 오버레이 표시");
     await showOverlay('whoTurn');
     
     // 다음 턴을 위한 상태 리셋
     isVoted.value = false;
     inProgress.value = true;
-    console.log("게임 진행 상태 재활성화 및 투표 상태 리셋");
   }, 3000);  // 경고 모달이 표시되는 시간과 동일
   
-  console.log("투표 중단 및 경고 표시 완료");
 };
 
 // 컴포넌트 마운트
@@ -1389,12 +1350,6 @@ const nextTurn = async (data) => {
     prompt.value = data.prompt;
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
-    console.log("=== 이미지 생성 API 호출 시작 ===");
-    console.log("게임ID:", gameID.value);
-    console.log("사용자ID:", peerId.value);
-    console.log("사용자 프롬프트:", data.prompt);
-    console.log("턴:", totalTurn.value);
-    console.log("현재 턴 번호 (totalTurn):", totalTurn.value);
     
     try {
       const responseImage = await createImage({
@@ -1404,51 +1359,30 @@ const nextTurn = async (data) => {
         turn: totalTurn.value++,
       });
       
-      console.log("=== 이미지 생성 API 응답 수신 ===");
-      console.log("응답 상태:", responseImage?.status);
-      console.log("응답 데이터 타입:", typeof responseImage?.data);
-      console.log("응답 데이터 크기:", responseImage?.data?.size || "알 수 없음");
       
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
       const imageBlob = URL.createObjectURL(responseImage.data);
-      console.log("이미지 Blob URL 생성 완료:", imageBlob);
 
       // webRTC의 데이터 채널은 Blob을 지원하지 않으므로 변환
       const arrayBuffer = await responseImage.data.arrayBuffer();
-      console.log("ArrayBuffer 변환 완료. 크기:", arrayBuffer.byteLength, "bytes");
       
       // 사람들에게 이미지 전송
-      console.log("=== WebRTC 이미지 전송 시작 ===");
-      console.log("전송할 피어 수:", connectedPeers.value.length);
       
       connectedPeers.value.forEach((peer, index) => {
         if (peer.id !== peerId.value && peer.connection.open) {
-          console.log(`피어 ${index + 1}(${peer.id})에게 이미지 전송 중...`);
           sendMessage(
             "sendImage",
             { imageBlob: arrayBuffer },
             peer.connection
           )
         } else {
-          console.log(`피어 ${index + 1}(${peer.id}) 건너뜀 - 자신이거나 연결 닫힘`);
         }
       });
       
       // 나의 책에 이미지 넣기
-      console.log("=== 자신의 책에 이미지 추가 ===");
-      console.log("현재 책 페이지 수:", bookContents.value.length);
       bookContents.value[bookContents.value.length - 1].image = imageBlob;
-      console.log("이미지 추가 완료. 최종 책 페이지 수:", bookContents.value.length);
-      console.log("=== 이미지 생성 및 공유 완료 ===");
       
     } catch (error) {
-      console.error("=== 이미지 생성 API 호출 실패 ===");
-      console.error("에러 타입:", error?.constructor?.name);
-      console.error("에러 메시지:", error?.message);
-      console.error("HTTP 상태:", error?.response?.status);
-      console.error("HTTP 상태 텍스트:", error?.response?.statusText);
-      console.error("응답 데이터:", error?.response?.data);
-      console.error("전체 에러 객체:", error);
       
       // Blob 응답 데이터를 텍스트로 변환하여 실제 에러 메시지 확인
       let errorMessage = "";
@@ -1457,12 +1391,9 @@ const nextTurn = async (data) => {
       if (error?.response?.data instanceof Blob) {
         try {
           const errorText = await error.response.data.text();
-          console.error("Blob 에러 데이터 내용:", errorText);
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.message || "";
-          console.error("파싱된 에러 메시지:", errorMessage);
         } catch (parseError) {
-          console.error("Blob 데이터 파싱 실패:", parseError);
         }
       }
       
@@ -1484,32 +1415,24 @@ const nextTurn = async (data) => {
         error?.message?.includes("filter")
       );
       
-      console.log("부적절한 콘텐츠 감지 여부:", isInappropriateContent);
       
       // 콘텐츠 필터링으로 인한 이미지 생성 실패 처리
       if (isInappropriateContent) {
         
-        console.log("=== 부적절한 콘텐츠로 인한 이미지 생성 거부 감지 ===");
         
         // 자신의 턴일 때만 처리 (투표 부결과 동일한 조건)
-        console.log("현재 턴:", currTurn.value, "내 턴:", myTurn.value, "턴 비교:", currTurn.value === myTurn.value);
         if (currTurn.value === myTurn.value) {
-          console.log("=== 자신의 턴이므로 부적절한 콘텐츠 처리 시작 ===");
           
           // 투표 탈락과 동일한 처리: 점수 감소
           const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-          console.log("현재 플레이어:", currentPlayer, "기존 점수:", currentPlayer.score);
           currentPlayer.score -= 1;
-          console.log("점수 감소 후:", currentPlayer.score);
           
           // 사용자 메시지가 이미 책에 추가된 상태이므로 제거 (투표 탈락과 동일)
-          console.log("책 내용 제거 전:", bookContents.value.length, bookContents.value);
           if (bookContents.value.length === 1) {
             bookContents.value = [{ content: "", image: null }];
           } else {
             bookContents.value = bookContents.value.slice(0, -1);
           }
-          console.log("책 내용 제거 후:", bookContents.value.length, bookContents.value);
           
           // 경고 메시지와 아이콘을 모든 플레이어에게 전송
           const warningMessage = {
@@ -1517,14 +1440,12 @@ const nextTurn = async (data) => {
             playerName: currentPlayer.name,
             message: "부적절한 이미지를 생성하려 했습니다"
           };
-          console.log("경고 메시지 생성:", warningMessage);
           
           // 턴 넘기기
           currTurn.value = (currTurn.value + 1) % participants.value.length;
           
           // condition에서 다음 턴 or 게임 종료 (투표 거부와 동일한 로직)
           if (usedCard.value.isEnding) {
-            console.log("부적절한 컨텐츠 처리 후 게임 종료 조건 감지");
             // 즉시 승자 표시 (1초 후)
             setTimeout(() => {
               isForceStopped.value = "champ";
@@ -1539,7 +1460,6 @@ const nextTurn = async (data) => {
             });
           } else {
             // 게임이 계속되는 경우에만 투표 중단 신호 전송
-            console.log("모든 플레이어에게 투표 중단 및 경고 알림 전송");
             const stopVotingMessage = {
               type: "stopVotingAndShowWarning",
               warningData: warningMessage,
@@ -1552,20 +1472,16 @@ const nextTurn = async (data) => {
             // 모든 피어에게 투표 중단 및 경고 알림 전송
             connectedPeers.value.forEach((peer) => {
               if (peer.id !== peerId.value && peer.connection.open) {
-                console.log("피어에게 투표 중단 및 경고 알림 전송:", peer.id);
                 sendMessage("stopVotingAndShowWarning", stopVotingMessage, peer.connection);
               }
             });
             
             // 자신에게도 투표 중단 및 경고 표시 (하지만 점수와 책 내용은 이미 처리했으므로 중복 적용 방지)
-            console.log("자신에게도 투표 중단 및 경고 모달 표시");
             const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true, skipBookContentRemoval: true};
             stopVotingAndShowWarning(selfStopVotingMessage);
           }
           
-          console.log("부적절한 콘텐츠 처리 완료. 플레이어 점수:", currentPlayer.score);
         } else {
-          console.log("=== 자신의 턴이 아니므로 부적절한 콘텐츠 처리 건너뜀 ===");
         }
       } else {
         // 일반적인 이미지 생성 실패
@@ -1687,24 +1603,19 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         // condition에서 다음 턴 or 게임 종료
         if (usedCard.value.isEnding) {
-          console.log("🎮 === 엔딩 카드 투표 통과 - 게임 종료 처리 시작 ===");
           
           // 1단계: 백그라운드로 책 표지 생성 요청 시작 (응답을 기다리지 않음)
-          console.log("🎮 백그라운드로 책 표지 생성 요청 시작");
           gameEnd(true); // await 제거 - 백그라운드 실행
           
           // 2단계: 1초 후 모든 플레이어에게 결과창 표시
           setTimeout(() => {
-            console.log("🎮 === 1초 후 모든 플레이어에게 결과창 표시 ===");
             
             // 방장 결과창 표시
-            console.log("🎮 방장 승자 화면 표시");
             isForceStopped.value = "champ";
             
             // 게스트들에게도 결과창 표시 (기본값으로 먼저 표시, 표지는 나중에 업데이트)
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
-                console.log(`🎮 플레이어 ${p.id}에게 결과창 표시 (기본값)`);
                 sendMessage("showResultsWithCover", {
                   bookCover: {
                     title: "아주 먼 옛날", // 기본값
@@ -1796,9 +1707,6 @@ if (currTurn.value === myTurn.value) {
 };
 
 const gameEnd = async (status) => {
-  console.log("🎮 === gameEnd 함수 시작 ===");
-  console.log("🎮 status:", status);
-  console.log("🎮 현재 bookCover 초기 상태:", bookCover.value);
   
   // 게임 시작 상태는 onWinnerShown에서 처리 (TTS 타이밍 제어를 위해)
   // gameStarted.value = false;  // 여기서 제거
@@ -1808,7 +1716,6 @@ const gameEnd = async (status) => {
   
   // 비정상 종료인 경우 (긴장감 100 초과)
   if (!status) {
-    console.log("🎮 비정상 종료 처리");
     // 책 비우기
     // 방장인 경우 게임실패 송신
     if (participants.value[0].id == peerId.value) {
@@ -1825,103 +1732,57 @@ const gameEnd = async (status) => {
     // 전체 실패 쇼 오버레이
     // isForceStopped.value = "fail";
   } else {
-    console.log("🎮 정상 종료 처리");
-    console.log("🎮 방장인가?:", participants.value[0].id == peerId.value);
     
     // 정상 종료인 경우
     if (participants.value[0].id == peerId.value) {
       // 정상 종료 api 들어가야함
       try {
-        console.log("🎮 === 게임 정상 종료 API 호출 시작 ===");
-        console.log("🎮 gameID:", gameID.value);
         
         return await deleteGame({
           gameId: gameID.value,
           isForceStopped: false
         }).then((res) => {
-          console.log("🎮 === 게임 종료 응답 수신 ===");
-          console.log("🎮 전체 응답 객체:", res);
-          console.log("🎮 응답 상태:", res.status);
-          console.log("🎮 응답 데이터 타입:", typeof res.data);
-          console.log("🎮 응답 data:", res.data);
           
           if (res.data && res.data.data) {
-            console.log("🎮 응답 data.data:", res.data.data);
-            console.log("🎮 bookId:", res.data.data.bookId);
-            console.log("🎮 title:", res.data.data.title);
-            console.log("🎮 bookCover URL:", res.data.data.bookCover);
             
             // 각 필드의 타입 체크
-            console.log("🎮 bookId 타입:", typeof res.data.data.bookId);
-            console.log("🎮 title 타입:", typeof res.data.data.title);
-            console.log("🎮 bookCover 타입:", typeof res.data.data.bookCover);
             
             // null/undefined 체크
-            console.log("🎮 bookCover가 null?:", res.data.data.bookCover === null);
-            console.log("🎮 bookCover가 undefined?:", res.data.data.bookCover === undefined);
-            console.log("🎮 bookCover가 'null' 문자열?:", res.data.data.bookCover === 'null');
             
             ISBN.value = res.data.data.bookId;
             bookCover.value.title = res.data.data.title;
             bookCover.value.imageUrl = res.data.data.bookCover;
             
-            console.log("🎮 === bookCover 객체 업데이트 완료 ===");
-            console.log("🎮 업데이트된 bookCover.value:", JSON.stringify(bookCover.value));
-            console.log("🎮 bookCover.value.title:", bookCover.value.title);
-            console.log("🎮 bookCover.value.imageUrl:", bookCover.value.imageUrl);
           } else {
-            console.error("🎮 ❌ 응답 데이터 구조 이상!");
-            console.error("🎮 res.data:", res.data);
           }
         }).then(() => {
-          console.log("🎮 === 다른 플레이어들에게 표지 정보 전송 ===");
-          console.log("🎮 전송할 bookCover:", bookCover.value);
-          console.log("🎮 전송할 ISBN:", ISBN.value);
           
           // 표지 생성 완료 후 실제 표지 정보로 업데이트
-          console.log("🎮 === 표지 생성 완료 후 실제 표지 정보로 업데이트 ===");
-          console.log("🎮 생성된 표지 정보:", bookCover.value);
-          console.log("🎮 생성된 ISBN:", ISBN.value);
           
           // 방장의 표지 정보는 이미 gameEnd 함수에서 설정됨
           // 게스트들에게 실제 표지 정보로 업데이트 메시지 전송
-          console.log("🎮 연결된 피어 수:", connectedPeers.value.length);
           
           connectedPeers.value.forEach(async (p, index) => {
-            console.log(`🎮 피어 ${index}: ID=${p.id}, open=${p.connection.open}`);
             
             if (p.id !== peerId.value && p.connection.open) {
-              console.log(`🎮 ✅ 플레이어 ${p.id}에게 실제 표지 정보 업데이트 전송`);
-              console.log(`🎮 업데이트할 표지 정보:`, bookCover.value);
-              console.log(`🎮 업데이트할 ISBN:`, ISBN.value);
               
               try {
                 sendMessage("bookCoverUpdate", {
                   bookCover: bookCover.value,
                   ISBN: ISBN.value,
                 }, p.connection);
-                console.log(`🎮 ✅ 표지 업데이트 메시지 전송 성공: ${p.id}`);
               } catch (error) {
-                console.error(`🎮 ❌ 표지 업데이트 메시지 전송 실패: ${p.id}`, error);
               }
             } else {
-              console.log(`🎮 ⏭️ 피어 ${p.id} 건너뜀 - 본인이거나 연결 끊어짐`);
             }
           });
         });
 
       } catch (error) {
-        console.error("🎮 === 게임 정상 종료 처리 실패 ===");
-        console.error("🎮 에러 객체:", error);
-        console.error("🎮 에러 메시지:", error.message);
-        console.error("🎮 에러 응답:", error.response);
         if (error.response) {
-          console.error("🎮 에러 응답 상태:", error.response.status);
-          console.error("🎮 에러 응답 데이터:", error.response.data);
         }
         
         // 에러 발생해도 모든 플레이어에게 결과창 표시 (기본값 사용)
-        console.warn("🎮 에러 발생으로 기본값으로 결과창 표시");
         
         // 기본 표지 정보 설정
         bookCover.value.title = "아주 먼 옛날";
@@ -1930,60 +1791,43 @@ const gameEnd = async (status) => {
         // 방장 결과창 표시는 voteEnd 함수에서 별도로 처리됨 (에러 상황에서도)
         
         // 다른 플레이어들에게도 기본값으로 결과창 표시 명령 (에러 상황에서도)
-        console.log("🎮 [에러 처리] 연결된 피어 수:", connectedPeers.value.length);
         
         connectedPeers.value.forEach(async (p) => {
           if (p.id !== peerId.value && p.connection.open) {
-            console.log(`🎮 [에러 처리] 플레이어 ${p.id}에게 기본값으로 결과창 표시`);
-            console.log(`🎮 [에러 처리] 전송할 기본 표지:`, bookCover.value);
             
             try {
               sendMessage("showResultsWithCover", {
                 bookCover: bookCover.value, // 기본값 포함
                 ISBN: ISBN.value,
               }, p.connection);
-              console.log(`🎮 [에러 처리] ✅ 메시지 전송 성공: ${p.id}`);
             } catch (msgError) {
-              console.error(`🎮 [에러 처리] ❌ 메시지 전송 실패: ${p.id}`, msgError);
             }
           }
         });
       }
     } else {
-      console.log("🎮 방장이 아니므로 API 호출 건너뜀");
     }
     // 우승자 쇼 오버레이
     // isForceStopped.value = "champ";
   }
   
-  console.log("🎮 === gameEnd 함수 종료 ===");
-  console.log("🎮 최종 bookCover 상태:", bookCover.value);
 };
 
 // 승자 표시 완료 후 나레이션 시작 (각 플레이어 개별 진행)
 const onWinnerShown = () => {
-  console.log("🎮 === 승자 표시 완료 - 개별 TTS 시작 ===");
-  console.log("🎮 현재 플레이어:", peerId.value);
   
   // 각 플레이어가 개별적으로 TTS 시작
   gameStarted.value = false;
-  console.log("🎮 TTS 시작됨 (개별 진행)");
 };
 
 // 나레이션 완료 후 승자 화면 제거 및 표지 표시 (각 플레이어 개별 진행)
 const onNarrationComplete = () => {
-  console.log("🎮 === TTS 완료 - 개별 표지 화면 전환 ===");
-  console.log("🎮 현재 플레이어:", peerId.value);
-  console.log("🎮 표지 정보:", bookCover.value);
-  console.log("🎮 표지 제목:", bookCover.value.title);
-  console.log("🎮 표지 이미지 URL:", bookCover.value.imageUrl);
   
   // 결과창 제거하고 표지로 전환
   isForceStopped.value = null;
   
   // GameView 내에서 표지를 표시하기 위해 상태 변경 (별도 라우팅 없음)
   nextTick(() => {
-    console.log("🎮 표지 표시 상태로 전환 (GameView 내부)");
     // 표지 표시 상태를 나타내는 변수가 필요할 수 있음
     // 현재는 isForceStopped.value = null 이면 표지가 표시되는 것으로 보임
   });

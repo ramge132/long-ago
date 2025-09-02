@@ -102,9 +102,7 @@ const register = async () => {
       });
       toast.successToast("회원가입 성공!");
       emit("register", id.value);
-      console.log(response);
     } catch (error) {
-      console.error("에러", error);
       toast.errorToast("error");
     }
   }
