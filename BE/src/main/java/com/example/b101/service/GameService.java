@@ -647,8 +647,8 @@ public class GameService {
                 "Style: " + style + ". The cover should be artistic, captivating, and suitable for a storybook. " +
                 "Include the title text elegantly integrated into the design.";
         
-        // SceneService와 동일한 재시도 로직 사용
-        return callGeminiWithRetryForCover(coverPrompt, 1); // 1회 재시도 (총 2번)
+        // 책표지 생성을 위해 재시도 횟수 증가
+        return callGeminiWithRetryForCover(coverPrompt, 4); // 4회 재시도 (총 5번)
     }
     
     /**
