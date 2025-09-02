@@ -118,9 +118,9 @@ public class S3service {
         // 업로드 성공 여부 플래그 ( 동시성 문제로 사용)
         AtomicBoolean isUploaded = new AtomicBoolean(false);
 
-        // 2) 병렬로 S3 업로드 (Python 서비스가 이미 처리한 Scene들은 제외)
+        // 2) 병렬로 S3 업로드
         List<CompletableFuture<Void>> uploadFutures = sceneRedisList.stream()
-                .filter(scene -> scene.getImage() != null) // Python 서비스가 처리한 Scene들은 image가 null이므로 제외
+                .filter(scene -> scene.getImage() != null)
                 .map(scene -> CompletableFuture.runAsync(() -> {
                     try {
                         uploadFileToS3(scene,bookId);
@@ -135,18 +135,9 @@ public class S3service {
         // 3) 모든 업로드 끝날 까지 대기 (각각의 병렬 처리 예외 처리)
         CompletableFuture.allOf(uploadFutures.toArray(new CompletableFuture[0])).join();
 
-        // Python 서비스가 이미 처리한 Scene들 개수 확인
-        long pythonProcessedCount = sceneRedisList.stream()
-                .filter(scene -> scene.getImageUrl() != null && scene.getImage() == null)
-                .count();
-
-        if (!isUploaded.get() && pythonProcessedCount == 0) {
+        if (!isUploaded.get()) {
             log.info("사진 하나도 저장 안 됨");
             return false;
-        }
-
-        if (pythonProcessedCount > 0) {
-            log.info("Python 서비스가 처리한 Scene 개수: {}", pythonProcessedCount);
         }
         log.info("아무튼 업로드 됨");
         return true;

@@ -5,7 +5,7 @@ Long Ago - 통합 이미지 생성 서비스 (Python)
 
 - OpenAI GPT-5 Responses API를 사용한 프롬프트 생성
 - Google Gemini 2.5 Flash Image Preview API를 사용한 이미지 생성  
-- AWS S3 이미지 저장
+- 바이너리 이미지 데이터 반환 (S3 업로드는 Java에서 처리)
 - 재시도 로직 포함
 - 결말카드/일반카드 구분 처리
 """
@@ -21,26 +21,13 @@ from datetime import datetime
 
 import uvicorn
 import httpx
-import boto3
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 # 환경변수 설정
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-S3_REGION = os.getenv("S3_REGION", "ap-southeast-2")
-
-# S3 클라이언트 초기화
-s3_client = boto3.client(
-    's3',
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=S3_REGION
-) if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY else None
 
 # 그림체 스타일 정의 (Java와 동일)
 DRAWING_STYLES = [
@@ -64,11 +51,7 @@ class SceneGenerationRequest(BaseModel):
     drawingStyle: int
     isEnding: bool
 
-class SceneGenerationResponse(BaseModel):
-    success: bool
-    imageUrl: Optional[str] = None
-    message: str
-    gptPrompt: Optional[str] = None
+# SceneGenerationResponse는 바이너리 이미지 데이터 직접 반환으로 대체
 
 class BookCoverGenerationRequest(BaseModel):
     storyContent: str
@@ -78,20 +61,19 @@ class BookCoverGenerationRequest(BaseModel):
 class BookCoverGenerationResponse(BaseModel):
     success: bool
     title: Optional[str] = None
-    imageUrl: Optional[str] = None
     message: str
 
 class UnifiedImageService:
     def __init__(self):
         """통합 이미지 생성 서비스 초기화"""
-        if not all([OPENAI_API_KEY, GEMINI_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET_NAME]):
+        if not all([OPENAI_API_KEY, GEMINI_API_KEY]):
             logger.error("필수 환경변수가 설정되지 않았습니다")
             sys.exit(1)
         
         logger.info("통합 이미지 생성 서비스 초기화 완료")
 
-    async def generate_scene_image(self, request: SceneGenerationRequest) -> SceneGenerationResponse:
-        """장면 이미지 생성 (Java SceneService.createScene 로직 복제)"""
+    async def generate_scene_image(self, request: SceneGenerationRequest) -> bytes:
+        """장면 이미지 생성 (Java SceneService.createScene 로직 복제) - 바이너리 이미지 데이터 반환"""
         try:
             logger.info("=== 이미지 생성 요청 시작 ===")
             logger.info(f"게임ID: {request.gameId}, 사용자ID: {request.userId}, 턴: {request.turn}")
@@ -124,28 +106,19 @@ class UnifiedImageService:
             logger.info("=== Gemini 이미지 생성 성공 ===")
             logger.info(f"생성된 이미지 크기: {len(image_data)} bytes")
             
-            # 3단계: S3에 업로드
-            object_key = f"{request.gameId}/{request.turn}.png"
-            image_url = await self._upload_to_s3(image_data, object_key)
-            
+            # 바이너리 이미지 데이터 반환 (S3 업로드는 Java에서 처리)
             logger.info(f"새로운 API에서 생성된 이미지 크기 : {len(image_data)}")
+            logger.info("=== Python 서비스에서 바이너리 이미지 데이터 반환 ===")
             
-            return SceneGenerationResponse(
-                success=True,
-                imageUrl=image_url,
-                message="이미지 생성 성공",
-                gptPrompt=enhanced_prompt
-            )
+            return image_data
             
         except Exception as e:
             logger.error(f"이미지 생성 실패: {str(e)}")
-            return SceneGenerationResponse(
-                success=False,
-                message=f"이미지 생성 실패: {str(e)}"
-            )
+            logger.error(f"에러 상세:", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"이미지 생성 실패: {str(e)}")
 
-    async def generate_book_cover(self, request: BookCoverGenerationRequest) -> BookCoverGenerationResponse:
-        """책 표지 생성 (Java GameService.finishGame 로직 복제)"""
+    async def generate_book_cover(self, request: BookCoverGenerationRequest) -> tuple[str, bytes]:
+        """책 표지 생성 (Java GameService.finishGame 로직 복제) - 제목과 바이너리 이미지 데이터 반환"""
         try:
             logger.info("=== 책 표지 생성 시작 ===")
             
@@ -165,23 +138,15 @@ class UnifiedImageService:
             if not cover_image_data or len(cover_image_data) == 0:
                 raise RuntimeError("이미지 생성 실패 - 빈 이미지")
             
-            # 3단계: S3에 업로드
-            object_key = f"{request.gameId}/0.png"  # 표지는 0번
-            image_url = await self._upload_to_s3(cover_image_data, object_key)
+            # 제목과 바이너리 이미지 데이터 반환 (S3 업로드는 Java에서 처리)
+            logger.info("=== Python 서비스에서 제목과 바이너리 이미지 데이터 반환 ===")
             
-            return BookCoverGenerationResponse(
-                success=True,
-                title=book_title,
-                imageUrl=image_url,
-                message="책 표지 생성 성공"
-            )
+            return book_title, cover_image_data
             
         except Exception as e:
             logger.error(f"책 표지 생성 실패: {str(e)}")
-            return BookCoverGenerationResponse(
-                success=False,
-                message=f"책 표지 생성 실패: {str(e)}"
-            )
+            logger.error(f"에러 상세:", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"책 표지 생성 실패: {str(e)}")
 
     async def _generate_prompt_with_gpt(self, user_sentence: str, game_mode: int, max_retries: int = 1) -> str:
         """OpenAI GPT-5 Responses API를 사용하여 프롬프트 생성 (Java callGPTWithRetry 로직 정확히 복제)"""
@@ -742,57 +707,34 @@ class UnifiedImageService:
         
         raise RuntimeError("Gemini API 재시도 로직 오류 - 책 표지")  # fallback
 
-    async def _upload_to_s3(self, image_data: bytes, object_key: str) -> str:
-        """이미지를 S3에 업로드하고 URL 반환"""
-        try:
-            if not s3_client:
-                raise RuntimeError("S3 클라이언트가 초기화되지 않았습니다")
-            
-            # S3에 업로드
-            s3_client.put_object(
-                Bucket=S3_BUCKET_NAME,
-                Key=object_key,
-                Body=image_data,
-                ContentType='image/png'
-            )
-            
-            # HTTPS URL 생성 (Mixed Content 보안)
-            image_url = f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{object_key}"
-            logger.info(f"S3 업로드 성공: {image_url}")
-            return image_url
-            
-        except Exception as e:
-            logger.error(f"S3 업로드 실패: {str(e)}")
-            raise RuntimeError(f"S3 업로드 실패: {str(e)}")
 
 # 전역 서비스 인스턴스
 image_service = UnifiedImageService()
 
-@app.post("/generate-scene", response_model=SceneGenerationResponse)
+@app.post("/generate-scene")
 async def generate_scene_image(request: SceneGenerationRequest):
-    """장면 이미지 생성 API"""
+    """장면 이미지 생성 API - 바이너리 이미지 데이터 반환"""
     try:
-        result = await image_service.generate_scene_image(request)
-        return result
+        image_data = await image_service.generate_scene_image(request)
+        return Response(content=image_data, media_type="image/png")
     except Exception as e:
         logger.error(f"장면 이미지 생성 API 오류: {str(e)}")
-        return SceneGenerationResponse(
-            success=False,
-            message=f"서버 오류: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
-@app.post("/generate-cover", response_model=BookCoverGenerationResponse)
+@app.post("/generate-cover")
 async def generate_book_cover(request: BookCoverGenerationRequest):
-    """책 표지 생성 API"""
+    """책 표지 생성 API - 제목과 바이너리 이미지 데이터 반환"""
     try:
-        result = await image_service.generate_book_cover(request)
-        return result
+        title, image_data = await image_service.generate_book_cover(request)
+        return {
+            "title": title,
+            "image_data": base64.b64encode(image_data).decode('utf-8'),
+            "success": True,
+            "message": "책 표지 생성 성공"
+        }
     except Exception as e:
         logger.error(f"책 표지 생성 API 오류: {str(e)}")
-        return BookCoverGenerationResponse(
-            success=False,
-            message=f"서버 오류: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
 @app.get("/health")
 async def health_check():
@@ -808,8 +750,6 @@ if __name__ == "__main__":
     logger.info("=== Long Ago 통합 이미지 생성 서비스 시작 ===")
     logger.info(f"OpenAI API 키 설정됨: {bool(OPENAI_API_KEY)}")
     logger.info(f"Gemini API 키 설정됨: {bool(GEMINI_API_KEY)}")
-    logger.info(f"AWS 설정됨: {bool(AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY)}")
-    logger.info(f"S3 버킷: {S3_BUCKET_NAME}")
-    logger.info(f"S3 리전: {S3_REGION}")
+    logger.info("바이너리 이미지 데이터 반환 모드 - S3 업로드는 Java에서 처리")
     
     uvicorn.run(app, host="0.0.0.0", port=8190)

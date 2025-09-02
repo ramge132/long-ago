@@ -81,7 +81,7 @@ public class SceneService {
         log.info("게임 유효성 검사 통과. 그림체 모드: {}", game.getDrawingStyle());
 
         // Python 통합 이미지 생성 서비스 호출
-        String imageUrl = null;
+        byte[] generateImage = null;
         try {
             // 결말카드인지 확인 (기존 로직과 동일)
             boolean isEndingCard = sceneRequest.getTurn() > 5 && 
@@ -89,12 +89,19 @@ public class SceneService {
                      sceneRequest.getUserPrompt().contains("끝") ||
                      sceneRequest.getUserPrompt().length() > 30);
             
-            log.info("=== Python 이미지 생성 서비스 호출 시작 ===");
-            log.info("결말카드 여부: {}, 그림체 모드: {}", isEndingCard, game.getDrawingStyle());
+            log.info("=== 결말카드 탐지 결과 ===");
+            log.info("턴 > 5: {}, '결말' 포함: {}, '끝' 포함: {}, 길이 > 30: {}", 
+                    sceneRequest.getTurn() > 5,
+                    sceneRequest.getUserPrompt().contains("결말"),
+                    sceneRequest.getUserPrompt().contains("끝"),
+                    sceneRequest.getUserPrompt().length() > 30);
+            log.info("최종 판정: {} 카드", isEndingCard ? "결말" : "일반");
             
-            imageUrl = callPythonImageService(sceneRequest, game.getDrawingStyle(), isEndingCard);
+            log.info("=== Python 이미지 생성 서비스 호출 시작 ===");
+            
+            generateImage = callPythonImageService(sceneRequest, game.getDrawingStyle(), isEndingCard);
             log.info("=== Python 이미지 생성 성공 ===");
-            log.info("생성된 이미지 URL: {}", imageUrl);
+            log.info("생성된 이미지 크기: {} bytes", generateImage.length);
             
         } catch (WebClientException e) {
             log.error("=== API 서버 통신 에러 ===");
@@ -127,30 +134,38 @@ public class SceneService {
                     request.getRequestURI());
         }
 
-        // Python 서비스에서 이미지가 성공적으로 생성되어 S3에 저장되었으므로 별도 검증 불필요
-        log.info("=== Python 서비스를 통한 이미지 생성 및 S3 저장 완료 ===");
+        if (generateImage == null || generateImage.length == 0) {
+            log.error("=== 이미지 생성 실패 ===");
+            log.error("생성된 이미지가 null이거나 크기가 0입니다. generateImage: {}", 
+                    generateImage == null ? "null" : "empty(" + generateImage.length + " bytes)");
+            return ApiResponseUtil.failure("이미지 생성이 완료되지 않았습니다. 다시 시도해주세요.",
+                    HttpStatus.SERVICE_UNAVAILABLE, // 503
+                    request.getRequestURI());
+        }
 
         log.info("=== Redis 저장 시작 ===");
 
-        // Redis에 Scene 정보 저장 (이미지는 이미 S3에 저장됨)
+        // Redis 등 저장소에 이미지 데이터와 함께 Scene 정보 저장
         String id = UUID.randomUUID().toString();
         SceneRedis scene = SceneRedis.builder()
                 .id(id)
                 .gameId(sceneRequest.getGameId())
                 .prompt(sceneRequest.getUserPrompt())
-                .image(null)  // Python 서비스에서 S3에 직접 저장하므로 바이너리 데이터는 저장하지 않음
-                .imageUrl(imageUrl)  // Python 서비스에서 반환받은 S3 이미지 URL 저장
+                .image(generateImage)  // 바이너리 이미지 데이터 저장
                 .sceneOrder(sceneRequest.getTurn())
                 .userId(sceneRequest.getUserId())
                 .build();
 
         redisSceneRepository.save(scene);
 
-        log.info("Redis에 저장된 scene 개수: {}", redisSceneRepository.findAllByGameId(sceneRequest.getGameId()).size());
-        log.info("Python 서비스에서 생성된 이미지 URL: {}", imageUrl);
+        log.info("Redis에 저장된 scene 개수 : {}", redisSceneRepository.findAllByGameId(sceneRequest.getGameId()).size());
+        log.info("새로운 API에서 생성된 이미지 크기 : {}", generateImage.length);
+        log.info("Redis에 저장된 이미지 크기 : {}", redisSceneRepository.findById(id).getImage().length);
 
-        // 성공 응답 반환 (이미지 URL 포함)
-        return ApiResponseUtil.success(imageUrl, "이미지 생성 성공", HttpStatus.CREATED, request.getRequestURI());
+        // 이미지 바이너리 데이터를 PNG 미디어 타입으로 반환
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.IMAGE_PNG)
+                .body(generateImage);
     }
 
 
@@ -622,9 +637,9 @@ public class SceneService {
     }
     
     /**
-     * Python 통합 이미지 생성 서비스 호출
+     * Python 통합 이미지 생성 서비스 호출 - 바이너리 이미지 데이터 반환
      */
-    private String callPythonImageService(SceneRequest sceneRequest, int drawingStyle, boolean isEnding) {
+    private byte[] callPythonImageService(SceneRequest sceneRequest, int drawingStyle, boolean isEnding) {
         try {
             // Python 서비스 요청 데이터 구성
             HashMap<String, Object> requestBody = new HashMap<>();
@@ -637,8 +652,8 @@ public class SceneService {
             
             log.info("Python 서비스 호출 요청: {}", requestBody);
             
-            // Python 서비스 호출 (재시도 로직 포함)
-            String response = pythonImageServiceClient
+            // Python 서비스 호출 (재시도 로직 포함) - 바이너리 이미지 데이터 반환
+            byte[] imageData = pythonImageServiceClient
                 .post()
                 .uri("/generate-scene")
                 .bodyValue(requestBody)
@@ -648,24 +663,17 @@ public class SceneService {
                     clientResponse -> clientResponse.bodyToMono(String.class)
                         .map(errorBody -> new RuntimeException("Python 서비스 에러: " + errorBody))
                 )
-                .bodyToMono(String.class)
+                .bodyToMono(byte[].class)  // 바이너리 데이터로 수신
                 .timeout(Duration.ofMinutes(5))  // 5분 타임아웃
                 .block();
             
-            // 응답 파싱
-            JsonNode responseNode = objectMapper.readTree(response);
-            
-            if (responseNode.get("success").asBoolean()) {
-                String imageUrl = responseNode.get("imageUrl").asText();
-                String gptPrompt = responseNode.has("gptPrompt") ? responseNode.get("gptPrompt").asText() : "";
-                
-                log.info("Python 이미지 생성 성공. URL: {}, GPT 프롬프트: {}", imageUrl, gptPrompt);
-                return imageUrl;
-            } else {
-                String errorMessage = responseNode.get("message").asText();
-                log.error("Python 이미지 생성 실패: {}", errorMessage);
-                throw new RuntimeException(errorMessage);
+            if (imageData == null || imageData.length == 0) {
+                log.error("Python 서비스에서 빈 이미지 데이터 수신");
+                throw new RuntimeException("빈 이미지 데이터 수신");
             }
+            
+            log.info("Python 이미지 생성 성공. 이미지 크기: {} bytes", imageData.length);
+            return imageData;
             
         } catch (Exception e) {
             log.error("Python 이미지 서비스 호출 실패: {}", e.getMessage());
