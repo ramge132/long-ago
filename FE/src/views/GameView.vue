@@ -650,11 +650,32 @@ const setupConnection = (conn) => {
         break;
 
       case "showResults":
-        console.log("🎮 결과창 표시 명령 수신");
+        console.log("🎮 구버전 결과창 표시 명령 수신 (더 이상 사용되지 않음)");
         isForceStopped.value = "champ";
         break;
 
+      case "showResultsWithCover":
+        console.log("🎮 표지 정보와 함께 결과창 표시 명령 수신");
+        console.log("🎮 수신한 표지 정보:", data.bookCover);
+        console.log("🎮 수신한 ISBN:", data.ISBN);
+        
+        // 표지 정보 설정
+        if (data.bookCover) {
+          bookCover.value = data.bookCover;
+        }
+        if (data.ISBN) {
+          ISBN.value = data.ISBN;
+        }
+        
+        // 결과창 표시
+        isForceStopped.value = "champ";
+        console.log("🎮 게스트 결과창 표시 완료 (표지 정보 포함)");
+        break;
+
       case "bookCover":
+        console.log("🎮 구버전 bookCover 메시지 수신 (더 이상 사용되지 않음)");
+        console.log("🎮 수신한 bookCover:", data.bookCover);
+        console.log("🎮 수신한 ISBN:", data.ISBN);
         bookCover.value = data.bookCover;
         ISBN.value = data.ISBN;
         break;
@@ -1809,33 +1830,27 @@ const gameEnd = async (status) => {
           console.log("🎮 전송할 bookCover:", bookCover.value);
           console.log("🎮 전송할 ISBN:", ISBN.value);
           
-          // 1단계: 모든 플레이어에게 표지 정보 전송
-          connectedPeers.value.forEach(async (p) => {
-            if (p.id !== peerId.value && p.connection.open) {
-              console.log(`🎮 플레이어 ${p.id}에게 표지 정보 전송`);
-              sendMessage("bookCover", {
-                bookCover: bookCover.value,
-                ISBN: ISBN.value,
-              }, p.connection);
-            }
-          });
-          
-          // 2단계: 모든 플레이어에게 결과창 표시 명령 전송 (표지 생성 완료 후)
+          // 표지 정보와 결과창 표시 명령을 함께 전송
           setTimeout(() => {
-            console.log("🎮 === 모든 플레이어에게 결과창 표시 명령 전송 ===");
+            console.log("🎮 === 모든 플레이어에게 표지 정보 + 결과창 표시 명령 전송 ===");
             
             // 방장도 결과창 표시
             isForceStopped.value = "champ";
             console.log("🎮 방장 결과창 표시 완료");
+            console.log("🎮 방장 표지 정보:", bookCover.value);
             
-            // 다른 플레이어들에게도 결과창 표시 명령
+            // 다른 플레이어들에게 표지 정보와 함께 결과창 표시 명령
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
-                console.log(`🎮 플레이어 ${p.id}에게 결과창 표시 명령 전송`);
-                sendMessage("showResults", {}, p.connection);
+                console.log(`🎮 플레이어 ${p.id}에게 표지 정보 + 결과창 표시 명령 전송`);
+                console.log(`🎮 전송할 표지 정보:`, bookCover.value);
+                sendMessage("showResultsWithCover", {
+                  bookCover: bookCover.value,
+                  ISBN: ISBN.value,
+                }, p.connection);
               }
             });
-          }, 100); // 표지 정보 전송 후 짧은 딜레이
+          }, 100); // 표지 생성 완료 후 짧은 딜레이
         });
 
       } catch (error) {
@@ -1858,11 +1873,14 @@ const gameEnd = async (status) => {
         // 방장도 결과창 표시
         isForceStopped.value = "champ";
         
-        // 다른 플레이어들에게도 결과창 표시 명령 (에러 상황에서도)
+        // 다른 플레이어들에게도 기본값으로 결과창 표시 명령 (에러 상황에서도)
         connectedPeers.value.forEach(async (p) => {
           if (p.id !== peerId.value && p.connection.open) {
             console.log(`🎮 [에러 처리] 플레이어 ${p.id}에게 기본값으로 결과창 표시`);
-            sendMessage("showResults", {}, p.connection);
+            sendMessage("showResultsWithCover", {
+              bookCover: bookCover.value, // 기본값 포함
+              ISBN: ISBN.value,
+            }, p.connection);
           }
         });
       }
@@ -1892,14 +1910,17 @@ const onNarrationComplete = () => {
   console.log("🎮 === TTS 완료 - 개별 표지 화면 전환 ===");
   console.log("🎮 현재 플레이어:", peerId.value);
   console.log("🎮 표지 정보:", bookCover.value);
+  console.log("🎮 표지 제목:", bookCover.value.title);
+  console.log("🎮 표지 이미지 URL:", bookCover.value.imageUrl);
   
   // 결과창 제거하고 표지로 전환
   isForceStopped.value = null;
   
-  // ResultView로 라우팅하여 표지 표시 (각 플레이어 개별)
+  // GameView 내에서 표지를 표시하기 위해 상태 변경 (별도 라우팅 없음)
   nextTick(() => {
-    console.log("🎮 ResultView로 라우팅 (개별 진행)");
-    router.push({ name: 'ResultView' }); 
+    console.log("🎮 표지 표시 상태로 전환 (GameView 내부)");
+    // 표지 표시 상태를 나타내는 변수가 필요할 수 있음
+    // 현재는 isForceStopped.value = null 이면 표지가 표시되는 것으로 보임
   });
 };
 
