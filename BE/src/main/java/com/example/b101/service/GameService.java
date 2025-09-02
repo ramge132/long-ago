@@ -530,8 +530,19 @@ public class GameService {
                 
                 // 응답 파싱 - GPT-5 Responses API
                 JsonNode responseJson = objectMapper.readTree(response);
-                log.info("응답 JSON 키들: {}", responseJson.fieldNames().hasNext() ? 
-                    String.join(", ", () -> responseJson.fieldNames()) : "없음");
+                
+                // JSON 키들을 수집
+                StringBuilder fieldNamesBuilder = new StringBuilder();
+                Iterator<String> fieldNames = responseJson.fieldNames();
+                while (fieldNames.hasNext()) {
+                    if (fieldNamesBuilder.length() > 0) {
+                        fieldNamesBuilder.append(", ");
+                    }
+                    fieldNamesBuilder.append(fieldNames.next());
+                }
+                String fieldNamesStr = fieldNamesBuilder.length() > 0 ? fieldNamesBuilder.toString() : "없음";
+                
+                log.info("응답 JSON 키들: {}", fieldNamesStr);
                 log.info("전체 응답: {}", responseJson.toString());
 
                 String generatedTitle = null;
