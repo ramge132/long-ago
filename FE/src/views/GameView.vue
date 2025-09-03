@@ -504,7 +504,7 @@ const setupConnection = (conn) => {
           });
 
           if (currTurn.value === myTurn.value) {
-            let accepted;
+            let accepted = false; // 기본값 설정
             if (upCount < downCount) {
               accepted = false;
               // 이미지 버리는 api
@@ -1446,7 +1446,7 @@ const nextTurn = async (data) => {
           const warningMessage = {
             type: "inappropriateContent",
             playerName: currentPlayer.name,
-            message: "부적절한 이미지를 생성하려 했습니다"
+            message: "부적절한 이미지가 생성되었습니다"
           };
           
           // 턴 넘기기
@@ -1564,7 +1564,7 @@ const voteEnd = async (data) => {
     });
 
     if (currTurn.value === myTurn.value) {
-      let accepted;
+      let accepted = false; // 기본값 설정
       if (upCount < downCount) {
         // 이미지 버리는 api
         accepted = false;
