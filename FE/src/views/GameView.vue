@@ -551,14 +551,28 @@ const setupConnection = (conn) => {
               // condition에서 다음 턴 or 게임 종료
               if (usedCard.value.isEnding) {
                 
-                // 방장만 표지 생성 API 호출 (결과창은 아직 표시하지 않음)
-                if (participants.value[0].id == peerId.value) {
-                  gameEnd(true);
-                } else {
-                  // 게스트도 게임 종료 상태로 전환 (결과창은 메시지로 받아서 표시)
-                  currTurn.value = -1;
-                  totalTurn.value = 1;
-                }
+                // 1단계: 백그라운드로 책 표지 생성 요청 시작 (응답을 기다리지 않음)
+                gameEnd(true); // await 제거 - 백그라운드 실행
+                
+                // 2단계: 1초 후 모든 플레이어에게 결과창 표시
+                setTimeout(() => {
+                  
+                  // 방장 결과창 표시
+                  isForceStopped.value = "champ";
+                  
+                  // 게스트들에게도 결과창 표시 (기본값으로 먼저 표시, 표지는 나중에 업데이트)
+                  connectedPeers.value.forEach(async (p) => {
+                    if (p.id !== peerId.value && p.connection.open) {
+                      sendMessage("showResultsWithCover", {
+                        bookCover: {
+                          title: "아주 먼 옛날", // 기본값
+                          imageUrl: "" // 기본값 (빈 문자열)
+                        },
+                        ISBN: "generating..." // 생성 중 표시
+                      }, p.connection);
+                    }
+                  });
+                }, 1000);
               } else {
                 connectedPeers.value.forEach(async (p) => {
                   if (p.id !== peerId.value && p.connection.open) {
