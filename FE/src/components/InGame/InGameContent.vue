@@ -53,7 +53,7 @@ import { ref, onMounted, reactive, watch, defineProps } from "vue";
 import { useAudioStore } from "@/stores/audio";
 import { TurningPage } from "@/assets";
 import { initVoices, speakText } from "@/functions/tts";
-import { speakTextConcurrent, stopAllTTS } from "@/functions/cloudTts";
+import { speakTextConcurrent, stopAllTTS, speakTextWithVolume } from "@/functions/cloudTts";
 
 const audioStore = useAudioStore();
 const pagesRef = ref(null);
@@ -152,6 +152,7 @@ const handlePageClick = (pageIndex) => {
   
   if (audioStore.audioData) {
     const turningEffect = new Audio(TurningPage);
+    turningEffect.volume = audioStore.audioVolume;  // 볼륨 적용
     turningEffect.play();
   }
   
@@ -226,7 +227,7 @@ const runBookSequence = async () => {
     }
 
     // TTS를 순차적으로 재생 (한 페이지씩)
-    await speakTextConcurrent(element.content);
+    await speakTextWithVolume(element.content, audioStore.audioVolume);
   }
   
   // 모든 작업이 완료되면 표지로 되돌리기
@@ -236,6 +237,7 @@ const runBookSequence = async () => {
   // 페이지 넘기는 효과음 재생 (표지로 돌아갈 때)
   if (audioStore.audioData) {
     const turningEffect = new Audio(TurningPage);
+    turningEffect.volume = audioStore.audioVolume;  // 볼륨 적용
     turningEffect.play();
   }
   

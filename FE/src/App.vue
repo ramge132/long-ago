@@ -64,6 +64,7 @@ const startLoading = (data) => {
   // 로딩 시작인 경우
   if (audioStore.audioData) {
     loadingMusic.loop = true;
+    loadingMusic.volume = audioStore.audioVolume;  // 볼륨 적용
     if (data.value) {
       loadingMusic.play();
       audioStore.audioPlay = false;

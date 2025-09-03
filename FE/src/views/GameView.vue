@@ -300,6 +300,7 @@ const setupConnection = (conn) => {
         });
         if (audioStore.audioData) {
           const messageMusic = new Audio(MessageMusic);
+          messageMusic.volume = audioStore.audioVolume;  // 볼륨 적용
           messageMusic.play();
         }
         break;

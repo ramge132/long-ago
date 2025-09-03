@@ -107,6 +107,7 @@ watch(() => props.isForceStopped, () => {
     if (props.isForceStopped === "champ") {
         // 음성이 켜져있을 때만 음악 재생
         if (audioStore.audioData) {
+            winningMusic.volume = audioStore.audioVolume;  // 볼륨 적용
             winningMusic.play();
             audioStore.audioPlay = false;
         }
@@ -120,6 +121,7 @@ watch(() => props.isForceStopped, () => {
     } else if (props.isForceStopped === "fail") {
         // 음성이 켜져있을 때만 음악 재생
         if (audioStore.audioData) {
+            loseMusic.volume = audioStore.audioVolume;  // 볼륨 적용
             loseMusic.play();
             audioStore.audioPlay = false;
         }
