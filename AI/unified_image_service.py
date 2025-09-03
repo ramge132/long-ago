@@ -466,6 +466,9 @@ class UnifiedImageService:
                 logger.info("=== Gemini API 응답 수신 ===")
                 logger.info("응답 상태: 응답 있음")
                 
+                # 디버깅: 실제 응답 내용 로깅
+                logger.info(f"🔍 Gemini API 실제 응답 내용: {response_json}")
+                
                 if not response_json:
                     logger.error("Gemini API에서 null 응답 수신")
                     raise RuntimeError("Gemini API null 응답")
@@ -612,6 +615,9 @@ class UnifiedImageService:
                 
                 logger.info("=== Gemini API 응답 수신 ===")
                 logger.info("응답 상태: 응답 있음")
+                
+                # 디버깅: 실제 응답 내용 로깅 (표지용)
+                logger.info(f"🔍 Gemini API 실제 응답 내용 (표지): {response_json}")
                 
                 if not response_json:
                     logger.error("Gemini API에서 null 응답 수신")
