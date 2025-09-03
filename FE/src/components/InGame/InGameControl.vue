@@ -6,8 +6,9 @@
             <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
               <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
               <div
-                class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl">
-                {{ card.keyword }}</div>
+                class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl leading-tight text-center">
+                <div v-html="formatCardText(card.keyword)"></div>
+              </div>
             </div>
           </transition-group>
       </div>
@@ -318,6 +319,25 @@ onkeydown = (e) => {
     if (chatInput) {
       chatInput.focus();
     }
+  }
+};
+
+const formatCardText = (text) => {
+  if (!text || text.length <= 3) {
+    return text;
+  }
+  
+  // 4글자 이상인 경우 더 균등하게 분할
+  if (text.length === 4) {
+    return text.substring(0, 2) + '<br>' + text.substring(2);
+  } else if (text.length === 5) {
+    return text.substring(0, 2) + '<br>' + text.substring(2);
+  } else if (text.length === 6) {
+    return text.substring(0, 3) + '<br>' + text.substring(3);
+  } else {
+    // 7글자 이상인 경우 중간 지점에서 분할
+    const midPoint = Math.ceil(text.length / 2);
+    return text.substring(0, midPoint) + '<br>' + text.substring(midPoint);
   }
 };
 
