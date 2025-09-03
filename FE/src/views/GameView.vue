@@ -1380,7 +1380,7 @@ const nextTurn = async (data) => {
         userId: peerId.value,
         userPrompt: data.prompt,
         turn: totalTurn.value++,
-        isEnding: data.isEnding || false,
+        isEnding: isEnding,
       });
       
       

@@ -290,7 +290,7 @@ class UnifiedImageService:
         
         return user_sentence  # fallback
     
-    async def _generate_book_title(self, story_content: str, max_retries: int = 4) -> str:
+    async def _generate_book_title(self, story_content: str, max_retries: int = 7) -> str:
         """OpenAI GPT를 사용하여 스토리를 요약하고 책 제목 생성 (Java generateBookTitle 로직 정확히 복제)"""
         logger.info("=== 책 제목 생성 시작 ===")
         
