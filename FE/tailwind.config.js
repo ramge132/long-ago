@@ -12,6 +12,7 @@ export default {
         story: ["story", ...defaultTheme.fontFamily.sans],
         logoFont: ["logoFont", ...defaultTheme.fontFamily.sans],
         title: ["title", ...defaultTheme.fontFamily.sans],
+        heirofLightBold: ["HeirofLightBold", ...defaultTheme.fontFamily.sans],
       },
       backgroundImage: {
         "fairytail-image": "url('/src/assets/background.svg')",

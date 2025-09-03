@@ -29,6 +29,12 @@
 }
 
 @font-face {
+  font-family: "HeirofLightBold";
+  src: url("@/assets/fonts/HeirofLightBold.ttf") format("truetype");
+  font-weight: 700;
+}
+
+@font-face {
   font-family: "title";
   src: url("@/assets/fonts/title.ttf") format("truetype");
   font-weight: 600;

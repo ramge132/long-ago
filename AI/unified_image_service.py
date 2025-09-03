@@ -423,8 +423,8 @@ class UnifiedImageService:
         # 표지 이미지 프롬프트 생성 (Java와 동일)
         cover_prompt = BOOK_COVER_PROMPT_TEMPLATE.format(book_title=book_title, style=style)
         
-        # 책표지 생성을 위해 재시도 횟수 증가 (Java와 동일)
-        return await self._call_gemini_with_retry_for_cover(cover_prompt, 4)  # 4회 재시도 (총 5번)
+        # 책표지 생성을 위해 재시도 횟수 증가 (더 높은 성공률을 위해 추가 증가)
+        return await self._call_gemini_with_retry_for_cover(cover_prompt, 7)  # 7회 재시도 (총 8번)
     
     async def _call_gemini_with_retry(self, prompt: str, max_retries: int) -> bytes:
         """재시도 로직이 포함된 Gemini API 호출 (Java callGeminiWithRetry 로직 정확히 복제)"""
