@@ -954,7 +954,7 @@ const initializePeer = () => {
 const showInappropriateWarning = (warningData) => {
   
   // 경고 토스트 메시지 표시 (모든 플레이어에게 보임)
-  const warningMessage = `${warningData.playerName}님의 ${warningData.message}`;
+  const warningMessage = `${warningData.message}`;
   
   // warning.png와 함께 커스텀 토스트 표시  
   toast.setToast({
@@ -971,7 +971,7 @@ const showInappropriateWarning = (warningData) => {
 // 부적절한 콘텐츠 경고 모달 표시
 const showInappropriateWarningModal = (warningData) => {
   
-  warningModalMessage.value = `${warningData.playerName}님이 ${warningData.message}`;
+  warningModalMessage.value = `${warningData.message}`;
   showWarningModal.value = true;
   
   // 3초 후 자동으로 모달 닫기
