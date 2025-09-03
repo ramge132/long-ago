@@ -21,15 +21,25 @@
             <div class="loser absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-katuri text-[#e0e0e0]">
                 전원 실패!
             </div>
+            <div class="absolute bottom-16 left-1/2 -translate-x-1/2">
+                <button 
+                    @click="goToLobby"
+                    class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-katuri rounded-lg transition-colors duration-200 shadow-lg"
+                >
+                    로비로 가기
+                </button>
+            </div>
         </div>
     </div>
 </template>
 <script setup>
 import { computed, watch, ref } from "vue";
+import { useRouter } from "vue-router";
 import { useAudioStore } from "@/stores/audio";
 import { WinningMusic, LoseMusic } from "@/assets";
 
 const audioStore = useAudioStore();
+const router = useRouter();
 const winningMusic = new Audio(WinningMusic);
 const loseMusic = new Audio(LoseMusic);
 const champGif = ref(null);
@@ -77,6 +87,21 @@ const topParticipants = computed(() => {
   // 점수가 최댓값과 같은 참가자들을 필터링합니다.
   return props.participants.filter(p => p.score === maxScore);
 });
+
+// 로비로 가기 함수
+const goToLobby = () => {
+  // 오디오 정리
+  if (audioStore.audioData) {
+    audioStore.audioPlay = true;
+    winningMusic.pause();
+    loseMusic.pause();
+    winningMusic.currentTime = 0;
+    loseMusic.currentTime = 0;
+  }
+  
+  // 로비로 라우팅
+  router.push('/game/lobby');
+};
 
 watch(() => props.isForceStopped, () => {
     if (props.isForceStopped === "champ") {
