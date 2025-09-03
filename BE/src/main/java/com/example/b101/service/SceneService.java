@@ -83,18 +83,11 @@ public class SceneService {
         // Python 통합 이미지 생성 서비스 호출
         byte[] generateImage = null;
         try {
-            // 결말카드인지 확인 (기존 로직과 동일)
-            boolean isEndingCard = sceneRequest.getTurn() > 5 && 
-                    (sceneRequest.getUserPrompt().contains("결말") || 
-                     sceneRequest.getUserPrompt().contains("끝") ||
-                     sceneRequest.getUserPrompt().length() > 30);
+            // 프론트엔드에서 전달받은 isEnding 값 사용 (실제 게임 로직에 기반)
+            boolean isEndingCard = sceneRequest.isEnding();
             
-            log.info("=== 결말카드 탐지 결과 ===");
-            log.info("턴 > 5: {}, '결말' 포함: {}, '끝' 포함: {}, 길이 > 30: {}", 
-                    sceneRequest.getTurn() > 5,
-                    sceneRequest.getUserPrompt().contains("결말"),
-                    sceneRequest.getUserPrompt().contains("끝"),
-                    sceneRequest.getUserPrompt().length() > 30);
+            log.info("=== 결말카드 판정 결과 ===");
+            log.info("프론트엔드에서 전달받은 isEnding: {}", sceneRequest.isEnding());
             log.info("최종 판정: {} 카드", isEndingCard ? "결말" : "일반");
             
             log.info("=== Python 이미지 생성 서비스 호출 시작 ===");

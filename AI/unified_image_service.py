@@ -97,14 +97,11 @@ class UnifiedImageService:
             logger.info(f"사용자 입력: [{request.userPrompt}] (길이: {len(request.userPrompt)}자)")
             logger.info(f"그림체 모드: {request.drawingStyle}")
             
-            # 결말카드인지 자동 탐지 (Java 로직과 동일)
-            is_ending_card = (request.turn > 5 and 
-                             ("결말" in request.userPrompt or 
-                              "끝" in request.userPrompt or 
-                              len(request.userPrompt) > 30))
+            # 프론트엔드에서 전달받은 isEnding 값 사용 (실제 게임 로직에 기반)
+            is_ending_card = request.isEnding
             
-            logger.info("=== 결말카드 탐지 결과 ===")
-            logger.info(f"턴 > 5: {request.turn > 5}, '결말' 포함: {'결말' in request.userPrompt}, '끝' 포함: {'끝' in request.userPrompt}, 길이 > 30: {len(request.userPrompt) > 30}")
+            logger.info("=== 결말카드 판정 결과 ===")
+            logger.info(f"프론트엔드에서 전달받은 isEnding: {request.isEnding}")
             logger.info(f"최종 판정: {'결말' if is_ending_card else '일반'} 카드")
             
             # 1단계: GPT로 프롬프트 생성
