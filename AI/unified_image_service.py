@@ -35,6 +35,23 @@ DRAWING_STYLES = [
     "크레용 드로잉 스타일", "픽셀 아트 스타일", "미니멀리스트 일러스트", "수채화 스타일", "스토리북 일러스트"
 ]
 
+# =============================================================================
+# 이미지 생성용 프롬프트 템플릿 상수
+# =============================================================================
+
+# GPT 프롬프트 생성 템플릿
+GPT_SCENE_PROMPT_TEMPLATE = "문장: {user_sentence}. 이 문장을 {style} 스타일의 이미지로 만들기 위한 핵심 영어 키워드를 나열해줘."
+GPT_ENDING_PROMPT_TEMPLATE = "결말: {user_sentence}. 이 문장을 {style} 스타일의 이미지로 만들기 위한 핵심 영어 키워드를 나열해줘."
+
+# GPT 책 제목 생성 프롬프트
+GPT_BOOK_TITLE_PROMPT_TEMPLATE = "다음 스토리를 10자 이내의 창의적인 제목으로 만들어주세요. 다른 설명 없이 제목만 말해주세요. 스토리: {story_content}"
+
+# Gemini 이미지 생성 프롬프트 템플릿
+GEMINI_IMAGE_PROMPT_TEMPLATE = "Generate an image: {prompt} portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution"
+
+# 책 표지 이미지 프롬프트 템플릿  
+BOOK_COVER_PROMPT_TEMPLATE = "Create a beautiful book cover for a story titled '{book_title}'. Style: {style}. The cover should be artistic, captivating, and suitable for a storybook. Include the title text elegantly integrated into the design."
+
 # FastAPI 앱 초기화
 app = FastAPI(title="Unified Image Generation Service", version="2.0.0")
 
@@ -174,9 +191,9 @@ class UnifiedImageService:
                 
                 # GPT-5 Responses API 요청 구조 (Java와 정확히 동일)
                 prompt_instruction = (
-                    f"결말: {user_sentence}. 이 문장을 {style} 스타일의 이미지로 만들기 위한 핵심 영어 키워드를 나열해줘." 
+                    GPT_ENDING_PROMPT_TEMPLATE.format(user_sentence=user_sentence, style=style)
                     if is_ending_card else 
-                    f"문장: {user_sentence}. 이 문장을 {style} 스타일의 이미지로 만들기 위한 핵심 영어 키워드를 나열해줘."
+                    GPT_SCENE_PROMPT_TEMPLATE.format(user_sentence=user_sentence, style=style)
                 )
                 
                 request_body = {
@@ -294,7 +311,7 @@ class UnifiedImageService:
                 # GPT-5 Responses API 요청 구조 (Java와 정확히 동일)
                 request_body = {
                     "model": "gpt-5-nano",
-                    "input": f"다음 스토리를 10자 이내의 창의적인 제목으로 만들어주세요. 다른 설명 없이 제목만 말해주세요. 스토리: {story_content}",
+                    "input": GPT_BOOK_TITLE_PROMPT_TEMPLATE.format(story_content=story_content),
                     "text": {"verbosity": "low"},
                     "reasoning": {"effort": "minimal"}
                 }
@@ -406,9 +423,7 @@ class UnifiedImageService:
         style = DRAWING_STYLES[drawing_style] if drawing_style < len(DRAWING_STYLES) else DRAWING_STYLES[0]
         
         # 표지 이미지 프롬프트 생성 (Java와 동일)
-        cover_prompt = (f"Create a beautiful book cover for a story titled '{book_title}'. "
-                       f"Style: {style}. The cover should be artistic, captivating, and suitable for a storybook. "
-                       f"Include the title text elegantly integrated into the design.")
+        cover_prompt = BOOK_COVER_PROMPT_TEMPLATE.format(book_title=book_title, style=style)
         
         # 책표지 생성을 위해 재시도 횟수 증가 (Java와 동일)
         return await self._call_gemini_with_retry_for_cover(cover_prompt, 4)  # 4회 재시도 (총 5번)
@@ -423,7 +438,7 @@ class UnifiedImageService:
                 logger.info(f"🔄 Gemini API 시도 {attempt}/{max_retries + 1}")
                 
                 # Gemini 2.5 Flash Image Preview API 요청 구조 (Java와 동일)
-                full_prompt = f"Generate an image: {prompt} portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution"
+                full_prompt = GEMINI_IMAGE_PROMPT_TEMPLATE.format(prompt=prompt)
                 
                 request_body = {
                     "contents": [{
@@ -570,7 +585,7 @@ class UnifiedImageService:
                 logger.info(f"🔄 Gemini API 시도 {attempt}/{max_retries + 1} - 책 표지")
                 
                 # Gemini 2.5 Flash Image Preview API 요청 구조 (Java와 동일)
-                full_prompt = f"Generate an image: {prompt} portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution"
+                full_prompt = GEMINI_IMAGE_PROMPT_TEMPLATE.format(prompt=prompt)
                 
                 request_body = {
                     "contents": [{
