@@ -47,10 +47,10 @@ GPT_ENDING_PROMPT_TEMPLATE = "결말: {user_sentence}. 이 문장을 {style} 스
 GPT_BOOK_TITLE_PROMPT_TEMPLATE = "다음 스토리를 10자 이내의 창의적인 제목으로 만들어주세요. 다른 설명 없이 제목만 말해주세요. 스토리: {story_content}"
 
 # Gemini 이미지 생성 프롬프트 템플릿
-GEMINI_IMAGE_PROMPT_TEMPLATE = "Generate an image: {prompt} portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution"
+GEMINI_IMAGE_PROMPT_TEMPLATE = "Generate an image: {prompt}"
 
 # 책 표지 이미지 프롬프트 템플릿  
-BOOK_COVER_PROMPT_TEMPLATE = "Create a beautiful book cover for a story titled '{book_title}'. Style: {style}. The cover should be artistic, captivating, and suitable for a storybook. Include the title text elegantly integrated into the design."
+BOOK_COVER_PROMPT_TEMPLATE = "Create a beautiful book cover for a story titled '{book_title}'. Style: {style}. The cover should be artistic, captivating, and suitable for a storybook."
 
 # FastAPI 앱 초기화
 app = FastAPI(title="Unified Image Generation Service", version="2.0.0")
