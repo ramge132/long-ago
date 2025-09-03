@@ -458,8 +458,26 @@ class UnifiedImageService:
                     
                     if response.status_code >= 400:
                         error_text = response.text
-                        logger.error(f"Gemini API 에러: {error_text}")
-                        raise RuntimeError(f"Gemini API 에러: {error_text}")
+                        logger.error(f"❌ Gemini API HTTP 에러 {response.status_code} (시도 {attempt}): {error_text}")
+                        
+                        # 할당량 초과 등 복구 불가능한 에러 감지
+                        if response.status_code == 429 or "quota" in error_text.lower() or "limit" in error_text.lower():
+                            logger.error("🚫 API 할당량 초과 - 즉시 실패")
+                            raise RuntimeError(f"Gemini API 할당량 초과: {error_text}")
+                        
+                        # 인증 문제 등 즉시 실패해야 하는 상황
+                        if response.status_code in [401, 403]:
+                            logger.error("🚫 인증/권한 문제 - 즉시 실패")
+                            raise RuntimeError(f"Gemini API 인증/권한 에러: {error_text}")
+                        
+                        # 5xx 서버 에러나 기타 일시적 문제는 재시도 가능
+                        if response.status_code >= 500 and attempt <= max_retries:
+                            logger.warning(f"⏰ 서버 에러 {response.status_code} - 재시도 {attempt}/{max_retries}")
+                            wait_time = 2.0 * attempt
+                            await asyncio.sleep(wait_time)
+                            continue
+                        
+                        raise RuntimeError(f"Gemini API 에러 {response.status_code}: {error_text}")
                         
                     response_json = response.json()
                 
@@ -486,12 +504,24 @@ class UnifiedImageService:
                         error_message = error.get("message", "No message")
                         logger.error(f"🚨 Gemini API 에러: {error_message}")
                         
-                        # 필터링 관련 에러 감지 (Java와 동일)
+                        # 필터링 관련 에러 감지 (Java와 동일) - 즉시 실패
                         if any(keyword in error_message.lower() for keyword in ["blocked", "filter", "safety"]):
                             logger.error("🔒 콘텐츠 필터링으로 인한 생성 거부 감지!")
                             raise RuntimeError(f"콘텐츠 필터링으로 인한 이미지 생성 거부: {error_message}")
+                        
+                        # 할당량 초과 등 복구 불가능한 에러 - 즉시 실패
+                        if any(keyword in error_message.lower() for keyword in ["quota", "limit", "billing"]):
+                            logger.error("🚫 할당량 초과 또는 billing 문제 - 즉시 실패")
+                            raise RuntimeError(f"API 할당량 또는 billing 문제: {error_message}")
                     
-                    raise RuntimeError("Gemini API candidates 필드 누락")
+                    # 일시적인 API 문제로 간주하고 재시도 (단, 마지막 시도가 아닌 경우)
+                    if attempt <= max_retries:
+                        logger.warning(f"⏰ candidates 필드 누락 - 재시도 {attempt}/{max_retries}")
+                        wait_time = 1.0 * attempt  # 점진적 백오프
+                        await asyncio.sleep(wait_time)
+                        continue
+                    else:
+                        raise RuntimeError("Gemini API candidates 필드 누락 - 최대 재시도 횟수 초과")
                 
                 candidates = response_json["candidates"]
                 if len(candidates) == 0:
@@ -507,7 +537,14 @@ class UnifiedImageService:
                             logger.error(f"🔒 프롬프트가 안전 필터에 의해 차단됨: {block_reason}")
                             raise RuntimeError(f"프롬프트 안전 필터 차단: {block_reason}")
                     
-                    raise RuntimeError("Gemini API candidates 배열 비어있음")
+                    # 안전 필터 문제가 아닌 경우 재시도
+                    if attempt <= max_retries:
+                        logger.warning(f"⏰ candidates 배열 비어있음 - 재시도 {attempt}/{max_retries}")
+                        wait_time = 1.0 * attempt
+                        await asyncio.sleep(wait_time)
+                        continue
+                    else:
+                        raise RuntimeError("Gemini API candidates 배열 비어있음 - 최대 재시도 횟수 초과")
                 
                 logger.info(f"candidates 개수: {len(candidates)}")
                 candidate = candidates[0]
@@ -554,24 +591,64 @@ class UnifiedImageService:
                             return image_bytes
                 
                 logger.error(f"❌ 모든 parts를 검사했지만 이미지 데이터를 찾을 수 없음! (시도 {attempt})")
-                raise RuntimeError("Gemini에서 이미지 데이터를 찾을 수 없음")
                 
+                # 이미지 데이터 누락도 재시도 가능한 상황으로 처리
+                if attempt <= max_retries:
+                    logger.warning(f"⏰ 이미지 데이터 누락 - 재시도 {attempt}/{max_retries}")
+                    wait_time = 1.0 * attempt
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    raise RuntimeError("Gemini에서 이미지 데이터를 찾을 수 없음 - 최대 재시도 횟수 초과")
+                
+            except httpx.TimeoutException:
+                logger.error(f"❌ Gemini API 타임아웃 (시도 {attempt})")
+                if attempt <= max_retries:
+                    wait_time = 2.0 * attempt
+                    logger.warning(f"⏰ 타임아웃으로 인한 재시도 {attempt}/{max_retries} - {wait_time}s 대기")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    raise RuntimeError("Gemini API 타임아웃 - 최대 재시도 횟수 초과")
+                    
+            except httpx.NetworkError as e:
+                logger.error(f"❌ 네트워크 에러 (시도 {attempt}): {str(e)}")
+                if attempt <= max_retries:
+                    wait_time = 2.0 * attempt
+                    logger.warning(f"⏰ 네트워크 에러로 인한 재시도 {attempt}/{max_retries} - {wait_time}s 대기")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    raise RuntimeError(f"네트워크 에러 - 최대 재시도 횟수 초과: {str(e)}")
+                    
+            except RuntimeError as e:
+                # RuntimeError는 대부분 복구 불가능한 에러이므로 즉시 재발생
+                error_msg = str(e)
+                if any(keyword in error_msg.lower() for keyword in ["안전 필터", "할당량", "인증", "권한"]):
+                    logger.error(f"🚫 복구 불가능한 에러 감지: {error_msg}")
+                    raise e
+                
+                # 기타 RuntimeError는 재시도 가능
+                logger.error(f"❌ RuntimeError (시도 {attempt}): {error_msg}")
+                if attempt <= max_retries:
+                    wait_time = 1.0 * attempt
+                    logger.warning(f"⏰ RuntimeError로 인한 재시도 {attempt}/{max_retries} - {wait_time}s 대기")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    raise RuntimeError(f"이미지 생성 최종 실패: {error_msg}")
+                    
             except Exception as e:
-                logger.error(f"❌ Gemini API 시도 {attempt} 실패: {str(e)}")
+                logger.error(f"❌ 예상치 못한 에러 (시도 {attempt}): {str(e)}")
                 
-                if attempt == max_retries + 1:
+                if attempt <= max_retries:
+                    wait_time = 1.0 * attempt
+                    logger.warning(f"⏰ 예상치 못한 에러로 인한 재시도 {attempt}/{max_retries} - {wait_time}s 대기")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
                     logger.error("🚨 Gemini API 최종 실패 - RuntimeException 던짐")
                     raise RuntimeError(f"이미지 생성 최종 실패: {str(e)}")
-                
-                # 짧은 대기 (500ms * attempt)
-                wait_time = 0.5 * attempt
-                logger.info(f"⏰ {wait_time}s 대기 후 재시도...")
-                
-                try:
-                    await asyncio.sleep(wait_time)
-                except Exception:
-                    logger.error("대기 중 인터럽트 발생")
-                    raise RuntimeError(f"이미지 생성 인터럽트: {str(e)}")
         
         raise RuntimeError("Gemini API 재시도 로직 오류")  # fallback
     
@@ -608,8 +685,26 @@ class UnifiedImageService:
                     
                     if response.status_code >= 400:
                         error_text = response.text
-                        logger.error(f"Gemini API 에러: {error_text}")
-                        raise RuntimeError(f"Gemini API 에러: {error_text}")
+                        logger.error(f"❌ Gemini API HTTP 에러 {response.status_code} (시도 {attempt}): {error_text}")
+                        
+                        # 할당량 초과 등 복구 불가능한 에러 감지
+                        if response.status_code == 429 or "quota" in error_text.lower() or "limit" in error_text.lower():
+                            logger.error("🚫 API 할당량 초과 - 즉시 실패")
+                            raise RuntimeError(f"Gemini API 할당량 초과: {error_text}")
+                        
+                        # 인증 문제 등 즉시 실패해야 하는 상황
+                        if response.status_code in [401, 403]:
+                            logger.error("🚫 인증/권한 문제 - 즉시 실패")
+                            raise RuntimeError(f"Gemini API 인증/권한 에러: {error_text}")
+                        
+                        # 5xx 서버 에러나 기타 일시적 문제는 재시도 가능
+                        if response.status_code >= 500 and attempt <= max_retries:
+                            logger.warning(f"⏰ 서버 에러 {response.status_code} - 재시도 {attempt}/{max_retries}")
+                            wait_time = 2.0 * attempt
+                            await asyncio.sleep(wait_time)
+                            continue
+                        
+                        raise RuntimeError(f"Gemini API 에러 {response.status_code}: {error_text}")
                         
                     response_json = response.json()
                 
@@ -657,7 +752,14 @@ class UnifiedImageService:
                             logger.error(f"🔒 프롬프트가 안전 필터에 의해 차단됨: {block_reason}")
                             raise RuntimeError(f"프롬프트 안전 필터 차단: {block_reason}")
                     
-                    raise RuntimeError("Gemini API candidates 배열 비어있음")
+                    # 안전 필터 문제가 아닌 경우 재시도
+                    if attempt <= max_retries:
+                        logger.warning(f"⏰ candidates 배열 비어있음 - 재시도 {attempt}/{max_retries}")
+                        wait_time = 1.0 * attempt
+                        await asyncio.sleep(wait_time)
+                        continue
+                    else:
+                        raise RuntimeError("Gemini API candidates 배열 비어있음 - 최대 재시도 횟수 초과")
                 
                 logger.info(f"candidates 개수: {len(candidates)}")
                 candidate = candidates[0]
@@ -704,7 +806,15 @@ class UnifiedImageService:
                             return image_bytes
                 
                 logger.error(f"❌ 모든 parts를 검사했지만 이미지 데이터를 찾을 수 없음! (시도 {attempt})")
-                raise RuntimeError("Gemini에서 이미지 데이터를 찾을 수 없음")
+                
+                # 이미지 데이터 누락도 재시도 가능한 상황으로 처리
+                if attempt <= max_retries:
+                    logger.warning(f"⏰ 이미지 데이터 누락 - 재시도 {attempt}/{max_retries}")
+                    wait_time = 1.0 * attempt
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    raise RuntimeError("Gemini에서 이미지 데이터를 찾을 수 없음 - 최대 재시도 횟수 초과")
                 
             except Exception as e:
                 logger.error(f"❌ Gemini API 시도 {attempt} 실패 - 책 표지: {str(e)}")
