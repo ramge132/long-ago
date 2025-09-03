@@ -19,4 +19,6 @@ public class SceneRequest {
     String userPrompt;
 
     int turn;
+    
+    boolean isEnding;
 }
