@@ -88,6 +88,11 @@ jobs:
         with:
           username: ${{ steps.set_vars.outputs.DOCKER_USER }}
           password: ${{ steps.set_vars.outputs.DOCKER_PASS }}
+      
+      - name: Check Docker Hub Status
+        run: |
+          echo "Checking Docker Hub API status..."
+          curl -f -s https://status.docker.com/api/v2/status.json || echo "Docker Hub status check failed, but continuing..."
 
       - name: Push FE Image
         if: github.ref_name == 'main' || startsWith(github.ref_name, 'FE/')
@@ -122,9 +127,31 @@ jobs:
         timeout-minutes: 20
         run: |
           echo "Pushing BE image with SHA tag..."
-          docker push ${{ steps.set_vars.outputs.BE_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }}
+          for i in {1..5}; do
+            if docker push ${{ steps.set_vars.outputs.BE_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }}; then
+              echo "SHA tag push successful"
+              break
+            else
+              echo "SHA tag push failed (attempt $i/5) with error code: $?"
+              docker system df
+              echo "Retrying in 15 seconds..."
+              if [ $i -lt 5 ]; then sleep 15; fi
+            fi
+          done
+          
           echo "Pushing BE image with latest tag..."
-          docker push ${{ steps.set_vars.outputs.BE_IMAGE_NAME }}:latest
+          for i in {1..5}; do
+            if docker push ${{ steps.set_vars.outputs.BE_IMAGE_NAME }}:latest; then
+              echo "Latest tag push successful"
+              break
+            else
+              echo "Latest tag push failed (attempt $i/5) with error code: $?"
+              docker system df  
+              echo "Retrying in 15 seconds..."
+              if [ $i -lt 5 ]; then sleep 15; fi
+            fi
+          done
+          
           echo "BE image push completed successfully!"
 
       - name: Push AI Image
@@ -132,9 +159,31 @@ jobs:
         timeout-minutes: 20
         run: |
           echo "Pushing AI image with SHA tag..."
-          docker push ${{ steps.set_vars.outputs.AI_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }}
+          for i in {1..5}; do
+            if docker push ${{ steps.set_vars.outputs.AI_IMAGE_NAME }}:${{ steps.get_sha.outputs.sha }}; then
+              echo "SHA tag push successful"
+              break
+            else
+              echo "SHA tag push failed (attempt $i/5) with error code: $?"
+              docker system df
+              echo "Retrying in 15 seconds..."
+              if [ $i -lt 5 ]; then sleep 15; fi
+            fi
+          done
+          
           echo "Pushing AI image with latest tag..."
-          docker push ${{ steps.set_vars.outputs.AI_IMAGE_NAME }}:latest
+          for i in {1..5}; do
+            if docker push ${{ steps.set_vars.outputs.AI_IMAGE_NAME }}:latest; then
+              echo "Latest tag push successful"
+              break
+            else
+              echo "Latest tag push failed (attempt $i/5) with error code: $?"
+              docker system df  
+              echo "Retrying in 15 seconds..."
+              if [ $i -lt 5 ]; then sleep 15; fi
+            fi
+          done
+          
           echo "AI image push completed successfully!"
 
   # =======================================================
