@@ -836,7 +836,7 @@ public class GameService {
         
         // 장면 데이터를 하나의 스토리 문자열로 결합 (Python 서비스가 기대하는 형식)
         String storyContent = sceneRedisList.stream()
-            .map(scene -> scene.getUserPrompt())
+            .map(scene -> scene.getPrompt())
             .collect(Collectors.joining(" "));
         
         // gameId 생성 (현재 타임스탬프 사용)
