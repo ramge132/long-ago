@@ -104,17 +104,18 @@ class UnifiedImageService:
             logger.info(f"프론트엔드에서 전달받은 isEnding: {request.isEnding}")
             logger.info(f"최종 판정: {'결말' if is_ending_card else '일반'} 카드")
             
-            # 1단계: GPT로 프롬프트 생성
+            # 직접 Gemini로 이미지 생성 (GPT 단계 제거로 속도 향상)
+            style = DRAWING_STYLES[request.drawingStyle]
             if is_ending_card:
-                logger.info("=== 결말카드 GPT 프롬프트 생성 시작 ===")
-                enhanced_prompt = await self._generate_ending_prompt_with_gpt(request.userPrompt, request.drawingStyle)
-                logger.info(f"결말카드용 GPT 프롬프트 생성 완료: [{enhanced_prompt}]")
+                logger.info("=== 결말카드 직접 이미지 생성 시작 ===")
+                enhanced_prompt = f"{style} 스타일로 그린 결말: {request.userPrompt}"
             else:
-                logger.info("=== 일반카드 GPT 프롬프트 생성 시작 ===")
-                enhanced_prompt = await self._generate_prompt_with_gpt(request.userPrompt, request.drawingStyle)
-                logger.info(f"일반카드용 GPT 프롬프트 생성 완료: [{enhanced_prompt}]")
+                logger.info("=== 일반카드 직접 이미지 생성 시작 ===") 
+                enhanced_prompt = f"{style} 스타일로 그린 {request.userPrompt} 이미지"
             
-            # 2단계: Gemini로 이미지 생성
+            logger.info(f"최적화된 프롬프트: [{enhanced_prompt}]")
+            
+            # Gemini로 이미지 생성
             logger.info("=== Gemini 이미지 생성 시작 ===")
             image_data = await self._generate_image_with_gemini(enhanced_prompt)
             logger.info("=== Gemini 이미지 생성 성공 ===")
@@ -208,7 +209,7 @@ class UnifiedImageService:
                     "Content-Type": "application/json"
                 }
                 
-                async with httpx.AsyncClient(timeout=30.0) as client:
+                async with httpx.AsyncClient(timeout=8.0) as client:
                     response = await client.post(
                         "https://api.openai.com/v1/responses",
                         json=request_body,
@@ -275,7 +276,7 @@ class UnifiedImageService:
                 
                 logger.warning(f"⚠️ GPT 응답에서 텍스트 필드 없음 (시도 {attempt})")
                 if attempt < max_retries + 1:
-                    await asyncio.sleep(0.5 * attempt)  # 대기 시간
+                    await asyncio.sleep(0.2 * attempt)  # 빠른 재시도
                     
             except Exception as e:
                 logger.error(f"❌ {card_type} GPT API 시도 {attempt} 실패: {str(e)}")
@@ -285,7 +286,7 @@ class UnifiedImageService:
                     return user_sentence  # 최종 실패시 원본 문장 반환
                 
                 # 대기 후 재시도
-                await asyncio.sleep(0.5 * attempt)
+                await asyncio.sleep(0.2 * attempt)
         
         return user_sentence  # fallback
     
@@ -320,7 +321,7 @@ class UnifiedImageService:
                     "Content-Type": "application/json"
                 }
                 
-                async with httpx.AsyncClient(timeout=30.0) as client:
+                async with httpx.AsyncClient(timeout=8.0) as client:
                     response = await client.post(
                         "https://api.openai.com/v1/responses",
                         json=request_body,
@@ -453,7 +454,7 @@ class UnifiedImageService:
                 logger.info(f"Gemini API URL: {api_url[:api_url.rfind('key=') + 4]}***")
                 logger.info("Gemini API 요청 전송 중...")
                 
-                async with httpx.AsyncClient(timeout=120.0) as client:
+                async with httpx.AsyncClient(timeout=12.0) as client:
                     response = await client.post(api_url, json=request_body)
                     
                     if response.status_code >= 400:
@@ -473,7 +474,7 @@ class UnifiedImageService:
                         # 5xx 서버 에러나 기타 일시적 문제는 재시도 가능
                         if response.status_code >= 500 and attempt <= max_retries:
                             logger.warning(f"⏰ 서버 에러 {response.status_code} - 재시도 {attempt}/{max_retries}")
-                            wait_time = 2.0 * attempt
+                            wait_time = 0.5 * attempt
                             await asyncio.sleep(wait_time)
                             continue
                         
@@ -517,7 +518,7 @@ class UnifiedImageService:
                     # 일시적인 API 문제로 간주하고 재시도 (단, 마지막 시도가 아닌 경우)
                     if attempt <= max_retries:
                         logger.warning(f"⏰ candidates 필드 누락 - 재시도 {attempt}/{max_retries}")
-                        wait_time = 1.0 * attempt  # 점진적 백오프
+                        wait_time = 0.3 * attempt  # 점진적 백오프
                         await asyncio.sleep(wait_time)
                         continue
                     else:
@@ -540,7 +541,7 @@ class UnifiedImageService:
                     # 안전 필터 문제가 아닌 경우 재시도
                     if attempt <= max_retries:
                         logger.warning(f"⏰ candidates 배열 비어있음 - 재시도 {attempt}/{max_retries}")
-                        wait_time = 1.0 * attempt
+                        wait_time = 0.3 * attempt
                         await asyncio.sleep(wait_time)
                         continue
                     else:
@@ -680,7 +681,7 @@ class UnifiedImageService:
                 logger.info(f"Gemini API URL: {api_url[:api_url.rfind('key=') + 4]}***")
                 logger.info("Gemini API 요청 전송 중...")
                 
-                async with httpx.AsyncClient(timeout=180.0) as client:  # 책 표지는 더 긴 타임아웃
+                async with httpx.AsyncClient(timeout=20.0) as client:  # 책 표지는 조금 더 긴 타임아웃
                     response = await client.post(api_url, json=request_body)
                     
                     if response.status_code >= 400:
@@ -700,7 +701,7 @@ class UnifiedImageService:
                         # 5xx 서버 에러나 기타 일시적 문제는 재시도 가능
                         if response.status_code >= 500 and attempt <= max_retries:
                             logger.warning(f"⏰ 서버 에러 {response.status_code} - 재시도 {attempt}/{max_retries}")
-                            wait_time = 2.0 * attempt
+                            wait_time = 0.5 * attempt
                             await asyncio.sleep(wait_time)
                             continue
                         
@@ -755,7 +756,7 @@ class UnifiedImageService:
                     # 안전 필터 문제가 아닌 경우 재시도
                     if attempt <= max_retries:
                         logger.warning(f"⏰ candidates 배열 비어있음 - 재시도 {attempt}/{max_retries}")
-                        wait_time = 1.0 * attempt
+                        wait_time = 0.3 * attempt
                         await asyncio.sleep(wait_time)
                         continue
                     else:
@@ -824,7 +825,7 @@ class UnifiedImageService:
                     raise RuntimeError(f"표지 이미지 생성 최종 실패: {str(e)}")
                 
                 # 짧은 대기 (500ms * attempt)
-                wait_time = 0.5 * attempt
+                wait_time = 0.2 * attempt
                 logger.info(f"⏰ {wait_time}s 대기 후 재시도...")
                 
                 try:
