@@ -155,10 +155,14 @@ const currentProfile = ref(Profile.cat_1);
 const currentIndex = ref(0);
 
 const refresh = () => {
-  // 더 효율적인 다음 인덱스 계산 (while 루프 제거)
-  const nextIndex = (currentIndex.value + 1) % profiles.value.length;
-  currentIndex.value = nextIndex;
-  currentProfile.value = profiles.value[nextIndex];
+  // 랜덤한 프로필 선택 (현재 프로필과 다른 것 선택)
+  let randomIndex;
+  do {
+    randomIndex = Math.floor(Math.random() * profiles.value.length);
+  } while (randomIndex === currentIndex.value && profiles.value.length > 1);
+  
+  currentIndex.value = randomIndex;
+  currentProfile.value = profiles.value[randomIndex];
 };
 
 const start = () => {
