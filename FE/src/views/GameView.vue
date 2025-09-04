@@ -1338,8 +1338,11 @@ const nextTurn = async (data) => {
         toast.errorToast("긴장감이 충분히 오르지 않았습니다!");
         return;
       }
+      // 결말카드 정보 설정
+      usedCard.value.id = -1; // 결말카드는 특별한 ID로 구분
       usedCard.value.keyword = data.prompt;
-      usedCard.value.isEnding = isEnding;
+      usedCard.value.isEnding = true; // 명시적으로 true 설정
+      console.log("🎯 [DEBUG] 결말카드 설정 완료 - isEnding:", usedCard.value.isEnding);
     }
 
     // 연결된 피어들에게 프롬프트 제출
@@ -1352,7 +1355,7 @@ const nextTurn = async (data) => {
             usedCard: {
               id: usedCard.value.id,
               keyword: usedCard.value.keyword,
-              isEnding: isEnding,
+              isEnding: usedCard.value.isEnding,
             },
           },
           peer.connection
@@ -1386,8 +1389,10 @@ const nextTurn = async (data) => {
         userId: peerId.value,
         userPrompt: data.prompt,
         turn: totalTurn.value++,
-        isEnding: isEnding,
+        isEnding: usedCard.value.isEnding,
       });
+      
+      console.log("🎯 [DEBUG] 이미지 생성 요청 - isEnding:", usedCard.value.isEnding);
       
       
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
