@@ -1303,9 +1303,15 @@ const addBookContent = (newContent) => {
 
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
+  console.log("🎯 [DEBUG] nextTurn 함수 호출됨");
+  console.log("🎯 [DEBUG] 받은 data:", data);
+  console.log("🎯 [DEBUG] data.isEnding:", data.isEnding);
+  console.log("🎯 [DEBUG] typeof data.isEnding:", typeof data.isEnding);
+  
   // 프롬프트 제출인 경우
   if (data?.prompt) {
     const isEnding = data.isEnding ? true : false;
+    console.log("🎯 [DEBUG] 계산된 isEnding:", isEnding);
     // 스토리 카드 제출인 경우
     if (!isEnding) {
       try {
