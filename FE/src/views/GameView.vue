@@ -1671,7 +1671,7 @@ const voteEnd = async (data) => {
 
           await showOverlay('whoTurn');
           inProgress.value = true;
-        };
+        }
       }
       // 투표 결과 전송 api
       try {
@@ -1731,7 +1731,6 @@ if (currTurn.value === myTurn.value) {
 } else {
   votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
   sendVoteResult();
-}
 }
 };
 
