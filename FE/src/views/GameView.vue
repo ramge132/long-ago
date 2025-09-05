@@ -1697,27 +1697,29 @@ const voteEnd = async (data) => {
         }
     }
   }
-}
-if (currTurn.value === myTurn.value) {
-  let stopWatch;
-  stopWatch = watch(
-    () => [bookContents.value, votings.value],
-    async ([newBookContents, newVotings]) => {
-      await nextTick();
-      const lastContent = newBookContents[newBookContents.length - 1];
-      if (lastContent && lastContent.image !== null && newVotings.length === participants.value.length - 1) {
-        votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
-        sendVoteResult();
-        if(stopWatch) {
-          stopWatch();
+
+  // 자신의 투표를 votings에 추가하고 투표 집계 처리
+  if (currTurn.value === myTurn.value) {
+    let stopWatch;
+    stopWatch = watch(
+      () => [bookContents.value, votings.value],
+      async ([newBookContents, newVotings]) => {
+        await nextTick();
+        const lastContent = newBookContents[newBookContents.length - 1];
+        if (lastContent && lastContent.image !== null && newVotings.length === participants.value.length - 1) {
+          votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
+          sendVoteResult();
+          if(stopWatch) {
+            stopWatch();
+          }
         }
-      }
-    },
-    { deep: true, immediate: true }
-  );
-} else {
-  votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
-  sendVoteResult();
+      },
+      { deep: true, immediate: true }
+    );
+  } else {
+    votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
+    sendVoteResult();
+  }
 }
 };
 
