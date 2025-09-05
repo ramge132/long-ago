@@ -506,8 +506,8 @@ const setupConnection = (conn) => {
 
           if (currTurn.value === myTurn.value) {
             let accepted = false; // 기본값 설정
-            if (upCount > downCount) {
-              // 찬성이 더 많을 때만 승인
+            if (upCount >= downCount) {
+              // 찬성이 더 많거나 동수일 때 승인 (동수 포함)
               isElected.value = true;
               accepted = true;
               // 투표 가결 시 점수 +2
@@ -1552,6 +1552,22 @@ const cardReroll = async () => {
 
 // 투표 종료
 const voteEnd = async (data) => {
+  // 서버에 voteEnd 함수 시작 로그 전송
+  try {
+    await fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'VOTE_END_FUNCTION_START',
+        user: userStore.userData.userNickname,
+        receivedData: data,
+        timestamp: new Date().toISOString()
+      })
+    });
+  } catch (error) {
+    // 로그 전송 실패해도 게임은 계속 진행
+  }
+
   prompt.value = "";
   isVoted.value = true;
   // 이미지 들어올 때까지 대기
@@ -1578,18 +1594,74 @@ const voteEnd = async (data) => {
       else downCount++;
     });
 
+    // 서버 로그: 투표 집계 결과
+    try {
+      await fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'VOTE_COUNT_RESULT',
+          gameId: gameID.value,
+          totalVotes: votings.value.length,
+          upCount: upCount,
+          downCount: downCount,
+          votingDetails: votings.value,
+          timestamp: new Date().toISOString()
+        })
+      });
+    } catch (error) {
+      console.error('Failed to send vote count log:', error);
+    }
+
     if (currTurn.value === myTurn.value) {
       let accepted = false; // 기본값 설정
-      if (upCount > downCount) {
-        // 찬성이 더 많을 때만 승인
+      if (upCount >= downCount) {
+        // 찬성이 더 많거나 동수일 때 승인 (동수 포함)
+        // 서버 로그: 찬성 승인 결정
+        try {
+          await fetch('/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'VOTE_DECISION_APPROVED',
+              gameId: gameID.value,
+              upCount: upCount,
+              downCount: downCount,
+              reason: upCount >= downCount ? '찬성이 더 많거나 동수' : '',
+              timestamp: new Date().toISOString()
+            })
+          });
+        } catch (error) {
+          console.error('Failed to send approval log:', error);
+        }
+
         isElected.value = true;
         accepted = true;
         // 투표 가결 시 점수 +2
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-        if (usedCard.value.isEnding) {
-          currentPlayer.score += 5;
-        } else {
-          currentPlayer.score += 2;
+        const scoreIncrease = usedCard.value.isEnding ? 5 : 2;
+        const oldScore = currentPlayer.score;
+        currentPlayer.score += scoreIncrease;
+        
+        // 서버 로그: 점수 증가
+        try {
+          await fetch('/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'SCORE_INCREASE',
+              gameId: gameID.value,
+              playerName: currentPlayer.name,
+              playerId: currentPlayer.id,
+              oldScore: oldScore,
+              newScore: currentPlayer.score,
+              scoreIncrease: scoreIncrease,
+              isEndingCard: usedCard.value.isEnding,
+              timestamp: new Date().toISOString()
+            })
+          });
+        } catch (error) {
+          console.error('Failed to send score increase log:', error);
         }
 
         // 턴 종료 트리거 송신하기
@@ -1638,17 +1710,76 @@ const voteEnd = async (data) => {
           inProgress.value = true;
         };
       } else {
-        // 반대가 더 많거나 동수일 때 거부
+        // 반대가 더 많을 때 거부 (동수는 찬성 승인)
+        // 서버 로그: 반대 거부 결정
+        try {
+          await fetch('/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'VOTE_DECISION_REJECTED',
+              gameId: gameID.value,
+              upCount: upCount,
+              downCount: downCount,
+              reason: '반대가 더 많음',
+              timestamp: new Date().toISOString()
+            })
+          });
+        } catch (error) {
+          console.error('Failed to send rejection log:', error);
+        }
+
         accepted = false;
         // 내 이미지 버리기
+        const bookContentsBefore = bookContents.value.length;
         if (bookContents.value.length === 1) {
           bookContents.value = [{ content: "", image: null }];
         } else {
           bookContents.value = bookContents.value.slice(0, -1);
         }
+        
+        // 서버 로그: 콘텐츠 삭제
+        try {
+          await fetch('/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'BOOK_CONTENT_DELETED',
+              gameId: gameID.value,
+              contentsBefore: bookContentsBefore,
+              contentsAfter: bookContents.value.length,
+              timestamp: new Date().toISOString()
+            })
+          });
+        } catch (error) {
+          console.error('Failed to send content deletion log:', error);
+        }
+
         // 현재 턴 사람 점수 -1
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        const oldScore = currentPlayer.score;
         currentPlayer.score -= 1;
+        
+        // 서버 로그: 점수 감소
+        try {
+          await fetch('/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'SCORE_DECREASE',
+              gameId: gameID.value,
+              playerName: currentPlayer.name,
+              playerId: currentPlayer.id,
+              oldScore: oldScore,
+              newScore: currentPlayer.score,
+              scoreDecrease: 1,
+              reason: '투표 거부',
+              timestamp: new Date().toISOString()
+            })
+          });
+        } catch (error) {
+          console.error('Failed to send score decrease log:', error);
+        }
         // 턴 종료 트리거 송신하기
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         connectedPeers.value.forEach((peer) => {
@@ -1667,6 +1798,26 @@ const voteEnd = async (data) => {
         await showOverlay('whoTurn');
         inProgress.value = true;
       }
+      
+      // 서버 로그: API 호출 시작
+      try {
+        await fetch('/api/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'API_CALL_START',
+            gameId: gameID.value,
+            userId: peerId.value,
+            accepted: accepted,
+            cardId: usedCard.value.id,
+            endpoint: 'voteResultSend',
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (error) {
+        console.error('Failed to send API call start log:', error);
+      }
+
       // 투표 결과 전송 api
       try {
           const response = await voteResultSend({
@@ -1675,24 +1826,100 @@ const voteEnd = async (data) => {
             accepted: accepted,
             cardId: usedCard.value.id,
           });
+          
+          // 서버 로그: API 호출 성공
+          try {
+            await fetch('/api/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'API_CALL_SUCCESS',
+                gameId: gameID.value,
+                responseStatus: response.status,
+                accepted: accepted,
+                cardId: usedCard.value.id,
+                timestamp: new Date().toISOString()
+              })
+            });
+          } catch (error) {
+            console.error('Failed to send API success log:', error);
+          }
+
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
           }
           // 투표 찬성 시 카드 제거
           if (accepted) {
+            const cardsBefore = storyCards.value.length;
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
               }
             });
+            
+            // 서버 로그: 카드 제거
+            try {
+              await fetch('/api/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'CARD_REMOVED',
+                  gameId: gameID.value,
+                  cardId: usedCard.value.id,
+                  cardsBefore: cardsBefore,
+                  cardsAfter: storyCards.value.length,
+                  timestamp: new Date().toISOString()
+                })
+              });
+            } catch (error) {
+              console.error('Failed to send card removal log:', error);
+            }
           }
         } catch (error) {
+          // 서버 로그: API 호출 실패
+          try {
+            await fetch('/api/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'API_CALL_ERROR',
+                gameId: gameID.value,
+                errorStatus: error.response?.status,
+                errorMessage: error.message,
+                accepted: accepted,
+                cardId: usedCard.value.id,
+                timestamp: new Date().toISOString()
+              })
+            });
+          } catch (logError) {
+            console.error('Failed to send API error log:', logError);
+          }
+
           if (error.response.status === 409) {
+            const cardsBefore = storyCards.value.length;
             storyCards.value.forEach((card, index) => {
               if (card.id === usedCard.value.id) {
                 storyCards.value.splice(index, 1);
               }
             });
+            
+            // 서버 로그: 409 오류 시 카드 제거
+            try {
+              await fetch('/api/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'CARD_REMOVED_ON_409',
+                  gameId: gameID.value,
+                  cardId: usedCard.value.id,
+                  cardsBefore: cardsBefore,
+                  cardsAfter: storyCards.value.length,
+                  timestamp: new Date().toISOString()
+                })
+              });
+            } catch (error) {
+              console.error('Failed to send 409 card removal log:', error);
+            }
           }
         }
     }

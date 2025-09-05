@@ -40,7 +40,7 @@
       <div class="grid grid-cols-2 w-full h-full gap-6 mt-2">
         <!-- 찬성 버튼 -->
         <div class="vote-button vote-up relative group cursor-pointer" 
-             @click="selected = 'up'" 
+             @click="selectVote('up')" 
              :class="selected === 'up' ? 'selected' : ''">
           <div class="vote-button-inner bg-gradient-to-br from-emerald-400 to-green-500 hover:from-emerald-300 hover:to-green-400 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 border border-white/30 overflow-hidden h-full flex justify-center items-center relative">
             <!-- 반짝이는 효과 -->
@@ -57,7 +57,7 @@
         
         <!-- 반대 버튼 -->
         <div class="vote-button vote-down relative group cursor-pointer" 
-             @click="selected = 'down'" 
+             @click="selectVote('down')" 
              :class="selected === 'down' ? 'selected' : ''">
           <div class="vote-button-inner bg-gradient-to-br from-rose-400 to-red-500 hover:from-rose-300 hover:to-red-400 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 border border-white/30 overflow-hidden h-full flex justify-center items-center relative">
             <!-- 반짝이는 효과 -->
@@ -121,6 +121,26 @@ const emit = defineEmits(['voteEnd']);
 const startCount = () => {
   countStarted.value = true;
 };
+
+const selectVote = async (voteType) => {
+  selected.value = voteType;
+  
+  // 서버에 투표 버튼 클릭 로그 전송
+  try {
+    await fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'VOTE_BUTTON_CLICK',
+        user: userStore.userData.userNickname,
+        selected: voteType,
+        timestamp: new Date().toISOString()
+      })
+    });
+  } catch (error) {
+    // 로그 전송 실패해도 게임은 계속 진행
+  }
+};
 const props = defineProps({
   prompt: {
     Type: String,
@@ -138,7 +158,23 @@ const voteEnd = () => {
     voteEnded.value = true;
   }, 500);
 };
-const removeComponent = () => {
+const removeComponent = async () => {
+  // 서버에 투표 종료 로그 전송
+  try {
+    await fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'VOTE_END',
+        user: userStore.userData.userNickname,
+        finalSelected: selected.value,
+        timestamp: new Date().toISOString()
+      })
+    });
+  } catch (error) {
+    // 로그 전송 실패해도 게임은 계속 진행
+  }
+  
   emit('voteEnd', {
     sender: userStore.userData.userNickname,
     selected: selected.value
