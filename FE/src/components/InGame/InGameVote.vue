@@ -107,7 +107,7 @@ import CardImage from "@/assets/cards";
 import { ref, onMounted, nextTick, watch } from 'vue';
 import { useUserStore } from '@/stores/auth';
 const userStore = useUserStore();
-const selected = ref("up");
+const selected = ref(null);
 const countStarted = ref(false);
 const voteEnded = ref(false);
 const showCard = ref(false);
