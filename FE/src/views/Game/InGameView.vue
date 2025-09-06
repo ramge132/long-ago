@@ -222,7 +222,6 @@ const voteEnd = (data) => {
 };
 
 const onVoteSelected = (voteType) => {
-  console.log('🗳️ InGameView에서 voteSelected 받음:', voteType);
   emit("voteSelected", voteType);
 };
 const goLobby = () => {

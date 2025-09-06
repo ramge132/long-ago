@@ -122,30 +122,10 @@ const startCount = () => {
   countStarted.value = true;
 };
 
-const selectVote = async (voteType) => {
-  console.log('🗳️ selectVote 호출됨:', voteType);
+const selectVote = (voteType) => {
   selected.value = voteType;
-  console.log('🗳️ selected.value 설정됨:', selected.value);
-  
   // 부모 컴포넌트에 즉시 선택 값 전달
   emit('voteSelected', voteType);
-  console.log('🗳️ voteSelected 이벤트 emit됨:', voteType);
-  
-  // 서버에 투표 버튼 클릭 로그 전송
-  try {
-    await fetch('/api/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'VOTE_BUTTON_CLICK',
-        user: userStore.userData.userNickname,
-        selected: voteType,
-        timestamp: new Date().toISOString()
-      })
-    });
-  } catch (error) {
-    // 로그 전송 실패해도 게임은 계속 진행
-  }
 };
 const props = defineProps({
   prompt: {
@@ -164,30 +144,11 @@ const voteEnd = () => {
     voteEnded.value = true;
   }, 500);
 };
-const removeComponent = async () => {
-  console.log('🗳️ removeComponent 호출됨, selected.value:', selected.value);
-  
-  // 서버에 투표 종료 로그 전송
-  try {
-    await fetch('/api/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'VOTE_END',
-        user: userStore.userData.userNickname,
-        finalSelected: selected.value,
-        timestamp: new Date().toISOString()
-      })
-    });
-  } catch (error) {
-    // 로그 전송 실패해도 게임은 계속 진행
-  }
-  
+const removeComponent = () => {
   const voteData = {
     sender: userStore.userData.userNickname,
     selected: selected.value
   };
-  console.log('🗳️ emit할 voteEnd 데이터:', voteData);
   emit('voteEnd', voteData);
 }
 const handleAnimationEnd = (event) => {

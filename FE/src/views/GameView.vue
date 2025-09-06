@@ -438,28 +438,19 @@ const setupConnection = (conn) => {
         
         // 투표 결과에 따른 점수 변화 처리 (P2P 동기화)
         if (data.scoreChange) {
-          console.log("🎯 [DEBUG] 점수 변화 처리:", data.scoreChange);
           const targetPlayer = participants.value[data.scoreChange.playerIndex];
           if (targetPlayer) {
             if (data.scoreChange.type === "increase") {
               targetPlayer.score += data.scoreChange.amount;
-              console.log(`🎯 [DEBUG] ${targetPlayer.name} 점수 +${data.scoreChange.amount}, 현재: ${targetPlayer.score}`);
             } else if (data.scoreChange.type === "decrease") {
               targetPlayer.score -= data.scoreChange.amount;
-              console.log(`🎯 [DEBUG] ${targetPlayer.name} 점수 -${data.scoreChange.amount}, 현재: ${targetPlayer.score}`);
             }
           }
         }
         
         // 카드 삭제 처리 (P2P 동기화)
         if (data.cardRemoval) {
-          console.log("🎯 [DEBUG] 카드 삭제 처리:", data.cardRemoval);
-          storyCards.value.forEach((card, index) => {
-            if (card.id === data.cardRemoval.cardId) {
-              console.log(`🎯 [DEBUG] 카드 제거: ${card.keyword} (ID: ${card.id})`);
-              storyCards.value.splice(index, 1);
-            }
-          });
+          storyCards.value = storyCards.value.filter(card => card.id !== data.cardRemoval.cardId);
         }
         
         totalTurn.value = data.totalTurn;
@@ -484,6 +475,7 @@ const setupConnection = (conn) => {
         usedCard.value = data.usedCard;
         prompt.value = data.prompt;
         inProgress.value = false;
+        isVoted.value = false; // 새로운 투표를 위해 초기화
         addBookContent({ content: data.prompt, image: null });
         votings.value = [];
         
@@ -497,7 +489,6 @@ const setupConnection = (conn) => {
           if(isVoted.value) {
             isVoted.value = false;
           } else {
-            console.log('🗳️ 타임아웃으로 투표 전송, 선택값:', currentVoteSelection.value);
             await voteEnd({
               sender: userStore.userData.userNickname,
               selected: currentVoteSelection.value,
@@ -523,18 +514,15 @@ const setupConnection = (conn) => {
         break;
 
       case "voteResult":
-        console.log('🗳️ 투표 수신:', data.sender, data.selected);
         votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
 
         if (votings.value.length == participants.value.length) {
           let upCount = 0;
           let downCount = 0;
-          console.log('🗳️ 모든 투표 수집 완료:', votings.value);
           votings.value.forEach((vote) => {
             if (vote.selected == 'up') upCount++;
             else downCount++;
           });
-          console.log('🗳️ 투표 집계 결과:', { upCount, downCount });
 
           if (currTurn.value === myTurn.value) {
             let accepted = false; // 기본값 설정
@@ -866,29 +854,6 @@ const connectToRoom = async (roomID) => {
       );
     });
 
-    // conn.on("data", (data) => {
-    //   if (data.type != "heartbeat" && data.type != "heartbeat_back") {
-    //     
-    //   }
-    //   if (data.type === "currentParticipants") {
-    //     handleExistingParticipants(data.participants);
-    //     roomConfigs.value = data.roomConfigs;
-    //   } else if (data.type === "newParticipantJoined") {
-    //     participants.value.push(data.data);
-    //   }
-
-    //   const newParticipant = {
-    //     id: peerId.value,
-    //     name: userStore.userData.userNickname,
-    //     image: userStore.userData.userProfile,
-    //     score: 10,
-    //   };
-
-    //   // 중복 확인 후 추가
-    //   if (!participants.value.some((p) => p.id === newParticipant.id)) {
-    //     participants.value.push(newParticipant);
-    //   }
-    // });
 
     // 재시도 횟수를 추적할 객체 생성
     let retries = 0;
@@ -1095,17 +1060,6 @@ onMounted(async () => {
   }
 });
 
-// // 퇴장 관련
-// addEventListener("beforeunload", () => {
-//   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
-//   connectedPeers.value.forEach((peer) => {
-//     sendMessage(
-//       "system",
-//       { id: peerId.value, nickname: userStore.userData.userNickname },
-//       peer.connection,
-//     );
-//   });
-// });
 
 // 퇴장 관련
 addEventListener("beforeunload", () => {
@@ -1321,20 +1275,11 @@ const addBookContent = (newContent) => {
 
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
-  console.log("🎯 [DEBUG] nextTurn 함수 호출됨");
-  console.log("🎯 [DEBUG] 받은 data:", data);
-  console.log("🎯 [DEBUG] currTurn:", currTurn.value);
-  console.log("🎯 [DEBUG] myTurn:", myTurn.value);
-  console.log("🎯 [DEBUG] inGameOrder:", inGameOrder.value);
-  console.log("🎯 [DEBUG] participants:", participants.value.map(p => ({id: p.id, name: p.name})));
   
   // ContentTimer에서 호출된 30초 타이머 만료인 경우 (본인의 턴일 때만)
   const isMyCurrentTurn = inGameOrder.value[currTurn.value] === myTurn.value;
-  console.log("🎯 [DEBUG] isMyCurrentTurn:", isMyCurrentTurn);
-  console.log("🎯 [DEBUG] 타임아웃 조건 확인:", (!data || !data.prompt), "&&", isMyCurrentTurn);
   
   if ((!data || !data.prompt) && isMyCurrentTurn) {
-    console.log("🎯 [DEBUG] 30초 타이머 만료 처리");
     // 타임아웃 점수 -1
     const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
     currentPlayer.score -= 1;
@@ -1363,7 +1308,6 @@ const nextTurn = async (data) => {
   // 프롬프트 제출인 경우
   if (data?.prompt) {
     const isEnding = data.isEnding ? true : false;
-    console.log("🎯 [DEBUG] 계산된 isEnding:", isEnding);
     // 스토리 카드 제출인 경우
     if (!isEnding) {
       try {
@@ -1394,7 +1338,6 @@ const nextTurn = async (data) => {
       usedCard.value.id = -1; // 결말카드는 특별한 ID로 구분
       usedCard.value.keyword = data.prompt;
       usedCard.value.isEnding = true; // 명시적으로 true 설정
-      console.log("🎯 [DEBUG] 결말카드 설정 완료 - isEnding:", usedCard.value.isEnding);
     }
 
     // 연결된 피어들에게 프롬프트 제출
@@ -1419,7 +1362,6 @@ const nextTurn = async (data) => {
           if(isVoted.value) {
             isVoted.value = false;
           } else {
-            console.log('🗳️ 두 번째 타임아웃으로 투표 전송, 선택값:', currentVoteSelection.value);
             await voteEnd({
               sender: userStore.userData.userNickname,
               selected: currentVoteSelection.value,
@@ -1445,7 +1387,6 @@ const nextTurn = async (data) => {
         isEnding: usedCard.value.isEnding,
       });
       
-      console.log("🎯 [DEBUG] 이미지 생성 요청 - isEnding:", usedCard.value.isEnding);
       
       
       // 이미지가 들어왔다고 하면 이미지 사람들에게 전송하고, 책에 넣는 코드
@@ -1592,21 +1533,17 @@ const cardReroll = async () => {
 
 // 투표 선택 시 즉시 호출
 const onVoteSelected = (voteType) => {
-  console.log('🗳️ GameView에서 voteSelected 받음:', voteType);
   currentVoteSelection.value = voteType;
-  console.log('🗳️ currentVoteSelection 업데이트됨:', currentVoteSelection.value);
 };
 
 // 투표 종료
 const voteEnd = async (data) => {
-  console.log('🗳️ GameView voteEnd 함수 호출됨:', data);
   currentVoteSelection.value = data.selected; // 현재 투표 선택값 저장
   prompt.value = "";
   isVoted.value = true;
   // 이미지 들어올 때까지 대기
 
   const sendVoteResult = async () => {
-  console.log('🗳️ 투표 결과 전송:', { sender: data.sender, selected: data.selected });
   connectedPeers.value.forEach((peer) => {
     if (peer.id !== peerId.value && peer.connection.open) {
       sendMessage(
@@ -1681,24 +1618,19 @@ const voteEnd = async (data) => {
         currTurn.value = (currTurn.value + 1) % participants.value.length;
         // condition에서 다음 턴 or 게임 종료
         if (usedCard.value.isEnding) {
-          console.log("🎮 === 엔딩 카드 투표 통과 - 게임 종료 처리 시작 ===");
           
           // 1단계: 백그라운드로 책 표지 생성 요청 시작 (응답을 기다리지 않음)
-          console.log("🎮 백그라운드로 책 표지 생성 요청 시작");
           gameEnd(true); // await 제거 - 백그라운드 실행
           
           // 2단계: 1초 후 모든 플레이어에게 결과창 표시
           setTimeout(() => {
-            console.log("🎮 === 1초 후 모든 플레이어에게 결과창 표시 ===");
             
             // 방장 결과창 표시
-            console.log("🎮 방장 승자 화면 표시");
             isForceStopped.value = "champ";
             
             // 게스트들에게도 결과창 표시 (기본값으로 먼저 표시, 표지는 나중에 업데이트)
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
-                console.log(`🎮 플레이어 ${p.id}에게 결과창 표시 (기본값)`);
                 sendMessage("showResultsWithCover", {
                   bookCover: {
                     title: "아주 먼 옛날", // 기본값
@@ -1752,7 +1684,6 @@ const voteEnd = async (data) => {
             if (accepted) {
               storyCards.value.forEach((card, index) => {
                 if (card.id === usedCard.value.id) {
-                  console.log(`🎯 [DEBUG] 카드 제거: ${card.keyword} (ID: ${card.id})`);
                   storyCards.value.splice(index, 1);
                 }
               });
