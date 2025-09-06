@@ -1,5 +1,12 @@
 <template>
-  <div class="h-full grid grid-cols-2">
+  <div class="h-full grid grid-cols-2 relative">
+    <!-- 초기 ink.gif 로딩 오버레이 -->
+    <Transition name="fade">
+      <div v-if="introLoading" class="absolute inset-0 bg-white flex justify-center items-center z-10">
+        <div src="@/assets/ink.gif" alt="Loading..." style="width: 300px; height: auto;">
+      </div>
+    </Transition>
+
     <div class="flex flex-col items-center justify-center gap-y-6">
       <div class="flex items-center relative">
         <img :src="currentProfile" alt="프로필" class="w-52 h-52" style="transition: none;" />
@@ -86,7 +93,7 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import "swiper/css";
@@ -106,6 +113,7 @@ const audioStore = useAudioStore();
 const router = useRouter();
 const route = useRoute();
 const nickname = ref("닉네임");
+const introLoading = ref(true); // 인트로 화면 자체 로딩 상태
 
 const profiles = ref([
   Profile.cat_1,
@@ -194,15 +202,28 @@ const startWithAudio = async () => {
 
 // 이미지 프리로딩 함수
 const preloadImages = () => {
-  profiles.value.forEach(profileSrc => {
-    const img = new Image();
-    img.src = profileSrc;
-  });
+  return Promise.all(profiles.value.map(profileSrc => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = profileSrc;
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+  }));
 };
 
-onMounted(() => {
+onMounted(async () => {
   // 이미지 프리로딩
-  preloadImages();
+  try {
+    await preloadImages();
+  } catch (error) {
+    console.error("이미지 프리로딩 실패:", error);
+  } finally {
+    // 모든 처리가 끝난 후 로딩 화면 제거
+    nextTick(() => {
+      introLoading.value = false;
+    });
+  }
   
   const randomIndex = Math.floor(Math.random() * profiles.value.length);
   currentIndex.value = randomIndex;
