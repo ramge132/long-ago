@@ -9,7 +9,7 @@
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
           :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" :isPreview="isPreview" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
-          @card-reroll="cardReroll" @vote-end="voteEnd" @go-lobby="goLobby" @winner-shown="onWinnerShown" @narration-complete="onNarrationComplete" @start-narration="onStartNarration" />
+          @card-reroll="cardReroll" @vote-end="voteEnd" @vote-selected="onVoteSelected" @go-lobby="goLobby" @winner-shown="onWinnerShown" @narration-complete="onNarrationComplete" @start-narration="onStartNarration" />
       </Transition>
     </RouterView>
     <div
@@ -1588,6 +1588,13 @@ const cardReroll = async () => {
   });
 
   endingCard.value.content = response.data.data.content;
+};
+
+// 투표 선택 시 즉시 호출
+const onVoteSelected = (voteType) => {
+  console.log('🗳️ GameView에서 voteSelected 받음:', voteType);
+  currentVoteSelection.value = voteType;
+  console.log('🗳️ currentVoteSelection 업데이트됨:', currentVoteSelection.value);
 };
 
 // 투표 종료

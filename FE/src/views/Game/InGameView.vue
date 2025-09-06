@@ -155,7 +155,7 @@
       :inProgress="inProgress"
       :percentage="percentage"
     />
-    <InGameVote class="z-50" @vote-end="voteEnd" :prompt="prompt" :usedCard="usedCard" :isPreview="isPreview" v-if="prompt !== '' && isVoted === false"/>
+    <InGameVote class="z-50" @vote-end="voteEnd" @vote-selected="onVoteSelected" :prompt="prompt" :usedCard="usedCard" :isPreview="isPreview" v-if="prompt !== '' && isVoted === false"/>
     <!-- <Transition name="fade">
       <div
         v-if="modal.isOpen"
@@ -204,7 +204,7 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "goLobby", "winner-shown", "narration-complete"]);
+const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "voteSelected", "goLobby", "winner-shown", "narration-complete"]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
@@ -219,6 +219,11 @@ const cardReroll = () => {
 }
 const voteEnd = (data) => {
   emit("voteEnd", data);
+};
+
+const onVoteSelected = (voteType) => {
+  console.log('🗳️ InGameView에서 voteSelected 받음:', voteType);
+  emit("voteSelected", voteType);
 };
 const goLobby = () => {
   emit("goLobby");

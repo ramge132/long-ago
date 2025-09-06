@@ -117,7 +117,7 @@ const contentSizes = ref([24, 20, 18, 16, 14, 12]); // px 단위로 변경
 const duration = ref(10);
 const cardPanelHeight = ref(280);
 const currentFontSize = ref(24);
-const emit = defineEmits(['voteEnd']);
+const emit = defineEmits(['voteEnd', 'voteSelected']);
 const startCount = () => {
   countStarted.value = true;
 };
@@ -126,6 +126,10 @@ const selectVote = async (voteType) => {
   console.log('🗳️ selectVote 호출됨:', voteType);
   selected.value = voteType;
   console.log('🗳️ selected.value 설정됨:', selected.value);
+  
+  // 부모 컴포넌트에 즉시 선택 값 전달
+  emit('voteSelected', voteType);
+  console.log('🗳️ voteSelected 이벤트 emit됨:', voteType);
   
   // 서버에 투표 버튼 클릭 로그 전송
   try {
