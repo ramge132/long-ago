@@ -478,6 +478,7 @@ const setupConnection = (conn) => {
         prompt.value = data.prompt;
         inProgress.value = false;
         isVoted.value = false; // 새로운 투표를 위해 초기화
+        currentVoteSelection.value = "up"; // 투표 선택값을 찬성으로 초기화
         addBookContent({ content: data.prompt, image: null });
         votings.value = [];
         
@@ -1399,6 +1400,7 @@ const nextTurn = async (data) => {
     // 투표 모달 띄우기
     inProgress.value = false;
     prompt.value = data.prompt;
+    currentVoteSelection.value = "up"; // 투표 선택값을 찬성으로 초기화
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
     

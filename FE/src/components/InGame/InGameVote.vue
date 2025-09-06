@@ -201,6 +201,9 @@ watch(() => props.prompt, () => {
     cardPanelHeight.value = 280;
     currentFontSize.value = 24;
     duration.value = 10;
+    
+    // 기본값을 부모 컴포넌트에 알림
+    emit('voteSelected', "up");
   }
 });
 
@@ -208,6 +211,9 @@ onMounted(async () => {
   await adjustCardSize();
   // 진입 바운스 애니메이션(0.6초) 후 실제 투표시간 9초 + 퇴장 애니메이션(0.4초) = 총 10초
   duration.value = 9;
+  
+  // 마운트 시 기본값을 부모 컴포넌트에 알림
+  emit('voteSelected', "up");
 });
 
 </script>
