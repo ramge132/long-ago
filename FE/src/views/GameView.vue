@@ -450,6 +450,17 @@ const setupConnection = (conn) => {
           }
         }
         
+        // 카드 삭제 처리 (P2P 동기화)
+        if (data.cardRemoval) {
+          console.log("🎯 [DEBUG] 카드 삭제 처리:", data.cardRemoval);
+          storyCards.value.forEach((card, index) => {
+            if (card.id === data.cardRemoval.cardId) {
+              console.log(`🎯 [DEBUG] 카드 제거: ${card.keyword} (ID: ${card.id})`);
+              storyCards.value.splice(index, 1);
+            }
+          });
+        }
+        
         totalTurn.value = data.totalTurn;
         inProgress.value = false;
         currTurn.value = data.currTurn;
@@ -1696,6 +1707,9 @@ const voteEnd = async (data) => {
                     type: "increase",
                     amount: scoreIncrease,
                     playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 이전 턴의 플레이어
+                  },
+                  cardRemoval: {
+                    cardId: usedCard.value.id
                   }
                 },
                 p.connection
@@ -1717,6 +1731,15 @@ const voteEnd = async (data) => {
           });
           if (response.status === 200) {
             // 이미지 쓰레기통에 넣기
+            // 투표 찬성 시 사용한 카드 제거
+            if (accepted) {
+              storyCards.value.forEach((card, index) => {
+                if (card.id === usedCard.value.id) {
+                  console.log(`🎯 [DEBUG] 카드 제거: ${card.keyword} (ID: ${card.id})`);
+                  storyCards.value.splice(index, 1);
+                }
+              });
+            }
           }
         } catch (error) {
           if (error.response.status === 409) {
