@@ -434,6 +434,22 @@ const setupConnection = (conn) => {
           const currentPlayer = participants.value[inGameOrder.value[data.currTurn === 0 ? participants.value.length - 1 : data.currTurn - 1]];
           currentPlayer.score -= 1;
         }
+        
+        // 투표 결과에 따른 점수 변화 처리 (P2P 동기화)
+        if (data.scoreChange) {
+          console.log("🎯 [DEBUG] 점수 변화 처리:", data.scoreChange);
+          const targetPlayer = participants.value[data.scoreChange.playerIndex];
+          if (targetPlayer) {
+            if (data.scoreChange.type === "increase") {
+              targetPlayer.score += data.scoreChange.amount;
+              console.log(`🎯 [DEBUG] ${targetPlayer.name} 점수 +${data.scoreChange.amount}, 현재: ${targetPlayer.score}`);
+            } else if (data.scoreChange.type === "decrease") {
+              targetPlayer.score -= data.scoreChange.amount;
+              console.log(`🎯 [DEBUG] ${targetPlayer.name} 점수 -${data.scoreChange.amount}, 현재: ${targetPlayer.score}`);
+            }
+          }
+        }
+        
         totalTurn.value = data.totalTurn;
         inProgress.value = false;
         currTurn.value = data.currTurn;
@@ -1609,6 +1625,11 @@ const voteEnd = async (data) => {
                 currTurn: currTurn.value,
                 imageDelete: true,
                 totalTurn: totalTurn.value,
+                scoreChange: {
+                  type: "decrease",
+                  amount: 1,
+                  playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 이전 턴의 플레이어
+                }
               },
               peer.connection
             )
@@ -1661,6 +1682,8 @@ const voteEnd = async (data) => {
             });
           }, 1000);
         } else {
+          // 다른 플레이어들에게 점수 증가 정보와 함께 nextTurn 메시지 전송
+          const scoreIncrease = usedCard.value.isEnding ? 5 : 2;
           connectedPeers.value.forEach(async (p) => {
             if (p.id !== peerId.value && p.connection.open) {
               sendMessage(
@@ -1669,6 +1692,11 @@ const voteEnd = async (data) => {
                   currTurn: currTurn.value,
                   imageDelete: false,
                   totalTurn: totalTurn.value,
+                  scoreChange: {
+                    type: "increase",
+                    amount: scoreIncrease,
+                    playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 이전 턴의 플레이어
+                  }
                 },
                 p.connection
               )
@@ -1700,19 +1728,9 @@ const voteEnd = async (data) => {
           }
         }
     } else {
-      if (upCount < downCount) {
-        // 현재 턴 사람 점수 -1
-        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-        currentPlayer.score -= 1;
-      } else {
+      // 다른 플레이어들은 P2P 메시지를 통해 점수 업데이트를 받으므로 여기서는 isElected만 설정
+      if (upCount >= downCount) {
         isElected.value = true;
-        // 투표 가결 시 점수 +2
-        const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-        if (usedCard.value.isEnding) {
-          currentPlayer.score += 5;
-        } else {
-          currentPlayer.score += 2;
-        }
       }
     }
   }
