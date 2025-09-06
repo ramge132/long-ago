@@ -737,6 +737,29 @@ const setupConnection = (conn) => {
             });
           }
         }
+          } else {
+            // 게스트도 동일한 투표 결과 처리
+            console.log("  📌 게스트 - 투표 결과 동기화");
+            console.log("    - voteAccepted:", voteAccepted);
+            console.log("    - currTurn:", currTurn.value, "myTurn:", myTurn.value);
+            
+            // 게스트도 투표 결과에 따라 isElected 설정
+            if (voteAccepted) {
+              console.log("    → isElected를 true로 설정 (게스트)");
+              isElected.value = true;
+              
+              // 동기화를 위해 약간의 지연 후 상태 확인
+              setTimeout(() => {
+                console.log("    → isElected 상태 재확인:", isElected.value);
+                console.log("    → bookContents 길이:", bookContents.value.length);
+                // InGameContent.vue에 전달되는 isElected 상태 확인
+                if (isElected.value && bookContents.value.length > 0) {
+                  console.log("    → 책 페이지 넘김이 자동으로 트리거됨");
+                }
+              }, 100);
+            } else {
+              console.log("    → 투표 거부 - isElected는 false 유지");
+            }
           }
         }
         break;
