@@ -192,8 +192,8 @@ watch(() => props.usedCard.keyword, async () => {
 
 onMounted(async () => {
   await adjustCardSize();
-  // 바운스 애니메이션 시간(0.6+0.4=1초) 포함하여 실제 투표시간 10초 보장
-  duration.value = 10.6;
+  // 진입 바운스 애니메이션(0.6초) 후 실제 투표시간 9초 + 퇴장 애니메이션(0.4초) = 총 10초
+  duration.value = 9;
 });
 
 </script>

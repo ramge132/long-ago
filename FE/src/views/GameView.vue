@@ -108,6 +108,8 @@ const showWarningModal = ref(false);
 const warningModalMessage = ref("");
 // 투표 타이머 관리
 let voteTimer = null;
+// 경고 후 상태 리셋 타이머 관리
+let warningTimer = null;
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -482,6 +484,12 @@ const setupConnection = (conn) => {
         // 기존 투표 타이머가 있으면 취소
         if (voteTimer) {
           clearTimeout(voteTimer);
+        }
+        
+        // 기존 경고 타이머가 있으면 취소 (부적절 콘텐츠 후 새 투표 시작 시)
+        if (warningTimer) {
+          clearTimeout(warningTimer);
+          warningTimer = null;
         }
         
         // 새로운 투표 타이머 설정
@@ -984,6 +992,12 @@ const stopVotingAndShowWarning = async (data) => {
     voteTimer = null;
   }
   
+  // 기존 경고 타이머가 있으면 취소 (중복 실행 방지)
+  if (warningTimer) {
+    clearTimeout(warningTimer);
+    warningTimer = null;
+  }
+  
   // 투표 관련 상태 초기화
   votings.value = [];
   usedCard.value = {};
@@ -1017,14 +1031,18 @@ const stopVotingAndShowWarning = async (data) => {
   currTurn.value = data.currTurn;
   
   // 6. 3초 후 whoTurn 오버레이 표시 (경고 모달이 먼저 표시된 후)
-  setTimeout(async () => {
+  warningTimer = setTimeout(async () => {
     await showOverlay('whoTurn');
     
-    // 다음 턴을 위한 상태 리셋
-    isVoted.value = false;
-    currentVoteSelection.value = "up"; // 투표 선택값 초기화
-    // prompt는 새로운 sendPrompt 메시지를 받았을 때만 설정되어야 함
-    inProgress.value = true;
+    // 다음 턴을 위한 상태 리셋 (새로운 투표가 없을 때만)
+    // inProgress는 새로운 sendPrompt에서 관리되므로 여기서 설정하지 않음
+    if (prompt.value === "") {
+      // 새로운 투표가 진행 중이지 않을 때만 기본 상태로 리셋
+      isVoted.value = false;
+      currentVoteSelection.value = "up"; // 투표 선택값 초기화
+      inProgress.value = true; // 다음 턴 대기 상태
+    }
+    warningTimer = null; // 타이머 완료 후 null로 설정
   }, 3000);  // 경고 모달이 표시되는 시간과 동일
   
 };
