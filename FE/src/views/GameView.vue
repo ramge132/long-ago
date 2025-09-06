@@ -1287,6 +1287,12 @@ const nextTurn = async (data) => {
 
     // 턴 종료 트리거 송신하기
     currTurn.value = (currTurn.value + 1) % participants.value.length;
+    inProgress.value = false;
+    
+    // 먼저 자신의 오버레이 표시
+    await showOverlay('whoTurn');
+    
+    // 오버레이 완료 후 다른 플레이어들에게 메시지 전송
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
@@ -1300,8 +1306,7 @@ const nextTurn = async (data) => {
         )
       }
     });
-    inProgress.value = false;
-    await showOverlay('whoTurn');
+    
     inProgress.value = true;
     return;
   }
@@ -1583,6 +1588,11 @@ const voteEnd = async (data) => {
         currentPlayer.score -= 1;
         // 턴 종료 트리거 송신하기
         currTurn.value = (currTurn.value + 1) % participants.value.length;
+        
+        // 먼저 자신의 오버레이 표시
+        await showOverlay('whoTurn');
+        
+        // 오버레이 완료 후 다른 플레이어들에게 메시지 전송
         connectedPeers.value.forEach((peer) => {
           if (peer.id !== peerId.value && peer.connection.open) {
             sendMessage(
@@ -1601,7 +1611,7 @@ const voteEnd = async (data) => {
             )
           }
         });
-        await showOverlay('whoTurn');
+        
         inProgress.value = true;
       }
       else {
@@ -1645,6 +1655,11 @@ const voteEnd = async (data) => {
         } else {
           // 다른 플레이어들에게 점수 증가 정보와 함께 nextTurn 메시지 전송
           const scoreIncrease = usedCard.value.isEnding ? 5 : 2;
+          
+          // 먼저 자신의 오버레이 표시
+          await showOverlay('whoTurn');
+          
+          // 오버레이 완료 후 다른 플레이어들에게 메시지 전송
           connectedPeers.value.forEach(async (p) => {
             if (p.id !== peerId.value && p.connection.open) {
               sendMessage(
@@ -1667,7 +1682,6 @@ const voteEnd = async (data) => {
             };
           });
 
-          await showOverlay('whoTurn');
           inProgress.value = true;
         }
       }
