@@ -107,7 +107,7 @@ import CardImage from "@/assets/cards";
 import { ref, onMounted, nextTick, watch } from 'vue';
 import { useUserStore } from '@/stores/auth';
 const userStore = useUserStore();
-const selected = ref(null);
+const selected = ref("up");
 const countStarted = ref(false);
 const voteEnded = ref(false);
 const showCard = ref(false);
@@ -123,7 +123,9 @@ const startCount = () => {
 };
 
 const selectVote = async (voteType) => {
+  console.log('🗳️ selectVote 호출됨:', voteType);
   selected.value = voteType;
+  console.log('🗳️ selected.value 설정됨:', selected.value);
   
   // 서버에 투표 버튼 클릭 로그 전송
   try {
@@ -159,6 +161,8 @@ const voteEnd = () => {
   }, 500);
 };
 const removeComponent = async () => {
+  console.log('🗳️ removeComponent 호출됨, selected.value:', selected.value);
+  
   // 서버에 투표 종료 로그 전송
   try {
     await fetch('/api/log', {
@@ -175,10 +179,12 @@ const removeComponent = async () => {
     // 로그 전송 실패해도 게임은 계속 진행
   }
   
-  emit('voteEnd', {
+  const voteData = {
     sender: userStore.userData.userNickname,
     selected: selected.value
-  });
+  };
+  console.log('🗳️ emit할 voteEnd 데이터:', voteData);
+  emit('voteEnd', voteData);
 }
 const handleAnimationEnd = (event) => {
   const animName = event.animationName;
