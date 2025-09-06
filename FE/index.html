@@ -4,16 +4,130 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Long Ago - 실시간 협동 스토리텔링 게임" />
+    
+    <!-- 중요 리소스 프리로드 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- DNS 프리페치 -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    
+    <!-- 중요 CSS 프리로드 -->
+    <link rel="preload" href="/src/assets/index.css" as="style">
+    
     <title>Long Ago</title>
+    
+    <!-- 초기 로딩 스타일 (인라인으로 즉시 적용) -->
+    <style>
+      body {
+        user-select: none;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      }
+      
+      /* 로딩 스피너 스타일 */
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease-out;
+      }
+      
+      #loading-screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .loader {
+        width: 60px;
+        height: 60px;
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-top: 5px solid #ffffff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      .loading-text {
+        position: absolute;
+        margin-top: 120px;
+        color: white;
+        font-size: 18px;
+        font-weight: 500;
+        letter-spacing: 1px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* 애니메이션 성능 최적화 */
+      * {
+        will-change: auto;
+      }
+      
+      /* 스크롤 성능 개선 */
+      html {
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+      }
+    </style>
   </head>
   <body oncontextmenu="return false">
+    <!-- 초기 로딩 화면 -->
+    <div id="loading-screen">
+      <div class="loader"></div>
+      <div class="loading-text">아주 먼 옛날...</div>
+    </div>
+    
+    <!-- Vue 앱 마운트 포인트 -->
     <div id="app"></div>
+    
+    <!-- 커스텀 커서 -->
     <div class="custom-cursor"></div>
+    
+    <!-- 메인 앱 스크립트 -->
     <script type="module" src="/src/main.js"></script>
+    
+    <!-- 로딩 화면 제거 스크립트 -->
+    <script>
+      // Vue 앱이 마운트되면 로딩 화면 제거
+      window.addEventListener('DOMContentLoaded', () => {
+        // Vue 앱이 로드되기를 기다림
+        const checkApp = setInterval(() => {
+          const app = document.querySelector('#app');
+          if (app && app.children.length > 0) {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+              loadingScreen.classList.add('hidden');
+              setTimeout(() => {
+                loadingScreen.style.display = 'none';
+              }, 300);
+            }
+            clearInterval(checkApp);
+          }
+        }, 100);
+        
+        // 최대 5초 후 강제 제거
+        setTimeout(() => {
+          const loadingScreen = document.getElementById('loading-screen');
+          if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+            loadingScreen.classList.add('hidden');
+            setTimeout(() => {
+              loadingScreen.style.display = 'none';
+            }, 300);
+          }
+        }, 5000);
+      });
+    </script>
   </body>
 </html>
-<style type="text/css">
-  body {
-    user-select: none;
-  }
-</style>
