@@ -1348,9 +1348,14 @@ const gameStart = async (data) => {
       peer.connection,
     );
   });
+  
+  // myTurn을 inGameOrder에서의 위치로 설정 (무작위 순서)
   participants.value.forEach((p, i) => {
     if (p.id === peerId.value) {
-      myTurn.value = i; // participants 배열에서의 내 인덱스
+      // i는 participants 배열에서의 인덱스
+      // inGameOrder에서 i를 찾아서 그 위치를 myTurn으로 설정
+      const turnIndex = inGameOrder.value.indexOf(i);
+      myTurn.value = turnIndex; // inGameOrder에서의 내 위치 (무작위 턴 순서)
     }
   });
   setTimeout(async () => {
@@ -1374,10 +1379,13 @@ const startReceived = (data) => {
     inGameOrder.value = data.order;
     gameID.value = data.gameId;
 
-    // 내 순서 몇번인지 저장
+    // 내 순서 몇번인지 저장 (무작위 순서)
     participants.value.forEach((p, i) => {
       if (p.id === peerId.value) {
-        myTurn.value = i; // participants 배열에서의 내 인덱스
+        // i는 participants 배열에서의 인덱스
+        // inGameOrder에서 i를 찾아서 그 위치를 myTurn으로 설정
+        const turnIndex = inGameOrder.value.indexOf(i);
+        myTurn.value = turnIndex; // inGameOrder에서의 내 위치 (무작위 턴 순서)
       }
     });
 
