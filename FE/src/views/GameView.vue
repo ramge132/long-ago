@@ -554,27 +554,40 @@ const setupConnection = (conn) => {
         break;
 
       case "voteResult":
+        console.log("📊 [voteResult] 투표 결과 수신");
+        console.log("  - 투표자:", data.sender);
+        console.log("  - 선택:", data.selected);
+        console.log("  - 현재 votings 배열:", JSON.stringify(votings.value));
+        console.log("  - 현재 isElected 상태:", isElected.value);
+        
         // 투표 배열에 추가 전 중복 체크
         const voteExists = votings.value.some(v => v.sender === data.sender);
         if (!voteExists) {
           votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
+          console.log("  - 투표 추가 후 votings:", JSON.stringify(votings.value));
         }
 
         if (votings.value.length == participants.value.length) {
+          console.log("📊 [voteResult] 모든 투표 완료");
           let upCount = 0;
           let downCount = 0;
           votings.value.forEach((vote) => {
             if (vote.selected == 'up') upCount++;
             else downCount++;
           });
+          console.log(`  - 투표 집계: 찬성 ${upCount} vs 반대 ${downCount}`);
           
           // 모든 플레이어가 동일한 결과를 봐야 함
           const voteAccepted = upCount >= downCount;
+          console.log("  - 투표 결과:", voteAccepted ? "승인" : "거부");
+          console.log("  - 현재 턴:", currTurn.value, "나의 턴:", myTurn.value);
           
           if (currTurn.value === myTurn.value) {
+            console.log("  📌 내 턴 - 투표 결과 처리");
             let accepted = voteAccepted;
             if (accepted) {
               // 찬성이 더 많거나 동수일 때 승인 (동수 포함)
+              console.log("    → isElected를 true로 설정");
               isElected.value = true;
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
@@ -1657,12 +1670,18 @@ const onVoteSelected = (voteType) => {
 
 // 투표 종료
 const voteEnd = async (data) => {
+  console.log("🗳️ [voteEnd] 투표 종료 함수 호출");
+  console.log("  - 투표자:", data.sender);
+  console.log("  - 선택:", data.selected);
+  console.log("  - 현재 votings:", JSON.stringify(votings.value));
+  
   currentVoteSelection.value = data.selected; // 현재 투표 선택값 저장
   prompt.value = "";
   isVoted.value = true;
   // 이미지 들어올 때까지 대기
 
   const sendVoteResult = async () => {
+  console.log("  📤 다른 플레이어들에게 투표 결과 전송");
   connectedPeers.value.forEach((peer) => {
     if (peer.id !== peerId.value && peer.connection.open) {
       sendMessage(
@@ -1677,12 +1696,18 @@ const voteEnd = async (data) => {
   });
 
   if (votings.value.length == participants.value.length) {
+    console.log("🗳️ [voteEnd] 모든 투표 완료 - 집계 시작");
     let upCount = 0;
     let downCount = 0;
     votings.value.forEach((vote) => {
       if (vote.selected == 'up') upCount++;
       else downCount++;
     });
+    console.log(`  - 투표 집계: 찬성 ${upCount} vs 반대 ${downCount}`);
+    
+    // 모든 플레이어가 동일한 결과를 봐야 함
+    const voteAccepted = upCount >= downCount;
+    console.log("  - 투표 결과:", voteAccepted ? "승인" : "거부");
 
     if (currTurn.value === myTurn.value) {
       let accepted;
@@ -1825,19 +1850,6 @@ const voteEnd = async (data) => {
               }
             });
           }
-          }
-        } else {
-          // 다른 플레이어들도 동일한 투표 결과 처리
-          if (voteAccepted) {
-            isElected.value = true;
-            
-            // 동기화를 위해 약간의 지연 후 상태 확인
-            setTimeout(() => {
-              // InGameContent.vue에 전달되는 isElected 상태 확인
-              if (isElected.value && bookContents.value.length > 0) {
-                // 책 페이지 넘김이 자동으로 트리거됨
-              }
-            }, 100);
           }
         }
   }
