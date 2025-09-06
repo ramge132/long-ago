@@ -327,7 +327,7 @@ const setupConnection = (conn) => {
         });
         participants.value.forEach((p, i) => {
           if (p.id === peerId.value) {
-            myTurn.value = inGameOrder.value.indexOf(i);
+            myTurn.value = i; // participants 배열에서의 내 인덱스
           }
         });
         const currTurnExited = currTurn.value === removedIndex;
@@ -1214,7 +1214,7 @@ const gameStart = async (data) => {
   });
   participants.value.forEach((p, i) => {
     if (p.id === peerId.value) {
-      myTurn.value = inGameOrder.value.indexOf(i);
+      myTurn.value = i; // participants 배열에서의 내 인덱스
     }
   });
   setTimeout(async () => {
@@ -1241,7 +1241,7 @@ const startReceived = (data) => {
     // 내 순서 몇번인지 저장
     participants.value.forEach((p, i) => {
       if (p.id === peerId.value) {
-        myTurn.value = inGameOrder.value.indexOf(i);
+        myTurn.value = i; // participants 배열에서의 내 인덱스
       }
     });
 
@@ -1290,11 +1290,17 @@ const addBookContent = (newContent) => {
 const nextTurn = async (data) => {
   console.log("🎯 [DEBUG] nextTurn 함수 호출됨");
   console.log("🎯 [DEBUG] 받은 data:", data);
-  console.log("🎯 [DEBUG] data.isEnding:", data.isEnding);
-  console.log("🎯 [DEBUG] typeof data.isEnding:", typeof data.isEnding);
+  console.log("🎯 [DEBUG] currTurn:", currTurn.value);
+  console.log("🎯 [DEBUG] myTurn:", myTurn.value);
+  console.log("🎯 [DEBUG] inGameOrder:", inGameOrder.value);
+  console.log("🎯 [DEBUG] participants:", participants.value.map(p => ({id: p.id, name: p.name})));
   
-  // ContentTimer에서 호출된 30초 타이머 만료인 경우
-  if (!data || (typeof data === 'undefined') || (data && !data.prompt && currTurn.value === myTurn.value)) {
+  // ContentTimer에서 호출된 30초 타이머 만료인 경우 (본인의 턴일 때만)
+  const isMyCurrentTurn = inGameOrder.value[currTurn.value] === myTurn.value;
+  console.log("🎯 [DEBUG] isMyCurrentTurn:", isMyCurrentTurn);
+  console.log("🎯 [DEBUG] 타임아웃 조건 확인:", (!data || !data.prompt), "&&", isMyCurrentTurn);
+  
+  if ((!data || !data.prompt) && isMyCurrentTurn) {
     console.log("🎯 [DEBUG] 30초 타이머 만료 처리");
     // 타임아웃 점수 -1
     const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
