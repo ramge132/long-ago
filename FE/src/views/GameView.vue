@@ -482,36 +482,37 @@ const setupConnection = (conn) => {
         break;
 
       case "sendPrompt":
-        usedCard.value = data.usedCard;
-        prompt.value = data.prompt;
-        inProgress.value = false;
-        isVoted.value = false; // 새로운 투표를 위해 초기화
-        currentVoteSelection.value = "up"; // 투표 선택값을 찬성으로 초기화
-        addBookContent({ content: data.prompt, image: null });
-        votings.value = [];
-        
-        // 기존 투표 타이머가 있으면 취소
+        // 기존 타이머들 모두 정리
         if (voteTimer) {
           clearTimeout(voteTimer);
+          voteTimer = null;
         }
-        
-        // 기존 경고 타이머가 있으면 취소 (부적절 콘텐츠 후 새 투표 시작 시)
         if (warningTimer) {
           clearTimeout(warningTimer);
           warningTimer = null;
         }
         
+        // 완전한 상태 초기화
+        usedCard.value = data.usedCard;
+        prompt.value = data.prompt;
+        inProgress.value = false;
+        isVoted.value = false; // 새로운 투표를 위해 초기화
+        currentVoteSelection.value = "up"; // 투표 선택값을 찬성으로 초기화
+        votings.value = []; // 투표 배열 완전 초기화
+        isElected.value = false; // 선출 상태 초기화
+        
+        // 책 콘텐츠 추가
+        addBookContent({ content: data.prompt, image: null });
+        
         // 새로운 투표 타이머 설정
         voteTimer = setTimeout(async () => {
-          if(isVoted.value) {
-            isVoted.value = false;
-          } else {
+          if(!isVoted.value) {
             await voteEnd({
               sender: userStore.userData.userNickname,
               selected: currentVoteSelection.value,
             });
-            isVoted.value = false;
           }
+          isVoted.value = false;
         }, 10000);  // 투표 시간 10초로 설정
         break;
 
@@ -531,7 +532,11 @@ const setupConnection = (conn) => {
         break;
 
       case "voteResult":
-        votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
+        // 투표 배열에 추가 전 중복 체크
+        const voteExists = votings.value.some(v => v.sender === data.sender);
+        if (!voteExists) {
+          votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
+        }
 
         if (votings.value.length == participants.value.length) {
           let upCount = 0;
@@ -540,13 +545,15 @@ const setupConnection = (conn) => {
             if (vote.selected == 'up') upCount++;
             else downCount++;
           });
-
+          
+          // 모든 플레이어가 동일한 결과를 봐야 함
+          const voteAccepted = upCount >= downCount;
+          
           if (currTurn.value === myTurn.value) {
-            let accepted = false; // 기본값 설정
-            if (upCount >= downCount) {
+            let accepted = voteAccepted;
+            if (accepted) {
               // 찬성이 더 많거나 동수일 때 승인 (동수 포함)
               isElected.value = true;
-              accepted = true;
               // 투표 가결 시 점수 +2
               const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
               if (usedCard.value.isEnding) {
@@ -995,26 +1002,30 @@ const hideWarningModal = () => {
 // 투표 중단 및 경고 표시 (모든 플레이어용)
 const stopVotingAndShowWarning = async (data) => {
   
-  // 1. 투표 즉시 중단 (InGameView에서 투표 UI 숨김)
-  inProgress.value = false;
-  isVoted.value = true;  // 투표 UI 즉시 숨김
-  prompt.value = "";     // 프롬프트도 초기화하여 완전히 투표 UI 제거
-  
-  // 투표 타이머 취소
+  // 모든 타이머 즉시 정리
   if (voteTimer) {
     clearTimeout(voteTimer);
     voteTimer = null;
   }
-  
-  // 기존 경고 타이머가 있으면 취소 (중복 실행 방지)
   if (warningTimer) {
     clearTimeout(warningTimer);
     warningTimer = null;
   }
   
-  // 투표 관련 상태 초기화
+  // 1. 투표 즉시 중단 (InGameView에서 투표 UI 숨김)
+  inProgress.value = false;
+  isVoted.value = true;  // 투표 UI 즉시 숨김
+  prompt.value = "";     // 프롬프트도 초기화하여 완전히 투표 UI 제거
+  isElected.value = false; // 선출 상태도 초기화
+  
+  // 투표 관련 상태 완전 초기화
   votings.value = [];
-  usedCard.value = {};
+  usedCard.value = {
+    id: 0,
+    keyword: "",
+    isEnding: false
+  };
+  currentVoteSelection.value = "up"; // 투표 선택값 초기화
   
   
   // 2. 점수 동기화 (다른 플레이어들)
@@ -1046,16 +1057,20 @@ const stopVotingAndShowWarning = async (data) => {
   
   // 6. 3초 후 whoTurn 오버레이 표시 (경고 모달이 먼저 표시된 후)
   warningTimer = setTimeout(async () => {
+    // 타이머 실행 시점에 새로운 투표가 시작되었는지 확인
+    if (prompt.value !== "" || voteTimer !== null) {
+      // 새로운 투표가 이미 시작됨 - whoTurn 오버레이 표시하지 않음
+      warningTimer = null;
+      return;
+    }
+    
     await showOverlay('whoTurn');
     
-    // 다음 턴을 위한 상태 리셋 (새로운 투표가 없을 때만)
-    // inProgress는 새로운 sendPrompt에서 관리되므로 여기서 설정하지 않음
-    if (prompt.value === "") {
-      // 새로운 투표가 진행 중이지 않을 때만 기본 상태로 리셋
-      isVoted.value = false;
-      currentVoteSelection.value = "up"; // 투표 선택값 초기화
-      inProgress.value = true; // 다음 턴 대기 상태
-    }
+    // 다음 턴을 위한 상태 리셋
+    isVoted.value = false;
+    currentVoteSelection.value = "up"; // 투표 선택값 초기화
+    inProgress.value = true; // 다음 턴 대기 상태
+    
     warningTimer = null; // 타이머 완료 후 null로 설정
   }, 3000);  // 경고 모달이 표시되는 시간과 동일
   
@@ -1745,13 +1760,21 @@ const voteEnd = async (data) => {
               }
             });
           }
+          }
+        } else {
+          // 다른 플레이어들도 동일한 투표 결과 처리
+          if (voteAccepted) {
+            isElected.value = true;
+            
+            // 동기화를 위해 약간의 지연 후 상태 확인
+            setTimeout(() => {
+              // InGameContent.vue에 전달되는 isElected 상태 확인
+              if (isElected.value && bookContents.value.length > 0) {
+                // 책 페이지 넘김이 자동으로 트리거됨
+              }
+            }, 100);
+          }
         }
-    } else {
-      // 다른 플레이어들은 P2P 메시지를 통해 점수 업데이트를 받으므로 여기서는 isElected만 설정
-      if (upCount >= downCount) {
-        isElected.value = true;
-      }
-    }
   }
 }
 if (currTurn.value === myTurn.value) {
