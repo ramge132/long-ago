@@ -1023,6 +1023,7 @@ const stopVotingAndShowWarning = async (data) => {
     // 다음 턴을 위한 상태 리셋
     isVoted.value = false;
     currentVoteSelection.value = "up"; // 투표 선택값 초기화
+    prompt.value = ""; // 프롬프트도 초기화하여 다음 턴에 새로운 투표창이 나올 수 있도록
     inProgress.value = true;
   }, 3000);  // 경고 모달이 표시되는 시간과 동일
   
