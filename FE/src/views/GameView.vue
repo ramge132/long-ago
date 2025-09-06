@@ -393,29 +393,28 @@ const setupConnection = (conn) => {
         emit("startLoading", {value: true});
 
         startReceived(data).then(async () => {
-          // 내 카드 받기
-          const response = await enterGame({
-            userId: peerId.value,
-            gameId: gameID.value,
-          });
+          // 내 카드 받기와 라우터 이동을 동시에 처리
+          const [response] = await Promise.all([
+            enterGame({
+              userId: peerId.value,
+              gameId: gameID.value,
+            }),
+            router.push("/game/play")
+          ]);
 
-          // isPreview.value = response.data.data.isPreview;
           storyCards.value = response.data.data.storyCards;
           endingCard.value = response.data.data.endingCard;
 
-          setTimeout(async () => {
-            await router.push("/game/play");
-            // 로딩 애니메이션 비활성화
-            emit("startLoading", {value: false});
-            
-            showOverlay('start').then(() => {
-              setTimeout(() => {
-                showOverlay('whoTurn').then(() => {
-                  inProgress.value = true;
-                });
-              }, 1000);
+          // 로딩 즉시 비활성화
+          emit("startLoading", {value: false});
+          
+          // 오버레이 표시
+          await showOverlay('start');
+          setTimeout(() => {
+            showOverlay('whoTurn').then(() => {
+              inProgress.value = true;
             });
-          }, 3000);
+          }, 500); // 딜레이 단축
         });
         break;
 
@@ -1358,19 +1357,23 @@ const gameStart = async (data) => {
       myTurn.value = turnIndex; // inGameOrder에서의 내 위치 (무작위 턴 순서)
     }
   });
-  setTimeout(async () => {
-    await router.push("/game/play");
-    // 로딩 애니메이션 비활성화
+  // API 호출과 라우터 이동을 병렬로 처리하여 시간 단축
+  Promise.all([
+    // 게임 시작 API 호출들을 여기에 넣을 수 있습니다.
+    router.push("/game/play")
+  ]).then(() => {
+    // 로딩 즉시 비활성화
     emit("startLoading", {value: false});
-    
+
+    // 오버레이 표시
     showOverlay('start').then(() => {
       setTimeout(() => {
         showOverlay('whoTurn').then(() => {
           inProgress.value = true;
         });
-      }, 1000);
+      }, 500); // 딜레이 단축
     });
-  }, 3000);
+  });
 };
 
 const startReceived = (data) => {
