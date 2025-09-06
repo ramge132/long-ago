@@ -41,13 +41,10 @@ export default defineConfig({
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
     },
-    // Terser 옵션으로 더 작은 번들 생성
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
+    // esbuild를 사용한 minification (기본값, terser보다 빠름)
+    minify: 'esbuild',
+    esbuildOptions: {
+      drop: ['console', 'debugger'],
     },
     // 소스맵 비활성화 (프로덕션)
     sourcemap: false,
