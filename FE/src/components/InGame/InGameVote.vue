@@ -190,6 +190,20 @@ watch(() => props.usedCard.keyword, async () => {
   await adjustCardSize();
 }, { deep: true });
 
+// 새로운 투표 시작 시 모든 상태 초기화
+watch(() => props.prompt, () => {
+  if (props.prompt) {
+    // 모든 상태를 초기값으로 리셋
+    selected.value = "up";
+    countStarted.value = false;
+    voteEnded.value = false;
+    showCard.value = false;
+    cardPanelHeight.value = 280;
+    currentFontSize.value = 24;
+    duration.value = 10;
+  }
+});
+
 onMounted(async () => {
   await adjustCardSize();
   // 진입 바운스 애니메이션(0.6초) 후 실제 투표시간 9초 + 퇴장 애니메이션(0.4초) = 총 10초
