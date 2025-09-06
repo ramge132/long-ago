@@ -8,36 +8,42 @@
   font-family: "katuri";
   src: url("@/assets/fonts/Katuri.ttf") format("truetype");
   font-weight: 400;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "omp";
   src: url("@/assets/fonts/One-mobile-pop.ttf") format("truetype");
   font-weight: 400;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "story";
   src: url("@/assets/fonts/story.ttf") format("truetype");
   font-weight: 400;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "logoFont";
   src: url("@/assets/fonts/logoFont.ttf") format("truetype");
   font-weight: 600;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "HeirofLightBold";
   src: url("@/assets/fonts/HeirofLightBold.ttf") format("truetype");
   font-weight: 700;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "title";
   src: url("@/assets/fonts/title.ttf") format("truetype");
   font-weight: 600;
+  font-display: swap;
 }
 
  /* 기본 폰트입니둥 */
