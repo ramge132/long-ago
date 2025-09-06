@@ -162,6 +162,7 @@ const emit = defineEmits(["startLoading"]);
 
 // 투표 결과를 보냈는 지 여부
 const isVoted = ref(false);
+const currentVoteSelection = ref("up"); // 현재 선택된 투표 값 추적
 // 게임 종료 애니메이션
 watch(isForceStopped, (newValue) => {
   if (newValue !== null) {
@@ -496,9 +497,10 @@ const setupConnection = (conn) => {
           if(isVoted.value) {
             isVoted.value = false;
           } else {
+            console.log('🗳️ 타임아웃으로 투표 전송, 선택값:', currentVoteSelection.value);
             await voteEnd({
               sender: userStore.userData.userNickname,
-              selected: "up",
+              selected: currentVoteSelection.value,
             });
             isVoted.value = false;
           }
@@ -1055,6 +1057,7 @@ const stopVotingAndShowWarning = async (data) => {
     
     // 다음 턴을 위한 상태 리셋
     isVoted.value = false;
+    currentVoteSelection.value = "up"; // 투표 선택값 초기화
     inProgress.value = true;
   }, 3000);  // 경고 모달이 표시되는 시간과 동일
   
@@ -1416,9 +1419,10 @@ const nextTurn = async (data) => {
           if(isVoted.value) {
             isVoted.value = false;
           } else {
+            console.log('🗳️ 두 번째 타임아웃으로 투표 전송, 선택값:', currentVoteSelection.value);
             await voteEnd({
               sender: userStore.userData.userNickname,
-              selected: "up",
+              selected: currentVoteSelection.value,
             });
             isVoted.value = false;
           }
@@ -1588,6 +1592,8 @@ const cardReroll = async () => {
 
 // 투표 종료
 const voteEnd = async (data) => {
+  console.log('🗳️ GameView voteEnd 함수 호출됨:', data);
+  currentVoteSelection.value = data.selected; // 현재 투표 선택값 저장
   prompt.value = "";
   isVoted.value = true;
   // 이미지 들어올 때까지 대기
