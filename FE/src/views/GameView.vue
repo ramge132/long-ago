@@ -521,15 +521,18 @@ const setupConnection = (conn) => {
         break;
 
       case "voteResult":
+        console.log('🗳️ 투표 수신:', data.sender, data.selected);
         votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
 
         if (votings.value.length == participants.value.length) {
           let upCount = 0;
           let downCount = 0;
+          console.log('🗳️ 모든 투표 수집 완료:', votings.value);
           votings.value.forEach((vote) => {
             if (vote.selected == 'up') upCount++;
             else downCount++;
           });
+          console.log('🗳️ 투표 집계 결과:', { upCount, downCount });
 
           if (currTurn.value === myTurn.value) {
             let accepted = false; // 기본값 설정
@@ -1590,6 +1593,7 @@ const voteEnd = async (data) => {
   // 이미지 들어올 때까지 대기
 
   const sendVoteResult = async () => {
+  console.log('🗳️ 투표 결과 전송:', { sender: data.sender, selected: data.selected });
   connectedPeers.value.forEach((peer) => {
     if (peer.id !== peerId.value && peer.connection.open) {
       sendMessage(
