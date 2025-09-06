@@ -29,8 +29,6 @@ export default defineConfig({
           'vendor-ui': ['vue-toastification', 'swiper'],
           'vendor-utils': ['axios', 'vue-clipboard3'],
           'vendor-peer': ['peerjs'],
-          // googleapis는 무거우므로 별도 청크로
-          'vendor-google': ['googleapis'],
         },
         // 청크 파일명 설정
         chunkFileNames: (chunkInfo) => {
@@ -72,7 +70,7 @@ export default defineConfig({
       'vue-toastification',
     ],
     // 제외할 의존성
-    exclude: ['googleapis'], // 무거운 googleapis는 동적 임포트로 처리
+    exclude: [],
   },
   // 에셋 인라인 임계값 (4kb 이하 파일은 base64로 인라인)
   assetsInlineLimit: 4096,
