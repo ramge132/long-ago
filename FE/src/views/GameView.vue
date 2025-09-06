@@ -482,17 +482,26 @@ const setupConnection = (conn) => {
         break;
 
       case "sendPrompt":
+        console.log("🎯 [sendPrompt] 새로운 프롬프트 수신");
+        console.log("  - 발신자:", data.prompt);
+        console.log("  - 현재 isVoted 상태:", isVoted.value);
+        console.log("  - 현재 votings 배열:", JSON.stringify(votings.value));
+        console.log("  - 현재 타이머 상태:", { voteTimer: !!voteTimer, warningTimer: !!warningTimer });
+        
         // 기존 타이머들 모두 정리
         if (voteTimer) {
+          console.log("  🔄 기존 voteTimer 정리");
           clearTimeout(voteTimer);
           voteTimer = null;
         }
         if (warningTimer) {
+          console.log("  🔄 기존 warningTimer 정리");
           clearTimeout(warningTimer);
           warningTimer = null;
         }
         
         // 완전한 상태 초기화
+        console.log("  🔄 상태 초기화 시작");
         usedCard.value = data.usedCard;
         prompt.value = data.prompt;
         inProgress.value = false;
@@ -501,16 +510,29 @@ const setupConnection = (conn) => {
         votings.value = []; // 투표 배열 완전 초기화
         isElected.value = false; // 선출 상태 초기화
         
+        console.log("  ✅ 상태 초기화 완료");
+        console.log("    - isVoted:", isVoted.value);
+        console.log("    - currentVoteSelection:", currentVoteSelection.value);
+        console.log("    - votings:", JSON.stringify(votings.value));
+        console.log("    - isElected:", isElected.value);
+        
         // 책 콘텐츠 추가
         addBookContent({ content: data.prompt, image: null });
         
         // 새로운 투표 타이머 설정
+        console.log("  ⏰ 새로운 투표 타이머 설정 (10초)");
         voteTimer = setTimeout(async () => {
+          console.log("  ⏰ [voteTimer] 타이머 만료");
+          console.log("    - isVoted 상태:", isVoted.value);
+          console.log("    - currentVoteSelection:", currentVoteSelection.value);
           if(!isVoted.value) {
+            console.log("    → 자동 투표 실행");
             await voteEnd({
               sender: userStore.userData.userNickname,
               selected: currentVoteSelection.value,
             });
+          } else {
+            console.log("    → 이미 투표함");
           }
           isVoted.value = false;
         }, 10000);  // 투표 시간 10초로 설정
@@ -1001,21 +1023,34 @@ const hideWarningModal = () => {
 
 // 투표 중단 및 경고 표시 (모든 플레이어용)
 const stopVotingAndShowWarning = async (data) => {
+  console.log("🚨 [stopVotingAndShowWarning] 함수 시작");
+  console.log("  - 데이터:", JSON.stringify(data));
+  console.log("  - 현재 isVoted 상태:", isVoted.value);
+  console.log("  - 현재 타이머 상태:", { voteTimer: !!voteTimer, warningTimer: !!warningTimer });
   
   // 모든 타이머 즉시 정리
   if (voteTimer) {
+    console.log("  🔄 voteTimer 정리");
     clearTimeout(voteTimer);
     voteTimer = null;
   }
   if (warningTimer) {
+    console.log("  🔄 warningTimer 정리");
     clearTimeout(warningTimer);
     warningTimer = null;
   }
   
   // 1. 투표 즉시 중단 (InGameView에서 투표 UI 숨김)
+  console.log("  📊 투표 UI 중단 처리");
   inProgress.value = false;
-  isVoted.value = true;  // 투표 UI 즉시 숨김
-  prompt.value = "";     // 프롬프트도 초기화하여 완전히 투표 UI 제거
+  
+  // 버그 수정: isVoted를 true로 설정하지 않음
+  // 대신 임시 플래그를 사용하여 투표 UI를 숨김
+  const wasVotingActive = !isVoted.value; // 현재 투표가 활성화되어 있었는지 기록
+  console.log("  - 투표가 활성화되어 있었는가?:", wasVotingActive);
+  
+  // 투표 UI를 숨기기 위해 prompt를 초기화 (isVoted는 건드리지 않음)
+  prompt.value = "";     // 프롬프트 초기화하여 투표 UI 제거
   isElected.value = false; // 선출 상태도 초기화
   
   // 투표 관련 상태 완전 초기화
@@ -1027,52 +1062,82 @@ const stopVotingAndShowWarning = async (data) => {
   };
   currentVoteSelection.value = "up"; // 투표 선택값 초기화
   
+  console.log("  ✅ 투표 상태 초기화 완료");
+  console.log("    - isVoted (변경 안함):", isVoted.value);
+  console.log("    - prompt:", prompt.value);
+  console.log("    - votings:", JSON.stringify(votings.value));
+  
   
   // 2. 점수 동기화 (다른 플레이어들)
+  console.log("  💯 점수 동기화 처리");
   if (data.isInappropriate && !data.skipScoreDeduction) {
     const affectedPlayerIndex = data.currTurn === 0 ? participants.value.length - 1 : data.currTurn - 1;
     const affectedPlayer = participants.value[inGameOrder.value[affectedPlayerIndex]];
     if (affectedPlayer) {
+      console.log(`    - ${affectedPlayer.name}의 점수 -1 (${affectedPlayer.score} → ${affectedPlayer.score - 1})`);
       affectedPlayer.score -= 1;
     }
   } else if (data.skipScoreDeduction) {
+    console.log("    - 점수 차감 건너뜀 (이미 처리됨)");
   }
   
   // 3. 책 내용 제거 (중복 제거 방지)
+  console.log("  📖 책 내용 제거 처리");
   if (data.imageDelete === true && !data.skipBookContentRemoval) {
+    const beforeLength = bookContents.value.length;
     if (bookContents.value.length === 1) {
       bookContents.value = [{ content: "", image: null }];
     } else {
       bookContents.value = bookContents.value.slice(0, -1);
     }
+    console.log(`    - 책 페이지 제거 (${beforeLength} → ${bookContents.value.length})`);
   } else if (data.skipBookContentRemoval) {
+    console.log("    - 책 내용 제거 건너뜀 (이미 처리됨)");
   }
   
   // 4. 경고 모달 표시
+  console.log("  ⚠️ 경고 모달 표시");
   showInappropriateWarningModal(data.warningData);
   
   // 5. 턴 정보 업데이트
+  console.log("  🔄 턴 정보 업데이트");
+  console.log(`    - totalTurn: ${totalTurn.value} → ${data.totalTurn}`);
+  console.log(`    - currTurn: ${currTurn.value} → ${data.currTurn}`);
   totalTurn.value = data.totalTurn;
   currTurn.value = data.currTurn;
   
-  // 6. 3초 후 whoTurn 오버레이 표시 (경고 모달이 먼저 표시된 후)
+  // 6. isVoted 상태를 즉시 false로 리셋 (버그 수정)
+  console.log("  🔧 isVoted 상태 즉시 리셋");
+  isVoted.value = false;  // 다음 투표를 위해 즉시 리셋
+  console.log("    - isVoted를 false로 설정 완료");
+  
+  // 7. 3초 후 whoTurn 오버레이 표시 (경고 모달이 먼저 표시된 후)
+  console.log("  ⏰ warningTimer 설정 (3초 후 whoTurn 오버레이)");
   warningTimer = setTimeout(async () => {
+    console.log("  ⏰ [warningTimer] 타이머 실행");
+    
     // 타이머 실행 시점에 새로운 투표가 시작되었는지 확인
     if (prompt.value !== "" || voteTimer !== null) {
-      // 새로운 투표가 이미 시작됨 - whoTurn 오버레이 표시하지 않음
+      console.log("    → 새로운 투표가 이미 시작됨, whoTurn 오버레이 건너뜀");
       warningTimer = null;
       return;
     }
     
+    console.log("    → whoTurn 오버레이 표시");
     await showOverlay('whoTurn');
     
-    // 다음 턴을 위한 상태 리셋
-    isVoted.value = false;
+    // 다음 턴을 위한 상태 확인 (이미 false로 설정되어 있어야 함)
+    console.log("    - 현재 isVoted 상태:", isVoted.value);
+    console.log("    - 현재 currentVoteSelection:", currentVoteSelection.value);
+    
     currentVoteSelection.value = "up"; // 투표 선택값 초기화
     inProgress.value = true; // 다음 턴 대기 상태
     
     warningTimer = null; // 타이머 완료 후 null로 설정
+    console.log("  ✅ [warningTimer] 완료");
   }, 3000);  // 경고 모달이 표시되는 시간과 동일
+  
+  console.log("🚨 [stopVotingAndShowWarning] 함수 종료");
   
 };
 
