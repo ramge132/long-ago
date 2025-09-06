@@ -420,6 +420,9 @@ const setupConnection = (conn) => {
         break;
 
       case "nextTurn":
+        // 먼저 모든 상태 업데이트를 완료한 후 오버레이 표시
+        
+        // 1. 책 내용 삭제 (투표 거부 시)
         if (data.imageDelete === true) {
           if (bookContents.value.length === 1) {
             bookContents.value = [{ content: "", image: null }];
@@ -427,6 +430,8 @@ const setupConnection = (conn) => {
             bookContents.value = bookContents.value.slice(0, -1);
           }
         }
+        
+        // 2. 점수 처리
         if (data.isTimeout) {
           // 타임아웃 점수 -1
           const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
@@ -438,7 +443,7 @@ const setupConnection = (conn) => {
           currentPlayer.score -= 1;
         }
         
-        // 투표 결과에 따른 점수 변화 처리 (P2P 동기화)
+        // 3. 투표 결과에 따른 점수 변화 처리 (P2P 동기화)
         if (data.scoreChange) {
           const targetPlayer = participants.value[data.scoreChange.playerIndex];
           if (targetPlayer) {
@@ -450,14 +455,17 @@ const setupConnection = (conn) => {
           }
         }
         
-        // 카드 삭제 처리 (P2P 동기화)
+        // 4. 카드 삭제 처리 (P2P 동기화)
         if (data.cardRemoval) {
           storyCards.value = storyCards.value.filter(card => card.id !== data.cardRemoval.cardId);
         }
         
+        // 5. 턴 정보 업데이트
         totalTurn.value = data.totalTurn;
-        inProgress.value = false;
         currTurn.value = data.currTurn;
+        
+        // 6. 상태 업데이트 후 오버레이 표시
+        inProgress.value = false;
         await showOverlay('whoTurn');
         inProgress.value = true;
         break;
@@ -595,16 +603,8 @@ const setupConnection = (conn) => {
             } else {
               // 반대가 더 많거나 동수일 때 거부
               accepted = false;
-              // 내 이미지 버리기
-              if (bookContents.value.length === 1) {
-                bookContents.value = [{ content: "", image: null }];
-              } else {
-                bookContents.value = bookContents.value.slice(0, -1);
-              }
-              // 현재 턴 사람 점수 -1
-              const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-              currentPlayer.score -= 1;
-              // 턴 종료 트리거 송신하기
+              
+              // 먼저 다른 플레이어들에게 삭제 메시지 전송 (오버레이 표시 전)
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               connectedPeers.value.forEach((peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
@@ -619,6 +619,19 @@ const setupConnection = (conn) => {
                   )
                 }
               });
+              
+              // 자신의 이미지도 삭제
+              if (bookContents.value.length === 1) {
+                bookContents.value = [{ content: "", image: null }];
+              } else {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
+              
+              // 현재 턴 사람 점수 -1
+              const currentPlayer = participants.value[inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1]];
+              currentPlayer.score -= 1;
+              
+              // 상태 동기화 후 오버레이 표시
               await showOverlay('whoTurn');
               inProgress.value = true;
             }
