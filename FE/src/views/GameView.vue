@@ -604,13 +604,26 @@ const setupConnection = (conn) => {
                 // 1단계: 백그라운드로 책 표지 생성 요청 시작 (응답을 기다리지 않음)
                 gameEnd(true); // await 제거 - 백그라운드 실행
                 
-                // 2단계: 1초 후 모든 플레이어에게 결과창 표시
+                // 2단계: 즉시 점수 정산을 먼저 전송
+                connectedPeers.value.forEach((p) => {
+                  if (p.id !== peerId.value && p.connection.open) {
+                    sendMessage("endingCardScoreUpdate", {
+                      scoreChange: {
+                        type: "increase",
+                        amount: 5, // 결말카드는 항상 +5점
+                        playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 결말카드를 낸 플레이어
+                      }
+                    }, p.connection);
+                  }
+                });
+                
+                // 3단계: 점수 정산 후 1초 뒤 결과창 표시
                 setTimeout(() => {
                   
                   // 방장 결과창 표시
                   isForceStopped.value = "champ";
                   
-                  // 게스트들에게도 결과창 표시 (점수 증가 정보 포함)
+                  // 게스트들에게도 결과창 표시
                   connectedPeers.value.forEach(async (p) => {
                     if (p.id !== peerId.value && p.connection.open) {
                       sendMessage("showResultsWithCover", {
@@ -618,12 +631,7 @@ const setupConnection = (conn) => {
                           title: "아주 먼 옛날", // 기본값
                           imageUrl: "" // 기본값 (빈 문자열)
                         },
-                        ISBN: "generating...", // 생성 중 표시
-                        scoreChange: {
-                          type: "increase",
-                          amount: 5, // 결말카드는 항상 +5점
-                          playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 결말카드를 낸 플레이어
-                        }
+                        ISBN: "generating..." // 생성 중 표시
                       }, p.connection);
                     }
                   });
@@ -791,9 +799,9 @@ const setupConnection = (conn) => {
         // 특별한 처리는 필요없고, 로그만 출력
         break;
 
-      case "showResultsWithCover":
-        
-        // 점수 변경 처리 (결말카드 +5점)
+      case "endingCardScoreUpdate":
+        // 결말카드 점수 정산 (결과창 표시 전에 먼저 처리)
+        console.log("📊 [endingCardScoreUpdate] 결말카드 점수 정산 처리");
         if (data.scoreChange) {
           const targetPlayer = participants.value[data.scoreChange.playerIndex];
           if (targetPlayer) {
@@ -803,8 +811,11 @@ const setupConnection = (conn) => {
             }
           }
         }
+        break;
+
+      case "showResultsWithCover":
         
-        // 표지 정보 설정
+        // 표지 정보 설정 (점수는 이미 endingCardScoreUpdate에서 처리됨)
         if (data.bookCover) {
           bookCover.value = data.bookCover;
         }
@@ -813,6 +824,7 @@ const setupConnection = (conn) => {
         }
         
         // 결과창 표시
+        console.log("🏆 [showResultsWithCover] 결과창 표시 (점수 정산은 이미 완료됨)");
         isForceStopped.value = "champ";
         break;
 
@@ -1832,13 +1844,26 @@ const voteEnd = async (data) => {
           // 1단계: 백그라운드로 책 표지 생성 요청 시작 (응답을 기다리지 않음)
           gameEnd(true); // await 제거 - 백그라운드 실행
           
-          // 2단계: 1초 후 모든 플레이어에게 결과창 표시
+          // 2단계: 즉시 점수 정산을 먼저 전송
+          connectedPeers.value.forEach((p) => {
+            if (p.id !== peerId.value && p.connection.open) {
+              sendMessage("endingCardScoreUpdate", {
+                scoreChange: {
+                  type: "increase",
+                  amount: 5, // 결말카드는 항상 +5점
+                  playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 결말카드를 낸 플레이어
+                }
+              }, p.connection);
+            }
+          });
+          
+          // 3단계: 점수 정산 후 1초 뒤 결과창 표시
           setTimeout(() => {
             
             // 방장 결과창 표시
             isForceStopped.value = "champ";
             
-            // 게스트들에게도 결과창 표시 (점수 증가 정보 포함)
+            // 게스트들에게도 결과창 표시
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
                 sendMessage("showResultsWithCover", {
@@ -1846,12 +1871,7 @@ const voteEnd = async (data) => {
                     title: "아주 먼 옛날", // 기본값
                     imageUrl: "" // 기본값 (빈 문자열)
                   },
-                  ISBN: "generating...", // 생성 중 표시
-                  scoreChange: {
-                    type: "increase",
-                    amount: 5, // 결말카드는 항상 +5점
-                    playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 결말카드를 낸 플레이어
-                  }
+                  ISBN: "generating..." // 생성 중 표시
                 }, p.connection);
               }
             });
