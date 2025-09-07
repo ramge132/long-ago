@@ -6,9 +6,6 @@
          :class="voteEnded ? 'bounce-reverse' : 'bounce'" 
          @animationend="handleAnimationEnd">
       
-      <!-- 배경 장식 요소 -->
-      <div class="absolute -top-4 -right-4 w-32 h-32 bg-gradient-to-br from-orange-200/20 to-amber-300/10 rounded-full blur-xl"></div>
-      <div class="absolute -bottom-8 -left-8 w-40 h-40 bg-gradient-to-tr from-blue-200/15 to-purple-300/10 rounded-full blur-2xl"></div>
       
       <!-- 모던한 프로그레스 바 -->
       <div class="modern-progress-container w-full h-6 mb-4">
@@ -79,8 +76,6 @@
          :class="showCard ? '' : '-translate-x-[120%] opacity-0 z-0'"
          :style="{ height: cardPanelHeight + 'px' }">
       
-      <!-- 카드 패널 배경 장식 -->
-      <div class="absolute -top-2 -right-2 w-16 h-16 bg-gradient-to-br from-amber-200/30 to-orange-300/20 rounded-full blur-lg"></div>
       
       <div class="relative z-10">
         <p class="font-omp text-lg font-semibold text-gray-700 mb-3 text-center">사용한 카드</p>
