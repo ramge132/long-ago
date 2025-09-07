@@ -46,11 +46,27 @@
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
                   <div class="flex flex-col items-center w-full">
                     <p class="mb-2">{{ mode.text }}</p>
-                    <label class="rounded-lg overflow-hidden" :for="'mode' + index" :class="{
-                      'outline outline-4 outline-color': localRoomConfigs.currMode === mode.value,
-                      'outline outline-4 outline-white': localRoomConfigs.currMode !== mode.value && mode.ishovered}
-                      " @click="handleClick($event, mode.value)" @mouseover="mode.ishovered = true" @mouseleave="mode.ishovered = false">
-                      <img :src="localRoomConfigs.currMode === mode.value || mode.ishovered ? modeViews[mode.value].modePreview : modeViews[mode.value].modeImage" alt="">
+<label
+                      class="relative rounded-lg overflow-hidden w-[16vw] h-[16vh]"
+                      :for="'mode' + mode.value"
+                      :class="{
+                        'outline outline-4 outline-color': localRoomConfigs.currMode === mode.value,
+                      }"
+                      @click="handleClick($event, mode.value)"
+                      @mouseover="startImageTransition(mode.value)"
+                      @mouseleave="stopImageTransition(mode.value)"
+                    >
+                      <img
+                        v-for="(image, imgIndex) in mode.images"
+                        :key="imgIndex"
+                        :src="image"
+                        :alt="`Mode ${mode.value} Image ${imgIndex + 1}`"
+                        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out"
+                        :class="{
+                          'opacity-100': mode.activeImageIndex === imgIndex,
+                          'opacity-0': mode.activeImageIndex !== imgIndex,
+                        }"
+                      />
                     </label>
                   </div>
                 </div>
@@ -93,12 +109,12 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, watch, defineProps, defineEmits } from "vue";
+import { ref, computed, watch, defineProps, defineEmits, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import useCilpboard from "vue-clipboard3";
 import toast from "@/functions/toast";
 import { InviteIcon, StartIcon } from "@/assets";
-import mode from "@/assets/images/modes";
+import modeImages from "@/assets/images/modes";
 import unicon from "@/assets/icons/favicon_4.svg";
 const router = useRouter();
 const { toClipboard } = useCilpboard();
@@ -109,22 +125,6 @@ const localRoomConfigs = ref({
   currTurnTime: 30,
   currMode: 0,
 });
-const modeViews = ref(
-  [
-  "Mode0",
-  "Mode1",
-  "Mode2",
-  "Mode3",
-  "Mode4",
-  "Mode5",
-  "Mode6",
-  "Mode7",
-  "Mode8",
-  ].map((type) => ({
-    modeImage: mode[`${type}`],
-    modePreview: mode[`${type}_preview`],
-  }))
-);
 const isPreview = ref(false);
 
 const emit = defineEmits(["roomConfiguration", "gameStart"]);
@@ -170,54 +170,85 @@ const modes = ref([
   {
     text: "기본 모드",
     value: 0,
-    ishovered: false,
+    images: modeImages.Mode0,
+    activeImageIndex: 0,
+    intervalId: null,
   },
   {
-    
     text: "3D 모드",
     value: 1,
-    ishovered: false,
+    images: modeImages.Mode1,
+    activeImageIndex: 0,
+    intervalId: null,
   },
   {
     text: "코믹북 모드",
     value: 2,
-    ishovered: false,
+    images: modeImages.Mode2,
+    activeImageIndex: 0,
+    intervalId: null,
   },
   {
-    
     text: "클레이 모드",
     value: 3,
-    ishovered: false,
+    images: modeImages.Mode3,
+    activeImageIndex: 0,
+    intervalId: null,
   },
   {
     text: "유치원 모드",
     value: 4,
-    ishovered: false,
+    images: modeImages.Mode4,
+    activeImageIndex: 0,
+    intervalId: null,
   },
   {
-    
     text: "픽셀 모드",
     value: 5,
-    ishovered: false,
+    images: modeImages.Mode5,
+    activeImageIndex: 0,
+    intervalId: null,
   },
   {
     text: "PS1 모드",
     value: 6,
-    ishovered: false,
+    images: modeImages.Mode6,
+    activeImageIndex: 0,
+    intervalId: null,
   },
   {
-    
     text: "동화책 모드",
     value: 7,
-    ishovered: false,
+    images: modeImages.Mode7,
+    activeImageIndex: 0,
+    intervalId: null,
   },
   {
-    
     text: "일러스트 모드",
     value: 8,
-    ishovered: false,
+    images: modeImages.Mode8,
+    activeImageIndex: 0,
+    intervalId: null,
   },
 ]);
+
+const startImageTransition = (modeValue) => {
+  const mode = modes.value.find((m) => m.value === modeValue);
+  if (mode && !mode.intervalId) {
+    mode.intervalId = setInterval(() => {
+      mode.activeImageIndex = (mode.activeImageIndex + 1) % mode.images.length;
+    }, 1000);
+  }
+};
+
+const stopImageTransition = (modeValue) => {
+  const mode = modes.value.find((m) => m.value === modeValue);
+  if (mode && mode.intervalId) {
+    clearInterval(mode.intervalId);
+    mode.intervalId = null;
+    mode.activeImageIndex = 0;
+  }
+};
 
 const copy = async () => {
   try {
@@ -261,11 +292,23 @@ const chunkedModes = computed(() => {
 
 const handleClick = (event, data) => {
   if(props.configurable) {
+    // Stop any running animations on other modes
+    modes.value.forEach(mode => {
+      if (mode.value !== data) {
+        stopImageTransition(mode.value);
+      }
+    });
     localRoomConfigs.value.currMode = data;
   } else {
     event.preventDefault();
   }
 }
+
+onUnmounted(() => {
+  modes.value.forEach(mode => {
+    stopImageTransition(mode.value);
+  });
+});
 
 watch(
   () => props.roomConfigs,
