@@ -47,7 +47,7 @@
                   <div class="flex flex-col items-center w-full">
                     <p class="mb-2">{{ mode.text }}</p>
 <label
-                      class="relative rounded-lg overflow-hidden w-[16vw] h-[16vh]"
+                      class="relative rounded-lg overflow-hidden w-40 h-40 cursor-pointer transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
                       :for="'mode' + mode.value"
                       :class="{
                         'outline outline-4 outline-color': localRoomConfigs.currMode === mode.value,
