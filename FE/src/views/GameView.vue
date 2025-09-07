@@ -610,7 +610,7 @@ const setupConnection = (conn) => {
                   // 방장 결과창 표시
                   isForceStopped.value = "champ";
                   
-                  // 게스트들에게도 결과창 표시 (기본값으로 먼저 표시, 표지는 나중에 업데이트)
+                  // 게스트들에게도 결과창 표시 (점수 증가 정보 포함)
                   connectedPeers.value.forEach(async (p) => {
                     if (p.id !== peerId.value && p.connection.open) {
                       sendMessage("showResultsWithCover", {
@@ -618,7 +618,12 @@ const setupConnection = (conn) => {
                           title: "아주 먼 옛날", // 기본값
                           imageUrl: "" // 기본값 (빈 문자열)
                         },
-                        ISBN: "generating..." // 생성 중 표시
+                        ISBN: "generating...", // 생성 중 표시
+                        scoreChange: {
+                          type: "increase",
+                          amount: 5, // 결말카드는 항상 +5점
+                          playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 결말카드를 낸 플레이어
+                        }
                       }, p.connection);
                     }
                   });
@@ -787,6 +792,17 @@ const setupConnection = (conn) => {
         break;
 
       case "showResultsWithCover":
+        
+        // 점수 변경 처리 (결말카드 +5점)
+        if (data.scoreChange) {
+          const targetPlayer = participants.value[data.scoreChange.playerIndex];
+          if (targetPlayer) {
+            if (data.scoreChange.type === "increase") {
+              targetPlayer.score += data.scoreChange.amount;
+              console.log(`📊 결말카드 점수 증가: ${targetPlayer.name} +${data.scoreChange.amount}점 (${targetPlayer.score - data.scoreChange.amount} → ${targetPlayer.score})`);
+            }
+          }
+        }
         
         // 표지 정보 설정
         if (data.bookCover) {
@@ -1822,7 +1838,7 @@ const voteEnd = async (data) => {
             // 방장 결과창 표시
             isForceStopped.value = "champ";
             
-            // 게스트들에게도 결과창 표시 (기본값으로 먼저 표시, 표지는 나중에 업데이트)
+            // 게스트들에게도 결과창 표시 (점수 증가 정보 포함)
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
                 sendMessage("showResultsWithCover", {
@@ -1830,7 +1846,12 @@ const voteEnd = async (data) => {
                     title: "아주 먼 옛날", // 기본값
                     imageUrl: "" // 기본값 (빈 문자열)
                   },
-                  ISBN: "generating..." // 생성 중 표시
+                  ISBN: "generating...", // 생성 중 표시
+                  scoreChange: {
+                    type: "increase",
+                    amount: 5, // 결말카드는 항상 +5점
+                    playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 결말카드를 낸 플레이어
+                  }
                 }, p.connection);
               }
             });
