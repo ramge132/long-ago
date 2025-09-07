@@ -583,13 +583,18 @@ const setupConnection = (conn) => {
           
           if (currTurn.value === myTurn.value) {
             console.log("  📌 내 턴 - 투표 결과 처리");
+            
+            // 턴 업데이트 전에 현재 플레이어 인덱스를 저장 (승인/거부 모두에서 사용)
+            const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+            const currentPlayerIndex = inGameOrder.value[currTurn.value];
+            
             let accepted = voteAccepted;
             if (accepted) {
               // 찬성이 더 많거나 동수일 때 승인 (동수 포함)
               console.log("    → isElected를 true로 설정");
               isElected.value = true;
               // 투표 가결 시 점수 +2
-              const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+              
               if (usedCard.value.isEnding) {
                 currentPlayer.score += 5;
               } else {
@@ -611,7 +616,7 @@ const setupConnection = (conn) => {
                       scoreChange: {
                         type: "increase",
                         amount: 5, // 결말카드는 항상 +5점
-                        playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 결말카드를 낸 플레이어
+                        playerIndex: currentPlayerIndex // 저장된 현재 플레이어 인덱스 사용
                       }
                     }, p.connection);
                   }
@@ -651,7 +656,7 @@ const setupConnection = (conn) => {
                         scoreChange: {
                           type: "increase",
                           amount: scoreIncrease,
-                          playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 이전 턴의 플레이어
+                          playerIndex: currentPlayerIndex // 저장된 현재 플레이어 인덱스 사용
                         },
                         cardRemoval: {
                           cardId: usedCard.value.id
@@ -692,8 +697,7 @@ const setupConnection = (conn) => {
                 bookContents.value = bookContents.value.slice(0, -1);
               }
               
-              // 현재 턴 사람 점수 -1
-              const currentPlayer = participants.value[inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1]];
+              // 투표 거부된 플레이어 점수 -1
               currentPlayer.score -= 1;
               
               // 상태 동기화 후 오버레이 표시
@@ -1794,8 +1798,9 @@ const voteEnd = async (data) => {
         } else {
           bookContents.value = bookContents.value.slice(0, -1);
         }
-        // 현재 턴 사람 점수 -1
+        // 투표 거부된 플레이어 점수 -1
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        const currentPlayerIndex = inGameOrder.value[currTurn.value]; // 턴 업데이트 전에 저장
         currentPlayer.score -= 1;
         // 턴 종료 트리거 송신하기
         currTurn.value = (currTurn.value + 1) % participants.value.length;
@@ -1815,7 +1820,7 @@ const voteEnd = async (data) => {
                 scoreChange: {
                   type: "decrease",
                   amount: 1,
-                  playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 이전 턴의 플레이어
+                  playerIndex: currentPlayerIndex // 저장된 현재 플레이어 인덱스 사용
                 }
               },
               peer.connection
@@ -1830,6 +1835,8 @@ const voteEnd = async (data) => {
         accepted = true;
         // 투표 가결 시 점수 +2
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+        const currentPlayerIndex = inGameOrder.value[currTurn.value]; // 턴 업데이트 전에 저장!
+        
         if (usedCard.value.isEnding) {
           currentPlayer.score += 5;
         } else {
@@ -1851,7 +1858,7 @@ const voteEnd = async (data) => {
                 scoreChange: {
                   type: "increase",
                   amount: 5, // 결말카드는 항상 +5점
-                  playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 결말카드를 낸 플레이어
+                  playerIndex: currentPlayerIndex // 저장된 현재 플레이어 인덱스 사용
                 }
               }, p.connection);
             }
@@ -1895,7 +1902,7 @@ const voteEnd = async (data) => {
                   scoreChange: {
                     type: "increase",
                     amount: scoreIncrease,
-                    playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 이전 턴의 플레이어
+                    playerIndex: currentPlayerIndex // 저장된 현재 플레이어 인덱스 사용
                   },
                   cardRemoval: {
                     cardId: usedCard.value.id
