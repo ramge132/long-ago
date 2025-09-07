@@ -624,6 +624,9 @@ const setupConnection = (conn) => {
                   });
                 }, 1000);
               } else {
+                // 다른 플레이어들에게 점수 증가 정보와 함께 nextTurn 메시지 전송
+                const scoreIncrease = usedCard.value.isEnding ? 5 : 2;
+                
                 connectedPeers.value.forEach(async (p) => {
                   if (p.id !== peerId.value && p.connection.open) {
                     sendMessage(
@@ -632,6 +635,14 @@ const setupConnection = (conn) => {
                         currTurn: currTurn.value,
                         imageDelete: false,
                         totalTurn: totalTurn.value,
+                        scoreChange: {
+                          type: "increase",
+                          amount: scoreIncrease,
+                          playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] // 이전 턴의 플레이어
+                        },
+                        cardRemoval: {
+                          cardId: usedCard.value.id
+                        }
                       },
                       p.connection
                     )
