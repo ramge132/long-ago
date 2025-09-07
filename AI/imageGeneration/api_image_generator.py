@@ -366,7 +366,8 @@ class APIImageGenerationSystem:
                 if not character:
                     continue
 
-                character_prompts.append(character.prompt)
+                if character.prompt:
+                    character_prompts.append(character.prompt)
 
                 if char_name in character_references:
                     # 재등장: 저장된 레퍼런스 이미지 사용
