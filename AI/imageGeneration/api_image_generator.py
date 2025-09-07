@@ -245,20 +245,6 @@ class GeminiImageGenerator:
         genai.configure(api_key=GEMINI_API_KEY)
         self.model = genai.GenerativeModel("gemini-2.5-flash-image-preview")
     
-    def encode_image_to_base64(self, image_path: str) -> str:
-        """이미지를 base64로 인코딩"""
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
-    
-    def load_image_for_gemini(self, image_path: str):
-        """Gemini용 이미지 로드"""
-        with open(image_path, "rb") as image_file:
-            image_data = image_file.read()
-        
-        # PIL Image 객체로 변환
-        image = Image.open(io.BytesIO(image_data))
-        return image
-    
     def generate_text_to_image(self, prompt: str, art_style: str = "") -> bytes:
         """텍스트에서 이미지 생성 (캐릭터 없는 경우)"""
         # 9:16 비율 명시 (세로형, 720x1280 해상도)
@@ -281,15 +267,9 @@ class GeminiImageGenerator:
             print(f"Error in text-to-image generation: {e}")
             raise
     
-    def generate_image_to_image(self, character_images: List[str], prompt: str, character_prompts: List[str], art_style: str = "") -> bytes:
+    def generate_image_to_image(self, character_images: List[Image.Image], prompt: str, character_prompts: List[str], art_style: str = "") -> bytes:
         """이미지에서 이미지 생성 (캐릭터 있는 경우)"""
         try:
-            # 캐릭터 이미지들을 로드
-            images = []
-            for img_path in character_images:
-                if os.path.exists(img_path):
-                    images.append(self.load_image_for_gemini(img_path))
-            
             # 캐릭터 프롬프트들을 결합
             combined_character_prompt = " ".join(character_prompts)
             
@@ -297,7 +277,7 @@ class GeminiImageGenerator:
             full_prompt = f"Generate an image based on these reference images. {combined_character_prompt} {prompt} {art_style} portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution".strip()
             
             # 이미지와 텍스트를 함께 전달
-            content = [full_prompt] + images
+            content = [full_prompt] + character_images
             
             response = self.model.generate_content(content)
             
@@ -365,28 +345,45 @@ class APIImageGenerationSystem:
         print("🔹 [GPT] 이미지 프롬프트 생성 중...")
         image_prompt = self.gpt_generator.generate_image_prompt(description, user_input)
         
-        # 2. 캐릭터 탐지
+        # 2. 캐릭터 탐지 및 레퍼런스 관리
         detected_characters = self.character_manager.detect_characters_in_text(user_input)
         print(f"🔹 [캐릭터 탐지] 발견된 캐릭터: {detected_characters}")
-        
+
+        character_references = session_data.get('character_references', {})
+        first_appearance_chars = []
+
         # 3. 그림체 스타일 가져오기
         art_style = self.art_styles.get(game_mode, "")
         
         # 4. 이미지 생성
         if detected_characters:
-            # 캐릭터가 있는 경우: image-to-image 모드
             print("🔹 [Gemini] Image-to-Image 모드로 이미지 생성 중...")
-            character_images = []
+            images_for_gemini = []
             character_prompts = []
             
             for char_name in detected_characters:
                 character = self.character_manager.get_character(char_name)
-                if character:
-                    character_images.append(character.image_path)
-                    character_prompts.append(character.prompt)
+                if not character:
+                    continue
+
+                character_prompts.append(character.prompt)
+
+                if char_name in character_references:
+                    # 재등장: 저장된 레퍼런스 이미지 사용
+                    print(f"   - 재등장 캐릭터: {char_name}. 레퍼런스 이미지 사용.")
+                    ref_image_data = character_references[char_name]
+                    img = Image.open(io.BytesIO(ref_image_data))
+                    images_for_gemini.append(img)
+                else:
+                    # 첫 등장: 기본 프리셋 이미지를 사용하고, 생성 후 저장할 목록에 추가
+                    print(f"   - 첫 등장 캐릭터: {char_name}. 기본 이미지 사용.")
+                    with open(character.image_path, "rb") as image_file:
+                        img = Image.open(io.BytesIO(image_file.read()))
+                    images_for_gemini.append(img)
+                    first_appearance_chars.append(char_name)
             
             image_bytes = self.gemini_generator.generate_image_to_image(
-                character_images, image_prompt, character_prompts, art_style
+                images_for_gemini, image_prompt, character_prompts, art_style
             )
         else:
             # 캐릭터가 없는 경우: text-to-image 모드
@@ -394,12 +391,19 @@ class APIImageGenerationSystem:
             image_bytes = self.gemini_generator.generate_text_to_image(
                 image_prompt, art_style
             )
+
+        # 5. 첫 등장 캐릭터의 경우, 생성된 이미지를 새 레퍼런스로 저장
+        if first_appearance_chars:
+            print(f"🔹 [레퍼런스 업데이트] 첫 등장 캐릭터의 새 이미지 저장: {first_appearance_chars}")
+            for char_name in first_appearance_chars:
+                character_references[char_name] = image_bytes
         
-        # 5. 세션 데이터 업데이트
+        # 6. 세션 데이터 업데이트
         updated_session_data = {
             "prev_prompt": image_prompt,
             "summary": story_summary,
-            "description": description
+            "description": description,
+            "character_references": character_references
         }
         
         print("✅ [이미지 생성 완료]")
