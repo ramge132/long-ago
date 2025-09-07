@@ -235,6 +235,8 @@ const modes = ref([
 const startImageTransition = (modeValue) => {
   const mode = modes.value.find((m) => m.value === modeValue);
   if (mode && !mode.intervalId) {
+    // Start with the next image immediately
+    mode.activeImageIndex = 1;
     mode.intervalId = setInterval(() => {
       mode.activeImageIndex = (mode.activeImageIndex + 1) % mode.images.length;
     }, 1000);
