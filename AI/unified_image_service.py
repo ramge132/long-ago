@@ -312,9 +312,22 @@ class UnifiedImageServiceV2:
         """Gemini Text-to-Image API 호출"""
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={GEMINI_API_KEY}"
         
+        # 다양성을 위한 프롬프트 변형 추가
+        variety_modifiers = [
+            "creative and unique perspective",
+            "fresh artistic interpretation", 
+            "imaginative composition",
+            "unexpected creative angle"
+        ]
+        
+        import random
+        selected_modifier = random.choice(variety_modifiers)
+        
         payload = {
             "contents": [{
-                "parts": [{"text": f"Create a picture of: {prompt}. Make it portrait orientation, 9:16 aspect ratio"}]
+                "parts": [{
+                    "text": f"Create a picture of: {prompt}. {selected_modifier}. Make it portrait orientation, 9:16 aspect ratio"
+                }]
             }]
         }
         
@@ -332,12 +345,40 @@ class UnifiedImageServiceV2:
 
     async def _call_gemini_image_to_image(self, ref_images: List[Image.Image], 
                                          prompt: str, ref_prompts: List[str], style: str) -> bytes:
-        """Gemini Image-to-Image API 호출"""
+        """Gemini Image-to-Image API 호출 - 프롬프트 기반 다양성
+        
+        Args:
+            ref_images: 레퍼런스 이미지들
+            prompt: 생성할 장면 설명
+            ref_prompts: 레퍼런스 캐릭터 설명
+            style: 그림 스타일
+        """
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={GEMINI_API_KEY}"
         
-        # parts 구성
+        # 구도 다양화를 위한 카메라 앵글/구도 옵션
+        composition_variety = [
+            "dynamic camera angle",
+            "interesting perspective", 
+            "creative composition",
+            "varied camera distance",
+            "cinematic framing",
+            "dramatic viewpoint",
+            "unique angle",
+            "fresh perspective"
+        ]
+        
+        # 랜덤으로 구도 옵션 선택 (다양성 증가)
+        import random
+        selected_composition = random.choice(composition_variety)
+        
+        # parts 구성 - 구도 다양화 프롬프트 추가
         parts = [{
-            "text": f"Using the provided reference images, create a new image. {' '.join(ref_prompts)} Scene: {prompt}. Style: {style}. Portrait orientation, 9:16 aspect ratio"
+            "text": f"Using the provided reference images, create a new image. Maintain character appearances exactly as shown in references. "
+                   f"{' '.join(ref_prompts)} "
+                   f"Scene: {prompt}. "
+                   f"Style: {style}. "
+                   f"Use {selected_composition} while keeping character consistency. "
+                   f"Portrait orientation, 9:16 aspect ratio"
         }]
         
         # 레퍼런스 이미지 추가
@@ -356,7 +397,9 @@ class UnifiedImageServiceV2:
                 }
             })
         
-        payload = {"contents": [{"parts": parts}]}
+        payload = {
+            "contents": [{"parts": parts}]
+        }
         
         response = requests.post(api_url, json=payload)
         response.raise_for_status()
