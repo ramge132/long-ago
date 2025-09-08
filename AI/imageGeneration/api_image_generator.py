@@ -18,71 +18,106 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 CHARACTERS_DIR = os.path.join(os.path.dirname(__file__), "characters")
 
 @dataclass
-class Character:
-    name: str
-    image_path: str
-    prompt: str
+class Entity:
+    name: str  # 영어 이름 (고유 식별자)
+    korean_name: str
+    entity_type: str  # '인물', '사물', '장소'
+    image_path: Optional[str] = None  # 캐릭터만 가짐
+    prompt: Optional[str] = None      # 캐릭터만 가짐
 
-class CharacterManager:
+class EntityManager:
     def __init__(self):
-        self.characters: Dict[str, Character] = {}
-        self.load_characters()
-    
-    def load_characters(self):
-        """캐릭터 이미지와 프롬프트 로드"""
-        character_names = [
-            "alien", "beggar", "boy", "detective", "doctor", 
-            "farmer", "girl", "idol", "merchant", "ninja", 
-            "oldman", "princess", "rich", "wizard"
-        ]
+        self.entities: Dict[str, Entity] = {}
+        self.korean_to_english_map: Dict[str, str] = {}
+        self.load_entities()
+
+    def load_entities(self):
+        """init_db.sql과 기존 캐릭터 정보를 기반으로 모든 개체 로드"""
         
-        for name in character_names:
+        # 1. 기존 캐릭터 정보 로드 (character 폴더 기반)
+        character_details = {
+            "alien": {"korean": "외계인"}, "beggar": {"korean": "가난뱅이"}, "boy": {"korean": "소년"},
+            "detective": {"korean": "탐정"}, "doctor": {"korean": "박사"}, "farmer": {"korean": "농부"},
+            "girl": {"korean": "소녀"}, "idol": {"korean": "아이돌"}, "merchant": {"korean": "상인"},
+            "ninja": {"korean": "닌자"}, "oldman": {"korean": "노인"}, "princess": {"korean": "공주"},
+            "rich": {"korean": "부자"}, "wizard": {"korean": "마법사"}, "god": {"korean": "신"},
+            "tiger": {"korean": "호랑이"}, "ghost": {"korean": "유령"}, "devil": {"korean": "마왕"}
+        }
+
+        for name, details in character_details.items():
             image_path = os.path.join(CHARACTERS_DIR, f"{name}.png")
             txt_path = os.path.join(CHARACTERS_DIR, f"{name}.txt")
-            
-            if os.path.exists(image_path) and os.path.exists(txt_path):
+            prompt = ""
+            if os.path.exists(txt_path):
                 with open(txt_path, 'r', encoding='utf-8') as f:
                     prompt = f.read().strip()
-                
-                self.characters[name] = Character(
+            
+            if os.path.exists(image_path) or name in ["god", "tiger", "ghost", "devil"]:
+                entity = Entity(
                     name=name,
-                    image_path=image_path,
+                    korean_name=details["korean"],
+                    entity_type='인물',
+                    image_path=image_path if os.path.exists(image_path) else None,
                     prompt=prompt
                 )
-    
-    def get_character(self, name: str) -> Optional[Character]:
-        """캐릭터 정보 가져오기"""
-        return self.characters.get(name)
-    
-    def get_all_character_names(self) -> List[str]:
-        """모든 캐릭터 이름 리스트 반환"""
-        return list(self.characters.keys())
-    
-    def detect_characters_in_text(self, text: str) -> List[str]:
-        """텍스트에서 언급된 캐릭터 탐지"""
-        detected = []
-        text_lower = text.lower()
-        
-        # 한국어-영어 매핑
-        korean_mapping = {
-            "닌자": "ninja", "공주": "princess", "의사": "doctor", 
-            "농부": "farmer", "마법사": "wizard", "상인": "merchant",
-            "소년": "boy", "소녀": "girl", "탐정": "detective",
-            "거지": "beggar", "부자": "rich", "노인": "oldman",
-            "아이돌": "idol", "외계인": "alien"
+                self.entities[name] = entity
+                self.korean_to_english_map[details["korean"]] = name
+
+        # 2. init_db.sql의 키워드 정보 로드
+        sql_entities = {
+            '호랑이': 'tiger', '유령': 'ghost', '농부': 'farmer', '상인': 'merchant', '신': 'god', 
+            '외계인': 'alien', '박사': 'doctor', '아이돌': 'idol', '마법사': 'wizard', '마왕': 'devil',
+            '소년': 'boy', '소녀': 'girl', '부자': 'rich', '탐정': 'detective', '노인': 'oldman', 
+            '가난뱅이': 'beggar', '공주': 'princess', '닌자': 'ninja',
+            '핸드폰': 'phone', '마차': 'carriage', '인형': 'doll', '부적': 'talisman', '지도': 'map',
+            '가면': 'mask', '칼': 'sword', '피리': 'flute', '지팡이': 'staff', '태양': 'sun',
+            '날개': 'wings', '의자': 'chair', '시계': 'clock', '도장': 'stamp', '보석': 'gem',
+            'UFO': 'ufo', '덫': 'trap', '총': 'gun', '타임머신': 'timemachine', '감자': 'potato',
+            '바다': 'sea', '다리': 'bridge', '묘지': 'cemetery', '식당': 'restaurant', '박물관': 'museum',
+            '비밀통로': 'secretpassage', '사막': 'desert', '저택': 'mansion', '천국': 'heaven'
         }
         
-        # 한국어 단어 탐지
-        for korean, english in korean_mapping.items():
+        entity_types = {
+            '호랑이': '인물', '유령': '인물', '농부': '인물', '상인': '인물', '신': '인물', '외계인': '인물',
+            '박사': '인물', '아이돌': '인물', '마법사': '인물', '마왕': '인물', '소년': '인물', '소녀': '인물',
+            '부자': '인물', '탐정': '인물', '노인': '인물', '가난뱅이': '인물', '공주': '인물', '닌자': '인물',
+            '핸드폰': '사물', '마차': '사물', '인형': '사물', '부적': '사물', '지도': '사물', '가면': '사물',
+            '칼': '사물', '피리': '사물', '지팡이': '사물', '태양': '사물', '날개': '사물', '의자': '사물',
+            '시계': '사물', '도장': '사물', '보석': '사물', 'UFO': '사물', '덫': '사물', '총': '사물',
+            '타임머신': '사물', '감자': '사물',
+            '바다': '장소', '다리': '장소', '묘지': '장소', '식당': '장소', '박물관': '장소',
+            '비밀통로': '장소', '사막': '장소', '저택': '장소', '천국': '장소'
+        }
+
+        for korean, english in sql_entities.items():
+            if english not in self.entities:
+                self.entities[english] = Entity(
+                    name=english,
+                    korean_name=korean,
+                    entity_type=entity_types.get(korean, '사물')
+                )
+            self.korean_to_english_map[korean] = english
+            if korean == '소년': self.korean_to_english_map['소녀'] = 'girl'
+            if korean == 'UFO': self.korean_to_english_map['ufo'] = 'ufo'
+
+    def get_entity(self, name: str) -> Optional[Entity]:
+        return self.entities.get(name)
+
+    def detect_entities_in_text(self, text: str) -> List[str]:
+        detected = []
+        for korean, english in self.korean_to_english_map.items():
             if korean in text:
                 detected.append(english)
-        
-        # 영어 단어 탐지
-        for character_name in self.characters.keys():
-            if character_name in text_lower:
-                detected.append(character_name)
-        
-        return list(set(detected))  # 중복 제거
+        # 영어 이름으로도 탐지
+        for english_name in self.entities.keys():
+            if english_name in text.lower():
+                detected.append(english_name)
+
+        # '소년'과 '소녀'는 'boy'와 'girl'로 각각 처리
+        if '소년' in text and 'boy' not in detected: detected.append('boy')
+        if '소녀' in text and 'girl' not in detected: detected.append('girl')
+
+        return sorted(list(set(detected)), key=lambda x: text.find(self.get_entity(x).korean_name) if self.get_entity(x) else -1)
 
 class GPTPromptGenerator:
     def __init__(self):
@@ -295,7 +330,7 @@ class GeminiImageGenerator:
 
 class APIImageGenerationSystem:
     def __init__(self):
-        self.character_manager = CharacterManager()
+        self.entity_manager = EntityManager()
         self.gpt_generator = GPTPromptGenerator()
         self.gemini_generator = GeminiImageGenerator()
         
@@ -345,66 +380,71 @@ class APIImageGenerationSystem:
         print("🔹 [GPT] 이미지 프롬프트 생성 중...")
         image_prompt = self.gpt_generator.generate_image_prompt(description, user_input)
         
-        # 2. 캐릭터 탐지 및 레퍼런스 관리
-        detected_characters = self.character_manager.detect_characters_in_text(user_input)
-        print(f"🔹 [캐릭터 탐지] 발견된 캐릭터: {detected_characters}")
+        # 2. 개체 탐지 및 레퍼런스 관리
+        detected_entities = self.entity_manager.detect_entities_in_text(user_input)
+        print(f"🔹 [개체 탐지] 발견된 개체: {detected_entities}")
 
-        character_references = session_data.get('character_references', {})
-        first_appearance_chars = []
-
+        entity_references = session_data.get('entity_references', {})
+        newly_referenced_entities = {} # 이번 턴에 레퍼런스가 생성/업데이트된 개체
+        
         # 3. 그림체 스타일 가져오기
         art_style = self.art_styles.get(game_mode, "")
+
+        # 4. 첫 등장 사물/장소에 대한 개별 레퍼런스 이미지 생성
+        for entity_name in detected_entities:
+            if entity_name not in entity_references:
+                entity = self.entity_manager.get_entity(entity_name)
+                # 캐릭터가 아니거나, 캐릭터지만 기본 이미지가 없는 경우
+                if entity and (entity.entity_type != '인물' or not entity.image_path):
+                    print(f"   - 첫 등장 (이미지 없음): '{entity.korean_name}'. 개별 레퍼런스 생성 중...")
+                    temp_prompt = f"A single, clear, centered image of a {entity.name} in a {art_style}, on a plain white background."
+                    try:
+                        ref_img_bytes = self.gemini_generator.generate_text_to_image(temp_prompt, art_style)
+                        entity_references[entity_name] = ref_img_bytes
+                        newly_referenced_entities[entity_name] = ref_img_bytes
+                        print(f"   - '{entity.korean_name}' 레퍼런스 이미지 생성 완료.")
+                    except Exception as e:
+                        print(f"   - '{entity.korean_name}' 레퍼런스 생성 실패: {e}")
+
+        # 5. 최종 이미지 생성
+        images_for_gemini = []
+        entity_prompts = []
         
-        # 4. 이미지 생성
-        if detected_characters:
-            print("🔹 [Gemini] Image-to-Image 모드로 이미지 생성 중...")
-            images_for_gemini = []
-            character_prompts = []
-            
-            for char_name in detected_characters:
-                character = self.character_manager.get_character(char_name)
-                if not character:
-                    continue
+        if detected_entities:
+            print("🔹 [Gemini] 최종 이미지 생성 (Image-to-Image 모드)...")
+            for entity_name in detected_entities:
+                entity = self.entity_manager.get_entity(entity_name)
+                if not entity: continue
 
-                if character.prompt:
-                    character_prompts.append(character.prompt)
+                if entity.prompt: entity_prompts.append(entity.prompt)
 
-                if char_name in character_references:
-                    # 재등장: 저장된 레퍼런스 이미지 사용
-                    print(f"   - 재등장 캐릭터: {char_name}. 레퍼런스 이미지 사용.")
-                    ref_image_data = character_references[char_name]
-                    img = Image.open(io.BytesIO(ref_image_data))
-                    images_for_gemini.append(img)
-                else:
-                    # 첫 등장: 기본 프리셋 이미지를 사용하고, 생성 후 저장할 목록에 추가
-                    print(f"   - 첫 등장 캐릭터: {char_name}. 기본 이미지 사용.")
-                    with open(character.image_path, "rb") as image_file:
-                        img = Image.open(io.BytesIO(image_file.read()))
-                    images_for_gemini.append(img)
-                    first_appearance_chars.append(char_name)
+                if entity_name in entity_references:
+                    # 재등장 또는 이번에 생성된 레퍼런스 사용
+                    print(f"   - 레퍼런스 사용: '{entity.korean_name}'")
+                    images_for_gemini.append(Image.open(io.BytesIO(entity_references[entity_name])))
+                elif entity.image_path: # 캐릭터 첫 등장
+                    print(f"   - 기본 레퍼런스 사용: '{entity.korean_name}' (캐릭터 첫 등장)")
+                    with open(entity.image_path, "rb") as f: images_for_gemini.append(Image.open(f))
             
-            image_bytes = self.gemini_generator.generate_image_to_image(
-                images_for_gemini, image_prompt, character_prompts, art_style
-            )
+            image_bytes = self.gemini_generator.generate_image_to_image(images_for_gemini, image_prompt, entity_prompts, art_style)
         else:
-            # 캐릭터가 없는 경우: text-to-image 모드
             print("🔹 [Gemini] Text-to-Image 모드로 이미지 생성 중...")
-            image_bytes = self.gemini_generator.generate_text_to_image(
-                image_prompt, art_style
-            )
+            image_bytes = self.gemini_generator.generate_text_to_image(image_prompt, art_style)
 
-        # 5. 첫 등장 캐릭터의 경우, 생성된 이미지를 새 레퍼런스로 저장
-        if first_appearance_chars:
-            print(f"🔹 [레퍼런스 업데이트] 첫 등장 캐릭터의 새 이미지 저장: {first_appearance_chars}")
-            for char_name in first_appearance_chars:
-                character_references[char_name] = image_bytes
-        
-        # 6. 세션 데이터 업데이트
+        # 6. 첫 등장 캐릭터 레퍼런스 업데이트
+        for entity_name in detected_entities:
+            if entity_name not in session_data.get('entity_references', {}) and entity_name not in newly_referenced_entities:
+                entity = self.entity_manager.get_entity(entity_name)
+                if entity and entity.entity_type == '인물':
+                    print(f"🔹 [레퍼런스 업데이트] 첫 등장 캐릭터 '{entity.korean_name}'의 레퍼런스를 최종 이미지로 업데이트합니다.")
+                    entity_references[entity_name] = image_bytes
+
+        # 7. 세션 데이터 업데이트
         updated_session_data = {
             "prev_prompt": image_prompt,
             "summary": story_summary,
             "description": description,
-            "character_references": character_references
+            "entity_references": entity_references
         }
         
         print("✅ [이미지 생성 완료]")
