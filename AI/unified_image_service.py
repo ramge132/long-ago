@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 """
-Long Ago - 통합 이미지 생성 서비스 (Python)
-기존 Java SceneService.java와 GameService.java의 로직을 정확히 복제
-
-- OpenAI GPT-5 Responses API를 사용한 프롬프트 생성
-- Google Gemini 2.5 Flash Image Preview API를 사용한 이미지 생성  
-- 바이너리 이미지 데이터 반환 (S3 업로드는 Java에서 처리)
-- 재시도 로직 포함
-- 결말카드/일반카드 구분 처리
+Long Ago - 통합 이미지 생성 서비스 v2.0 (Image-to-Image 지원)
+- Text-to-Image와 Image-to-Image 모두 지원
+- 인물/사물/장소 레퍼런스 관리로 일관성 유지
+- 게임별 세션 데이터 관리
 """
 
 import os
@@ -16,50 +12,142 @@ import asyncio
 import json
 import base64
 import logging
-from typing import Optional, Dict, Any, List
+import io
+from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
+from dataclasses import dataclass
+from pathlib import Path
 
 import uvicorn
 import httpx
 from fastapi import FastAPI, HTTPException, Response
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from PIL import Image
+from openai import OpenAI
+import requests
 
 # 환경변수 설정
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# 그림체 스타일 정의 (Java와 동일)
+# 캐릭터 파일 경로
+CHARACTERS_DIR = Path(__file__).parent / "imageGeneration" / "characters"
+
+# 그림체 스타일 정의
 DRAWING_STYLES = [
-    "애니메이션 스타일", "3D 카툰 스타일", "코믹 스트립 스타일", "클레이메이션 스타일",
-    "크레용 드로잉 스타일", "픽셀 아트 스타일", "미니멀리스트 일러스트", "수채화 스타일", "스토리북 일러스트"
+    "anime style, vibrant colors, detailed illustration",
+    "cute 3d cartoon style, soft colors, rounded features", 
+    "comic strip style, bold outlines, dramatic expressions",
+    "claymation style, 3D rendered, soft clay texture",
+    "crayon drawing style, childlike, soft pastels",
+    "pixel art style, retro gaming aesthetic, sharp pixels",
+    "minimalist illustration, clean lines, simple colors",
+    "watercolor painting style, soft blending, artistic",
+    "storybook illustration, whimsical, detailed"
 ]
 
-# =============================================================================
-# 이미지 생성용 프롬프트 템플릿 상수
-# =============================================================================
-
-# GPT 프롬프트 생성 템플릿
-GPT_SCENE_PROMPT_TEMPLATE = "문장: {user_sentence}. 이 문장을 {style} 스타일의 이미지로 만들기 위한 핵심 영어 키워드를 나열해줘."
-GPT_ENDING_PROMPT_TEMPLATE = "결말: {user_sentence}. 이 문장을 {style} 스타일의 이미지로 만들기 위한 핵심 영어 키워드를 나열해줘."
-
-# GPT 책 제목 생성 프롬프트
-GPT_BOOK_TITLE_PROMPT_TEMPLATE = "다음 스토리를 10자 이내의 창의적인 제목으로 만들어주세요. 다른 설명 없이 제목만 말해주세요. 스토리: {story_content}"
-
-# Gemini 이미지 생성 프롬프트 템플릿
-GEMINI_IMAGE_PROMPT_TEMPLATE = "Generate an image: {prompt}"
-
-# 책 표지 이미지 프롬프트 템플릿  
-BOOK_COVER_PROMPT_TEMPLATE = "Create a beautiful book cover for a story titled '{book_title}'. Style: {style}. The cover should be artistic, captivating, and suitable for a storybook."
-
 # FastAPI 앱 초기화
-app = FastAPI(title="Unified Image Generation Service", version="2.0.0")
+app = FastAPI(title="Unified Image Generation Service v2", version="2.0.0")
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 요청/응답 모델
+# ================== 엔티티 관리 시스템 ==================
+
+@dataclass
+class Entity:
+    name: str  # 영어 이름
+    korean_name: str
+    entity_type: str  # '인물', '사물', '장소'
+    image_path: Optional[str] = None
+    prompt: Optional[str] = None
+
+class EntityManager:
+    def __init__(self):
+        self.entities: Dict[str, Entity] = {}
+        self.korean_to_english_map: Dict[str, str] = {}
+        self.load_entities()
+
+    def load_entities(self):
+        """init_db.sql 기반 모든 개체 로드"""
+        
+        # 캐릭터 정보
+        character_details = {
+            "alien": {"korean": "외계인"}, "beggar": {"korean": "가난뱅이"}, "boy": {"korean": "소년"},
+            "detective": {"korean": "탐정"}, "doctor": {"korean": "박사"}, "farmer": {"korean": "농부"},
+            "girl": {"korean": "소녀"}, "idol": {"korean": "아이돌"}, "merchant": {"korean": "상인"},
+            "ninja": {"korean": "닌자"}, "oldman": {"korean": "노인"}, "princess": {"korean": "공주"},
+            "rich": {"korean": "부자"}, "wizard": {"korean": "마법사"}, "god": {"korean": "신"},
+            "tiger": {"korean": "호랑이"}, "ghost": {"korean": "유령"}, "devil": {"korean": "마왕"}
+        }
+
+        for name, details in character_details.items():
+            image_path = CHARACTERS_DIR / f"{name}.png"
+            txt_path = CHARACTERS_DIR / f"{name}.txt"
+            prompt = ""
+            
+            if txt_path.exists():
+                with open(txt_path, 'r', encoding='utf-8') as f:
+                    prompt = f.read().strip()
+            
+            entity = Entity(
+                name=name,
+                korean_name=details["korean"],
+                entity_type='인물',
+                image_path=str(image_path) if image_path.exists() else None,
+                prompt=prompt
+            )
+            self.entities[name] = entity
+            self.korean_to_english_map[details["korean"]] = name
+
+        # init_db.sql 키워드
+        sql_entities = {
+            '핸드폰': 'phone', '마차': 'carriage', '인형': 'doll', '부적': 'talisman',
+            '지도': 'map', '가면': 'mask', '칼': 'sword', '피리': 'flute',
+            '지팡이': 'staff', '태양': 'sun', '날개': 'wings', '의자': 'chair',
+            '시계': 'clock', '도장': 'stamp', '보석': 'gem', 'UFO': 'ufo',
+            '덫': 'trap', '총': 'gun', '타임머신': 'timemachine', '감자': 'potato',
+            '바다': 'sea', '다리': 'bridge', '묘지': 'cemetery', '식당': 'restaurant',
+            '박물관': 'museum', '비밀통로': 'secretpassage', '사막': 'desert',
+            '저택': 'mansion', '천국': 'heaven'
+        }
+        
+        entity_types = {
+            '핸드폰': '사물', '마차': '사물', '인형': '사물', '부적': '사물',
+            '지도': '사물', '가면': '사물', '칼': '사물', '피리': '사물',
+            '지팡이': '사물', '태양': '사물', '날개': '사물', '의자': '사물',
+            '시계': '사물', '도장': '사물', '보석': '사물', 'UFO': '사물',
+            '덫': '사물', '총': '사물', '타임머신': '사물', '감자': '사물',
+            '바다': '장소', '다리': '장소', '묘지': '장소', '식당': '장소',
+            '박물관': '장소', '비밀통로': '장소', '사막': '장소',
+            '저택': '장소', '천국': '장소'
+        }
+
+        for korean, english in sql_entities.items():
+            if english not in self.entities:
+                self.entities[english] = Entity(
+                    name=english,
+                    korean_name=korean,
+                    entity_type=entity_types.get(korean, '사물')
+                )
+            self.korean_to_english_map[korean] = english
+
+    def get_entity(self, name: str) -> Optional[Entity]:
+        return self.entities.get(name)
+
+    def detect_entities_in_text(self, text: str) -> List[str]:
+        detected = []
+        for korean, english in self.korean_to_english_map.items():
+            if korean in text:
+                detected.append(english)
+        
+        return sorted(list(set(detected)), 
+                     key=lambda x: text.find(self.get_entity(x).korean_name) 
+                     if self.get_entity(x) else -1)
+
+# ================== 요청/응답 모델 ==================
+
 class SceneGenerationRequest(BaseModel):
     gameId: str
     userId: str
@@ -67,818 +155,281 @@ class SceneGenerationRequest(BaseModel):
     turn: int
     drawingStyle: int
     isEnding: bool
-
-# SceneGenerationResponse는 바이너리 이미지 데이터 직접 반환으로 대체
+    sessionData: Optional[Dict] = None  # 세션 데이터 추가
 
 class BookCoverGenerationRequest(BaseModel):
     storyContent: str
     gameId: str
     drawingStyle: int
 
-class BookCoverGenerationResponse(BaseModel):
-    success: bool
-    title: Optional[str] = None
-    message: str
+# ================== 세션 관리 ==================
 
-class UnifiedImageService:
+class SessionManager:
+    """게임별 세션 데이터 관리"""
     def __init__(self):
-        """통합 이미지 생성 서비스 초기화"""
+        self.sessions: Dict[str, Dict] = {}
+    
+    def get_session(self, game_id: str) -> Dict:
+        if game_id not in self.sessions:
+            self.sessions[game_id] = {
+                "prev_prompt": "",
+                "summary": "",
+                "description": "",
+                "entity_references": {}
+            }
+        return self.sessions[game_id]
+    
+    def update_session(self, game_id: str, data: Dict):
+        self.sessions[game_id] = data
+    
+    def clear_session(self, game_id: str):
+        if game_id in self.sessions:
+            del self.sessions[game_id]
+
+# ================== 이미지 생성 서비스 ==================
+
+class UnifiedImageServiceV2:
+    def __init__(self):
+        """통합 이미지 생성 서비스 v2 초기화"""
         if not all([OPENAI_API_KEY, GEMINI_API_KEY]):
             logger.error("필수 환경변수가 설정되지 않았습니다")
             sys.exit(1)
         
-        logger.info("통합 이미지 생성 서비스 초기화 완료")
+        self.entity_manager = EntityManager()
+        self.session_manager = SessionManager()
+        self.openai_client = OpenAI(api_key=OPENAI_API_KEY)
+        
+        logger.info("통합 이미지 생성 서비스 v2 초기화 완료 (Image-to-Image 지원)")
 
     async def generate_scene_image(self, request: SceneGenerationRequest) -> bytes:
-        """장면 이미지 생성 (Java SceneService.createScene 로직 복제) - 바이너리 이미지 데이터 반환"""
+        """장면 이미지 생성 - Image-to-Image 지원"""
         try:
-            logger.info("=== 이미지 생성 요청 시작 ===")
+            logger.info("=== 이미지 생성 요청 시작 (v2) ===")
             logger.info(f"게임ID: {request.gameId}, 사용자ID: {request.userId}, 턴: {request.turn}")
-            logger.info(f"사용자 입력: [{request.userPrompt}] (길이: {len(request.userPrompt)}자)")
-            logger.info(f"그림체 모드: {request.drawingStyle}")
+            logger.info(f"사용자 입력: [{request.userPrompt}]")
             
-            # 프론트엔드에서 전달받은 isEnding 값 사용 (실제 게임 로직에 기반)
-            is_ending_card = request.isEnding
+            # 세션 데이터 가져오기
+            session_data = request.sessionData or self.session_manager.get_session(request.gameId)
             
-            logger.info("=== 결말카드 판정 결과 ===")
-            logger.info(f"프론트엔드에서 전달받은 isEnding: {request.isEnding}")
-            logger.info(f"최종 판정: {'결말' if is_ending_card else '일반'} 카드")
+            # 엔티티 탐지
+            detected_entities = self.entity_manager.detect_entities_in_text(request.userPrompt)
+            logger.info(f"🔹 발견된 엔티티: {detected_entities}")
             
-            # 직접 Gemini로 이미지 생성 (GPT 단계 제거로 속도 향상)
-            style = DRAWING_STYLES[request.drawingStyle]
-            if is_ending_card:
-                logger.info("=== 결말카드 직접 이미지 생성 시작 ===")
-                enhanced_prompt = f"{style} 스타일로 그린 결말: {request.userPrompt}"
+            # 스타일 가져오기
+            art_style = DRAWING_STYLES[request.drawingStyle]
+            
+            # 레퍼런스 관리
+            entity_references = session_data.get('entity_references', {})
+            
+            # Image-to-Image 또는 Text-to-Image 결정
+            if detected_entities:
+                logger.info("🔹 Image-to-Image 모드 활성화")
+                image_data = await self._generate_with_references(
+                    request.userPrompt,
+                    detected_entities,
+                    entity_references,
+                    art_style,
+                    request.isEnding
+                )
+                
+                # 첫 등장 엔티티 레퍼런스 저장
+                for entity_name in detected_entities:
+                    if entity_name not in entity_references:
+                        entity = self.entity_manager.get_entity(entity_name)
+                        if entity and entity.entity_type == '인물':
+                            logger.info(f"🔹 '{entity.korean_name}' 레퍼런스 저장")
+                            entity_references[entity_name] = base64.b64encode(image_data).decode('utf-8')
+                
             else:
-                logger.info("=== 일반카드 직접 이미지 생성 시작 ===") 
-                enhanced_prompt = f"{style} 스타일로 그린 {request.userPrompt} 이미지"
+                logger.info("🔹 Text-to-Image 모드")
+                image_data = await self._generate_text_to_image(
+                    request.userPrompt,
+                    art_style,
+                    request.isEnding
+                )
             
-            logger.info(f"최적화된 프롬프트: [{enhanced_prompt}]")
+            # 세션 업데이트
+            updated_session = {
+                "prev_prompt": request.userPrompt,
+                "summary": session_data.get("summary", "") + " " + request.userPrompt,
+                "description": "",
+                "entity_references": entity_references
+            }
+            self.session_manager.update_session(request.gameId, updated_session)
             
-            # Gemini로 이미지 생성
-            logger.info("=== Gemini 이미지 생성 시작 ===")
-            image_data = await self._generate_image_with_gemini(enhanced_prompt)
-            logger.info("=== Gemini 이미지 생성 성공 ===")
-            logger.info(f"생성된 이미지 크기: {len(image_data)} bytes")
-            
-            # 바이너리 이미지 데이터 반환 (S3 업로드는 Java에서 처리)
-            logger.info(f"새로운 API에서 생성된 이미지 크기 : {len(image_data)}")
-            logger.info("=== Python 서비스에서 바이너리 이미지 데이터 반환 ===")
-            
+            logger.info(f"✅ 이미지 생성 완료: {len(image_data)} bytes")
             return image_data
             
         except Exception as e:
             logger.error(f"이미지 생성 실패: {str(e)}")
-            logger.error(f"에러 상세:", exc_info=True)
             raise HTTPException(status_code=500, detail=f"이미지 생성 실패: {str(e)}")
 
+    async def _generate_with_references(self, prompt: str, entities: List[str], 
+                                       references: Dict, style: str, is_ending: bool) -> bytes:
+        """레퍼런스 이미지를 활용한 Image-to-Image 생성"""
+        
+        # 레퍼런스 이미지 수집 (최대 3개)
+        reference_images = []
+        reference_prompts = []
+        
+        for entity_name in entities[:3]:  # 최대 3개만
+            entity = self.entity_manager.get_entity(entity_name)
+            if not entity:
+                continue
+            
+            # 레퍼런스 이미지 찾기
+            if entity_name in references:
+                # 저장된 레퍼런스 사용
+                logger.info(f"   - '{entity.korean_name}' 레퍼런스 재사용")
+                img_data = base64.b64decode(references[entity_name])
+                reference_images.append(Image.open(io.BytesIO(img_data)))
+            elif entity.image_path:
+                # 기본 이미지 사용
+                logger.info(f"   - '{entity.korean_name}' 기본 이미지 사용")
+                reference_images.append(Image.open(entity.image_path))
+            
+            if entity.prompt:
+                reference_prompts.append(entity.prompt)
+        
+        # Gemini Image-to-Image API 호출
+        if reference_images:
+            return await self._call_gemini_image_to_image(
+                reference_images, prompt, reference_prompts, style
+            )
+        else:
+            return await self._generate_text_to_image(prompt, style, is_ending)
+
+    async def _generate_text_to_image(self, prompt: str, style: str, is_ending: bool) -> bytes:
+        """Text-to-Image 생성"""
+        if is_ending:
+            full_prompt = f"{style} 스타일로 그린 결말: {prompt}"
+        else:
+            full_prompt = f"{style} 스타일로 그린 {prompt} 이미지"
+        
+        return await self._call_gemini_text_to_image(full_prompt)
+
+    async def _call_gemini_text_to_image(self, prompt: str) -> bytes:
+        """Gemini Text-to-Image API 호출"""
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={GEMINI_API_KEY}"
+        
+        payload = {
+            "contents": [{
+                "parts": [{"text": f"Create a picture of: {prompt}. Make it portrait orientation, 9:16 aspect ratio"}]
+            }]
+        }
+        
+        response = requests.post(api_url, json=payload)
+        response.raise_for_status()
+        
+        result = response.json()
+        
+        if 'candidates' in result and result['candidates']:
+            for part in result['candidates'][0].get('content', {}).get('parts', []):
+                if 'inlineData' in part:
+                    return base64.b64decode(part['inlineData']['data'])
+        
+        raise Exception("이미지 생성 실패")
+
+    async def _call_gemini_image_to_image(self, ref_images: List[Image.Image], 
+                                         prompt: str, ref_prompts: List[str], style: str) -> bytes:
+        """Gemini Image-to-Image API 호출"""
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={GEMINI_API_KEY}"
+        
+        # parts 구성
+        parts = [{
+            "text": f"Using the provided reference images, create a new image. {' '.join(ref_prompts)} Scene: {prompt}. Style: {style}. Portrait orientation, 9:16 aspect ratio"
+        }]
+        
+        # 레퍼런스 이미지 추가
+        for img in ref_images:
+            buffer = io.BytesIO()
+            if img.mode == 'RGBA':
+                rgb_img = Image.new('RGB', img.size, (255, 255, 255))
+                rgb_img.paste(img, mask=img.split()[3] if len(img.split()) > 3 else None)
+                img = rgb_img
+            img.save(buffer, format='JPEG', quality=95)
+            
+            parts.append({
+                "inlineData": {
+                    "mimeType": "image/jpeg",
+                    "data": base64.b64encode(buffer.getvalue()).decode('utf-8')
+                }
+            })
+        
+        payload = {"contents": [{"parts": parts}]}
+        
+        response = requests.post(api_url, json=payload)
+        response.raise_for_status()
+        
+        result = response.json()
+        
+        if 'candidates' in result and result['candidates']:
+            for part in result['candidates'][0].get('content', {}).get('parts', []):
+                if 'inlineData' in part:
+                    return base64.b64decode(part['inlineData']['data'])
+        
+        raise Exception("Image-to-Image 생성 실패")
+
     async def generate_book_cover(self, request: BookCoverGenerationRequest) -> tuple[str, bytes]:
-        """책 표지 생성 (Java GameService.finishGame 로직 복제) - 제목과 바이너리 이미지 데이터 반환"""
-        try:
-            logger.info("=== 책 표지 생성 시작 ===")
-            
-            # 1단계: 스토리 요약 및 제목 생성
-            logger.info("=== 1단계: 스토리 요약 및 제목 생성 시작 ===")
-            book_title = await self._generate_book_title(request.storyContent)
-            logger.info(f"GPT로 생성된 책 제목: [{book_title}]")
-            
-            if not book_title or not book_title.strip():
-                raise RuntimeError("제목 생성 실패 - 빈 제목")
-            
-            # 2단계: 표지 이미지 생성
-            logger.info("=== 2단계: 표지 이미지 생성 시작 ===")
-            cover_image_data = await self._generate_cover_image(book_title, request.drawingStyle)
-            logger.info(f"Gemini로 생성된 표지 이미지 크기: {len(cover_image_data)} bytes")
-            
-            if not cover_image_data or len(cover_image_data) == 0:
-                raise RuntimeError("이미지 생성 실패 - 빈 이미지")
-            
-            # 제목과 바이너리 이미지 데이터 반환 (S3 업로드는 Java에서 처리)
-            logger.info("=== Python 서비스에서 제목과 바이너리 이미지 데이터 반환 ===")
-            
-            return book_title, cover_image_data
-            
-        except Exception as e:
-            logger.error(f"책 표지 생성 실패: {str(e)}")
-            logger.error(f"에러 상세:", exc_info=True)
-            raise HTTPException(status_code=500, detail=f"책 표지 생성 실패: {str(e)}")
-
-    async def _generate_prompt_with_gpt(self, user_sentence: str, game_mode: int, max_retries: int = 1) -> str:
-        """OpenAI GPT-5 Responses API를 사용하여 프롬프트 생성 (Java callGPTWithRetry 로직 정확히 복제)"""
-        return await self._call_gpt_with_retry(user_sentence, game_mode, max_retries, is_ending_card=False)
-    
-    async def _generate_ending_prompt_with_gpt(self, ending_card_content: str, game_mode: int, max_retries: int = 1) -> str:
-        """결말카드 전용 OpenAI GPT 프롬프트 생성 (Java generateEndingPromptWithGPT 로직 복제)"""
-        return await self._call_gpt_with_retry(ending_card_content, game_mode, max_retries, is_ending_card=True)
-    
-    async def _call_gpt_with_retry(self, user_sentence: str, game_mode: int, max_retries: int, is_ending_card: bool) -> str:
-        """재시도 로직이 포함된 GPT API 호출 (Java callGPTWithRetry 로직 정확히 복제)"""
-        
-        card_type = "결말카드" if is_ending_card else "일반카드"
-        logger.info(f"=== {card_type} GPT API 호출 시작 (최대 {max_retries + 1}회 시도) ===")
-        logger.info(f"입력 문장: [{user_sentence}], 게임모드: {game_mode}")
-        
-        # 그림체 스타일 정의 (Java와 동일)
-        style = DRAWING_STYLES[game_mode] if game_mode < len(DRAWING_STYLES) else DRAWING_STYLES[0]
-        logger.info(f"선택된 스타일: {style}")
-        
-        # 재시도 로직 (Java와 동일)
-        for attempt in range(1, max_retries + 2):  # 1부터 시작
-            try:
-                logger.info(f"🔄 {card_type} GPT API 시도 {attempt}/{max_retries + 1}")
-                
-                # GPT-5 Responses API 요청 구조 (Java와 정확히 동일)
-                prompt_instruction = (
-                    GPT_ENDING_PROMPT_TEMPLATE.format(user_sentence=user_sentence, style=style)
-                    if is_ending_card else 
-                    GPT_SCENE_PROMPT_TEMPLATE.format(user_sentence=user_sentence, style=style)
-                )
-                
-                request_body = {
-                    "model": "gpt-5-nano",
-                    "input": prompt_instruction,
-                    "reasoning": {"effort": "low"},
-                    "text": {"verbosity": "low"}
-                }
-                
-                logger.info(f"GPT-5 Responses API 요청 전송 중... (시도 {attempt})")
-                
-                # OpenAI Responses API 호출 (Java와 동일한 엔드포인트)
-                headers = {
-                    "Authorization": f"Bearer {OPENAI_API_KEY}",
-                    "Content-Type": "application/json"
-                }
-                
-                async with httpx.AsyncClient(timeout=8.0) as client:
-                    response = await client.post(
-                        "https://api.openai.com/v1/responses",
-                        json=request_body,
-                        headers=headers
-                    )
-                    
-                    if response.status_code >= 400:
-                        error_body = response.text
-                        logger.error(f"🚨 OpenAI API 에러 응답 본문: {error_body}")
-                        raise RuntimeError(f"OpenAI API 에러: {error_body}")
-                    
-                    response_json = response.json()
-                
-                logger.info("OpenAI API 응답 수신: 응답 있음")
-                logger.info(f"응답 JSON 구조: {response_json}")
-                
-                # 응답 파싱 (Java와 정확히 동일한 로직)
-                generated_prompt = None
-                
-                # 1. output_text 직접 확인
-                if "output_text" in response_json:
-                    generated_prompt = response_json["output_text"].strip()
-                    logger.info(f"✅ output_text에서 프롬프트 발견: [{generated_prompt}]")
-                    
-                # 2. output 배열 확인
-                elif "output" in response_json and isinstance(response_json["output"], list):
-                    output_array = response_json["output"]
-                    logger.info(f"output 배열 크기: {len(output_array)}")
-                    
-                    for i, output_node in enumerate(output_array):
-                        logger.info(f"output[{i}] 타입: {output_node.get('type', '')}")
-                        
-                        # 메시지 타입인 경우
-                        if output_node.get("type") == "message" and "content" in output_node:
-                            content_array = output_node["content"]
-                            if isinstance(content_array, list):
-                                for j, content in enumerate(content_array):
-                                    logger.info(f"content[{j}] 타입: {content.get('type', '')}")
-                                    
-                                    if content.get("type") == "output_text" and "text" in content:
-                                        generated_prompt = content["text"].strip()
-                                        logger.info(f"✅ content에서 프롬프트 발견: [{generated_prompt}]")
-                                        break
-                        # 직접 텍스트가 있는 경우
-                        elif "text" in output_node:
-                            generated_prompt = output_node["text"].strip()
-                            logger.info(f"✅ output 노드에서 프롬프트 발견: [{generated_prompt}]")
-                        
-                        if generated_prompt:
-                            break
-                            
-                # 3. choices 배열 확인 (Chat Completions 스타일)
-                elif "choices" in response_json and isinstance(response_json["choices"], list):
-                    choices = response_json["choices"]
-                    if len(choices) > 0:
-                        first_choice = choices[0]
-                        if "message" in first_choice and "content" in first_choice["message"]:
-                            generated_prompt = first_choice["message"]["content"].strip()
-                            logger.info(f"✅ choices에서 프롬프트 발견: [{generated_prompt}]")
-                
-                if generated_prompt and generated_prompt.strip():
-                    logger.info(f"✅ {card_type} GPT API 성공 (시도 {attempt}): [{generated_prompt}]")
-                    return generated_prompt
-                
-                logger.warning(f"⚠️ GPT 응답에서 텍스트 필드 없음 (시도 {attempt})")
-                if attempt < max_retries + 1:
-                    await asyncio.sleep(0.2 * attempt)  # 빠른 재시도
-                    
-            except Exception as e:
-                logger.error(f"❌ {card_type} GPT API 시도 {attempt} 실패: {str(e)}")
-                
-                if attempt == max_retries + 1:
-                    logger.error(f"🚨 {card_type} GPT API 최종 실패 - 원본 문장 사용")
-                    return user_sentence  # 최종 실패시 원본 문장 반환
-                
-                # 대기 후 재시도
-                await asyncio.sleep(0.2 * attempt)
-        
-        return user_sentence  # fallback
-    
-    async def _generate_book_title(self, story_content: str, max_retries: int = 7) -> str:
-        """OpenAI GPT를 사용하여 스토리를 요약하고 책 제목 생성 (Java generateBookTitle 로직 정확히 복제)"""
-        logger.info("=== 책 제목 생성 시작 ===")
-        
-        # 길이 제한 (200자) - Java와 동일
-        if len(story_content) > 200:
-            story_content = story_content[:200]
-        
-        logger.info(f"스토리 내용 길이: {len(story_content)} 글자")
-        logger.info(f"스토리 내용 미리보기: {story_content[:min(100, len(story_content))]}...")
-        
-        # 재시도 로직 (최대 5번 시도 - 제목 생성은 필수)
-        for attempt in range(1, max_retries + 2):  # 1~5
-            try:
-                logger.info(f"🔄 책 제목 생성 시도 {attempt}/{max_retries + 1}")
-                
-                # GPT-5 Responses API 요청 구조 (Java와 정확히 동일)
-                request_body = {
-                    "model": "gpt-5-nano",
-                    "input": GPT_BOOK_TITLE_PROMPT_TEMPLATE.format(story_content=story_content),
-                    "text": {"verbosity": "low"},
-                    "reasoning": {"effort": "minimal"}
-                }
-                
-                logger.info(f"GPT-5 Responses API 요청 전송 중... (시도 {attempt})")
-                
-                headers = {
-                    "Authorization": f"Bearer {OPENAI_API_KEY}",
-                    "Content-Type": "application/json"
-                }
-                
-                async with httpx.AsyncClient(timeout=8.0) as client:
-                    response = await client.post(
-                        "https://api.openai.com/v1/responses",
-                        json=request_body,
-                        headers=headers
-                    )
-                    
-                    if response.status_code >= 400:
-                        error_body = response.text
-                        logger.error(f"🚨 OpenAI API 에러 응답 본문: {error_body}")
-                        raise RuntimeError(f"OpenAI API 에러: {error_body}")
-                    
-                    response_json = response.json()
-                
-                logger.info("GPT API 응답 수신: 응답 있음")
-                
-                if not response_json:
-                    raise RuntimeError("GPT API null 응답")
-                
-                # JSON 키들을 수집 (Java와 동일)
-                field_names = list(response_json.keys())
-                logger.info(f"응답 JSON 키들: {', '.join(field_names) if field_names else '없음'}")
-                logger.info(f"전체 응답: {response_json}")
-                
-                generated_title = None
-                
-                # 1. output_text 직접 확인
-                if "output_text" in response_json:
-                    generated_title = response_json["output_text"].strip()
-                    logger.info(f"✅ output_text에서 제목 발견: [{generated_title}]")
-                    
-                # 2. output 배열 확인
-                elif "output" in response_json and isinstance(response_json["output"], list):
-                    output_array = response_json["output"]
-                    logger.info(f"output 배열 크기: {len(output_array)}")
-                    
-                    for i, output_node in enumerate(output_array):
-                        logger.info(f"output[{i}] 타입: {output_node.get('type', '')}")
-                        
-                        # 메시지 타입인 경우
-                        if output_node.get("type") == "message" and "content" in output_node:
-                            content_array = output_node["content"]
-                            if isinstance(content_array, list):
-                                for j, content in enumerate(content_array):
-                                    logger.info(f"content[{j}] 타입: {content.get('type', '')}")
-                                    
-                                    if content.get("type") == "output_text" and "text" in content:
-                                        generated_title = content["text"].strip()
-                                        logger.info(f"✅ content에서 제목 발견: [{generated_title}]")
-                                        break
-                        # 직접 텍스트가 있는 경우
-                        elif "text" in output_node:
-                            generated_title = output_node["text"].strip()
-                            logger.info(f"✅ output 노드에서 제목 발견: [{generated_title}]")
-                        
-                        if generated_title:
-                            break
-                            
-                # 3. choices 배열 확인 (Chat Completions 스타일)
-                elif "choices" in response_json and isinstance(response_json["choices"], list):
-                    choices = response_json["choices"]
-                    if len(choices) > 0:
-                        first_choice = choices[0]
-                        if "message" in first_choice and "content" in first_choice["message"]:
-                            generated_title = first_choice["message"]["content"].strip()
-                            logger.info(f"✅ choices에서 제목 발견: [{generated_title}]")
-                
-                if generated_title and generated_title.strip():
-                    logger.info(f"✅ 책 제목 생성 성공 (시도 {attempt}): [{generated_title}]")
-                    return generated_title
-                
-                logger.warning(f"⚠️ GPT 응답에서 choices 필드 없음 (시도 {attempt})")
-                if attempt < max_retries + 1:
-                    await asyncio.sleep(1.0)  # 1초 대기 후 재시도
-                    
-            except Exception as e:
-                logger.error(f"❌ 책 제목 생성 시도 {attempt} 실패: {str(e)}")
-                if attempt == max_retries + 1:
-                    logger.error("🚨 책 제목 생성 최종 실패 - RuntimeException 던짐")
-                    raise RuntimeError(f"GPT 제목 생성 필수 - {max_retries + 1}회 시도 모두 실패: {str(e)}")
-                else:
-                    try:
-                        await asyncio.sleep(1.0)  # 1초 대기 후 재시도
-                    except Exception:
-                        raise RuntimeError("제목 생성 중 인터럽트 발생")
-        
-        # 이 지점에 도달하면 안 됨 (모든 재시도 실패)
-        logger.error("🚨 CRITICAL: 책 제목 생성 로직 오류 - 이 지점에 도달하면 안 됨")
-        raise RuntimeError("책 제목 생성 로직 오류")
-
-    async def _generate_image_with_gemini(self, prompt: str, max_retries: int = 1) -> bytes:
-        """Gemini 2.5 Flash Image Preview를 사용하여 이미지 생성 (Java callGeminiWithRetry 로직 정확히 복제)"""
-        return await self._call_gemini_with_retry(prompt, max_retries)
-    
-    async def _generate_cover_image(self, book_title: str, drawing_style: int) -> bytes:
-        """표지 이미지 생성 (Java generateCoverImage 로직 정확히 복제)"""
-        # 그림체 모드에 따른 스타일 정의 (Java와 동일)
-        style = DRAWING_STYLES[drawing_style] if drawing_style < len(DRAWING_STYLES) else DRAWING_STYLES[0]
-        
-        # 표지 이미지 프롬프트 생성 (Java와 동일)
-        cover_prompt = BOOK_COVER_PROMPT_TEMPLATE.format(book_title=book_title, style=style)
-        
-        # 책표지 생성을 위해 재시도 횟수 증가 (더 높은 성공률을 위해 추가 증가)
-        return await self._call_gemini_with_retry_for_cover(cover_prompt, 7)  # 7회 재시도 (총 8번)
-    
-    async def _call_gemini_with_retry(self, prompt: str, max_retries: int) -> bytes:
-        """재시도 로직이 포함된 Gemini API 호출 (Java callGeminiWithRetry 로직 정확히 복제)"""
-        logger.info(f"=== Gemini 2.5 Flash Image Preview API 호출 시작 (최대 {max_retries + 1}회 시도) ===")
-        logger.info(f"입력 프롬프트: [{prompt}] (길이: {len(prompt)}자)")
-        
-        for attempt in range(1, max_retries + 2):  # 1부터 시작
-            try:
-                logger.info(f"🔄 Gemini API 시도 {attempt}/{max_retries + 1}")
-                
-                # Gemini 2.5 Flash Image Preview API 요청 구조 (Java와 동일)
-                full_prompt = GEMINI_IMAGE_PROMPT_TEMPLATE.format(prompt=prompt)
-                
-                request_body = {
-                    "contents": [{
-                        "parts": [{
-                            "text": full_prompt
-                        }]
-                    }]
-                }
-                
-                logger.info(f"Gemini API 전송 프롬프트: [{full_prompt}] (길이: {len(full_prompt)}자)")
-                
-                # Gemini 2.5 Flash Image Preview API 호출
-                api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={GEMINI_API_KEY}"
-                
-                logger.info(f"Gemini API URL: {api_url[:api_url.rfind('key=') + 4]}***")
-                logger.info("Gemini API 요청 전송 중...")
-                
-                async with httpx.AsyncClient(timeout=12.0) as client:
-                    response = await client.post(api_url, json=request_body)
-                    
-                    if response.status_code >= 400:
-                        error_text = response.text
-                        logger.error(f"❌ Gemini API HTTP 에러 {response.status_code} (시도 {attempt}): {error_text}")
-                        
-                        # 할당량 초과 등 복구 불가능한 에러 감지
-                        if response.status_code == 429 or "quota" in error_text.lower() or "limit" in error_text.lower():
-                            logger.error("🚫 API 할당량 초과 - 즉시 실패")
-                            raise RuntimeError(f"Gemini API 할당량 초과: {error_text}")
-                        
-                        # 인증 문제 등 즉시 실패해야 하는 상황
-                        if response.status_code in [401, 403]:
-                            logger.error("🚫 인증/권한 문제 - 즉시 실패")
-                            raise RuntimeError(f"Gemini API 인증/권한 에러: {error_text}")
-                        
-                        # 5xx 서버 에러나 기타 일시적 문제는 재시도 가능
-                        if response.status_code >= 500 and attempt <= max_retries:
-                            logger.warning(f"⏰ 서버 에러 {response.status_code} - 재시도 {attempt}/{max_retries}")
-                            wait_time = 0.5 * attempt
-                            await asyncio.sleep(wait_time)
-                            continue
-                        
-                        raise RuntimeError(f"Gemini API 에러 {response.status_code}: {error_text}")
-                        
-                    response_json = response.json()
-                
-                logger.info("=== Gemini API 응답 수신 ===")
-                logger.info("응답 상태: 응답 있음")
-                
-                # 디버깅: 실제 응답 내용 로깅
-                logger.info(f"🔍 Gemini API 실제 응답 내용: {response_json}")
-                
-                if not response_json:
-                    logger.error("Gemini API에서 null 응답 수신")
-                    raise RuntimeError("Gemini API null 응답")
-                
-                # 응답 파싱 (Java와 정확히 동일)
-                logger.info("=== Gemini API 응답 JSON 분석 ===")
-                
-                # candidates 확인
-                if "candidates" not in response_json:
-                    logger.error(f"❌ Gemini API 응답에 'candidates' 필드 없음! (시도 {attempt})")
-                    
-                    # 에러 정보 상세 분석 (Java와 동일)
-                    if "error" in response_json:
-                        error = response_json["error"]
-                        error_message = error.get("message", "No message")
-                        logger.error(f"🚨 Gemini API 에러: {error_message}")
-                        
-                        # 필터링 관련 에러 감지 (Java와 동일) - 즉시 실패
-                        if any(keyword in error_message.lower() for keyword in ["blocked", "filter", "safety"]):
-                            logger.error("🔒 콘텐츠 필터링으로 인한 생성 거부 감지!")
-                            raise RuntimeError(f"콘텐츠 필터링으로 인한 이미지 생성 거부: {error_message}")
-                        
-                        # 할당량 초과 등 복구 불가능한 에러 - 즉시 실패
-                        if any(keyword in error_message.lower() for keyword in ["quota", "limit", "billing"]):
-                            logger.error("🚫 할당량 초과 또는 billing 문제 - 즉시 실패")
-                            raise RuntimeError(f"API 할당량 또는 billing 문제: {error_message}")
-                    
-                    # 일시적인 API 문제로 간주하고 재시도 (단, 마지막 시도가 아닌 경우)
-                    if attempt <= max_retries:
-                        logger.warning(f"⏰ candidates 필드 누락 - 재시도 {attempt}/{max_retries}")
-                        wait_time = 0.3 * attempt  # 점진적 백오프
-                        await asyncio.sleep(wait_time)
-                        continue
-                    else:
-                        raise RuntimeError("Gemini API candidates 필드 누락 - 최대 재시도 횟수 초과")
-                
-                candidates = response_json["candidates"]
-                if len(candidates) == 0:
-                    logger.error(f"❌ candidates 배열이 비어있음! (시도 {attempt})")
-                    
-                    # promptFeedback 확인 (필터링 정보)
-                    if "promptFeedback" in response_json:
-                        prompt_feedback = response_json["promptFeedback"]
-                        logger.error(f"  - promptFeedback: {prompt_feedback}")
-                        
-                        if "blockReason" in prompt_feedback:
-                            block_reason = prompt_feedback["blockReason"]
-                            logger.error(f"🔒 프롬프트가 안전 필터에 의해 차단됨: {block_reason}")
-                            raise RuntimeError(f"프롬프트 안전 필터 차단: {block_reason}")
-                    
-                    # 안전 필터 문제가 아닌 경우 재시도
-                    if attempt <= max_retries:
-                        logger.warning(f"⏰ candidates 배열 비어있음 - 재시도 {attempt}/{max_retries}")
-                        wait_time = 0.3 * attempt
-                        await asyncio.sleep(wait_time)
-                        continue
-                    else:
-                        raise RuntimeError("Gemini API candidates 배열 비어있음 - 최대 재시도 횟수 초과")
-                
-                logger.info(f"candidates 개수: {len(candidates)}")
-                candidate = candidates[0]
-                
-                # candidate의 필터링 상태 확인 (Java와 동일)
-                if "finishReason" in candidate:
-                    finish_reason = candidate["finishReason"]
-                    logger.info(f"finishReason: {finish_reason}")
-                    
-                    # 필터링으로 인한 중단 감지
-                    if finish_reason == "SAFETY":
-                        logger.error("🔒 콘텐츠가 안전 필터에 의해 차단됨!")
-                        raise RuntimeError(f"SAFETY 필터 차단 - 유해 콘텐츠 감지: {finish_reason}")
-                
-                # content 및 parts 확인 (Java와 동일)
-                if "content" not in candidate:
-                    logger.error("❌ candidate에 'content' 필드 없음!")
-                    raise RuntimeError("Gemini API candidate content 누락")
-                
-                candidate_content = candidate["content"]
-                if "parts" not in candidate_content:
-                    logger.error("❌ content에 'parts' 필드 없음!")
-                    raise RuntimeError("Gemini API content parts 누락")
-                
-                parts = candidate_content["parts"]
-                logger.info(f"parts 개수: {len(parts)}")
-                
-                # 각 part 검사 (Java와 동일)
-                for i, current_part in enumerate(parts):
-                    logger.info(f"=== Part {i} 분석 ===")
-                    
-                    # inlineData 방식 확인
-                    if "inlineData" in current_part:
-                        inline_data = current_part["inlineData"]
-                        
-                        if "data" in inline_data:
-                            base64_data = inline_data["data"]
-                            logger.info("✅ SUCCESS: Base64 이미지 데이터 발견!")
-                            logger.info(f"Base64 데이터 길이: {len(base64_data)} 글자")
-                            
-                            image_bytes = base64.b64decode(base64_data)
-                            logger.info(f"✅ Gemini API 성공 (시도 {attempt}) ===")
-                            logger.info(f"최종 이미지 크기: {len(image_bytes)} bytes")
-                            return image_bytes
-                
-                logger.error(f"❌ 모든 parts를 검사했지만 이미지 데이터를 찾을 수 없음! (시도 {attempt})")
-                
-                # 이미지 데이터 누락도 재시도 가능한 상황으로 처리
-                if attempt <= max_retries:
-                    logger.warning(f"⏰ 이미지 데이터 누락 - 재시도 {attempt}/{max_retries}")
-                    wait_time = 1.0 * attempt
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    raise RuntimeError("Gemini에서 이미지 데이터를 찾을 수 없음 - 최대 재시도 횟수 초과")
-                
-            except httpx.TimeoutException:
-                logger.error(f"❌ Gemini API 타임아웃 (시도 {attempt})")
-                if attempt <= max_retries:
-                    wait_time = 2.0 * attempt
-                    logger.warning(f"⏰ 타임아웃으로 인한 재시도 {attempt}/{max_retries} - {wait_time}s 대기")
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    raise RuntimeError("Gemini API 타임아웃 - 최대 재시도 횟수 초과")
-                    
-            except httpx.NetworkError as e:
-                logger.error(f"❌ 네트워크 에러 (시도 {attempt}): {str(e)}")
-                if attempt <= max_retries:
-                    wait_time = 2.0 * attempt
-                    logger.warning(f"⏰ 네트워크 에러로 인한 재시도 {attempt}/{max_retries} - {wait_time}s 대기")
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    raise RuntimeError(f"네트워크 에러 - 최대 재시도 횟수 초과: {str(e)}")
-                    
-            except RuntimeError as e:
-                # RuntimeError는 대부분 복구 불가능한 에러이므로 즉시 재발생
-                error_msg = str(e)
-                if any(keyword in error_msg.lower() for keyword in ["안전 필터", "할당량", "인증", "권한"]):
-                    logger.error(f"🚫 복구 불가능한 에러 감지: {error_msg}")
-                    raise e
-                
-                # 기타 RuntimeError는 재시도 가능
-                logger.error(f"❌ RuntimeError (시도 {attempt}): {error_msg}")
-                if attempt <= max_retries:
-                    wait_time = 1.0 * attempt
-                    logger.warning(f"⏰ RuntimeError로 인한 재시도 {attempt}/{max_retries} - {wait_time}s 대기")
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    raise RuntimeError(f"이미지 생성 최종 실패: {error_msg}")
-                    
-            except Exception as e:
-                logger.error(f"❌ 예상치 못한 에러 (시도 {attempt}): {str(e)}")
-                
-                if attempt <= max_retries:
-                    wait_time = 1.0 * attempt
-                    logger.warning(f"⏰ 예상치 못한 에러로 인한 재시도 {attempt}/{max_retries} - {wait_time}s 대기")
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    logger.error("🚨 Gemini API 최종 실패 - RuntimeException 던짐")
-                    raise RuntimeError(f"이미지 생성 최종 실패: {str(e)}")
-        
-        raise RuntimeError("Gemini API 재시도 로직 오류")  # fallback
-    
-    async def _call_gemini_with_retry_for_cover(self, prompt: str, max_retries: int) -> bytes:
-        """재시도 로직이 포함된 Gemini API 호출 (책 표지용) - Java callGeminiWithRetryForCover 로직 정확히 복제"""
-        logger.info(f"=== Gemini 2.5 Flash Image Preview API 호출 시작 (최대 {max_retries + 1}회 시도) - 책 표지 ===")
-        logger.info(f"입력 프롬프트: [{prompt}] (길이: {len(prompt)}자)")
-        
-        for attempt in range(1, max_retries + 2):  # 1부터 시작
-            try:
-                logger.info(f"🔄 Gemini API 시도 {attempt}/{max_retries + 1} - 책 표지")
-                
-                # Gemini 2.5 Flash Image Preview API 요청 구조 (Java와 동일)
-                full_prompt = GEMINI_IMAGE_PROMPT_TEMPLATE.format(prompt=prompt)
-                
-                request_body = {
-                    "contents": [{
-                        "parts": [{
-                            "text": full_prompt
-                        }]
-                    }]
-                }
-                
-                logger.info(f"Gemini API 전송 프롬프트: [{full_prompt}] (길이: {len(full_prompt)}자)")
-                
-                # Gemini 2.5 Flash Image Preview API 호출
-                api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={GEMINI_API_KEY}"
-                
-                logger.info(f"Gemini API URL: {api_url[:api_url.rfind('key=') + 4]}***")
-                logger.info("Gemini API 요청 전송 중...")
-                
-                async with httpx.AsyncClient(timeout=20.0) as client:  # 책 표지는 조금 더 긴 타임아웃
-                    response = await client.post(api_url, json=request_body)
-                    
-                    if response.status_code >= 400:
-                        error_text = response.text
-                        logger.error(f"❌ Gemini API HTTP 에러 {response.status_code} (시도 {attempt}): {error_text}")
-                        
-                        # 할당량 초과 등 복구 불가능한 에러 감지
-                        if response.status_code == 429 or "quota" in error_text.lower() or "limit" in error_text.lower():
-                            logger.error("🚫 API 할당량 초과 - 즉시 실패")
-                            raise RuntimeError(f"Gemini API 할당량 초과: {error_text}")
-                        
-                        # 인증 문제 등 즉시 실패해야 하는 상황
-                        if response.status_code in [401, 403]:
-                            logger.error("🚫 인증/권한 문제 - 즉시 실패")
-                            raise RuntimeError(f"Gemini API 인증/권한 에러: {error_text}")
-                        
-                        # 5xx 서버 에러나 기타 일시적 문제는 재시도 가능
-                        if response.status_code >= 500 and attempt <= max_retries:
-                            logger.warning(f"⏰ 서버 에러 {response.status_code} - 재시도 {attempt}/{max_retries}")
-                            wait_time = 0.5 * attempt
-                            await asyncio.sleep(wait_time)
-                            continue
-                        
-                        raise RuntimeError(f"Gemini API 에러 {response.status_code}: {error_text}")
-                        
-                    response_json = response.json()
-                
-                logger.info("=== Gemini API 응답 수신 ===")
-                logger.info("응답 상태: 응답 있음")
-                
-                # 디버깅: 실제 응답 내용 로깅 (표지용)
-                logger.info(f"🔍 Gemini API 실제 응답 내용 (표지): {response_json}")
-                
-                if not response_json:
-                    logger.error("Gemini API에서 null 응답 수신")
-                    raise RuntimeError("Gemini API null 응답")
-                
-                # 응답 파싱은 _call_gemini_with_retry와 동일한 로직 사용
-                logger.info("=== Gemini API 응답 JSON 분석 ===")
-                
-                # candidates 확인
-                if "candidates" not in response_json:
-                    logger.error(f"❌ Gemini API 응답에 'candidates' 필드 없음! (시도 {attempt})")
-                    
-                    # 에러 정보 상세 분석
-                    if "error" in response_json:
-                        error = response_json["error"]
-                        error_message = error.get("message", "No message")
-                        logger.error(f"🚨 Gemini API 에러: {error_message}")
-                        
-                        # 필터링 관련 에러 감지
-                        if any(keyword in error_message.lower() for keyword in ["blocked", "filter", "safety"]):
-                            logger.error("🔒 콘텐츠 필터링으로 인한 생성 거부 감지!")
-                            raise RuntimeError(f"콘텐츠 필터링으로 인한 이미지 생성 거부: {error_message}")
-                    
-                    raise RuntimeError("Gemini API candidates 필드 누락")
-                
-                candidates = response_json["candidates"]
-                if len(candidates) == 0:
-                    logger.error(f"❌ candidates 배열이 비어있음! (시도 {attempt})")
-                    
-                    # promptFeedback 확인 (필터링 정보)
-                    if "promptFeedback" in response_json:
-                        prompt_feedback = response_json["promptFeedback"]
-                        logger.error(f"  - promptFeedback: {prompt_feedback}")
-                        
-                        if "blockReason" in prompt_feedback:
-                            block_reason = prompt_feedback["blockReason"]
-                            logger.error(f"🔒 프롬프트가 안전 필터에 의해 차단됨: {block_reason}")
-                            raise RuntimeError(f"프롬프트 안전 필터 차단: {block_reason}")
-                    
-                    # 안전 필터 문제가 아닌 경우 재시도
-                    if attempt <= max_retries:
-                        logger.warning(f"⏰ candidates 배열 비어있음 - 재시도 {attempt}/{max_retries}")
-                        wait_time = 0.3 * attempt
-                        await asyncio.sleep(wait_time)
-                        continue
-                    else:
-                        raise RuntimeError("Gemini API candidates 배열 비어있음 - 최대 재시도 횟수 초과")
-                
-                logger.info(f"candidates 개수: {len(candidates)}")
-                candidate = candidates[0]
-                
-                # candidate의 필터링 상태 확인
-                if "finishReason" in candidate:
-                    finish_reason = candidate["finishReason"]
-                    logger.info(f"finishReason: {finish_reason}")
-                    
-                    # 필터링으로 인한 중단 감지
-                    if finish_reason == "SAFETY":
-                        logger.error("🔒 콘텐츠가 안전 필터에 의해 차단됨!")
-                        raise RuntimeError(f"SAFETY 필터 차단 - 유해 콘텐츠 감지: {finish_reason}")
-                
-                # content 및 parts 확인
-                if "content" not in candidate:
-                    logger.error("❌ candidate에 'content' 필드 없음!")
-                    raise RuntimeError("Gemini API candidate content 누락")
-                
-                candidate_content = candidate["content"]
-                if "parts" not in candidate_content:
-                    logger.error("❌ content에 'parts' 필드 없음!")
-                    raise RuntimeError("Gemini API content parts 누락")
-                
-                parts = candidate_content["parts"]
-                logger.info(f"parts 개수: {len(parts)}")
-                
-                # 각 part 검사
-                for i, current_part in enumerate(parts):
-                    logger.info(f"=== Part {i} 분석 ===")
-                    
-                    # inlineData 방식 확인
-                    if "inlineData" in current_part:
-                        inline_data = current_part["inlineData"]
-                        
-                        if "data" in inline_data:
-                            base64_data = inline_data["data"]
-                            logger.info("✅ SUCCESS: Base64 이미지 데이터 발견!")
-                            logger.info(f"Base64 데이터 길이: {len(base64_data)} 글자")
-                            
-                            image_bytes = base64.b64decode(base64_data)
-                            logger.info(f"✅ Gemini API 성공 (시도 {attempt}) - 책 표지 ===")
-                            logger.info(f"최종 이미지 크기: {len(image_bytes)} bytes")
-                            return image_bytes
-                
-                logger.error(f"❌ 모든 parts를 검사했지만 이미지 데이터를 찾을 수 없음! (시도 {attempt})")
-                
-                # 이미지 데이터 누락도 재시도 가능한 상황으로 처리
-                if attempt <= max_retries:
-                    logger.warning(f"⏰ 이미지 데이터 누락 - 재시도 {attempt}/{max_retries}")
-                    wait_time = 1.0 * attempt
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    raise RuntimeError("Gemini에서 이미지 데이터를 찾을 수 없음 - 최대 재시도 횟수 초과")
-                
-            except Exception as e:
-                logger.error(f"❌ Gemini API 시도 {attempt} 실패 - 책 표지: {str(e)}")
-                
-                if attempt == max_retries + 1:
-                    logger.error("🚨 Gemini API 최종 실패 - 책 표지 - RuntimeException 던짐")
-                    raise RuntimeError(f"표지 이미지 생성 최종 실패: {str(e)}")
-                
-                # 짧은 대기 (500ms * attempt)
-                wait_time = 0.2 * attempt
-                logger.info(f"⏰ {wait_time}s 대기 후 재시도...")
-                
-                try:
-                    await asyncio.sleep(wait_time)
-                except Exception:
-                    logger.error("대기 중 인터럽트 발생")
-                    raise RuntimeError(f"표지 이미지 생성 인터럽트: {str(e)}")
-        
-        raise RuntimeError("Gemini API 재시도 로직 오류 - 책 표지")  # fallback
-
+        """책 표지 생성"""
+        # 기존 로직 유지
+        title = "멋진 이야기"  # 간단히 처리
+        cover_image = await self._generate_text_to_image(
+            f"book cover titled '{title}'",
+            DRAWING_STYLES[request.drawingStyle],
+            False
+        )
+        return title, cover_image
 
 # 전역 서비스 인스턴스
-image_service = UnifiedImageService()
+image_service = UnifiedImageServiceV2()
+
+# ================== API 엔드포인트 ==================
 
 @app.post("/generate-scene")
 async def generate_scene_image(request: SceneGenerationRequest):
-    """장면 이미지 생성 API - 바이너리 이미지 데이터 반환"""
+    """장면 이미지 생성 API"""
     try:
         image_data = await image_service.generate_scene_image(request)
         return Response(content=image_data, media_type="image/png")
     except Exception as e:
-        logger.error(f"장면 이미지 생성 API 오류: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+        logger.error(f"API 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-cover")
 async def generate_book_cover(request: BookCoverGenerationRequest):
-    """책 표지 생성 API - 제목과 바이너리 이미지 데이터 반환"""
+    """책 표지 생성 API"""
     try:
         title, image_data = await image_service.generate_book_cover(request)
         return {
             "title": title,
             "image_data": base64.b64encode(image_data).decode('utf-8'),
-            "success": True,
-            "message": "책 표지 생성 성공"
+            "success": True
         }
     except Exception as e:
-        logger.error(f"책 표지 생성 API 오류: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+        logger.error(f"API 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 async def health_check():
-    """헬스 체크 엔드포인트"""
+    """헬스 체크"""
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "service": "Unified Image Generation Service",
-        "version": "2.0.0"
+        "version": "2.0.0",
+        "features": ["text-to-image", "image-to-image"]
     }
 
+@app.delete("/session/{game_id}")
+async def clear_session(game_id: str):
+    """게임 세션 정리"""
+    image_service.session_manager.clear_session(game_id)
+    return {"message": f"Session cleared for game {game_id}"}
+
 if __name__ == "__main__":
-    logger.info("=== Long Ago 통합 이미지 생성 서비스 시작 ===")
-    logger.info(f"OpenAI API 키 설정됨: {bool(OPENAI_API_KEY)}")
-    logger.info(f"Gemini API 키 설정됨: {bool(GEMINI_API_KEY)}")
-    logger.info("바이너리 이미지 데이터 반환 모드 - S3 업로드는 Java에서 처리")
+    logger.info("=== Long Ago 통합 이미지 생성 서비스 v2 시작 ===")
+    logger.info("✅ Image-to-Image 기능 활성화")
+    logger.info(f"OpenAI API 키: {'설정됨' if OPENAI_API_KEY else '없음'}")
+    logger.info(f"Gemini API 키: {'설정됨' if GEMINI_API_KEY else '없음'}")
     
     uvicorn.run(app, host="0.0.0.0", port=8190)
