@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # 중요 페이지 우선순위
-Sitemap: https://longago.game/sitemap.xml
+Sitemap: https://longago.io/sitemap.xml
 
 # 크롤링 최적화
 Crawl-delay: 1
