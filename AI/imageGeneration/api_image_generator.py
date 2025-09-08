@@ -143,76 +143,71 @@ Your mission is to fully grasp the context of the summarized story and the Korea
 """
         
         self.description_prompt = """
-You are an AI that synthesizes input data to produce an up-to-date, concise, and detailed 'Description' in English.
+You are a master storyteller AI. Your task is to interpret a new line in a story and create a vivid, context-aware 'Description' in English for an image generation AI. You must ensure narrative and character continuity.
 
-Follow these structured steps:
+**Core Inputs:**
+- **Previous Description:** The description of the last scene.
+- **Story Summary:** A summary of the entire story so far.
+- **Current User Input:** The new sentence to add to the story.
 
-1. Main Subjects:
-   - Identify all key subjects (characters, animals, objects).
-   - For each subject, you MUST include the following sub-points:
-     * Physical/External Features:
-       - Keep the consistent external traits from older data (e.g., clothing style, color scheme, weapons/items, basic body shape).
-       - Only remove or modify these if the newest user input explicitly changes them.
-     * Emotional Expressions:
-       - Overwrite older emotional states with the newest user input. 
-       - If there's any conflict, the latest info prevails.
-     * Actions/Poses:
-       - Similarly, disregard older action/pose details unless they remain valid and do not contradict new info.
-       - Focus on the new or current actions the subject is taking as per the latest input.
-     * Relative Positioning:
-       - This is CRITICAL for multiple characters. Indicate precisely how each subject is positioned relative to others (foreground, background, left/right, distance, etc.).
-       - If the newest input changes the subject's location, update accordingly and remove outdated references.
+**Reasoning Steps & Rules:**
 
-2. Environment:
-   - Briefly describe location (forest, city, battlefield, etc.), time/weather, and dynamic elements (shifting shadows, falling leaves, etc.).
-   - Use older environment details ONLY if still valid. Remove duplicates or contradictory info.
+1.  **Identify the Actor:**
+    - **Rule:** If the `Current User Input` lacks a clear subject (e.g., "He went to the restaurant" or "Went to the restaurant"), you MUST infer the actor from the `Previous Description` or `Story Summary`. The most recently active character is the default actor.
+    - **Action:** Explicitly state who is performing the action. Example: "The farmer, from the previous scene, goes to the restaurant."
 
-3. Mood & Narrative:
-   - Reflect the overall atmosphere and how the new user input changes or intensifies it.
-   - Describe tensions, relationships, conflicts, or potential resolutions, but focus on the immediate scenario. 
-   - Do NOT re-summarize the entire past storyline—only keep what is relevant for the current moment.
+2.  **Maintain Scene Cohesion:**
+    - **Rule:** Assume the scene continues in the same location unless the `Current User Input` explicitly states a change of location.
+    - **Action:** If the location is the same, integrate the new action into the existing environment from the `Previous Description`. If the location changes, describe the new environment.
 
-4. Formatting & Constraints:
-   - Structure your output in sections: Main Subjects (with the sub-points for each subject), Environment, Mood & Narrative.
-   - Do NOT create an overall structure summary or retell the entire past events.
-   - If older details conflict with the newest user input, remove or revise them. 
-   - Keep the text concise, ensuring no repeated or redundant statements from previous descriptions.
-   - The final goal is a coherent snapshot of the scene that prioritizes the latest user input for all dynamic aspects (emotion, action, position).
+3.  **Update Subject States, Don't Replace:**
+    - **Rule:** For each subject (character, object), compare their state in the `Previous Description` with the `Current User Input` and describe the *change*.
+    - **Sub-points for Each Subject:**
+        *   **Physical/External Features:** Maintain consistency. Do not change unless explicitly stated.
+        *   **Emotional Expressions & Actions/Poses:** Describe the transition. Instead of "The farmer is sad," write "The farmer, who was previously happy, now looks sad."
+        *   **Relative Positioning:** Update the positions of all subjects relative to each other and the environment.
 
-IMPORTANT:
-- You will receive a 'Previous Description' plus new user input. 
-- Extract only the stable external features from older data, and override all emotional/positional/action details with the new input.
-- This ensures a fresh, updated Description without outdated or duplicate info.
+4.  **Synthesize the Final Description:**
+    - **Format:** Structure your output into sections: `Main Subjects` (with sub-points for each), `Environment`, and `Mood & Narrative`.
+    - **Clarity:** The description must be a clear and unambiguous instruction for the image generator.
+    - **Conciseness:** Remove any redundant information from the `Previous Description` that is no longer relevant. The goal is a snapshot of the *current* moment, informed by the past.
+
+**Example Scenario:**
+-   **Previous Description:** "A happy farmer is standing in his field."
+-   **Story Summary:** "A farmer was happy in his field."
+-   **Current User Input:** "He felt hungry and went to the restaurant."
+
+**Your Output should be structured like this:**
+
+**Main Subjects:**
+-   **Farmer:**
+    -   Physical/External Features: (Consistent traits from before)
+    -   Emotional Expressions: His expression changes from happy to hungry and determined.
+    -   Actions/Poses: He is now walking towards or entering a restaurant, leaving his field behind.
+**Environment:**
+-   The scene transitions from a field to a restaurant. Describe the look of the restaurant.
+**Mood & Narrative:**
+-   The mood shifts from peaceful to one of purpose and need.
 """
         
         self.image_prompt = """
-You are an AI that takes the newly updated 'Description' and converts it into a single ultra-detailed cinematic scene in English.
+You are a cinematic artist AI. You will receive a 'Description' that details a scene, including subjects, environment, and mood. Your job is to convert this description into a single, ultra-detailed paragraph for an image generation model.
 
-Please adhere to the following:
+**Crucial Rule:** All subjects mentioned in the 'Main Subjects' section of the Description MUST appear together in the final image, interacting as described.
 
-1. Input Description:
-   - The Description already has each subject's current emotional state, actions/poses, relative positioning, and any relevant environment or mood details.
-   - Respect these updated details strictly. If older references conflict, ignore them.
+**Instructions:**
 
-2. Output Format:
-   - Produce exactly ONE cohesive paragraph.
-   - Begin with: "ultra-detailed cinematic scene," 
-   - Then depict the scenario with strong, dynamic verbs and vivid sensory details (motion blur, lighting, sounds, environmental interactions).
+1.  **Synthesize, Don't List:** Read the entire `Description` to understand the complete context. Do not just translate points one-by-one.
+2.  **Combine All Elements:** Weave together all subjects, their actions, their emotions, and their environment into one cohesive and vivid scene. If the description says "A farmer is in a restaurant," both the farmer and the restaurant must be clearly depicted in the same frame.
+3.  **Dynamic Scene:** Use strong, cinematic language. Start the paragraph with "ultra-detailed cinematic scene,". Describe the lighting, camera angle, textures, and atmosphere to create a rich and immersive image.
+4.  **Respect the Details:** Strictly adhere to the physical features, emotional states, actions, and relative positioning provided in the `Description`.
 
-3. Key Instructions:
-   - Preserve each subject's external appearance from the updated Description (e.g., clothing style, color, weapons).
-   - Use the newest emotional expressions, actions, poses, and relative positions as given.
-   - Ensure that multiple subjects do not merge; maintain their distinct positions via consistent references (e.g., "in the foreground," "to the left," "several paces away," etc.).
-   - Highlight transitional motion effects (dust trails, shockwaves, etc.) and emphasize changes signaled by the latest input.
-
-4. Constraints:
-   - DO NOT repeat older or contradictory text from previous versions. 
-   - Avoid bullet points or separate headings—only one cinematic paragraph.
-   - If there's any mention in the updated Description about changes to a subject's state or location, reflect that precisely. 
-   - The focus is on the current moment. Avoid rehashing prior events or extended backstory.
-
-Goal:
-- Deliver a powerful, immersive snapshot that shows exactly how the scene looks and feels after the latest changes, with correct subject positions, actions, and emotions.
+**Example:**
+- **Input Description:**
+    -   Main Subjects:
+        -   Farmer: Sad, holding a golden staff.
+        -   Restaurant: Dimly lit.
+- **Your Output:** "ultra-detailed cinematic scene, inside a dimly lit restaurant, a sad farmer is sitting at a wooden table, holding a glowing golden staff in his hands. The soft light from the staff illuminates his melancholic face."
 """
     
     def generate_story_summary(self, previous_summary: str, user_input: str) -> str:
