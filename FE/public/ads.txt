@@ -1,0 +1,11 @@
+# Long Ago - AI 협동 스토리텔링 웹게임
+# ads.txt 파일 - 광고 설정
+
+# 현재 직접 광고 판매 없음
+# Direct sales disabled
+
+# Google AdSense (실제 사용 시 Publisher ID로 교체)
+# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+
+# 무단 광고 차단
+# Unauthorized advertising is prohibited
