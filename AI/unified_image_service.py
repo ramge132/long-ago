@@ -13,6 +13,7 @@ import json
 import base64
 import logging
 import io
+import random
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
 from dataclasses import dataclass
@@ -26,6 +27,8 @@ from PIL import Image
 from openai import OpenAI
 import requests
 
+# ================== 환경 설정 ==================
+
 # 환경변수 설정
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -33,18 +36,63 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # 캐릭터 파일 경로
 CHARACTERS_DIR = Path(__file__).parent / "imageGeneration" / "characters"
 
-# 그림체 스타일 정의
+# ================== 프롬프트 설정 (최상단 집중 관리) ==================
+
+# 1. 그림체 스타일 정의 (9가지)
 DRAWING_STYLES = [
-    "anime style, vibrant colors, detailed illustration",
-    "cute 3d cartoon style, soft colors, rounded features", 
-    "comic strip style, bold outlines, dramatic expressions",
-    "claymation style, 3D rendered, soft clay texture",
-    "crayon drawing style, childlike, soft pastels",
-    "pixel art style, retro gaming aesthetic, sharp pixels",
-    "minimalist illustration, clean lines, simple colors",
-    "watercolor painting style, soft blending, artistic",
-    "storybook illustration, whimsical, detailed"
+    "anime style, vibrant colors, detailed illustration",           # 0: 애니메이션 스타일
+    "cute 3d cartoon style, soft colors, rounded features",         # 1: 3D 카툰 스타일
+    "comic strip style, bold outlines, dramatic expressions",       # 2: 만화 스타일
+    "claymation style, 3D rendered, soft clay texture",            # 3: 클레이메이션
+    "crayon drawing style, childlike, soft pastels",               # 4: 크레용 그림
+    "pixel art style, retro gaming aesthetic, sharp pixels",       # 5: 픽셀 아트
+    "minimalist illustration, clean lines, simple colors",         # 6: 미니멀리즘
+    "watercolor painting style, soft blending, artistic",          # 7: 수채화
+    "storybook illustration, whimsical, detailed"                  # 8: 동화책 일러스트
 ]
+
+# 2. Text-to-Image 다양성 프롬프트 변형
+TEXT_TO_IMAGE_VARIETY_MODIFIERS = [
+    "creative and unique perspective",
+    "fresh artistic interpretation", 
+    "imaginative composition",
+    "unexpected creative angle",
+    "artistic and original viewpoint",
+    "innovative visual approach",
+    "distinctive artistic style",
+    "novel and inventive perspective"
+]
+
+# 3. Image-to-Image 구도 다양화 옵션
+IMAGE_TO_IMAGE_COMPOSITION_VARIETY = [
+    "dynamic camera angle",           # 역동적인 카메라 앵글
+    "interesting perspective",         # 흥미로운 관점
+    "creative composition",           # 창의적인 구도
+    "varied camera distance",         # 다양한 카메라 거리
+    "cinematic framing",             # 영화적 프레이밍
+    "dramatic viewpoint",            # 드라마틱한 시점
+    "unique angle",                  # 독특한 앵글
+    "fresh perspective",             # 신선한 관점
+    "wide-angle view",               # 광각 뷰
+    "close-up dramatic shot",        # 클로즈업 드라마틱 샷
+    "bird's eye view",               # 조감도
+    "low angle heroic shot",         # 로우앵글 영웅적 샷
+    "tilted dutch angle",            # 틸트된 더치 앵글
+    "over-the-shoulder view"         # 어깨 너머 뷰
+]
+
+# 4. 장면별 특수 프롬프트 템플릿
+SCENE_TEMPLATES = {
+    "ending": "Epic finale scene with dramatic atmosphere. ",
+    "action": "Dynamic action scene with intense energy. ",
+    "calm": "Peaceful and serene atmosphere. ",
+    "emotional": "Emotionally charged scene with deep feelings. "
+}
+
+# 5. 기본 이미지 설정
+IMAGE_SETTINGS = {
+    "quality": 95  # JPEG 압축 품질 (1-100)
+}
 
 # FastAPI 앱 초기화
 app = FastAPI(title="Unified Image Generation Service v2", version="2.0.0")
@@ -302,9 +350,9 @@ class UnifiedImageServiceV2:
     async def _generate_text_to_image(self, prompt: str, style: str, is_ending: bool) -> bytes:
         """Text-to-Image 생성"""
         if is_ending:
-            full_prompt = f"{style} 스타일로 그린 결말: {prompt}"
+            full_prompt = f"{style} 스타일로 그린 결말 장면: {prompt}. No text, words, or writing in the image."
         else:
-            full_prompt = f"{style} 스타일로 그린 {prompt} 이미지"
+            full_prompt = f"{style} 스타일로 그린 {prompt} 이미지. No text, words, or writing in the image."
         
         return await self._call_gemini_text_to_image(full_prompt)
 
@@ -312,21 +360,13 @@ class UnifiedImageServiceV2:
         """Gemini Text-to-Image API 호출"""
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={GEMINI_API_KEY}"
         
-        # 다양성을 위한 프롬프트 변형 추가
-        variety_modifiers = [
-            "creative and unique perspective",
-            "fresh artistic interpretation", 
-            "imaginative composition",
-            "unexpected creative angle"
-        ]
-        
-        import random
-        selected_modifier = random.choice(variety_modifiers)
+        # 최상단에 정의된 다양성 프롬프트 사용
+        selected_modifier = random.choice(TEXT_TO_IMAGE_VARIETY_MODIFIERS)
         
         payload = {
             "contents": [{
                 "parts": [{
-                    "text": f"Create a picture of: {prompt}. {selected_modifier}. Make it portrait orientation, 9:16 aspect ratio"
+                    "text": f"Create a picture of: {prompt}. {selected_modifier}"
                 }]
             }]
         }
@@ -355,30 +395,18 @@ class UnifiedImageServiceV2:
         """
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={GEMINI_API_KEY}"
         
-        # 구도 다양화를 위한 카메라 앵글/구도 옵션
-        composition_variety = [
-            "dynamic camera angle",
-            "interesting perspective", 
-            "creative composition",
-            "varied camera distance",
-            "cinematic framing",
-            "dramatic viewpoint",
-            "unique angle",
-            "fresh perspective"
-        ]
+        # 최상단에 정의된 구도 다양화 옵션 사용
+        selected_composition = random.choice(IMAGE_TO_IMAGE_COMPOSITION_VARIETY)
         
-        # 랜덤으로 구도 옵션 선택 (다양성 증가)
-        import random
-        selected_composition = random.choice(composition_variety)
-        
-        # parts 구성 - 구도 다양화 프롬프트 추가
+        # parts 구성 - 디자인 참조만 하도록 수정
         parts = [{
-            "text": f"Using the provided reference images, create a new image. Maintain character appearances exactly as shown in references. "
+            "text": f"Using the provided reference images as design references only, create a new scene. "
+                   f"Reference the character designs (clothing style, colors, general appearance) but create them in new poses and expressions appropriate for the scene. "
                    f"{' '.join(ref_prompts)} "
                    f"Scene: {prompt}. "
                    f"Style: {style}. "
-                   f"Use {selected_composition} while keeping character consistency. "
-                   f"Portrait orientation, 9:16 aspect ratio"
+                   f"Use {selected_composition} for creative variety. "
+                   f"No text, words, or writing in the image."
         }]
         
         # 레퍼런스 이미지 추가
@@ -417,8 +445,10 @@ class UnifiedImageServiceV2:
         """책 표지 생성"""
         # 기존 로직 유지
         title = "멋진 이야기"  # 간단히 처리
+        # 텍스트 없는 책 표지 이미지 생성
+        cover_prompt = f"beautiful book cover illustration without any text or title"
         cover_image = await self._generate_text_to_image(
-            f"book cover titled '{title}'",
+            cover_prompt,
             DRAWING_STYLES[request.drawingStyle],
             False
         )
