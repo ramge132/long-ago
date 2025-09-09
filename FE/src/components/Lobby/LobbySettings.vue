@@ -46,15 +46,14 @@
               <h3 class="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
                 게임 모드
               </h3>
-              <p class="text-xs text-slate-400 mt-1 font-light">원하는 아트 스타일을 선택하세요</p>
             </div>
-            <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll p-5 pointer-events-auto">
+            <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll px-5 py-6 pb-8 pointer-events-auto">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
                   <div class="flex flex-col items-center w-full">
                     <h4 class="mb-3 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors duration-200 text-center leading-tight">{{ mode.text }}</h4>
 <label
-                      class="relative rounded-lg overflow-hidden w-40 h-40 cursor-pointer transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+                      class="relative rounded-lg overflow-hidden w-40 h-40 cursor-pointer transform transition-all duration-300 hover:scale-102 hover:shadow-lg hover:-translate-y-1"
                       :for="'mode' + mode.value"
                       :class="{
                         'outline outline-4 outline-color': localRoomConfigs.currMode === mode.value,

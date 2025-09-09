@@ -24,7 +24,7 @@
       class="waiting-slot flex items-center gap-x-3 rounded-md p-2 border-2 border-dashed border-[#adb7cf]/40 bg-[#52bebc]/10 backdrop-blur-sm"
     >
       <div class="rounded-full border border-white w-10 h-10 bg-gray-500"></div>
-      <div class="flex items-center gap-x-2">
+      <div class="flex items-center gap-x-3">
         <span class="text-sm text-gray-400 font-medium">대기중</span>
         <div class="modern-waiting-dots"></div>
       </div>
