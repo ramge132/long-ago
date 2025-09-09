@@ -18,6 +18,7 @@
             </div>
             <div
               class="range-container drop-shadow-lg relative w-2/3 h-[24px] flex justify-center items-center"
+              @wheel.prevent="handleWheelScroll"
             >
               <input
                 type="range"
@@ -338,6 +339,25 @@ const handleClick = (event, data) => {
     localRoomConfigs.value.currMode = data;
   } else {
     event.preventDefault();
+  }
+}
+
+const handleWheelScroll = (event) => {
+  if (!props.configurable) return;
+  
+  const currentValue = localRoomConfigs.value.currTurnTime;
+  const step = stepTimeValue.value;
+  const min = minTimeValue.value;
+  const max = maxTimeValue.value;
+  
+  if (event.deltaY > 0) {
+    // 아래로 스크롤 -> 30초쪽으로 (값 감소)
+    const newValue = Math.max(min, currentValue - step);
+    localRoomConfigs.value.currTurnTime = newValue;
+  } else {
+    // 위로 스크롤 -> 40초쪽으로 (값 증가)
+    const newValue = Math.min(max, currentValue + step);
+    localRoomConfigs.value.currTurnTime = newValue;
   }
 }
 
