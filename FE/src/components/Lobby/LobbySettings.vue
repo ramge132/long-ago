@@ -48,7 +48,7 @@
                   <div class="flex flex-col items-center w-full modern-mode-card-container">
                     <div class="relative modern-card-wrapper group">
                       <label
-                        class="relative block rounded-2xl overflow-hidden w-40 h-40 cursor-pointer transform transition-all duration-500 ease-out group-hover:scale-105 group-hover:shadow-2xl group-hover:-translate-y-2"
+                        class="relative block rounded-2xl overflow-hidden w-32 h-32 cursor-pointer transform transition-all duration-500 ease-out group-hover:scale-102 group-hover:shadow-lg group-hover:-translate-y-1"
                         :for="'mode' + mode.value"
                         :class="{
                           'ring-4 ring-opacity-60 modern-selected': localRoomConfigs.currMode === mode.value,
@@ -87,8 +87,8 @@
                       </label>
                       
                       <!-- Modern Mode Title -->
-                      <div class="mt-3 text-center">
-                        <h4 class="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-all duration-300 tracking-tight"
+                      <div class="mt-2 text-center">
+                        <h4 class="text-xs font-bold text-slate-700 group-hover:text-slate-900 transition-all duration-300 tracking-tight"
                             :class="{
                               'text-[#ef90b0] font-extrabold': localRoomConfigs.currMode === mode.value
                             }">
