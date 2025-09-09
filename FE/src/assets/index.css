@@ -141,22 +141,30 @@ body {
 .range-slider::-webkit-slider-thumb {
   cursor: pointer;
   position: relative;
-  scale: 135%;
+  scale: 150%;
   z-index: 30;
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f3c86f, #d1b2c5, #9973b0, #de7caf);
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
+  background: linear-gradient(135deg, #f78ca0, #ef90b0, #e797c1, #df9dd2);
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(239, 144, 176, 0.3), 
+              inset 0 1px 3px rgba(255, 255, 255, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .range-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  box-shadow: 0 4px 12px rgba(243, 200, 111, 0.4);
+  transform: scale(1.15);
+  box-shadow: 0 6px 20px rgba(239, 144, 176, 0.5), 
+              inset 0 1px 3px rgba(255, 255, 255, 0.7);
+  border: 3px solid #ffffff;
+}
+
+.range-slider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(239, 144, 176, 0.6);
 }
 
 .selectStyle {

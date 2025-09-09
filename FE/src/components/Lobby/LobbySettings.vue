@@ -15,23 +15,23 @@
               </template>
             </div>
             <div
-              class="range-container drop-shadow-md relative w-2/3 h-[20px] flex justify-center items-center"
+              class="range-container drop-shadow-lg relative w-2/3 h-[24px] flex justify-center items-center"
             >
               <input
                 type="range"
                 :min="minTimeValue"
                 :max="maxTimeValue"
                 :step="stepTimeValue"
-                class="range-slider rounded-xl appearance-none w-full bg-white outline-none absolute"
+                class="range-slider rounded-xl appearance-none w-full bg-gradient-to-r from-gray-200 via-white to-gray-200 outline-none absolute h-[8px] shadow-inner"
                 v-model="localRoomConfigs.currTurnTime"
               />
               <div
-                class="ticks w-full h-[20px] pointer-events-none flex justify-between items-center p-[2px]"
+                class="ticks w-full h-[24px] pointer-events-none flex justify-between items-center p-[2px]"
               >
                 <div
                   v-for="(tick, index) in ticks"
                   :key="index"
-                  class="h-[8px] w-[8px] bg-gray-500 rounded-lg relative z-20"
+                  class="h-[6px] w-[6px] bg-gradient-to-b from-gray-300 to-gray-500 rounded-full relative z-20 shadow-sm"
                 ></div>
               </div>
             </div>
@@ -337,7 +337,7 @@ watch(
     outline-color: transparent;
     position: relative;
     background: linear-gradient(white, white) padding-box,
-                linear-gradient(45deg, #f3c86f, #d1b2c5, #9973b0, #de7caf, #e28cb8, #cba8cd, #adb7cf, #52bebc) border-box;
+                linear-gradient(45deg, #f78ca0, #ef90b0, #e797c1, #df9dd2) border-box;
     border: 4px solid transparent;
   }
   
@@ -348,7 +348,7 @@ watch(
     left: -4px;
     right: -4px;
     bottom: -4px;
-    background: linear-gradient(45deg, #f3c86f, #d1b2c5, #9973b0, #de7caf, #e28cb8, #cba8cd, #adb7cf, #52bebc);
+    background: linear-gradient(45deg, #f78ca0, #ef90b0, #e797c1, #df9dd2);
     border-radius: inherit;
     z-index: -1;
     border-radius: 12px;
