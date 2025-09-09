@@ -24,13 +24,9 @@
       class="waiting-slot flex items-center gap-x-3 rounded-md p-2 border-2 border-dashed border-[#adb7cf]/40 bg-[#52bebc]/10 backdrop-blur-sm"
     >
       <div class="rounded-full border border-white w-10 h-10 bg-gray-500"></div>
-      <div class="flex">
-        <div class="animate-bounce" style="animation-delay: 0.1s">대</div>
-        <div class="animate-bounce" style="animation-delay: 0.2s">기</div>
-        <div class="animate-bounce" style="animation-delay: 0.3s">중</div>
-        <div class="animate-bounce" style="animation-delay: 0.4s">.</div>
-        <div class="animate-bounce" style="animation-delay: 0.5s">.</div>
-        <div class="animate-bounce" style="animation-delay: 0.6s">.</div>
+      <div class="flex items-center gap-x-2">
+        <span class="text-sm text-gray-400">대기중</span>
+        <div class="modern-waiting-dots"></div>
       </div>
     </div>
     <div
@@ -46,7 +42,7 @@
       </p>
     </div>
     <div
-      class="flex items-center relative h-12 border border-[#f3c86f]/40 bg-white/5 backdrop-blur-sm rounded-lg overflow-hidden"
+      class="flex items-center relative h-12 border border-[#adb7cf]/40 bg-white/5 backdrop-blur-sm rounded-lg overflow-hidden"
     >
       <input
         type="text"
@@ -112,4 +108,55 @@ watch(
   { deep: true },
 );
 </script>
-<style></style>
+<style>
+/* Modern Waiting Dots Animation */
+.modern-waiting-dots {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9ca3af;
+  position: relative;
+  animation: modern-pulse 1.2s infinite ease-in-out;
+}
+
+.modern-waiting-dots::before,
+.modern-waiting-dots::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9ca3af;
+  position: absolute;
+  top: 0;
+}
+
+.modern-waiting-dots::before {
+  left: -16px;
+  animation: modern-pulse 1.2s infinite ease-in-out;
+  animation-delay: -0.4s;
+}
+
+.modern-waiting-dots::after {
+  left: 16px;
+  animation: modern-pulse 1.2s infinite ease-in-out;
+  animation-delay: 0.4s;
+}
+
+@keyframes modern-pulse {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Enhanced waiting slot styling */
+.waiting-slot:hover .modern-waiting-dots,
+.waiting-slot:hover .modern-waiting-dots::before,
+.waiting-slot:hover .modern-waiting-dots::after {
+  background: #6b7280;
+}
+</style>
