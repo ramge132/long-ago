@@ -26,3 +26,6 @@ export { default as InGameEnding } from "./InGame/InGameEnding.vue";
 // InGameProgress
 export { default as ContentTimer } from "./InGame/InGameProgress/ContentTimer.vue";
 export { default as ContentGuage } from "./InGame/InGameProgress/ContentGuage.vue";
+
+// Ad
+export { default as AdBanner } from "./Ad/AdBanner.vue";
