@@ -108,11 +108,11 @@
             </div>
           </div>
         </div>
-        <div class="grid grid-cols-2">
+        <div class="grid grid-cols-2 -mt-3">
           <div class="flex justify-center items-center">
             <button
               type="button"
-              class="duration-300 ease-in-out w-40 h-10 rounded-lg bg-black text-white flex items-center justify-center hover:bg-gray-800 hover:scale-105 font-medium"
+              class="invite-btn duration-300 ease-in-out w-40 h-10 rounded-lg bg-black text-white flex items-center justify-center font-medium"
               @click="copy"
             >
               <div class="flex gap-x-4">
@@ -128,7 +128,7 @@
           <div class="flex justify-center items-center">
             <button
               type="button"
-              class="duration-300 ease-in-out w-40 h-10 rounded-lg bg-black text-white flex items-center justify-center hover:bg-gray-800 hover:scale-105 font-medium"
+              class="start-btn duration-300 ease-in-out w-40 h-10 rounded-lg bg-black text-white flex items-center justify-center font-medium"
               @click="gameStart"
             >
               <div class="flex gap-x-4">
@@ -472,6 +472,24 @@ watch(
 
   .grid.grid-cols-3.gap-x-8.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
     background: #4b5563;
+  }
+
+  /* 초대하기 및 시작하기 버튼 호버 효과 */
+  .invite-btn:hover,
+  .start-btn:hover {
+    background: linear-gradient(60deg, rgba(232,193,147,1) 0%, rgba(193,164,204,1) 20%, rgba(221,124,175,1) 60%, rgba(191,176,209,1) 90%, #9FBACC 100%);
+    background-size: 300% 100%;
+    animation: gradient 1.5s ease-in-out infinite alternate;
+    transform: scale(1.05);
+  }
+
+  @keyframes gradient {
+    0% {
+      background-position: 0%;
+    }
+    100% {
+      background-position: 100%;
+    }
   }
 
 </style>
