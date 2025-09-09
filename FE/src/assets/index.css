@@ -130,7 +130,8 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #60a4d7; /* 스크롤바 색상 */
+  background: linear-gradient(135deg, #f3c86f, #d1b2c5, #9973b0, #de7caf, #e28cb8, #cba8cd, #adb7cf, #52bebc); /* 스크롤바 색상 - 새로운 8단계 그라데이션 */
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -142,6 +143,20 @@ body {
   position: relative;
   scale: 135%;
   z-index: 30;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f3c86f, #d1b2c5, #9973b0, #de7caf);
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(243, 200, 111, 0.4);
 }
 
 .selectStyle {

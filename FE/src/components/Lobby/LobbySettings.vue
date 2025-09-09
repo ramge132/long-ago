@@ -31,7 +31,7 @@
                 <div
                   v-for="(tick, index) in ticks"
                   :key="index"
-                  class="h-[8px] w-[8px] bg-[#6d6d6d] rounded-lg relative z-20"
+                  class="h-[8px] w-[8px] bg-gradient-to-r from-[#adb7cf] to-[#52bebc] rounded-lg relative z-20 transition-all duration-200 hover:scale-125"
                 ></div>
               </div>
             </div>
@@ -78,7 +78,7 @@
           <div class="flex justify-center items-center">
             <button
               type="button"
-              class="duration-300 ease-in-out border-2 w-40 h-10 rounded-lg border-black bg-black text-white flex items-center justify-center hover:shadow-md hover:scale-105"
+              class="duration-300 ease-in-out w-40 h-10 rounded-lg bg-gradient-to-r from-[#f3c86f] via-[#d1b2c5] to-[#9973b0] text-white flex items-center justify-center hover:shadow-lg hover:scale-105 font-medium"
               @click="copy"
             >
               <div class="flex gap-x-4">
@@ -94,7 +94,7 @@
           <div class="flex justify-center items-center">
             <button
               type="button"
-              class="duration-300 ease-in-out border-2 w-40 h-10 rounded-lg border-black bg-black text-white flex items-center justify-center hover:shadow-md hover:scale-105"
+              class="duration-300 ease-in-out w-40 h-10 rounded-lg bg-gradient-to-r from-[#de7caf] via-[#e28cb8] to-[#cba8cd] text-white flex items-center justify-center hover:shadow-lg hover:scale-105 font-medium"
               @click="gameStart"
             >
               <div class="flex gap-x-4">
@@ -332,6 +332,24 @@ watch(
 </script>
 <style>
   .outline-color {
-    outline-color: #72a0ff;
+    outline: 4px solid;
+    outline-color: transparent;
+    position: relative;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(45deg, #f3c86f, #d1b2c5, #9973b0, #de7caf, #e28cb8, #cba8cd, #adb7cf, #52bebc) border-box;
+    border: 4px solid transparent;
+  }
+  
+  .outline-color::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    background: linear-gradient(45deg, #f3c86f, #d1b2c5, #9973b0, #de7caf, #e28cb8, #cba8cd, #adb7cf, #52bebc);
+    border-radius: inherit;
+    z-index: -1;
+    border-radius: 12px;
   }
 </style>

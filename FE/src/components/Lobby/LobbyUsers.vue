@@ -4,7 +4,7 @@
     <div
       v-for="(user, index) in props.participants"
       :key="user.id"
-      class="flex items-center gap-x-3 rounded-md p-1 border-2 border-[#00000050]"
+      class="participant-card relative flex items-center gap-x-3 rounded-md p-2 bg-gradient-to-r from-[#f3c86f]/20 via-[#d1b2c5]/20 to-[#9973b0]/20 border border-[#f3c86f]/30 backdrop-blur-sm hover:scale-102 transition-all duration-200"
     >
       <div class="relative flex w-10 h-10">
         <img :src="user.image" alt="프로필" />
@@ -21,7 +21,7 @@
     <div
       v-for="n in maxParticipants - props.participants.length"
       :key="'waiting-' + n"
-      class="flex items-center gap-x-3 rounded-md p-1 border-2 border-[#00000050]"
+      class="waiting-slot flex items-center gap-x-3 rounded-md p-2 border-2 border-dashed border-[#adb7cf]/40 bg-[#52bebc]/10 backdrop-blur-sm"
     >
       <div class="rounded-full border border-white w-10 h-10 bg-gray-500"></div>
       <div class="flex">
@@ -34,7 +34,7 @@
       </div>
     </div>
     <div
-      class="rounded-md border-2 border-[#00000050] flex-1 max-h-28 overflow-y-scroll p-2"
+      class="rounded-md border border-[#adb7cf]/40 bg-gradient-to-b from-[#52bebc]/10 to-transparent flex-1 max-h-28 overflow-y-scroll p-2 backdrop-blur-sm"
       ref="chatBox"
     >
       <p
@@ -46,18 +46,18 @@
       </p>
     </div>
     <div
-      class="flex items-center relative h-12 border-2 border-[#00000050] rounded-lg overflow-hidden"
+      class="flex items-center relative h-12 border border-[#f3c86f]/40 bg-white/5 backdrop-blur-sm rounded-lg overflow-hidden"
     >
       <input
         type="text"
         v-model="message"
         @keyup.enter="send"
         placeholder="메시지를 입력하세요"
-        class="w-full h-full pl-4 pr-16 text-[0.8rem] bg-[#ffffff00] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600"
+        class="w-full h-full pl-4 pr-16 text-[0.8rem] bg-[#ffffff00] focus:outline-none focus:ring-2 focus:ring-[#f3c86f] focus:border-transparent placeholder-gray-600"
       />
       <button
         @click="send"
-        class="absolute h-8 w-14 right-2 px-4 py-2 bg-black text-center text-[0.8rem] text-white rounded-lg transition-colors"
+        class="absolute h-8 w-14 right-2 bg-gradient-to-r from-[#f3c86f] via-[#d1b2c5] to-[#9973b0] text-white rounded-lg transition-colors flex items-center justify-center font-medium text-sm hover:shadow-lg"
       >
         전송
       </button>
