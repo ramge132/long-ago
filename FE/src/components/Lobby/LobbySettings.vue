@@ -42,11 +42,6 @@
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
-            <div class="text-center mt-12 mb-1">
-              <h3 class="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
-                모드
-              </h3>
-            </div>
             <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll px-5 py-6 pb-8 pointer-events-auto">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
