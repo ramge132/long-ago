@@ -41,10 +41,10 @@
           <!-- <div class="absolute right-5 top-5 rounded-full border-4 border-[#E77DAF] flex justify-center items-center p-2 cursor-pointer" :class="isPreview ? 'bg-[#E77DAF]' : ''" @click="isPreview = !isPreview">
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
-          <div class="col-span-3 row-span-3 flex flex-col items-center">
-            <div class="grid grid-cols-3 gap-x-3 max-h-28 w-full overflow-y-scroll px-2 py-1 pb-1 pointer-events-auto">
+          <div class="col-span-3 row-span-4 flex flex-col items-center">
+            <div class="grid grid-cols-3 gap-x-8 max-h-80 w-full overflow-y-scroll px-5 py-6 pb-8 pointer-events-auto mt-4">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
-                <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-2'">
+                <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
                   <div class="flex flex-col items-center w-full modern-mode-card-container">
                     <div class="relative modern-card-wrapper group">
                       <label
@@ -437,21 +437,21 @@ watch(
   }
 
   /* 모드 선택창의 스크롤바 스타일 - 그라데이션 제거 */
-  .grid.grid-cols-3.gap-x-3.max-h-28.w-full.overflow-y-scroll::-webkit-scrollbar {
-    width: 4px;
+  .grid.grid-cols-3.gap-x-8.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar {
+    width: 8px;
   }
 
-  .grid.grid-cols-3.gap-x-3.max-h-28.w-full.overflow-y-scroll::-webkit-scrollbar-track {
+  .grid.grid-cols-3.gap-x-8.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
-    border-radius: 2px;
+    border-radius: 4px;
   }
 
-  .grid.grid-cols-3.gap-x-3.max-h-28.w-full.overflow-y-scroll::-webkit-scrollbar-thumb {
+  .grid.grid-cols-3.gap-x-8.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-thumb {
     background: #6b7280;
-    border-radius: 2px;
+    border-radius: 4px;
   }
 
-  .grid.grid-cols-3.gap-x-3.max-h-28.w-full.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+  .grid.grid-cols-3.gap-x-8.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
     background: #4b5563;
   }
 
