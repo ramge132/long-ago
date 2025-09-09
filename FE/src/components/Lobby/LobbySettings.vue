@@ -7,7 +7,7 @@
           class="row-span-5 grid grid-cols-3 grid-rows-5 border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5 font-extrabold"
           :class="configurable == false ? 'pointer-events-none' : ''"
         >
-          <div class="col-span-3 flex flex-col items-center">
+          <div class="col-span-3 row-span-1 flex flex-col items-center">
             <h3 class="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent mb-3">
               턴당 소요 시간
             </h3>
