@@ -41,8 +41,8 @@
           <!-- <div class="absolute right-5 top-5 rounded-full border-4 border-[#E77DAF] flex justify-center items-center p-2 cursor-pointer" :class="isPreview ? 'bg-[#E77DAF]' : ''" @click="isPreview = !isPreview">
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
-          <div class="col-span-3 row-span-4 flex flex-col items-center pt-4 pb-2">
-            <div class="grid grid-cols-3 gap-x-8 max-h-full w-full overflow-y-scroll px-5 py-1 pointer-events-auto">
+          <div class="col-span-3 row-span-4 flex flex-col items-center pt-4 pb-2 min-h-0">
+            <div class="grid grid-cols-3 gap-x-8 flex-1 min-h-0 w-full overflow-y-scroll px-5 py-1 pointer-events-auto">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
                   <div class="flex flex-col items-center w-full modern-mode-card-container">
