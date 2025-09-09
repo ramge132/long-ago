@@ -160,4 +160,25 @@ watch(
 .waiting-slot:hover .modern-waiting-dots::after {
   background: #6b7280;
 }
+
+/* Chat log scrollbar styling - match mode selection */
+.flex-1.max-h-28.overflow-y-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.flex-1.max-h-28.overflow-y-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.flex-1.max-h-28.overflow-y-scroll::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 6px;
+  opacity: 0.7;
+}
+
+.flex-1.max-h-28.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+  opacity: 1;
+}
 </style>
