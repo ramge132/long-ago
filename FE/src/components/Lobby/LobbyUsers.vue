@@ -24,9 +24,9 @@
       class="waiting-slot flex items-center gap-x-3 rounded-md p-2 border-2 border-dashed border-[#adb7cf]/40 bg-[#52bebc]/10 backdrop-blur-sm"
     >
       <div class="rounded-full border border-white w-10 h-10 bg-gray-500"></div>
-      <div class="flex items-center gap-x-2">
-        <span class="text-sm text-gray-400">대기중</span>
-        <div class="modern-waiting-dots"></div>
+      <div class="flex items-center justify-between w-full">
+        <span class="text-sm text-gray-400 font-medium">대기중</span>
+        <div class="modern-waiting-dots ml-4"></div>
       </div>
     </div>
     <div
@@ -111,19 +111,19 @@ watch(
 <style>
 /* Modern Waiting Dots Animation */
 .modern-waiting-dots {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: #9ca3af;
   position: relative;
-  animation: modern-pulse 1.2s infinite ease-in-out;
+  animation: modern-pulse 1.4s infinite ease-in-out;
 }
 
 .modern-waiting-dots::before,
 .modern-waiting-dots::after {
   content: '';
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: #9ca3af;
   position: absolute;
@@ -131,15 +131,15 @@ watch(
 }
 
 .modern-waiting-dots::before {
-  left: -16px;
-  animation: modern-pulse 1.2s infinite ease-in-out;
-  animation-delay: -0.4s;
+  left: -10px;
+  animation: modern-pulse 1.4s infinite ease-in-out;
+  animation-delay: -0.47s;
 }
 
 .modern-waiting-dots::after {
-  left: 16px;
-  animation: modern-pulse 1.2s infinite ease-in-out;
-  animation-delay: 0.4s;
+  left: 10px;
+  animation: modern-pulse 1.4s infinite ease-in-out;
+  animation-delay: 0.47s;
 }
 
 @keyframes modern-pulse {

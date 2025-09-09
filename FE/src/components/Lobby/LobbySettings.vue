@@ -8,10 +8,12 @@
           :class="configurable == false ? 'pointer-events-none' : ''"
         >
           <div class="col-span-3 flex flex-col items-center">
-            <label>턴당 소요 시간(초)</label>
-            <div class="w-2/3 flex justify-between">
+            <h3 class="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent mb-3">
+              턴당 소요 시간
+            </h3>
+            <div class="w-2/3 flex justify-between mb-2">
               <template v-for="n in 11" :key="n">
-                <p v-if="n % 2 != 0">{{ n + 29 }}</p>
+                <span v-if="n % 2 != 0" class="text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors duration-200">{{ n + 29 }}<span class="text-[10px] text-slate-400 ml-0.5">초</span></span>
               </template>
             </div>
             <div
@@ -40,12 +42,17 @@
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
-            <label class="block mt-4">게임 모드</label>
+            <div class="text-center mt-3 mb-4">
+              <h3 class="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
+                게임 모드
+              </h3>
+              <p class="text-xs text-slate-400 mt-1 font-light">원하는 아트 스타일을 선택하세요</p>
+            </div>
             <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll p-5 pointer-events-auto">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
                   <div class="flex flex-col items-center w-full">
-                    <p class="mb-2">{{ mode.text }}</p>
+                    <h4 class="mb-3 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors duration-200 text-center leading-tight">{{ mode.text }}</h4>
 <label
                       class="relative rounded-lg overflow-hidden w-40 h-40 cursor-pointer transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
                       :for="'mode' + mode.value"
