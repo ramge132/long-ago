@@ -42,7 +42,7 @@
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
-            <div class="text-center mt-12 mb-4">
+            <div class="text-center mt-12 mb-2">
               <h3 class="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
                 게임 모드
               </h3>
@@ -50,30 +50,63 @@
             <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll px-5 py-6 pb-8 pointer-events-auto">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
-                  <div class="flex flex-col items-center w-full">
-                    <h4 class="mb-3 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors duration-200 text-center leading-tight">{{ mode.text }}</h4>
-<label
-                      class="relative rounded-lg overflow-hidden w-40 h-40 cursor-pointer transform transition-all duration-300 hover:scale-102 hover:shadow-lg hover:-translate-y-1"
-                      :for="'mode' + mode.value"
-                      :class="{
-                        'outline outline-4 outline-color': localRoomConfigs.currMode === mode.value,
-                      }"
-                      @click="handleClick($event, mode.value)"
-                      @mouseover="startImageTransition(mode.value)"
-                      @mouseleave="stopImageTransition(mode.value)"
-                    >
-                      <img
-                        v-for="(image, imgIndex) in mode.images"
-                        :key="imgIndex"
-                        :src="image"
-                        :alt="`Mode ${mode.value} Image ${imgIndex + 1}`"
-                        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out"
+                  <div class="flex flex-col items-center w-full modern-mode-card-container">
+                    <div class="relative modern-card-wrapper group">
+                      <label
+                        class="relative block rounded-2xl overflow-hidden w-40 h-40 cursor-pointer transform transition-all duration-500 ease-out group-hover:scale-105 group-hover:shadow-2xl group-hover:-translate-y-2"
+                        :for="'mode' + mode.value"
                         :class="{
-                          'opacity-100': mode.activeImageIndex === imgIndex,
-                          'opacity-0': mode.activeImageIndex !== imgIndex,
+                          'ring-4 ring-opacity-60 modern-selected': localRoomConfigs.currMode === mode.value,
                         }"
-                      />
-                    </label>
+                        @click="handleClick($event, mode.value)"
+                        @mouseenter="startImageTransition(mode.value)"
+                        @mouseleave="stopImageTransition(mode.value)"
+                      >
+                        <!-- Background Blur Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent z-10 group-hover:from-black/10 transition-all duration-300"></div>
+                        
+                        <!-- Images -->
+                        <img
+                          v-for="(image, imgIndex) in mode.images"
+                          :key="imgIndex"
+                          :src="image"
+                          :alt="`${mode.text} 미리보기 ${imgIndex + 1}`"
+                          class="absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110"
+                          :class="{
+                            'opacity-100': mode.activeImageIndex === imgIndex,
+                            'opacity-0': mode.activeImageIndex !== imgIndex,
+                          }"
+                        />
+                        
+                        <!-- Selection Checkmark -->
+                        <div v-if="localRoomConfigs.currMode === mode.value" class="absolute top-3 right-3 z-20 modern-check-badge">
+                          <div class="w-6 h-6 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          </div>
+                        </div>
+                        
+                        <!-- Hover Indicator -->
+                        <div class="absolute inset-0 border-2 border-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+                      </label>
+                      
+                      <!-- Modern Mode Title -->
+                      <div class="mt-3 text-center">
+                        <h4 class="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-all duration-300 tracking-tight"
+                            :class="{
+                              'text-emerald-600 font-extrabold': localRoomConfigs.currMode === mode.value
+                            }">
+                          {{ mode.text }}
+                        </h4>
+                        <!-- Selection indicator dot -->
+                        <div class="mt-1 flex justify-center">
+                          <div class="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                               :class="localRoomConfigs.currMode === mode.value ? 'bg-emerald-500 shadow-lg shadow-emerald-200' : 'bg-slate-300 group-hover:bg-slate-400'">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </template>
@@ -338,6 +371,54 @@ watch(
 );
 </script>
 <style>
+/* Modern Mode Card Styles */
+.modern-card-wrapper {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-selected {
+  ring-color: rgb(16 185 129 / 0.6);
+  box-shadow: 
+    0 0 0 4px rgb(16 185 129 / 0.1),
+    0 20px 40px -12px rgb(16 185 129 / 0.3),
+    0 8px 25px -8px rgba(0, 0, 0, 0.1);
+}
+
+.modern-check-badge {
+  animation: checkBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes checkBounce {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(-15deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.modern-mode-card-container:hover .modern-card-wrapper {
+  transform: perspective(1000px) rotateX(-2deg);
+}
+
+/* Enhanced Image Hover Effects */
+.modern-card-wrapper:hover label {
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Typography Enhancement */
+.modern-card-wrapper h4 {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  letter-spacing: -0.025em;
+}
+
   .outline-color {
     outline: 4px solid;
     outline-color: transparent;
