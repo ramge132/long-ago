@@ -42,7 +42,7 @@
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
-            <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll px-5 py-6 pb-8 pointer-events-auto">
+            <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll px-5 py-4 pb-2 pointer-events-auto">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
                   <div class="flex flex-col items-center w-full modern-mode-card-container">
