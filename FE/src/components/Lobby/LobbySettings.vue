@@ -42,13 +42,13 @@
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
-            <div class="grid grid-cols-3 gap-x-8 max-h-80 w-full overflow-y-scroll px-5 py-6 pb-8 pointer-events-auto mt-6">
+            <div class="grid grid-cols-3 gap-x-4 max-h-80 w-full overflow-y-scroll px-3 py-6 pb-8 pointer-events-auto mt-6">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
-                <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
+                <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-5'">
                   <div class="flex flex-col items-center w-full modern-mode-card-container">
                     <div class="relative modern-card-wrapper group">
                       <label
-                        class="relative block rounded-2xl overflow-hidden w-36 h-36 cursor-pointer transform transition-all duration-500 ease-out group-hover:scale-102 group-hover:shadow-lg group-hover:-translate-y-1"
+                        class="relative block rounded-2xl overflow-hidden w-44 h-44 cursor-pointer transform transition-all duration-500 ease-out group-hover:scale-102 group-hover:shadow-lg group-hover:-translate-y-1"
                         :for="'mode' + mode.value"
                         :class="{
                           'ring-4 ring-opacity-60 modern-selected': localRoomConfigs.currMode === mode.value,
@@ -456,21 +456,21 @@ watch(
   }
 
   /* 모드 선택창의 스크롤바 스타일 - 그라데이션 제거 */
-  .grid.grid-cols-3.gap-x-8.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar {
+  .grid.grid-cols-3.gap-x-4.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar {
     width: 8px;
   }
 
-  .grid.grid-cols-3.gap-x-8.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-track {
+  .grid.grid-cols-3.gap-x-4.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 4px;
   }
 
-  .grid.grid-cols-3.gap-x-8.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-thumb {
+  .grid.grid-cols-3.gap-x-4.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-thumb {
     background: #6b7280;
     border-radius: 4px;
   }
 
-  .grid.grid-cols-3.gap-x-8.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+  .grid.grid-cols-3.gap-x-4.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
     background: #4b5563;
   }
 
