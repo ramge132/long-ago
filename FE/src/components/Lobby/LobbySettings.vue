@@ -42,7 +42,7 @@
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
-            <div class="text-center mt-8 mb-4">
+            <div class="text-center mt-12 mb-4">
               <h3 class="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
                 게임 모드
               </h3>

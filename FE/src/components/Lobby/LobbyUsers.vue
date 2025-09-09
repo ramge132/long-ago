@@ -143,13 +143,14 @@ watch(
 }
 
 @keyframes modern-pulse {
-  0%, 80%, 100% {
-    transform: scale(0.8);
-    opacity: 0.5;
+  0% {
+    opacity: 0.3;
   }
-  40% {
-    transform: scale(1.2);
-    opacity: 1;
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.3;
   }
 }
 
