@@ -42,9 +42,9 @@
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
-            <div class="text-center mt-12 mb-2">
+            <div class="text-center mt-12 mb-1">
               <h3 class="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
-                게임 모드
+                모드
               </h3>
             </div>
             <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll px-5 py-6 pb-8 pointer-events-auto">
@@ -80,7 +80,7 @@
                         
                         <!-- Selection Checkmark -->
                         <div v-if="localRoomConfigs.currMode === mode.value" class="absolute top-3 right-3 z-20 modern-check-badge">
-                          <div class="w-6 h-6 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                          <div class="w-6 h-6 bg-gradient-to-r from-[#f78ca0] to-[#ef90b0] rounded-full flex items-center justify-center shadow-lg">
                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                             </svg>
@@ -95,14 +95,14 @@
                       <div class="mt-3 text-center">
                         <h4 class="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-all duration-300 tracking-tight"
                             :class="{
-                              'text-emerald-600 font-extrabold': localRoomConfigs.currMode === mode.value
+                              'text-[#ef90b0] font-extrabold': localRoomConfigs.currMode === mode.value
                             }">
                           {{ mode.text }}
                         </h4>
                         <!-- Selection indicator dot -->
                         <div class="mt-1 flex justify-center">
                           <div class="w-1.5 h-1.5 rounded-full transition-all duration-300"
-                               :class="localRoomConfigs.currMode === mode.value ? 'bg-emerald-500 shadow-lg shadow-emerald-200' : 'bg-slate-300 group-hover:bg-slate-400'">
+                               :class="localRoomConfigs.currMode === mode.value ? 'bg-[#ef90b0] shadow-lg shadow-[#ef90b0]/30' : 'bg-slate-300 group-hover:bg-slate-400'">
                           </div>
                         </div>
                       </div>
@@ -377,10 +377,10 @@ watch(
 }
 
 .modern-selected {
-  ring-color: rgb(16 185 129 / 0.6);
+  ring-color: rgb(239 144 176 / 0.6);
   box-shadow: 
-    0 0 0 4px rgb(16 185 129 / 0.1),
-    0 20px 40px -12px rgb(16 185 129 / 0.3),
+    0 0 0 4px rgb(239 144 176 / 0.1),
+    0 20px 40px -12px rgb(239 144 176 / 0.3),
     0 8px 25px -8px rgba(0, 0, 0, 0.1);
 }
 
