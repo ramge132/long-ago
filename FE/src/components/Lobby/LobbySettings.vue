@@ -42,13 +42,13 @@
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
-            <div class="grid grid-cols-3 gap-x-8 max-h-64 w-full overflow-y-scroll px-5 py-6 pb-8 pointer-events-auto">
+            <div class="grid grid-cols-3 gap-x-6 max-h-36 w-full overflow-y-scroll px-4 py-2 pb-2 pointer-events-auto">
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
-                <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-7'">
+                <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-4'">
                   <div class="flex flex-col items-center w-full modern-mode-card-container">
                     <div class="relative modern-card-wrapper group">
                       <label
-                        class="relative block rounded-2xl overflow-hidden w-32 h-32 cursor-pointer transform transition-all duration-500 ease-out group-hover:scale-102 group-hover:shadow-lg group-hover:-translate-y-1"
+                        class="relative block rounded-2xl overflow-hidden w-28 h-28 cursor-pointer transform transition-all duration-500 ease-out group-hover:scale-102 group-hover:shadow-lg group-hover:-translate-y-1"
                         :for="'mode' + mode.value"
                         :class="{
                           'ring-4 ring-opacity-60 modern-selected': localRoomConfigs.currMode === mode.value,
@@ -87,16 +87,16 @@
                       </label>
                       
                       <!-- Modern Mode Title -->
-                      <div class="mt-2 text-center">
-                        <h4 class="text-xs font-bold text-slate-700 group-hover:text-slate-900 transition-all duration-300 tracking-tight"
+                      <div class="mt-1 text-center">
+                        <h4 class="text-[10px] font-bold text-slate-700 group-hover:text-slate-900 transition-all duration-300 tracking-tight leading-tight"
                             :class="{
                               'text-[#ef90b0] font-extrabold': localRoomConfigs.currMode === mode.value
                             }">
                           {{ mode.text }}
                         </h4>
                         <!-- Selection indicator dot -->
-                        <div class="mt-1 flex justify-center">
-                          <div class="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                        <div class="mt-0.5 flex justify-center">
+                          <div class="w-1 h-1 rounded-full transition-all duration-300"
                                :class="localRoomConfigs.currMode === mode.value ? 'bg-[#ef90b0] shadow-lg shadow-[#ef90b0]/30' : 'bg-slate-300 group-hover:bg-slate-400'">
                           </div>
                         </div>
@@ -437,21 +437,21 @@ watch(
   }
 
   /* 모드 선택창의 스크롤바 스타일 - 그라데이션 제거 */
-  .grid.grid-cols-3.gap-x-8.max-h-64.w-full.overflow-y-scroll::-webkit-scrollbar {
-    width: 8px;
+  .grid.grid-cols-3.gap-x-6.max-h-36.w-full.overflow-y-scroll::-webkit-scrollbar {
+    width: 6px;
   }
 
-  .grid.grid-cols-3.gap-x-8.max-h-64.w-full.overflow-y-scroll::-webkit-scrollbar-track {
+  .grid.grid-cols-3.gap-x-6.max-h-36.w-full.overflow-y-scroll::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
-  .grid.grid-cols-3.gap-x-8.max-h-64.w-full.overflow-y-scroll::-webkit-scrollbar-thumb {
+  .grid.grid-cols-3.gap-x-6.max-h-36.w-full.overflow-y-scroll::-webkit-scrollbar-thumb {
     background: #6b7280;
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
-  .grid.grid-cols-3.gap-x-8.max-h-64.w-full.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+  .grid.grid-cols-3.gap-x-6.max-h-36.w-full.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
     background: #4b5563;
   }
 
