@@ -7,32 +7,58 @@
           class="row-span-5 grid grid-cols-3 grid-rows-5 border drop-shadow-md rounded-xl bg-[#ffffffa3] p-5 font-extrabold"
           :class="configurable == false ? 'pointer-events-none' : ''"
         >
-          <div class="col-span-3 flex flex-col items-center">
-            <label>턴당 소요 시간(초)</label>
-            <div class="w-2/3 flex justify-between">
-              <template v-for="n in 11" :key="n">
-                <p v-if="n % 2 != 0">{{ n + 29 }}</p>
-              </template>
+          <div class="col-span-3 flex flex-col items-center space-y-6 py-4">
+            <!-- 헤더와 현재 값 -->
+            <div class="flex flex-col items-center space-y-3">
+              <label class="text-lg font-semibold text-gray-700">턴당 소요 시간</label>
+              <div class="modern-timer-display bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-2xl shadow-lg">
+                {{ localRoomConfigs.currTurnTime }}초
+              </div>
             </div>
-            <div
-              class="range-container drop-shadow-md relative w-2/3 h-[20px] flex justify-center items-center"
-            >
-              <input
-                type="range"
-                :min="minTimeValue"
-                :max="maxTimeValue"
-                :step="stepTimeValue"
-                class="range-slider rounded-xl appearance-none w-full bg-white outline-none absolute"
-                v-model="localRoomConfigs.currTurnTime"
-              />
-              <div
-                class="ticks w-full h-[20px] pointer-events-none flex justify-between items-center p-[2px]"
-              >
-                <div
-                  v-for="(tick, index) in ticks"
-                  :key="index"
-                  class="h-[8px] w-[8px] bg-gradient-to-r from-[#adb7cf] to-[#52bebc] rounded-lg relative z-20 transition-all duration-200 hover:scale-125"
+
+            <!-- 모던 슬라이더 컨테이너 -->
+            <div class="w-4/5 max-w-md">
+              <!-- 값 라벨 -->
+              <div class="flex justify-between text-xs text-gray-500 mb-4 px-1">
+                <span class="transform -translate-x-1">30초</span>
+                <span>35초</span>
+                <span class="transform translate-x-1">40초</span>
+              </div>
+              
+              <!-- 슬라이더 -->
+              <div class="modern-slider-container relative h-8 flex items-center">
+                <!-- 트랙 배경 -->
+                <div class="slider-track-bg absolute w-full h-2 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full shadow-inner"></div>
+                
+                <!-- 진행도 트랙 -->
+                <div 
+                  class="slider-track-progress absolute h-2 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600 rounded-full shadow-md transition-all duration-300 ease-out"
+                  :style="{ width: sliderProgress + '%' }"
                 ></div>
+                
+                <!-- 실제 input -->
+                <input
+                  type="range"
+                  :min="minTimeValue"
+                  :max="maxTimeValue"
+                  :step="stepTimeValue"
+                  class="modern-range-input w-full h-2 bg-transparent appearance-none cursor-pointer relative z-10"
+                  v-model="localRoomConfigs.currTurnTime"
+                />
+                
+                <!-- 인터랙티브 틱 마크 -->
+                <div class="absolute w-full flex justify-between pointer-events-none z-5">
+                  <div
+                    v-for="(position, index) in tickPositions"
+                    :key="index"
+                    class="tick-mark w-4 h-4 bg-white border-2 border-gray-300 rounded-full shadow-sm transition-all duration-200"
+                    :class="{
+                      'border-blue-500 bg-blue-100 scale-125': isTickActive(index),
+                      'border-gray-300 bg-white': !isTickActive(index)
+                    }"
+                    :style="{ left: position + '%', transform: 'translateX(-50%)' }"
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
@@ -78,7 +104,7 @@
           <div class="flex justify-center items-center">
             <button
               type="button"
-              class="duration-300 ease-in-out w-40 h-10 rounded-lg bg-gradient-to-r from-[#f3c86f] via-[#d1b2c5] to-[#9973b0] text-white flex items-center justify-center hover:shadow-lg hover:scale-105 font-medium"
+              class="duration-300 ease-in-out w-40 h-10 rounded-lg bg-black text-white flex items-center justify-center hover:bg-gray-800 hover:scale-105 font-medium"
               @click="copy"
             >
               <div class="flex gap-x-4">
@@ -94,7 +120,7 @@
           <div class="flex justify-center items-center">
             <button
               type="button"
-              class="duration-300 ease-in-out w-40 h-10 rounded-lg bg-gradient-to-r from-[#de7caf] via-[#e28cb8] to-[#cba8cd] text-white flex items-center justify-center hover:shadow-lg hover:scale-105 font-medium"
+              class="duration-300 ease-in-out w-40 h-10 rounded-lg bg-black text-white flex items-center justify-center hover:bg-gray-800 hover:scale-105 font-medium"
               @click="gameStart"
             >
               <div class="flex gap-x-4">
@@ -161,6 +187,30 @@ const ticks = computed(() => {
   }
   return positions;
 });
+
+const sliderProgress = computed(() => {
+  const current = localRoomConfigs.value.currTurnTime;
+  const min = minTimeValue.value;
+  const max = maxTimeValue.value;
+  return ((current - min) / (max - min)) * 100;
+});
+
+const tickPositions = computed(() => {
+  const steps = (maxTimeValue.value - minTimeValue.value) / stepTimeValue.value;
+  const positions = [];
+  for (let i = 0; i <= steps; i++) {
+    positions.push((i / steps) * 100);
+  }
+  return positions;
+});
+
+const isTickActive = (index) => {
+  const currentValue = localRoomConfigs.value.currTurnTime;
+  const minValue = minTimeValue.value;
+  const step = stepTimeValue.value;
+  const currentStep = (currentValue - minValue) / step;
+  return index <= currentStep;
+};
 
 // // 플레이어 카드 개수
 // const cardCount = ref([4, 5, 6]);
@@ -351,5 +401,119 @@ watch(
     border-radius: inherit;
     z-index: -1;
     border-radius: 12px;
+  }
+
+  /* 모드 선택창의 스크롤바 스타일 - 그라데이션 제거 */
+  .grid.grid-cols-3.gap-x-8.max-h-64.w-full.overflow-y-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .grid.grid-cols-3.gap-x-8.max-h-64.w-full.overflow-y-scroll::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+
+  .grid.grid-cols-3.gap-x-8.max-h-64.w-full.overflow-y-scroll::-webkit-scrollbar-thumb {
+    background: #6b7280;
+    border-radius: 4px;
+  }
+
+  .grid.grid-cols-3.gap-x-8.max-h-64.w-full.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
+  }
+
+  /* 최신 모던 슬라이더 스타일 */
+  .modern-range-input {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    outline: none;
+  }
+
+  .modern-range-input::-webkit-slider-track {
+    -webkit-appearance: none;
+    background: transparent;
+    height: 8px;
+    border-radius: 4px;
+  }
+
+  .modern-range-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6);
+    border: 3px solid white;
+    cursor: pointer;
+    box-shadow: 
+      0 4px 12px rgba(59, 130, 246, 0.4),
+      0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 20;
+  }
+
+  .modern-range-input::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 
+      0 6px 20px rgba(59, 130, 246, 0.5),
+      0 4px 8px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #2563eb, #4f46e5, #7c3aed);
+  }
+
+  .modern-range-input::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+    box-shadow: 
+      0 2px 8px rgba(59, 130, 246, 0.6),
+      0 1px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Firefox 스타일 */
+  .modern-range-input::-moz-range-track {
+    background: transparent;
+    height: 8px;
+    border-radius: 4px;
+    border: none;
+  }
+
+  .modern-range-input::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6);
+    border: 3px solid white;
+    cursor: pointer;
+    box-shadow: 
+      0 4px 12px rgba(59, 130, 246, 0.4),
+      0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .modern-range-input::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    background: linear-gradient(135deg, #2563eb, #4f46e5, #7c3aed);
+  }
+
+  /* 애니메이션 효과 */
+  .modern-slider-container:hover .slider-track-progress {
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+  }
+
+  .tick-mark {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .modern-timer-display {
+    animation: pulse-subtle 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% {
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+    }
+    50% {
+      box-shadow: 0 6px 25px rgba(59, 130, 246, 0.4);
+    }
   }
 </style>

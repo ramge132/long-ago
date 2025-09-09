@@ -57,7 +57,7 @@
       />
       <button
         @click="send"
-        class="absolute h-8 w-14 right-2 bg-gradient-to-r from-[#f3c86f] via-[#d1b2c5] to-[#9973b0] text-white rounded-lg transition-colors flex items-center justify-center font-medium text-sm hover:shadow-lg"
+        class="absolute h-8 w-14 right-2 bg-black text-white rounded-lg transition-colors flex items-center justify-center font-medium text-sm hover:bg-gray-800"
       >
         전송
       </button>
