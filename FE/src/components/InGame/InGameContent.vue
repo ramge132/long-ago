@@ -10,7 +10,7 @@
           :style="{ zIndex: calculateZIndex(0) }"
         >
         <!-- 표지 이미지 먼저 렌더링 (배경) -->
-        <img :src="bookCover.imageUrl" alt="책 표지" v-if="bookCover.imageUrl && bookCover.imageUrl !== null && bookCover.imageUrl !== 'null'" class="absolute inset-0 w-full h-full object-cover" style="backface-visibility: hidden">
+        <img :src="bookCover.imageUrl" alt="책 표지" v-if="bookCover.imageUrl && bookCover.imageUrl !== null && bookCover.imageUrl !== 'null'" class="absolute inset-0 w-full h-full object-cover" style="backface-visibility: hidden; image-rendering: -webkit-optimize-contrast; will-change: transform;" loading="eager" fetchpriority="high">
         <!-- 제목 텍스트 (전경, 이미지 위에 표시) -->
         <p v-html="bookCover.title ? bookCover.title : `아주 먼<br>옛날..<br>`" class="break-keep absolute top-1/3 -translate-y-1/2 font-heirofLightBold text-white text-5xl z-10" style="backface-visibility: hidden; text-shadow: 2px 2px 4px rgba(0,0,0,0.8)"></p>
         
@@ -37,7 +37,7 @@
                 class="mask-layer"
                 :class="{ 'animating': isFlipped(index * 2 + 2) }"
                 @animationend="onAnimationEnd(index)">
-                <img :src="content.image" alt="이야기 이미지" class="story-image">
+                <img :src="content.image" alt="이야기 이미지" class="story-image" loading="eager" fetchpriority="high" style="image-rendering: -webkit-optimize-contrast; will-change: transform;">
               </div>
             </div>
           </div>
@@ -82,22 +82,22 @@ const props = defineProps({
 
 // bookCover prop 모니터링
 watch(() => props.bookCover, (newValue, oldValue) => {
-  
   if (newValue) {
-    
     // URL 유효성 검사
     if (newValue.imageUrl && newValue.imageUrl !== 'null' && newValue.imageUrl !== null) {
-      
-      // 이미지 로드 테스트
-      const testImg = new Image();
-      testImg.onload = () => {
+      // 이미지 즉시 프리로드 - 표시 전에 미리 로드
+      const preloadImg = new Image();
+      preloadImg.loading = 'eager';
+      preloadImg.fetchPriority = 'high';
+      preloadImg.onload = () => {
+        // 프리로드 완료 후 즉시 표시 가능
+        console.log('책 표지 이미지 프리로드 완료:', newValue.imageUrl);
       };
-      testImg.onerror = (error) => {
+      preloadImg.onerror = (error) => {
+        console.warn('책 표지 이미지 로드 실패:', newValue.imageUrl, error);
       };
-      testImg.src = newValue.imageUrl;
-    } else {
+      preloadImg.src = newValue.imageUrl;
     }
-  } else {
   }
 }, { deep: true, immediate: true });
 // const test = ref({
@@ -186,8 +186,26 @@ const handlePageClick = (pageIndex) => {
 };
 
 watch(() => props.bookContents,
-  () => {
+  (newContents) => {
   updatePagesZIndex();
+  
+  // 새로운 스토리 이미지들 프리로드
+  if (newContents) {
+    newContents.forEach((content, index) => {
+      if (content.image && content.image !== 'null' && content.image !== null) {
+        const preloadImg = new Image();
+        preloadImg.loading = 'eager';
+        preloadImg.fetchPriority = 'high';
+        preloadImg.onload = () => {
+          console.log(`스토리 이미지 ${index + 1} 프리로드 완료:`, content.image);
+        };
+        preloadImg.onerror = (error) => {
+          console.warn(`스토리 이미지 ${index + 1} 로드 실패:`, content.image, error);
+        };
+        preloadImg.src = content.image;
+      }
+    });
+  }
 },
 { deep: true });
 
@@ -332,6 +350,9 @@ p {
   user-select: none;
   /* background-color: white; 기본 페이지 색상 */
   background-image: url("/src/assets/images/bookPage.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* 페이지 그림자 효과 */
 }
 .book .page:before {
@@ -392,6 +413,12 @@ p {
 
 .page img {
   backface-visibility: hidden;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  will-change: transform;
+  /* 이미지 로딩 최적화 */
+  decoding: async;
 }
 
 /* 잉크 번짐 reveal 효과 */
@@ -412,6 +439,13 @@ p {
   top: 0;
   left: 0;
   z-index: 1;
+  /* 렌더링 최적화 */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+  decoding: async;
 }
 
 /* 마스크 레이어 - 잉크 번짐 효과 (위 레이어) */
