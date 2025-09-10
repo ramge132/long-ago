@@ -19,7 +19,7 @@
             class="absolute z-40 bg-[#ffffff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 flex items-center justify-center px-3 py-1 hidden"
             :class="'speech-bubble' + index"
           >
-            <p class="text-center text-sm leading-tight"></p>
+            <p class="text-center text-sm leading-tight font-medium"></p>
           </div>
           <div
             class="absolute z-40 bg-[#ffffff] w-[80px] min-h-[60px] rounded-full bottom-[30px] right-[-20px] after:absolute after:top-0 after:left-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-l-0 after:mt-[-10px] after:border-b-[#ffffff] after:w-0 after:h-0 flex justify-center items-center hidden"
@@ -104,7 +104,7 @@
               class="absolute z-40 bg-[#ffffff] w-[120px] min-h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 flex items-center justify-center px-3 py-1 hidden"
               :class="'speech-bubble' + index"
             >
-              <p class="text-center text-sm leading-tight"></p>
+              <p class="text-center text-sm leading-tight font-medium"></p>
             </div>
             <div
               class="absolute z-40 bg-[#ffffff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#ffffff] after:w-0 after:h-0 flex justify-center items-center hidden"
@@ -349,20 +349,36 @@ watch(
           select.value = document.querySelector(".emoticon-bubble" + index);
           type = 1;
           
-          // 이모티콘 즉시 표시를 위한 최적화
-          const img = select.value.firstChild;
-          img.src = lastMessage.message;
+          // 기존 타이머가 있다면 먼저 클리어
+          if (chatTime.value[index][type]) {
+            clearTimeout(chatTime.value[index][type]);
+          }
           
-          // 이미지 로드 완료를 기다리지 않고 즉시 표시
+          // 말풍선과 이모티콘을 완전히 동시에 표시
+          const img = select.value.firstChild;
+          
+          // 이미지 src 설정과 동시에 말풍선 표시
+          img.src = lastMessage.message;
           select.value.classList.remove("hidden");
+          
+          // 이미지 로딩 에러 방지
+          img.onerror = () => {
+            console.warn('이모티콘 로드 실패:', lastMessage.message);
+          };
         } else {
           select.value = document.querySelector(".speech-bubble" + index);
+          // 기존 텍스트 타이머가 있다면 먼저 클리어
+          if (chatTime.value[index][type]) {
+            clearTimeout(chatTime.value[index][type]);
+          }
           select.value.firstChild.textContent = lastMessage.message;
           select.value.classList.remove("hidden");
         }
         
-        // 기존 타이머 클리어 및 새 타이머 설정
-        clearTimeout(chatTime.value[index][type]);
+        // 새 타이머 설정 (이모티콘의 경우 이미 위에서 클리어됨)
+        if (lastMessage.form !== "emoticon") {
+          clearTimeout(chatTime.value[index][type]);
+        }
         chatTime.value[index][type] = setTimeout(() => {
           select.value.classList.add("hidden");
         }, 5000);
@@ -453,5 +469,19 @@ onBeforeUnmount(() => {
     opacity: 0;
     transform: translateY(100%);
   }
+}
+
+/* 이모티콘 이미지 렌더링 최적화 */
+.emoticon-bubble0 img,
+.emoticon-bubble1 img,
+.emoticon-bubble2 img,
+.emoticon-bubble3 img,
+.emoticon-bubble4 img,
+.emoticon-bubble5 img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
 }
 </style>
