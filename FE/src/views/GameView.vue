@@ -485,9 +485,9 @@ const setupConnection = (conn) => {
         console.log("  - 발신자:", data.prompt);
         console.log("  - 현재 isVoted 상태:", isVoted.value);
         console.log("  - 현재 votings 배열:", JSON.stringify(votings.value));
-        console.log("  - 현재 타이머 상태:", { voteTimer: !!voteTimer, warningTimer: !!warningTimer });
+        console.log("  - 현재 타이머 상태:", { voteTimer: !!voteTimer, warningTimer: !!warningTimer, overlayTimeout: !!overlayTimeout.value });
         
-        // 기존 타이머들 모두 정리
+        // 기존 타이머들 모두 정리 (오버레이 타이머 포함)
         if (voteTimer) {
           console.log("  🔄 기존 voteTimer 정리");
           clearTimeout(voteTimer);
@@ -497,6 +497,16 @@ const setupConnection = (conn) => {
           console.log("  🔄 기존 warningTimer 정리");
           clearTimeout(warningTimer);
           warningTimer = null;
+        }
+        if (overlayTimeout.value) {
+          console.log("  🔄 기존 overlayTimeout 정리 (whoTurn 애니메이션 중단)");
+          clearTimeout(overlayTimeout.value);
+          overlayTimeout.value = null;
+          // 오버레이를 즉시 숨김
+          const overlay = document.querySelector(".overlay");
+          if (overlay) {
+            overlay.classList.add('scale-0');
+          }
         }
         
         // 완전한 상태 초기화
@@ -1133,9 +1143,9 @@ const stopVotingAndShowWarning = async (data) => {
   console.log("🚨 [stopVotingAndShowWarning] 함수 시작");
   console.log("  - 데이터:", JSON.stringify(data));
   console.log("  - 현재 isVoted 상태:", isVoted.value);
-  console.log("  - 현재 타이머 상태:", { voteTimer: !!voteTimer, warningTimer: !!warningTimer });
+  console.log("  - 현재 타이머 상태:", { voteTimer: !!voteTimer, warningTimer: !!warningTimer, overlayTimeout: !!overlayTimeout.value });
   
-  // 모든 타이머 즉시 정리
+  // 모든 타이머 즉시 정리 (오버레이 타이머 포함)
   if (voteTimer) {
     console.log("  🔄 voteTimer 정리");
     clearTimeout(voteTimer);
@@ -1145,6 +1155,16 @@ const stopVotingAndShowWarning = async (data) => {
     console.log("  🔄 warningTimer 정리");
     clearTimeout(warningTimer);
     warningTimer = null;
+  }
+  if (overlayTimeout.value) {
+    console.log("  🔄 기존 overlayTimeout 정리 (애니메이션 중단)");
+    clearTimeout(overlayTimeout.value);
+    overlayTimeout.value = null;
+    // 오버레이를 즉시 숨김
+    const overlay = document.querySelector(".overlay");
+    if (overlay) {
+      overlay.classList.add('scale-0');
+    }
   }
   
   // 1. 투표 즉시 중단 (InGameView에서 투표 UI 숨김)
