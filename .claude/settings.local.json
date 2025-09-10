@@ -5,7 +5,8 @@
       "WebFetch(domain:ai.google.dev)",
       "WebSearch",
       "Bash(curl:*)",
-      "Bash(ssh:*)"
+      "Bash(ssh:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []
