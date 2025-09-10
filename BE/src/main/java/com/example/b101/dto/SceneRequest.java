@@ -20,5 +20,5 @@ public class SceneRequest {
 
     int turn;
     
-    boolean isEnding;
+    Boolean isEnding;  // boolean을 Boolean으로 변경하여 Jackson 역직렬화 문제 해결
 }

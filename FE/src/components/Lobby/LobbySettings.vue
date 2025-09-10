@@ -123,7 +123,7 @@
               <!-- 하단 스크롤 blur 효과 -->
               <div 
                 class="scroll-blur-bottom absolute left-0 right-0 h-8 z-10 pointer-events-none transition-opacity duration-300"
-                style="bottom: 32px;"
+                style="bottom: 0;"
                 :class="{ 'opacity-100': showBottomBlur, 'opacity-0': !showBottomBlur }"
               ></div>
             </div>
@@ -534,31 +534,15 @@ watch(
     background: #4b5563;
   }
 
-  /* 2025 트렌드 모던 glassmorphism blur 효과 */
+  /* 간단한 shadow 효과 */
   .scroll-blur-top {
-    background: linear-gradient(
-      180deg,
-      hsla(0, 0%, 100%, 0.75) 0%,
-      hsla(0, 0%, 100%, 0.55) 60%,
-      transparent 100%
-    );
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    background-clip: padding-box;
-    border-radius: 4px 4px 0 0;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8) 0%, transparent 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
   
   .scroll-blur-bottom {
-    background: linear-gradient(
-      0deg,
-      hsla(0, 0%, 100%, 0.75) 0%,
-      hsla(0, 0%, 100%, 0.55) 60%,
-      transparent 100%
-    );
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    background-clip: padding-box;
-    border-radius: 0 0 4px 4px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.8) 0%, transparent 100%);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
   }
 
   /* 초대하기 및 시작하기 버튼 호버 효과 */

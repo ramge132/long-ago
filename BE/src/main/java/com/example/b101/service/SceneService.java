@@ -84,10 +84,13 @@ public class SceneService {
         byte[] generateImage = null;
         try {
             // 프론트엔드에서 전달받은 isEnding 값 사용 (실제 게임 로직에 기반)
-            boolean isEndingCard = sceneRequest.isEnding();
+            // Boolean으로 변경되었으므로 null 체크 추가
+            Boolean isEndingValue = sceneRequest.getIsEnding();
+            boolean isEndingCard = isEndingValue != null ? isEndingValue : false;
             
             log.info("=== 결말카드 판정 결과 ===");
-            log.info("프론트엔드에서 전달받은 isEnding: {}", sceneRequest.isEnding());
+            log.info("프론트엔드에서 전달받은 isEnding (원본): {}", isEndingValue);
+            log.info("프론트엔드에서 전달받은 isEnding (처리): {}", isEndingCard);
             log.info("최종 판정: {} 카드", isEndingCard ? "결말" : "일반");
             
             log.info("=== Python 이미지 생성 서비스 호출 시작 ===");
