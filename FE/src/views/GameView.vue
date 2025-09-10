@@ -769,21 +769,50 @@ const setupConnection = (conn) => {
             console.log("  📌 게스트 - 투표 결과 동기화");
             console.log("    - voteAccepted:", voteAccepted);
             console.log("    - currTurn:", currTurn.value, "myTurn:", myTurn.value);
+            console.log("    - usedCard.isEnding:", usedCard.value.isEnding);
+            console.log("    - 방장 여부:", participants.value[0].id === peerId.value);
             
             // 게스트도 투표 결과에 따라 isElected 설정
             if (voteAccepted) {
               console.log("    → isElected를 true로 설정 (게스트)");
               isElected.value = true;
               
-              // 동기화를 위해 약간의 지연 후 상태 확인
-              setTimeout(() => {
-                console.log("    → isElected 상태 재확인:", isElected.value);
-                console.log("    → bookContents 길이:", bookContents.value.length);
-                // InGameContent.vue에 전달되는 isElected 상태 확인
-                if (isElected.value && bookContents.value.length > 0) {
-                  console.log("    → 책 페이지 넘김이 자동으로 트리거됨");
-                }
-              }, 100);
+              // 방장이 게스트의 결말카드 투표를 처리하는 경우
+              if (usedCard.value.isEnding && participants.value[0].id === peerId.value) {
+                console.log("    → 방장이 게스트의 결말카드 게임 종료 처리");
+                
+                // 1단계: 백그라운드로 책 표지 생성 요청
+                gameEnd(true);
+                
+                // 2단계: 1초 뒤 결과창 표시 (점수 정산은 이미 endingCardScoreUpdate로 처리됨)
+                setTimeout(() => {
+                  console.log("    → 방장 결과창 표시");
+                  isForceStopped.value = "champ";
+                  
+                  // 게스트들에게도 결과창 표시
+                  connectedPeers.value.forEach(async (p) => {
+                    if (p.id !== peerId.value && p.connection.open) {
+                      sendMessage("showResultsWithCover", {
+                        bookCover: {
+                          title: "아주 먼 옛날",
+                          imageUrl: ""
+                        },
+                        ISBN: "generating..."
+                      }, p.connection);
+                    }
+                  });
+                }, 1000);
+              } else {
+                // 동기화를 위해 약간의 지연 후 상태 확인
+                setTimeout(() => {
+                  console.log("    → isElected 상태 재확인:", isElected.value);
+                  console.log("    → bookContents 길이:", bookContents.value.length);
+                  // InGameContent.vue에 전달되는 isElected 상태 확인
+                  if (isElected.value && bookContents.value.length > 0) {
+                    console.log("    → 책 페이지 넘김이 자동으로 트리거됨");
+                  }
+                }, 100);
+              }
             } else {
               console.log("    → 투표 거부 - isElected는 false 유지");
             }
