@@ -39,16 +39,26 @@
         <div class="vote-button vote-up relative group cursor-pointer" 
              @click="selectVote('up')" 
              :class="selected === 'up' ? 'selected' : ''">
-          <div class="vote-button-inner bg-gradient-to-br from-emerald-400 to-green-500 hover:from-emerald-300 hover:to-green-400 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 border border-white/30 overflow-hidden h-full flex justify-center items-center relative">
+          <div class="vote-button-inner rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 border overflow-hidden h-full flex justify-center items-center relative"
+               :class="selected === 'up' ? 'bg-gradient-to-br from-emerald-300 to-green-400 border-emerald-200 ring-4 ring-emerald-200/50 shadow-emerald-200/50' : 'bg-gradient-to-br from-emerald-400 to-green-500 hover:from-emerald-300 hover:to-green-400 border-white/30'">
             <!-- 반짝이는 효과 -->
             <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            <!-- 아이콘 -->
-            <div class="relative z-10 flex flex-col items-center gap-2">
-              <img :src="VoteUpLeftIcon" alt="찬성" class="w-16 h-16 drop-shadow-lg filter brightness-110">
-              <span class="text-white font-katuri text-lg font-bold drop-shadow-sm">찬성</span>
+            <!-- 선택된 상태 글로우 효과 -->
+            <div v-if="selected === 'up'" class="absolute inset-0 bg-gradient-to-r from-white/30 via-white/10 to-white/30 rounded-2xl animate-pulse-gentle"></div>
+            <!-- 체크마크 아이콘 (선택됨) -->
+            <div v-if="selected === 'up'" class="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg z-20">
+              <svg class="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+              </svg>
             </div>
-            <!-- 선택된 효과 -->
-            <div class="absolute inset-0 border-4 border-white rounded-2xl transition-opacity duration-300" :class="selected === 'up' ? 'opacity-100' : 'opacity-0'"></div>
+            <!-- 아이콘 -->
+            <div class="relative z-10 flex flex-col items-center gap-2 transition-all duration-300"
+                 :class="selected === 'up' ? 'scale-110' : ''">
+              <img :src="VoteUpLeftIcon" alt="찬성" class="w-16 h-16 drop-shadow-lg filter brightness-110 transition-all duration-300"
+                   :class="selected === 'up' ? 'drop-shadow-xl' : ''">
+              <span class="text-white font-katuri text-lg font-bold drop-shadow-sm transition-all duration-300"
+                    :class="selected === 'up' ? 'text-emerald-50 drop-shadow-md' : ''">찬성</span>
+            </div>
           </div>
         </div>
         
@@ -56,16 +66,26 @@
         <div class="vote-button vote-down relative group cursor-pointer" 
              @click="selectVote('down')" 
              :class="selected === 'down' ? 'selected' : ''">
-          <div class="vote-button-inner bg-gradient-to-br from-rose-400 to-red-500 hover:from-rose-300 hover:to-red-400 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 border border-white/30 overflow-hidden h-full flex justify-center items-center relative">
+          <div class="vote-button-inner rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 border overflow-hidden h-full flex justify-center items-center relative"
+               :class="selected === 'down' ? 'bg-gradient-to-br from-rose-300 to-red-400 border-rose-200 ring-4 ring-rose-200/50 shadow-rose-200/50' : 'bg-gradient-to-br from-rose-400 to-red-500 hover:from-rose-300 hover:to-red-400 border-white/30'">
             <!-- 반짝이는 효과 -->
             <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            <!-- 아이콘 -->
-            <div class="relative z-10 flex flex-col items-center gap-2">
-              <img :src="VoteDownRightIcon" alt="반대" class="w-16 h-16 drop-shadow-lg filter brightness-110">
-              <span class="text-white font-katuri text-lg font-bold drop-shadow-sm">반대</span>
+            <!-- 선택된 상태 글로우 효과 -->
+            <div v-if="selected === 'down'" class="absolute inset-0 bg-gradient-to-r from-white/30 via-white/10 to-white/30 rounded-2xl animate-pulse-gentle"></div>
+            <!-- 체크마크 아이콘 (선택됨) -->
+            <div v-if="selected === 'down'" class="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg z-20">
+              <svg class="w-5 h-5 text-rose-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+              </svg>
             </div>
-            <!-- 선택된 효과 -->
-            <div class="absolute inset-0 border-4 border-white rounded-2xl transition-opacity duration-300" :class="selected === 'down' ? 'opacity-100' : 'opacity-0'"></div>
+            <!-- 아이콘 -->
+            <div class="relative z-10 flex flex-col items-center gap-2 transition-all duration-300"
+                 :class="selected === 'down' ? 'scale-110' : ''">
+              <img :src="VoteDownRightIcon" alt="반대" class="w-16 h-16 drop-shadow-lg filter brightness-110 transition-all duration-300"
+                   :class="selected === 'down' ? 'drop-shadow-xl' : ''">
+              <span class="text-white font-katuri text-lg font-bold drop-shadow-sm transition-all duration-300"
+                    :class="selected === 'down' ? 'text-rose-50 drop-shadow-md' : ''">반대</span>
+            </div>
           </div>
         </div>
       </div>
@@ -289,20 +309,30 @@ onMounted(async () => {
   opacity: 1;
 }
 
-/* 투표 버튼 선택 시 펄스 효과 */
-.vote-button.selected .vote-button-inner::before {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: inherit;
-  background: linear-gradient(45deg, rgba(255,255,255,0.8), rgba(255,255,255,0.2), rgba(255,255,255,0.8));
-  z-index: -1;
-  animation: pulse-border 2s infinite;
+/* 부드러운 펄스 글로우 애니메이션 */
+@keyframes animate-pulse-gentle {
+  0%, 100% { 
+    opacity: 0.3; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.6; 
+    transform: scale(1.01);
+  }
 }
 
-@keyframes pulse-border {
-  0%, 100% { opacity: 0.7; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.02); }
+.animate-pulse-gentle {
+  animation: animate-pulse-gentle 2s ease-in-out infinite;
+}
+
+/* 선택된 버튼 상태 강화 */
+.vote-button.selected {
+  transform: scale(1.05);
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));
+}
+
+.vote-button.selected .vote-button-inner {
+  box-shadow: 0 0 20px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 
 /* 카드 텍스트 그림자 효과 - 핸드 카드와 동일 */
