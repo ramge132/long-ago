@@ -147,6 +147,20 @@ class EntityManager:
             "행복": "happy", "슬픔": "sad", "분노": "angry",
             "놀람": "surprised", "두려움": "scared", "기쁨": "joyful"
         }
+
+        # 통합 키워드 목록 생성 (긴 단어 우선)
+        self.all_keywords = []
+        for korean in self.character_keywords:
+            self.all_keywords.append((korean, "characters"))
+        for korean in self.location_keywords:
+            self.all_keywords.append((korean, "locations"))
+        for korean in self.object_keywords:
+            self.all_keywords.append((korean, "objects"))
+        for korean in self.emotion_keywords:
+            self.all_keywords.append((korean, "emotions"))
+        
+        # 키워드 길이 기준으로 내림차순 정렬
+        self.all_keywords.sort(key=lambda x: len(x[0]), reverse=True)
         
         # 기본 캐릭터 이미지 로드
         self.default_images = {}
@@ -162,33 +176,16 @@ class EntityManager:
                 logger.info(f"✓ 기본 이미지 로드: {english}.png")
     
     def extract_entities(self, text: str) -> Dict[str, List[str]]:
-        """텍스트에서 엔티티(한글) 추출"""
-        entities = {
-            "characters": [],
-            "locations": [],
-            "objects": [],
-            "emotions": []
-        }
+        """텍스트에서 엔티티(한글) 추출 (긴 단어 우선)"""
+        entities = { "characters": [], "locations": [], "objects": [], "emotions": [] }
+        processed_text = text
         
-        # 캐릭터 추출
-        for korean, english in self.character_keywords.items():
-            if korean in text and korean not in entities["characters"]:
-                entities["characters"].append(korean)
-        
-        # 장소 추출
-        for korean, english in self.location_keywords.items():
-            if korean in text and korean not in entities["locations"]:
-                entities["locations"].append(korean)
-        
-        # 객체 추출
-        for korean, english in self.object_keywords.items():
-            if korean in text and korean not in entities["objects"]:
-                entities["objects"].append(korean)
-        
-        # 감정 추출
-        for korean, english in self.emotion_keywords.items():
-            if korean in text and korean not in entities["emotions"]:
-                entities["emotions"].append(korean)
+        for keyword, entity_type in self.all_keywords:
+            if keyword in processed_text:
+                if keyword not in entities[entity_type]:
+                    entities[entity_type].append(keyword)
+                # 다른 짧은 키워드와의 충돌을 피하기 위해 처리된 키워드를 대체
+                processed_text = processed_text.replace(keyword, " " * len(keyword))
         
         return entities
     
