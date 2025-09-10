@@ -1545,7 +1545,7 @@ const nextTurn = async (data) => {
       // 결말카드 정보 설정
       usedCard.value.id = -1; // 결말카드는 특별한 ID로 구분
       usedCard.value.keyword = data.prompt;
-      usedCard.value.isEnding = true; // 명시적으로 true 설정
+      usedCard.value.isEnding = isEnding; // 지역 변수 isEnding을 사용
     }
 
     // 연결된 피어들에게 프롬프트 제출
@@ -1593,7 +1593,7 @@ const nextTurn = async (data) => {
         userId: peerId.value,
         userPrompt: data.prompt,
         turn: totalTurn.value++,
-        isEnding: usedCard.value.isEnding,
+        isEnding: isEnding, // usedCard.value.isEnding 대신 지역 변수 inEnding을 직접 사용
       });
       
       

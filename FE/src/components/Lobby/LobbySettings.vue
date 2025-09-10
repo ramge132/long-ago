@@ -42,7 +42,22 @@
             <img :src="unicon" alt="" class="w-10 h-10">
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
-            <div class="grid grid-cols-3 gap-x-4 max-h-80 w-full overflow-y-scroll px-3 py-6 pb-8 pointer-events-auto mt-6">
+            <div class="relative max-h-80 w-full">
+              <!-- 상단 스크롤 blur 효과 -->
+              <div 
+                class="scroll-blur-top absolute top-0 left-0 right-0 h-12 z-10 pointer-events-none transition-opacity duration-300"
+                :class="{ 'opacity-100': showTopBlur, 'opacity-0': !showTopBlur }"
+              >
+                <!-- 스크롤 인디케이터 -->
+                <div class="absolute top-2 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-[#f78ca0] to-[#ef90b0] rounded-full opacity-60"></div>
+              </div>
+              
+              <!-- 스크롤 컨테이너 -->
+              <div 
+                ref="modeScrollContainer"
+                class="grid grid-cols-3 gap-x-4 max-h-80 w-full overflow-y-scroll px-3 py-6 pb-8 pointer-events-auto mt-6 relative"
+                @scroll="handleScroll"
+              >
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
                 <div class="flex justify-between w-full"  v-for="(mode, index) in modeGroup" :key="index" :class="idx === 0 ? '' : 'mt-5'">
                   <div class="flex flex-col items-center w-full modern-mode-card-container">
@@ -105,6 +120,16 @@
                   </div>
                 </div>
               </template>
+              </div>
+              
+              <!-- 하단 스크롤 blur 효과 -->
+              <div 
+                class="scroll-blur-bottom absolute bottom-0 left-0 right-0 h-12 z-10 pointer-events-none transition-opacity duration-300"
+                :class="{ 'opacity-100': showBottomBlur, 'opacity-0': !showBottomBlur }"
+              >
+                <!-- 스크롤 인디케이터 -->
+                <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-[#f78ca0] to-[#ef90b0] rounded-full opacity-60"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -143,7 +168,7 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, watch, defineProps, defineEmits, onUnmounted } from "vue";
+import { ref, computed, watch, defineProps, defineEmits, onUnmounted, onMounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import useCilpboard from "vue-clipboard3";
 import toast from "@/functions/toast";
@@ -160,6 +185,11 @@ const localRoomConfigs = ref({
   currMode: 0,
 });
 const isPreview = ref(false);
+
+// 스크롤 blur 효과 상태
+const modeScrollContainer = ref(null);
+const showTopBlur = ref(false);
+const showBottomBlur = ref(false);
 
 const emit = defineEmits(["roomConfiguration", "gameStart"]);
 
@@ -360,6 +390,40 @@ const handleWheelScroll = (event) => {
   }
 }
 
+// 모드 선택 영역 스크롤 감지
+const handleScroll = () => {
+  if (!modeScrollContainer.value) return;
+  
+  const container = modeScrollContainer.value;
+  const scrollTop = container.scrollTop;
+  const scrollHeight = container.scrollHeight;
+  const clientHeight = container.clientHeight;
+  const scrollBottom = scrollHeight - scrollTop - clientHeight;
+  
+  // 상단 blur: 스크롤이 5px 이상 내려갔을 때 표시
+  showTopBlur.value = scrollTop > 5;
+  
+  // 하단 blur: 스크롤이 5px 이상 남았을 때 표시
+  showBottomBlur.value = scrollBottom > 5;
+}
+
+// 초기 스크롤 상태 확인
+const checkInitialScroll = async () => {
+  await nextTick();
+  if (!modeScrollContainer.value) return;
+  
+  const container = modeScrollContainer.value;
+  const hasOverflow = container.scrollHeight > container.clientHeight;
+  
+  // 처음에는 상단 blur 없고, 하단 blur만 표시 (스크롤 가능한 경우)
+  showTopBlur.value = false;
+  showBottomBlur.value = hasOverflow;
+}
+
+onMounted(() => {
+  checkInitialScroll();
+});
+
 onUnmounted(() => {
   modes.value.forEach(mode => {
     stopImageTransition(mode.value);
@@ -472,6 +536,44 @@ watch(
 
   .grid.grid-cols-3.gap-x-4.max-h-80.w-full.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
     background: #4b5563;
+  }
+
+  /* 스크롤 blur 효과 개선 */
+  .scroll-blur-top, .scroll-blur-bottom {
+    border-radius: 0 0 1rem 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .scroll-blur-bottom {
+    border-radius: 1rem 1rem 0 0;
+  }
+  
+  .scroll-blur-top {
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.7) 25%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0.2) 70%,
+      rgba(255, 255, 255, 0.05) 85%,
+      transparent 100%
+    );
+    backdrop-filter: blur(12px) saturate(1.3);
+    -webkit-backdrop-filter: blur(12px) saturate(1.3);
+  }
+  
+  .scroll-blur-bottom {
+    background: linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.7) 25%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0.2) 70%,
+      rgba(255, 255, 255, 0.05) 85%,
+      transparent 100%
+    );
+    backdrop-filter: blur(12px) saturate(1.3);
+    -webkit-backdrop-filter: blur(12px) saturate(1.3);
   }
 
   /* 초대하기 및 시작하기 버튼 호버 효과 */

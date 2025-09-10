@@ -177,16 +177,23 @@ const sendChat = () => {
 const sendprompt = () => {
   if (props.gameStarted === false) {
     toast.errorToast("게임 진행중에만 이야기를 제출할 수 있습니다!");
-  } else {
-    if (props.myTurn !== props.currTurn) {
-      toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
-    } else if (message.value.trim()) {
-      emit("nextTurn", {
-        prompt: message.value
-      });
-      message.value = "";
-      chatRefs.value[currChatModeIdx.value].blur();
-    }
+    return;
+  }
+  if (props.myTurn !== props.currTurn) {
+    toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
+    return;
+  }
+  if (message.value.trim()) {
+    // 제출된 내용이 엔딩카드 내용과 일치하는지 확인
+    const isEndingSubmit = message.value.trim() === props.endingCard.content.trim();
+    
+    emit("nextTurn", {
+      prompt: message.value,
+      isEnding: isEndingSubmit, // 확인된 값을 전달
+    });
+
+    message.value = "";
+    chatRefs.value[currChatModeIdx.value].blur();
   }
 };
 const sendEmoticon = (data) => {
