@@ -45,12 +45,10 @@
             <div class="relative max-h-80 w-full">
               <!-- 상단 스크롤 blur 효과 -->
               <div 
-                class="scroll-blur-top absolute top-0 left-0 right-0 h-12 z-10 pointer-events-none transition-opacity duration-300"
+                class="scroll-blur-top absolute left-0 right-0 h-8 z-10 pointer-events-none transition-opacity duration-300"
+                style="top: 24px;"
                 :class="{ 'opacity-100': showTopBlur, 'opacity-0': !showTopBlur }"
-              >
-                <!-- 스크롤 인디케이터 -->
-                <div class="absolute top-2 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-[#f78ca0] to-[#ef90b0] rounded-full opacity-60"></div>
-              </div>
+              ></div>
               
               <!-- 스크롤 컨테이너 -->
               <div 
@@ -124,12 +122,10 @@
               
               <!-- 하단 스크롤 blur 효과 -->
               <div 
-                class="scroll-blur-bottom absolute bottom-0 left-0 right-0 h-12 z-10 pointer-events-none transition-opacity duration-300"
+                class="scroll-blur-bottom absolute left-0 right-0 h-8 z-10 pointer-events-none transition-opacity duration-300"
+                style="bottom: 32px;"
                 :class="{ 'opacity-100': showBottomBlur, 'opacity-0': !showBottomBlur }"
-              >
-                <!-- 스크롤 인디케이터 -->
-                <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-[#f78ca0] to-[#ef90b0] rounded-full opacity-60"></div>
-              </div>
+              ></div>
             </div>
           </div>
         </div>
@@ -538,42 +534,31 @@ watch(
     background: #4b5563;
   }
 
-  /* 스크롤 blur 효과 개선 */
-  .scroll-blur-top, .scroll-blur-bottom {
-    border-radius: 0 0 1rem 1rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  .scroll-blur-bottom {
-    border-radius: 1rem 1rem 0 0;
-  }
-  
+  /* 2025 트렌드 모던 glassmorphism blur 효과 */
   .scroll-blur-top {
     background: linear-gradient(
-      to bottom,
-      rgba(255, 255, 255, 0.9) 0%,
-      rgba(255, 255, 255, 0.7) 25%,
-      rgba(255, 255, 255, 0.4) 50%,
-      rgba(255, 255, 255, 0.2) 70%,
-      rgba(255, 255, 255, 0.05) 85%,
+      180deg,
+      hsla(0, 0%, 100%, 0.75) 0%,
+      hsla(0, 0%, 100%, 0.55) 60%,
       transparent 100%
     );
-    backdrop-filter: blur(12px) saturate(1.3);
-    -webkit-backdrop-filter: blur(12px) saturate(1.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background-clip: padding-box;
+    border-radius: 4px 4px 0 0;
   }
   
   .scroll-blur-bottom {
     background: linear-gradient(
-      to top,
-      rgba(255, 255, 255, 0.9) 0%,
-      rgba(255, 255, 255, 0.7) 25%,
-      rgba(255, 255, 255, 0.4) 50%,
-      rgba(255, 255, 255, 0.2) 70%,
-      rgba(255, 255, 255, 0.05) 85%,
+      0deg,
+      hsla(0, 0%, 100%, 0.75) 0%,
+      hsla(0, 0%, 100%, 0.55) 60%,
       transparent 100%
     );
-    backdrop-filter: blur(12px) saturate(1.3);
-    -webkit-backdrop-filter: blur(12px) saturate(1.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background-clip: padding-box;
+    border-radius: 0 0 4px 4px;
   }
 
   /* 초대하기 및 시작하기 버튼 호버 효과 */
