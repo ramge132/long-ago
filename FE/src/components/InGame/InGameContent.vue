@@ -240,6 +240,7 @@ const runBookSequence = async () => {
       // 페이지 넘기는 효과음 재생
       if (audioStore.audioData) {
         const turningEffect = new Audio(TurningPage);
+        turningEffect.volume = audioStore.audioVolume;  // 볼륨 적용
         turningEffect.play();
       }
     }
@@ -278,6 +279,7 @@ watch(
       // 페이지 넘기는 효과음 재생
       if (audioStore.audioData) {
         const turningEffect = new Audio(TurningPage);
+        turningEffect.volume = audioStore.audioVolume;  // 볼륨 적용
         turningEffect.play();
       }
       
