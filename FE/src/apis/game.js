@@ -72,6 +72,14 @@ export const promptFiltering = async (data) => {
 // 이미지 생성 부분
 export const createImage = async (data) => {
   try {
+    console.log("📡 [createImage API] 백엔드로 전송하는 데이터:");
+    console.log("  - gameId:", data.gameId);
+    console.log("  - userId:", data.userId);
+    console.log("  - userPrompt:", data.userPrompt);
+    console.log("  - turn:", data.turn);
+    console.log("  - isEnding:", data.isEnding);
+    console.log("  - 전체 데이터:", JSON.stringify(data));
+    
     const response = await apiClient.post(import.meta.env.VITE_SCENE, data, { responseType: "blob", });
     return response;
   } catch(error) {

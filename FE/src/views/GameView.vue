@@ -1478,6 +1478,10 @@ const addBookContent = (newContent) => {
 
 // 다음 순서 넘기기
 const nextTurn = async (data) => {
+  console.log("🔍 [nextTurn] 함수 호출됨");
+  console.log("  - data:", JSON.stringify(data));
+  console.log("  - data.isEnding:", data?.isEnding);
+  console.log("  - data.prompt:", data?.prompt);
   
   // ContentTimer에서 호출된 30초 타이머 만료인 경우 (본인의 턴일 때만)
   const isMyCurrentTurn = inGameOrder.value[currTurn.value] === myTurn.value;
@@ -1515,7 +1519,11 @@ const nextTurn = async (data) => {
   
   // 프롬프트 제출인 경우
   if (data?.prompt) {
-    const isEnding = data.isEnding ? true : false;
+    const isEnding = data.isEnding === true; // 명시적으로 true 확인
+    console.log("🎯 [nextTurn] isEnding 지역 변수 설정:", isEnding);
+    console.log("  - data.isEnding 원본 값:", data.isEnding);
+    console.log("  - isEnding 지역 변수 값:", isEnding);
+    
     // 스토리 카드 제출인 경우
     if (!isEnding) {
       try {
@@ -1586,6 +1594,12 @@ const nextTurn = async (data) => {
     currentVoteSelection.value = "up"; // 투표 선택값을 찬성으로 초기화
     votings.value = [];
     // 해당 프롬프트로 이미지 생성 요청 (api)
+    console.log("🚀 [nextTurn] createImage API 호출 전");
+    console.log("  - gameId:", gameID.value);
+    console.log("  - userId:", peerId.value);
+    console.log("  - userPrompt:", data.prompt);
+    console.log("  - turn:", totalTurn.value);
+    console.log("  - isEnding (전달할 값):", isEnding);
     
     try {
       const responseImage = await createImage({
@@ -1593,7 +1607,7 @@ const nextTurn = async (data) => {
         userId: peerId.value,
         userPrompt: data.prompt,
         turn: totalTurn.value++,
-        isEnding: isEnding, // usedCard.value.isEnding 대신 지역 변수 inEnding을 직접 사용
+        isEnding: isEnding, // usedCard.value.isEnding 대신 지역 변수 isEnding을 직접 사용
       });
       
       
