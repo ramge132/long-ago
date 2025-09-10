@@ -34,6 +34,9 @@ game_contexts = {}
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# FastAPI 앱 초기화
+app = FastAPI(title="Unified Image Generation Service v2.4", version="2.4.0")
+
 # ================== 엔티티 관리 시스템 ==================
 class EntityManager:
     def __init__(self):
@@ -73,10 +76,11 @@ class PromptGenerator:
         prompt_parts = [f"A scene from a story: {user_prompt}", DRAWING_STYLES[drawing_style]]
         
         def append_prompt_part(entity_type, prefix):
-            if entities[entity_type]:
-                kw_dict = getattr(self.entity_manager, f"{entity_type}_keywords")
-                english_list = [kw_dict.get(k, k) for k in entities[entity_type]]
-                prompt_parts.append(f"{prefix}: {', '.join(english_list)}")
+            if entities.get(entity_type): # .get()으로 안전하게 접근
+                kw_dict = self.entity_manager.keywords.get(entity_type, {})
+                english_list = [kw_dict.get(k, k) for k in entities[entity_type] if k in kw_dict]
+                if english_list:
+                    prompt_parts.append(f"{prefix}: {', '.join(english_list)}")
 
         append_prompt_part("characters", "Featuring")
         append_prompt_part("locations", "Setting")
