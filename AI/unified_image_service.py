@@ -34,6 +34,22 @@ CHARACTERS_DIR = Path(__file__).parent / "imageGeneration" / "characters"
 
 # 캐릭터 레퍼런스 저장소 (게임별로 관리)
 character_references = {}
+# 게임별 문맥 저장소 (등장인물, 사물 등)
+game_contexts = {}
+
+def _add_korean_particle(noun: str, particle_pair: tuple[str, str]) -> str:
+    """
+    한글 명사에 올바른 조사를 붙여줍니다. (은/는, 이/가, 을/를)
+    particle_pair: ('은', '는'), ('이', '가'), ('을', '를')
+    """
+    if not isinstance(noun, str) or not noun:
+        return ""
+        
+    last_char = noun[-1]
+    if '가' <= last_char <= '힣':
+        has_batchim = (ord(last_char) - 0xAC00) % 28 > 0
+        return noun + particle_pair[0] if has_batchim else noun + particle_pair[1]
+    return noun + particle_pair[1]
 
 # ================== 프롬프트 설정 ==================
 
@@ -95,28 +111,35 @@ class EntityManager:
     엔티티(캐릭터, 객체, 장소) 추출 및 관리
     """
     def __init__(self):
-        # 캐릭터 타입 매핑 (한글 -> 영문)
+        # 캐릭터 타입 매핑 (한글 -> 영문) - init_db.sql 기반
         self.character_keywords = {
-            "공주": "princess", "왕자": "prince", "마법사": "wizard", 
-            "소년": "boy", "소녀": "girl", "노인": "oldman",
-            "탐정": "detective", "박사": "doctor", "농부": "farmer",
-            "아이돌": "idol", "상인": "merchant", "닌자": "ninja",
-            "부자": "rich", "가난뱅이": "beggar", "외계인": "alien"
+            '호랑이': 'tiger', '유령': 'ghost', '농부': 'farmer', '상인': 'merchant',
+            '신': 'god', '외계인': 'alien', '박사': 'doctor', '아이돌': 'idol',
+            '마법사': 'wizard', '마왕': 'demon king', '소년': 'boy', '소녀': 'girl',
+            '부자': 'rich person', '탐정': 'detective', '노인': 'old man',
+            '가난뱅이': 'beggar', '공주': 'princess', '닌자': 'ninja'
         }
-        
+
         # 장소 관련 키워드
         self.location_keywords = {
             "숲": "forest", "성": "castle", "마을": "village",
             "바다": "ocean", "산": "mountain", "동굴": "cave",
             "학교": "school", "집": "house", "정원": "garden",
-            "사막": "desert", "우주": "space", "도시": "city"
+            "사막": "desert", "우주": "space", "도시": "city",
+            "다리": "bridge", "묘지": "cemetery", "식당": "restaurant",
+            "박물관": "museum", "비밀통로": "secret passage", "저택": "mansion", "천국": "heaven"
         }
-        
-        # 객체 관련 키워드
+
+        # 객체 관련 키워드 - init_db.sql 기반 + 기존
         self.object_keywords = {
-            "검": "sword", "마법지팡이": "magic wand", "책": "book",
-            "보물": "treasure", "열쇠": "key", "거울": "mirror",
-            "꽃": "flower", "나무": "tree", "별": "star"
+            '핸드폰': 'smartphone', '마차': 'carriage', '인형': 'doll', '부적': 'talisman',
+            '지도': 'map', '가면': 'mask', '칼': 'sword', '피리': 'flute', '지팡이': 'staff',
+            '태양': 'sun', '날개': 'wings', '의자': 'chair', '시계': 'clock', '도장': 'seal',
+            '보석': 'jewel', 'UFO': 'UFO', '덫': 'trap', '총': 'gun', '타임머신': 'time machine',
+            '감자': 'potato',
+            # 기존 유용 키워드
+            "검": "sword", "마법지팡이": "magic wand", "책": "book", "보물": "treasure",
+            "열쇠": "key", "거울": "mirror", "꽃": "flower", "나무": "tree", "별": "star"
         }
         
         # 감정 키워드
@@ -139,7 +162,7 @@ class EntityManager:
                 logger.info(f"✓ 기본 이미지 로드: {english}.png")
     
     def extract_entities(self, text: str) -> Dict[str, List[str]]:
-        """텍스트에서 엔티티 추출"""
+        """텍스트에서 엔티티(한글) 추출"""
         entities = {
             "characters": [],
             "locations": [],
@@ -149,23 +172,23 @@ class EntityManager:
         
         # 캐릭터 추출
         for korean, english in self.character_keywords.items():
-            if korean in text:
-                entities["characters"].append(english)
+            if korean in text and korean not in entities["characters"]:
+                entities["characters"].append(korean)
         
         # 장소 추출
         for korean, english in self.location_keywords.items():
-            if korean in text:
-                entities["locations"].append(english)
+            if korean in text and korean not in entities["locations"]:
+                entities["locations"].append(korean)
         
         # 객체 추출
         for korean, english in self.object_keywords.items():
-            if korean in text:
-                entities["objects"].append(english)
+            if korean in text and korean not in entities["objects"]:
+                entities["objects"].append(korean)
         
         # 감정 추출
         for korean, english in self.emotion_keywords.items():
-            if korean in text:
-                entities["emotions"].append(english)
+            if korean in text and korean not in entities["emotions"]:
+                entities["emotions"].append(korean)
         
         return entities
     
@@ -189,35 +212,38 @@ class PromptGenerator:
         """
         사용자 입력을 기반으로 동적 프롬프트 생성
         """
-        # 엔티티 추출
+        # 엔티티 추출 (한글 이름으로 넘어옴)
         entities = self.entity_manager.extract_entities(user_prompt)
         
         # 기본 프롬프트 구성
-        prompt_parts = []
+        prompt_parts = [
+            f"A scene from a story: {user_prompt}"
+        ]
         
         # 스타일 추가
         prompt_parts.append(DRAWING_STYLES[drawing_style])
         
-        # 캐릭터 설명
+        # 캐릭터 설명 (영문으로 변환)
         if entities["characters"]:
-            char_desc = ", ".join(entities["characters"])
-            # 표정과 포즈 랜덤 추가
+            english_chars = [self.entity_manager.character_keywords.get(k, k) for k in entities["characters"]]
+            char_desc = ", ".join(english_chars)
             expression = random.choice(EXPRESSION_VARIATIONS)
             pose = random.choice(POSE_VARIATIONS)
-            prompt_parts.append(f"{char_desc} character, {expression} expression, {pose}")
+            prompt_parts.append(f"Featuring: {char_desc}, {expression} expression, {pose}")
         
-        # 장소 설명
+        # 장소 설명 (영문으로 변환)
         if entities["locations"]:
-            location_desc = ", ".join(entities["locations"])
-            # 시간대 조명 효과 랜덤 추가
+            english_locs = [self.entity_manager.location_keywords.get(k, k) for k in entities["locations"]]
+            location_desc = ", ".join(english_locs)
             time_key = random.choice(list(TIME_OF_DAY_LIGHTING.keys()))
             lighting = TIME_OF_DAY_LIGHTING[time_key]
-            prompt_parts.append(f"in {location_desc}, {lighting}")
-        
-        # 객체 설명
+            prompt_parts.append(f"Setting: {location_desc}, {lighting}")
+
+        # 객체 설명 (영문으로 변환)
         if entities["objects"]:
-            objects_desc = ", ".join(entities["objects"])
-            prompt_parts.append(f"with {objects_desc}")
+            english_objs = [self.entity_manager.object_keywords.get(k, k) for k in entities["objects"]]
+            objects_desc = ", ".join(english_objs)
+            prompt_parts.append(f"With important object: {objects_desc}")
         
         # 구도 다양화
         composition = random.choice(COMPOSITION_VARIATIONS)
@@ -276,12 +302,12 @@ class ImageGenerationService:
                 }
             })
             parts.append({
-                "text": f"Based on the character in this reference image, generate a new scene: {prompt}. Keep the exact same character appearance, only change the scene and pose."
+                "text": f"Based on the character in this reference image, generate a new scene: {prompt}. Focus on the scene described by the text. Keep the exact same character appearance, only change the scene, pose, and expression. No text, watermark, or distorted features."
             })
         else:
             # Text-to-Image 모드
             parts.append({
-                "text": f"Generate an image: {prompt}"
+                "text": f"{prompt}. High quality, detailed, artistic, no text, no watermark, no distorted features."
             })
         
         payload = {
@@ -319,74 +345,144 @@ class ImageGenerationService:
             logger.error(f"Gemini 이미지 생성 실패: {str(e)}")
             raise
     
-    async def generate_scene_image(self, 
+    async def generate_scene_image(self,
                                  user_prompt: str,
                                  drawing_style: int = 0,
                                  is_ending: bool = False,
                                  game_id: str = None,
                                  turn: int = 0) -> bytes:
         """
-        장면 이미지 생성 (Image-to-Image 지원)
+        장면 이미지 생성 (문맥 관리 및 Image-to-Image 지원)
         """
         try:
-            logger.info(f"=== 이미지 생성 요청 시작 (v2) ===")
-            logger.info(f"게임ID: {game_id}, 사용자ID: {user_prompt[:50]}, 턴: {turn}")
-            logger.info(f"사용자 입력: [{user_prompt}]")
-            
-            # 엔티티 추출
-            entities = self.entity_manager.extract_entities(user_prompt)
-            detected_characters = entities["characters"]
-            logger.info(f"🔹 발견된 엔티티: {detected_characters}")
-            
-            # 동적 프롬프트 생성
-            dynamic_prompt = self.prompt_generator.create_dynamic_prompt(
-                user_prompt, drawing_style, is_ending
-            )
-            
-            # 게임별 캐릭터 레퍼런스 확인
-            reference_image = None
-            if game_id and detected_characters:
-                game_refs = character_references.get(game_id, {})
+            logger.info(f"=== 이미지 생성 요청 시작 (v2.2) ===")
+            logger.info(f"게임ID: {game_id}, 턴: {turn}")
+            logger.info(f"사용자 입력 (원본): [{user_prompt}]")
+
+            modified_prompt = user_prompt
+            context = None
+
+            # 1. 문맥 관리 및 대명사/문맥 치환
+            if game_id:
+                if game_id not in game_contexts:
+                    game_contexts[game_id] = {
+                        "mentioned_characters": [], "last_character": None,
+                        "mentioned_objects": [], "last_object": None,
+                        "mentioned_locations": [], "last_location": None,
+                        "turn": 0
+                    }
+                context = game_contexts[game_id]
                 
-                # 첫 번째 발견된 캐릭터의 레퍼런스 사용
-                for char in detected_characters:
-                    if char in game_refs:
-                        reference_image = game_refs[char]
-                        logger.info(f"🔹 '{char}' 캐릭터 레퍼런스 사용 (Image-to-Image)")
+                if context["turn"] > 0:
+                    temp_prompt = modified_prompt
+                    
+                    # 1-1. 단일 엔티티 치환
+                    if context["last_character"]:
+                        lc = context["last_character"]
+                        temp_prompt = temp_prompt.replace("그는", _add_korean_particle(lc, ("은", "는")))
+                        temp_prompt = temp_prompt.replace("그녀는", _add_korean_particle(lc, ("은", "는")))
+                        temp_prompt = temp_prompt.replace("그가", _add_korean_particle(lc, ("이", "가")))
+                        temp_prompt = temp_prompt.replace("그녀가", _add_korean_particle(lc, ("이", "가")))
+                        temp_prompt = temp_prompt.replace("그를", _add_korean_particle(lc, ("을", "를")))
+                        temp_prompt = temp_prompt.replace("그녀를", _add_korean_particle(lc, ("을", "를")))
+                        temp_prompt = temp_prompt.replace("그의", lc + "의")
+                        temp_prompt = temp_prompt.replace("그녀의", lc + "의")
+                    if context["last_object"]:
+                        lo = context["last_object"]
+                        for p in ["그것", "이것"]:
+                            temp_prompt = temp_prompt.replace(f"{p}은", _add_korean_particle(lo, ("은", "는")))
+                            temp_prompt = temp_prompt.replace(f"{p}이", _add_korean_particle(lo, ("이", "가")))
+                            temp_prompt = temp_prompt.replace(f"{p}을", _add_korean_particle(lo, ("을", "를")))
+                            temp_prompt = temp_prompt.replace(f"{p}의", lo + "의")
+                    if context["last_location"]:
+                        ll = context["last_location"]
+                        temp_prompt = temp_prompt.replace("그곳", ll)
+                    
+                    # 1-2. 복수 엔티티 치환
+                    if context["mentioned_characters"]:
+                        chars_text = ", ".join(context["mentioned_characters"])
+                        temp_prompt = temp_prompt.replace("그들은", chars_text)
+                        temp_prompt = temp_prompt.replace("그들이", chars_text)
+                    if context["mentioned_objects"]:
+                        objs_text = ", ".join(context["mentioned_objects"])
+                        temp_prompt = temp_prompt.replace("그것들은", objs_text)
+                    
+                    if temp_prompt != modified_prompt:
+                        logger.info(f"🔹 대명사 치환 적용: [{temp_prompt}]")
+                        modified_prompt = temp_prompt
+
+                    # 1-3. 능동적 문맥 주입 (주어 없을 시)
+                    current_entities = self.entity_manager.extract_entities(modified_prompt)
+                    if not current_entities["characters"] and context["last_character"]:
+                        # 주어가 없는 문장으로 보이면 마지막 캐릭터를 주어로 추가
+                        modified_prompt = f"{_add_korean_particle(context['last_character'], ('이', '가'))} {modified_prompt}"
+                        logger.info(f"🔹 캐릭터 문맥 주입: [{modified_prompt}]")
+
+            # 2. 엔티티 추출 및 문맥 업데이트
+            entities = self.entity_manager.extract_entities(modified_prompt) # entities are Korean
+            logger.info(f"🔹 발견된 엔티티 (한글): {entities}")
+
+            if context:
+                context["turn"] += 1
+                if entities["characters"]:
+                    new_chars = [c for c in entities["characters"] if c not in context["mentioned_characters"]]
+                    if new_chars: context["mentioned_characters"].extend(new_chars)
+                    context["last_character"] = entities["characters"][-1]
+                if entities["objects"]:
+                    new_objs = [o for o in entities["objects"] if o not in context["mentioned_objects"]]
+                    if new_objs: context["mentioned_objects"].extend(new_objs)
+                    context["last_object"] = entities["objects"][-1]
+                if entities["locations"]:
+                    new_locs = [l for l in entities["locations"] if l not in context["mentioned_locations"]]
+                    if new_locs: context["mentioned_locations"].extend(new_locs)
+                    context["last_location"] = entities["locations"][-1]
+
+            # 3. 동적 프롬프트 생성
+            dynamic_prompt = self.prompt_generator.create_dynamic_prompt(
+                modified_prompt, drawing_style, is_ending
+            )
+
+            # 4. 캐릭터 레퍼런스 확인 (Image-to-Image)
+            reference_image = None
+            detected_english_chars = [self.entity_manager.character_keywords.get(k) for k in entities["characters"]]
+            
+            if game_id and detected_english_chars:
+                game_refs = character_references.get(game_id, {})
+                for char_en in detected_english_chars:
+                    if char_en in game_refs:
+                        reference_image = game_refs[char_en]
+                        logger.info(f"🔹 '{char_en}' 레퍼런스 이미지 사용 (Image-to-Image)")
                         break
-            
-            if reference_image:
-                logger.info(f"🔹 Image-to-Image 모드")
-            else:
-                logger.info(f"🔹 Text-to-Image 모드")
-            
-            # Gemini로 이미지 생성
+
+            # 5. Gemini로 이미지 생성
             image_data = await self.generate_image_with_gemini(dynamic_prompt, reference_image)
-            
-            # 새로운 캐릭터라면 레퍼런스로 저장
-            if game_id and detected_characters and not reference_image:
+
+            # 6. 새로운 캐릭터 레퍼런스 저장
+            if game_id and detected_english_chars:
                 if game_id not in character_references:
                     character_references[game_id] = {}
-                
-                for char in detected_characters:
-                    if char not in character_references[game_id]:
-                        character_references[game_id][char] = image_data
-                        logger.info(f"✅ '{char}' 캐릭터 레퍼런스 저장 (턴 {turn})")
-            
+                for char_en in detected_english_chars:
+                    if char_en and char_en not in character_references[game_id]:
+                        character_references[game_id][char_en] = image_data
+                        logger.info(f"✅ '{char_en}' 캐릭터 레퍼런스 저장됨 (턴 {turn})")
+                        break # 첫 등장 캐릭터 하나만 저장
+
             logger.info(f"✅ 이미지 생성 완료: {len(image_data)} bytes")
             return image_data
-            
+
         except Exception as e:
             logger.error(f"이미지 생성 실패: {str(e)}")
             
             # 2차 시도: 기본 캐릭터 이미지 반환
-            entities = self.entity_manager.extract_entities(user_prompt)
-            if entities["characters"]:
-                char_type = entities["characters"][0]
-                default_image = self.entity_manager.get_default_image(char_type)
-                if default_image:
-                    logger.info(f"✓ 기본 이미지 사용: {char_type}")
-                    return default_image
+            fallback_entities = self.entity_manager.extract_entities(user_prompt) # Korean
+            if fallback_entities["characters"]:
+                char_kr = fallback_entities["characters"][0]
+                char_en = self.entity_manager.character_keywords.get(char_kr)
+                if char_en:
+                    default_image = self.entity_manager.get_default_image(char_en)
+                    if default_image:
+                        logger.info(f"✓ 기본 이미지 사용: {char_en}")
+                        return default_image
             
             # 3차: 빈 이미지 반환
             logger.warning("기본 이미지도 없음, 빈 이미지 반환")
@@ -490,51 +586,38 @@ class ImageGenerationService:
     
     def _generate_simple_title(self, story: str) -> str:
         """간단한 제목 생성"""
-        # 스토리에서 주요 캐릭터 찾기
+        # 스토리에서 주요 캐릭터 찾기 (Korean)
         entities = self.entity_manager.extract_entities(story)
         
+        # 영어 키로 된 맵
+        char_map = {
+            "princess": "공주의 모험", "prince": "왕자의 여정", "wizard": "마법사의 비밀",
+            "boy": "소년의 이야기", "girl": "소녀의 꿈", "old man": "노인의 지혜",
+            "detective": "탐정의 추리", "doctor": "박사의 발견", "farmer": "농부의 하루",
+            "idol": "아이돌의 무대", "merchant": "상인의 거래", "ninja": "닌자의 임무",
+            "rich person": "부자의 비밀", "beggar": "가난뱅이의 행운", "alien": "외계인의 방문",
+            "tiger": "호랑이의 전설", "ghost": "유령의 속삭임", "god": "신의 변덕", "demon king": "마왕의 부활"
+        }
+        location_map = {
+            "forest": "숲속의 이야기", "castle": "성의 전설", "village": "마을의 비밀",
+            "ocean": "바다의 노래", "mountain": "산의 정령", "cave": "동굴의 신비",
+            "school": "학교 유령", "house": "집으로 가는 길", "garden": "정원의 기적",
+            "desert": "사막의 별", "space": "우주 모험", "city": "도시의 빛",
+            "bridge":"다리 위의 약속", "cemetery":"묘지에서의 하룻밤", "restaurant":"수상한 식당",
+            "museum":"박물관은 살아있다", "secret passage":"비밀통로의 끝", "mansion":"저택의 비밀", "heaven":"천국으로 가는 계단"
+        }
+
         if entities["characters"]:
-            # 첫 번째 캐릭터 기반 제목
-            char_map = {
-                "princess": "공주의 모험",
-                "prince": "왕자의 여정",
-                "wizard": "마법사의 비밀",
-                "boy": "소년의 이야기",
-                "girl": "소녀의 꿈",
-                "oldman": "노인의 지혜",
-                "detective": "탐정의 추리",
-                "doctor": "박사의 발견",
-                "farmer": "농부의 하루",
-                "idol": "아이돌의 무대",
-                "merchant": "상인의 거래",
-                "ninja": "닌자의 임무",
-                "rich": "부자의 비밀",
-                "beggar": "가난뱅이의 행운",
-                "alien": "외계인의 방문"
-            }
-            first_char = entities["characters"][0]
-            if first_char in char_map:
-                return char_map[first_char]
-        
-        # 장소 기반 제목
+            first_char_kr = entities["characters"][0]
+            first_char_en = self.entity_manager.character_keywords.get(first_char_kr)
+            if first_char_en in char_map:
+                return char_map[first_char_en]
+
         if entities["locations"]:
-            location_map = {
-                "forest": "숲속의 이야기",
-                "castle": "성의 전설",
-                "village": "마을의 비밀",
-                "ocean": "바다의 노래",
-                "mountain": "산의 전설",
-                "cave": "동굴의 신비",
-                "school": "학교 이야기",
-                "house": "집으로 가는 길",
-                "garden": "정원의 기적",
-                "desert": "사막의 별",
-                "space": "우주 모험",
-                "city": "도시의 빛"
-            }
-            first_loc = entities["locations"][0]
-            if first_loc in location_map:
-                return location_map[first_loc]
+            first_loc_kr = entities["locations"][0]
+            first_loc_en = self.entity_manager.location_keywords.get(first_loc_kr)
+            if first_loc_en in location_map:
+                return location_map[first_loc_en]
         
         # 기본값
         return "아주 먼 옛날 이야기"
@@ -627,13 +710,24 @@ async def extract_entities_endpoint(text: str):
 
 @app.delete("/game/{game_id}")
 async def cleanup_game_endpoint(game_id: str):
-    """게임 종료 시 레퍼런스 정리"""
+    """게임 종료 시 레퍼런스 및 문맥 정리"""
+    cleaned_messages = []
+    
     if game_id in character_references:
         char_count = len(character_references[game_id])
         del character_references[game_id]
-        logger.info(f"🗑️ 게임 {game_id}의 캐릭터 레퍼런스 {char_count}개 정리 완료")
-        return {"message": f"Game {game_id} references cleaned ({char_count} characters)"}
-    return {"message": f"No references found for game {game_id}"}
+        cleaned_messages.append(f"Cleaned {char_count} character references.")
+        
+    if game_id in game_contexts:
+        del game_contexts[game_id]
+        cleaned_messages.append("Cleaned game context.")
+
+    if cleaned_messages:
+        full_message = f"Game {game_id} cleanup: {' '.join(cleaned_messages)}"
+        logger.info(f"🗑️ {full_message}")
+        return {"message": full_message}
+    
+    return {"message": f"No data found for game {game_id} to clean."}
 
 # ================== 메인 실행 ==================
 
