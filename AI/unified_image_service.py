@@ -80,9 +80,14 @@ class PromptGenerator:
         prompt_parts = [f"A scene from a story: {user_prompt}", DRAWING_STYLES[drawing_style]]
         def append_prompt_part(entity_type, prefix):
             if entities.get(entity_type):
+                # 올바른 딕셔너리 구조에 접근하도록 수정
                 kw_dict = self.entity_manager.keywords.get(entity_type, {})
                 english_list = [kw_dict.get(k) for k in entities[entity_type] if k in kw_dict]
-                if english_list: prompt_parts.append(f"{prefix}: {', '.join(english_list)}")
+                # 중복 및 None 값 제거
+                if english_list:
+                    unique_list = sorted(list(set(filter(None, english_list))))
+                    if unique_list:
+                        prompt_parts.append(f"{prefix}: {', '.join(unique_list)}")
         
         append_prompt_part("characters", "Featuring")
         append_prompt_part("locations", "Setting")
