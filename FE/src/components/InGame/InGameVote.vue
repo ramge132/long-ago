@@ -36,55 +36,49 @@
       <!-- 모던한 투표 버튼들 -->
       <div class="grid grid-cols-2 w-full h-full gap-6 mt-2">
         <!-- 찬성 버튼 -->
-        <div class="vote-button vote-up relative group cursor-pointer" 
+        <div class="vote-button vote-up relative cursor-pointer transition-all duration-300" 
              @click="selectVote('up')" 
              :class="selected === 'up' ? 'selected' : ''">
-          <div class="vote-button-inner rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 border overflow-hidden h-full flex justify-center items-center relative"
-               :class="selected === 'up' ? 'bg-gradient-to-br from-emerald-300 to-green-400 border-emerald-200 ring-4 ring-emerald-200/50 shadow-emerald-200/50' : 'bg-gradient-to-br from-emerald-400 to-green-500 hover:from-emerald-300 hover:to-green-400 border-white/30'">
-            <!-- 반짝이는 효과 -->
-            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            <!-- 선택된 상태 글로우 효과 -->
-            <div v-if="selected === 'up'" class="absolute inset-0 bg-gradient-to-r from-white/30 via-white/10 to-white/30 rounded-2xl animate-pulse-gentle"></div>
-            <!-- 체크마크 아이콘 (선택됨) -->
-            <div v-if="selected === 'up'" class="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg z-20">
-              <svg class="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-              </svg>
+          <div class="neumorphic-button neumorphic-green h-full flex flex-col justify-center items-center gap-3 relative overflow-hidden"
+               :class="selected === 'up' ? 'neumorphic-pressed' : 'hover:neumorphic-hover'">
+            <!-- 선택된 상태 표시 - 내부 글로우 -->
+            <div v-if="selected === 'up'" class="absolute inset-4 bg-emerald-400/20 rounded-3xl animate-pulse-soft"></div>
+            <!-- 상단 선택 인디케이터 -->
+            <div v-if="selected === 'up'" class="absolute top-4 right-4 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+              <div class="w-3 h-3 bg-white rounded-full"></div>
             </div>
-            <!-- 아이콘 -->
-            <div class="relative z-10 flex flex-col items-center gap-2 transition-all duration-300"
-                 :class="selected === 'up' ? 'scale-110' : ''">
-              <img :src="VoteUpLeftIcon" alt="찬성" class="w-16 h-16 drop-shadow-lg filter brightness-110 transition-all duration-300"
-                   :class="selected === 'up' ? 'drop-shadow-xl' : ''">
-              <span class="text-white font-katuri text-lg font-bold drop-shadow-sm transition-all duration-300"
-                    :class="selected === 'up' ? 'text-emerald-50 drop-shadow-md' : ''">찬성</span>
+            <!-- 아이콘과 텍스트 -->
+            <div class="flex flex-col items-center gap-2 transition-all duration-300"
+                 :class="selected === 'up' ? 'translate-y-0.5' : ''">
+              <img :src="VoteUpLeftIcon" alt="찬성" 
+                   class="w-16 h-16 transition-all duration-300"
+                   :class="selected === 'up' ? 'brightness-110 contrast-110' : 'brightness-95'">
+              <span class="font-katuri text-lg font-bold transition-all duration-300"
+                    :class="selected === 'up' ? 'text-emerald-700' : 'text-emerald-600'">찬성</span>
             </div>
           </div>
         </div>
         
         <!-- 반대 버튼 -->
-        <div class="vote-button vote-down relative group cursor-pointer" 
+        <div class="vote-button vote-down relative cursor-pointer transition-all duration-300" 
              @click="selectVote('down')" 
              :class="selected === 'down' ? 'selected' : ''">
-          <div class="vote-button-inner rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 border overflow-hidden h-full flex justify-center items-center relative"
-               :class="selected === 'down' ? 'bg-gradient-to-br from-rose-300 to-red-400 border-rose-200 ring-4 ring-rose-200/50 shadow-rose-200/50' : 'bg-gradient-to-br from-rose-400 to-red-500 hover:from-rose-300 hover:to-red-400 border-white/30'">
-            <!-- 반짝이는 효과 -->
-            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            <!-- 선택된 상태 글로우 효과 -->
-            <div v-if="selected === 'down'" class="absolute inset-0 bg-gradient-to-r from-white/30 via-white/10 to-white/30 rounded-2xl animate-pulse-gentle"></div>
-            <!-- 체크마크 아이콘 (선택됨) -->
-            <div v-if="selected === 'down'" class="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg z-20">
-              <svg class="w-5 h-5 text-rose-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-              </svg>
+          <div class="neumorphic-button neumorphic-red h-full flex flex-col justify-center items-center gap-3 relative overflow-hidden"
+               :class="selected === 'down' ? 'neumorphic-pressed' : 'hover:neumorphic-hover'">
+            <!-- 선택된 상태 표시 - 내부 글로우 -->
+            <div v-if="selected === 'down'" class="absolute inset-4 bg-rose-400/20 rounded-3xl animate-pulse-soft"></div>
+            <!-- 상단 선택 인디케이터 -->
+            <div v-if="selected === 'down'" class="absolute top-4 right-4 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center">
+              <div class="w-3 h-3 bg-white rounded-full"></div>
             </div>
-            <!-- 아이콘 -->
-            <div class="relative z-10 flex flex-col items-center gap-2 transition-all duration-300"
-                 :class="selected === 'down' ? 'scale-110' : ''">
-              <img :src="VoteDownRightIcon" alt="반대" class="w-16 h-16 drop-shadow-lg filter brightness-110 transition-all duration-300"
-                   :class="selected === 'down' ? 'drop-shadow-xl' : ''">
-              <span class="text-white font-katuri text-lg font-bold drop-shadow-sm transition-all duration-300"
-                    :class="selected === 'down' ? 'text-rose-50 drop-shadow-md' : ''">반대</span>
+            <!-- 아이콘과 텍스트 -->
+            <div class="flex flex-col items-center gap-2 transition-all duration-300"
+                 :class="selected === 'down' ? 'translate-y-0.5' : ''">
+              <img :src="VoteDownRightIcon" alt="반대" 
+                   class="w-16 h-16 transition-all duration-300"
+                   :class="selected === 'down' ? 'brightness-110 contrast-110' : 'brightness-95'">
+              <span class="font-katuri text-lg font-bold transition-all duration-300"
+                    :class="selected === 'down' ? 'text-rose-700' : 'text-rose-600'">반대</span>
             </div>
           </div>
         </div>
@@ -309,30 +303,97 @@ onMounted(async () => {
   opacity: 1;
 }
 
-/* 부드러운 펄스 글로우 애니메이션 */
-@keyframes animate-pulse-gentle {
+/* 뉴모피즘 버튼 스타일 */
+.neumorphic-button {
+  border-radius: 2rem;
+  padding: 2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* 찬성 버튼 - 녹색 뉴모피즘 */
+.neumorphic-green {
+  background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
+  box-shadow: 
+    20px 20px 40px rgba(34, 197, 94, 0.1),
+    -20px -20px 40px rgba(255, 255, 255, 0.9),
+    inset 0 0 0 rgba(34, 197, 94, 0);
+  border: 1px solid rgba(34, 197, 94, 0.1);
+}
+
+/* 반대 버튼 - 빨간색 뉴모피즘 */
+.neumorphic-red {
+  background: linear-gradient(145deg, #fef2f2, #fee2e2);
+  box-shadow: 
+    20px 20px 40px rgba(239, 68, 68, 0.1),
+    -20px -20px 40px rgba(255, 255, 255, 0.9),
+    inset 0 0 0 rgba(239, 68, 68, 0);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+/* 호버 효과 */
+.neumorphic-hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    25px 25px 50px rgba(0, 0, 0, 0.15),
+    -25px -25px 50px rgba(255, 255, 255, 0.95);
+}
+
+.neumorphic-green:hover {
+  box-shadow: 
+    25px 25px 50px rgba(34, 197, 94, 0.15),
+    -25px -25px 50px rgba(255, 255, 255, 0.95),
+    inset 0 0 20px rgba(34, 197, 94, 0.05);
+}
+
+.neumorphic-red:hover {
+  box-shadow: 
+    25px 25px 50px rgba(239, 68, 68, 0.15),
+    -25px -25px 50px rgba(255, 255, 255, 0.95),
+    inset 0 0 20px rgba(239, 68, 68, 0.05);
+}
+
+/* 눌림 효과 (선택된 상태) */
+.neumorphic-pressed {
+  transform: translateY(2px);
+  box-shadow: 
+    inset 15px 15px 30px rgba(0, 0, 0, 0.1),
+    inset -15px -15px 30px rgba(255, 255, 255, 0.8);
+}
+
+.neumorphic-green.neumorphic-pressed {
+  background: linear-gradient(145deg, #dcfce7, #bbf7d0);
+  box-shadow: 
+    inset 15px 15px 30px rgba(34, 197, 94, 0.2),
+    inset -15px -15px 30px rgba(255, 255, 255, 0.9);
+}
+
+.neumorphic-red.neumorphic-pressed {
+  background: linear-gradient(145deg, #fecaca, #fca5a5);
+  box-shadow: 
+    inset 15px 15px 30px rgba(239, 68, 68, 0.2),
+    inset -15px -15px 30px rgba(255, 255, 255, 0.9);
+}
+
+/* 부드러운 펄스 애니메이션 */
+@keyframes animate-pulse-soft {
   0%, 100% { 
-    opacity: 0.3; 
-    transform: scale(1);
+    opacity: 0.4;
+    transform: scale(0.98);
   }
   50% { 
-    opacity: 0.6; 
-    transform: scale(1.01);
+    opacity: 0.8;
+    transform: scale(1.02);
   }
 }
 
-.animate-pulse-gentle {
-  animation: animate-pulse-gentle 2s ease-in-out infinite;
+.animate-pulse-soft {
+  animation: animate-pulse-soft 3s ease-in-out infinite;
 }
 
-/* 선택된 버튼 상태 강화 */
+/* 선택된 버튼의 추가 효과 */
 .vote-button.selected {
-  transform: scale(1.05);
-  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));
-}
-
-.vote-button.selected .vote-button-inner {
-  box-shadow: 0 0 20px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+  z-index: 10;
 }
 
 /* 카드 텍스트 그림자 효과 - 핸드 카드와 동일 */
