@@ -123,7 +123,7 @@
               <!-- 하단 스크롤 blur 효과 -->
               <div 
                 class="scroll-blur-bottom absolute left-0 right-0 h-8 z-10 pointer-events-none transition-opacity duration-300"
-                style="bottom: 0;"
+                style="top: 296px;"
                 :class="{ 'opacity-100': showBottomBlur, 'opacity-0': !showBottomBlur }"
               ></div>
             </div>
@@ -534,15 +534,15 @@ watch(
     background: #4b5563;
   }
 
-  /* 간단한 shadow 효과 */
+  /* 완전히 transparent한 순수 shadow 효과 */
   .scroll-blur-top {
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8) 0%, transparent 100%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background: transparent;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
   }
   
   .scroll-blur-bottom {
-    background: linear-gradient(to top, rgba(255, 255, 255, 0.8) 0%, transparent 100%);
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    background: transparent;
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.08);
   }
 
   /* 초대하기 및 시작하기 버튼 호버 효과 */
