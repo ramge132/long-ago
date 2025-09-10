@@ -227,7 +227,7 @@ const chatMode = ref([
   {
     mark: "이야기",
     fucntion: sendprompt,
-    placeholder: "다음 이어질 이야기를 작성해주세요",
+    placeholder: "한 카드만 사용할 수 있습니다",
   },
 ]);
 const currChatModeIdx = ref(0);
