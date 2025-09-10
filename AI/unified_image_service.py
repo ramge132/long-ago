@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Long Ago - 통합 이미지 생성 서비스 v2.5
-- 저소음(low-noise) 및 안정적인 오류 처리
+Long Ago - 통합 이미지 생성 서비스 v2.6
+- 안정성 강화 및 핵심 기능 복구
 """
 import os
 import sys
 import asyncio
 import base64
+import logging
 import random
 from typing import Optional, Dict, List
 
@@ -22,8 +23,25 @@ DRAWING_STYLES = [
     "comic strip style", "claymation style", "crayon drawing style", "pixel art style", 
     "minimalist illustration", "watercolor painting style", "storybook illustration"
 ]
+
+# 게임별 상태 저장소
 character_references = {}
 game_contexts = {}
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="Unified Image Generation Service v2.6", version="2.6.0")
+
+# ================== 유틸리티 함수 ==================
+def _add_korean_particle(noun: str, particle_pair: tuple[str, str]) -> str:
+    if not isinstance(noun, str) or not noun: return ""
+    last_char = noun[-1]
+    if '가' <= last_char <= '힣':
+        has_batchim = (ord(last_char) - 0xAC00) % 28 > 0
+        return noun + particle_pair[0] if has_batchim else noun + particle_pair[1]
+    return noun + particle_pair[1]
 
 # ================== 엔티티 관리 시스템 ==================
 class EntityManager:
@@ -63,7 +81,7 @@ class PromptGenerator:
         def append_prompt_part(entity_type, prefix):
             if entities.get(entity_type):
                 kw_dict = self.entity_manager.keywords.get(entity_type, {})
-                english_list = [kw_dict.get(k, k) for k in entities[entity_type] if k in kw_dict]
+                english_list = [kw_dict.get(k) for k in entities[entity_type] if k in kw_dict]
                 if english_list: prompt_parts.append(f"{prefix}: {', '.join(english_list)}")
         
         append_prompt_part("characters", "Featuring")
@@ -71,7 +89,9 @@ class PromptGenerator:
         append_prompt_part("objects", "With important object")
         if is_ending: prompt_parts.append("epic finale scene")
         prompt_parts.extend(["high quality", "detailed illustration"])
-        return ", ".join(prompt_parts)
+        final_prompt = ", ".join(prompt_parts)
+        logger.info(f"-> Generated Prompt: {final_prompt[:150]}...")
+        return final_prompt
 
 # ================== 이미지 생성 서비스 ==================
 class ImageGenerationService:
@@ -96,17 +116,35 @@ class ImageGenerationService:
                         return base64.b64decode(image_part['inlineData']['data'])
                 raise Exception("Image generation failed, possibly due to safety filters.")
             except Exception as e:
-                # 오류를 바깥으로 전파하여 중앙에서 처리
-                raise e
+                logger.error(f"Gemini API call failed: {e}")
+                raise
 
     async def generate_scene(self, user_prompt: str, selected_keywords: Optional[List[str]], drawing_style: int, is_ending: bool, game_id: str, turn: int) -> bytes:
+        logger.info(f"=== v2.6 Scene Request: game_id={game_id}, turn={turn}, selected_keywords={selected_keywords}")
+        logger.info(f"Original User Prompt: [{user_prompt}]")
+        
         context = game_contexts.setdefault(game_id, {"last_character": None, "turn": 0})
-        turn_entities = self.entity_manager.extract_entities(user_prompt, allowed_keywords=selected_keywords)
+        
+        # 대명사 치환 적용
+        contextual_prompt = user_prompt
+        if context["turn"] > 0 and context["last_character"]:
+            lc = context["last_character"]
+            temp_prompt = contextual_prompt.replace("그는", lc).replace("그녀는", lc)
+            if temp_prompt != contextual_prompt:
+                logger.info(f"-> Pronouns replaced: [{temp_prompt}]")
+                contextual_prompt = temp_prompt
+
+        # 사용자 의도 파악
+        turn_entities = self.entity_manager.extract_entities(contextual_prompt, allowed_keywords=selected_keywords)
+        logger.info(f"-> Entities from user intent: {turn_entities}")
+
+        # AI 프롬프트용 최종 엔티티 구성
         prompt_entities = {k: v[:] for k, v in turn_entities.items()}
         if context["last_character"] and not prompt_entities["characters"]:
+            logger.info(f"-> Context Injection: Adding '{context['last_character']}' to prompt entities.")
             prompt_entities["characters"].append(context["last_character"])
 
-        dynamic_prompt = self.prompt_generator.create(user_prompt, prompt_entities, drawing_style, is_ending)
+        dynamic_prompt = self.prompt_generator.create(contextual_prompt, prompt_entities, drawing_style, is_ending)
         
         context["turn"] += 1
         if turn_entities["characters"]:
@@ -117,6 +155,7 @@ class ImageGenerationService:
             char_en = self.entity_manager.keywords['characters'].get(prompt_entities["characters"][0])
             if char_en and char_en in character_references.get(game_id, {}):
                 ref_image = character_references[game_id][char_en]
+                logger.info(f"-> Using reference image for '{char_en}'")
         
         image_data = await self._generate_with_gemini(dynamic_prompt, ref_image)
 
@@ -124,11 +163,12 @@ class ImageGenerationService:
             char_en = self.entity_manager.keywords['characters'].get(turn_entities["characters"][0])
             if char_en and char_en not in character_references.get(game_id, {}):
                 character_references.setdefault(game_id, {})[char_en] = image_data
+                logger.info(f"-> New reference saved for '{char_en}'")
         
+        logger.info("-> Scene generation complete.")
         return image_data
 
 # ================== API 모델 및 엔드포인트 ==================
-app = FastAPI()
 image_service = ImageGenerationService()
 
 class SceneGenerationRequest(BaseModel):
@@ -150,15 +190,20 @@ async def generate_scene_endpoint(request: SceneGenerationRequest):
             game_id=request.gameId,
             turn=request.turn
         ), media_type="image/png")
-    except Exception:
-        # 클라이언트에게는 일반적인 오류 메시지만 전달
+    except Exception as e:
+        logger.error(f"API Error in /generate-scene: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Image generation failed.")
 
 @app.delete("/game/{game_id}")
 async def cleanup_game_endpoint(game_id: str):
-    if game_id in character_references: character_references.pop(game_id)
-    if game_id in game_contexts: game_contexts.pop(game_id)
-    return {"message": f"Cleaned up data for game {game_id}."}
+    message = "No data to clean."
+    if game_id in character_references or game_id in game_contexts:
+        character_references.pop(game_id, None)
+        game_contexts.pop(game_id, None)
+        message = f"Cleaned up data for game {game_id}."
+    logger.info(f"🗑️ {message}")
+    return {"message": message}
 
 if __name__ == "__main__":
+    logger.info("Starting Long Ago Image Service v2.6")
     uvicorn.run(app, host="0.0.0.0", port=8190)
