@@ -1,18 +1,10 @@
 <template>
   <div class="absolute w-full h-full rounded-lg bg-gradient-to-br from-black/20 via-black/15 to-black/20 flex justify-center">
     
-    <!-- 메인 투표 패널 - 글래스모피즘 스타일 -->
-    <div class="w-1/2 max-w-2xl h-2/3 glassmorphism-panel rounded-3xl shadow-2xl border border-white/30 flex flex-col items-center p-6 gap-4 z-20 relative overflow-hidden" 
+    <!-- 메인 투표 패널 -->
+    <div class="w-1/2 max-w-2xl h-2/3 bg-gradient-to-br from-white/95 to-white/85 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 flex flex-col items-center p-6 gap-4 z-20 relative overflow-hidden" 
          :class="voteEnded ? 'bounce-reverse' : 'bounce'" 
          @animationend="handleAnimationEnd">
-      <!-- 배경 그라디언트 오버레이 -->
-      <div class="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-purple-400/5 to-pink-400/10 rounded-3xl"></div>
-      <!-- 동적 배경 파티클 효과 -->
-      <div class="absolute inset-0 overflow-hidden rounded-3xl">
-        <div class="floating-particle particle-1"></div>
-        <div class="floating-particle particle-2"></div>
-        <div class="floating-particle particle-3"></div>
-      </div>
       
       
       <!-- 모던한 프로그레스 바 -->
@@ -27,19 +19,18 @@
         </div>
       </div>
       
-      <!-- 질문 텍스트 - 모던한 그라디언트 -->
+      <!-- 질문 텍스트 -->
       <div class="text-center relative z-10">
-        <h2 class="text-2xl lg:text-3xl font-katuri bg-gradient-to-r from-slate-800 via-blue-900 to-purple-800 bg-clip-text text-transparent drop-shadow-sm mb-3 leading-tight px-4">
+        <h2 class="text-2xl lg:text-3xl font-katuri bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-clip-text text-transparent drop-shadow-sm mb-2 leading-tight px-4">
           {{ usedCard.isEnding ? '이 이야기로 끝맺을까요?' : '이 이야기를 추가할까요?' }}
         </h2>
-        <div class="w-20 h-1.5 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 rounded-full mx-auto shadow-lg"></div>
+        <div class="w-16 h-1 bg-gradient-to-r from-orange-300 to-amber-400 rounded-full mx-auto"></div>
       </div>
       
-      <!-- 프롬프트 박스 - 글래스모피즘 -->
-      <div class="w-full glassmorphism-card rounded-2xl p-5 relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-br from-white/20 via-blue-50/10 to-purple-50/20 rounded-2xl"></div>
-        <div class="absolute inset-0 bg-noise opacity-5 rounded-2xl"></div>
-        <p class="text-lg lg:text-xl text-slate-800 font-medium leading-relaxed text-center relative z-10 break-words">{{ prompt }}</p>
+      <!-- 프롬프트 박스 -->
+      <div class="w-full bg-gradient-to-br from-gray-50 to-white border border-gray-200/50 rounded-2xl p-4 shadow-inner backdrop-blur-sm relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-50/20 via-transparent to-purple-50/20 rounded-2xl"></div>
+        <p class="text-lg lg:text-xl text-gray-700 font-medium leading-relaxed text-center relative z-10 break-words">{{ prompt }}</p>
       </div>
       
       <!-- 모던한 투표 버튼들 -->
@@ -405,101 +396,21 @@ onMounted(async () => {
   z-index: 10;
 }
 
-/* 글래스모피즘 패널 */
-.glassmorphism-panel {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-
-.glassmorphism-card {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 
-    0 4px 16px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-/* 플로팅 파티클 효과 */
-.floating-particle {
-  position: absolute;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.particle-1 {
-  width: 20px;
-  height: 20px;
-  top: 10%;
-  left: 15%;
-  animation: float1 8s ease-in-out infinite;
-}
-
-.particle-2 {
-  width: 15px;
-  height: 15px;
-  top: 70%;
-  right: 20%;
-  animation: float2 10s ease-in-out infinite;
-}
-
-.particle-3 {
-  width: 12px;
-  height: 12px;
-  top: 40%;
-  right: 10%;
-  animation: float3 7s ease-in-out infinite;
-}
-
-@keyframes float1 {
-  0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
-  50% { transform: translateY(-20px) rotate(180deg); opacity: 0.8; }
-}
-
-@keyframes float2 {
-  0%, 100% { transform: translateX(0px) rotate(0deg); opacity: 0.4; }
-  50% { transform: translateX(15px) rotate(270deg); opacity: 0.7; }
-}
-
-@keyframes float3 {
-  0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); opacity: 0.2; }
-  33% { transform: translateY(-10px) translateX(10px) rotate(120deg); opacity: 0.6; }
-  66% { transform: translateY(5px) translateX(-5px) rotate(240deg); opacity: 0.5; }
-}
-
-/* 노이즈 텍스처 효과 */
-.bg-noise {
-  background-image: 
-    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0);
-  background-size: 20px 20px;
-}
-
-/* 프로그레스 바 개선 */
+/* 프로그레스 바 컨테이너 */
 .modern-progress-container {
   position: relative;
 }
 
 .modern-progress-bar {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  position: relative;
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .modern-progress-fill {
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
-  box-shadow: 
-    0 0 20px rgba(139, 92, 246, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  position: relative;
+  transition: width 0.3s ease;
 }
+
 
 /* 카드 텍스트 그림자 효과 - 핸드 카드와 동일 */
 .storycard {
