@@ -43,17 +43,11 @@
           </div> -->
           <div class="col-span-3 row-span-4 flex flex-col items-center">
             <div class="relative max-h-80 w-full">
-              <!-- 상단 스크롤 blur 효과 -->
-              <div 
-                class="scroll-blur-top absolute left-0 right-0 h-8 z-10 pointer-events-none transition-opacity duration-300"
-                style="top: 24px;"
-                :class="{ 'opacity-100': showTopBlur, 'opacity-0': !showTopBlur }"
-              ></div>
-              
               <!-- 스크롤 컨테이너 -->
               <div 
                 ref="modeScrollContainer"
-                class="grid grid-cols-3 gap-x-4 max-h-80 w-full overflow-y-scroll px-3 py-6 pb-8 pointer-events-auto mt-6 relative"
+                class="grid grid-cols-3 gap-x-4 max-h-80 w-full overflow-y-scroll px-3 py-6 pb-8 pointer-events-auto mt-6 relative scroll-container"
+                :class="{ 'show-top-shadow': showTopBlur, 'show-bottom-shadow': showBottomBlur }"
                 @scroll="handleScroll"
               >
               <template v-for="(modeGroup, idx) in chunkedModes" :key="group">
@@ -119,13 +113,6 @@
                 </div>
               </template>
               </div>
-              
-              <!-- 하단 스크롤 blur 효과 -->
-              <div 
-                class="scroll-blur-bottom absolute left-0 right-0 h-8 z-10 pointer-events-none transition-opacity duration-300"
-                style="top: 296px;"
-                :class="{ 'opacity-100': showBottomBlur, 'opacity-0': !showBottomBlur }"
-              ></div>
             </div>
           </div>
         </div>
@@ -534,15 +521,23 @@ watch(
     background: #4b5563;
   }
 
-  /* 완전히 transparent한 순수 shadow 효과 */
-  .scroll-blur-top {
-    background: transparent;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  /* 스크롤 컨테이너 테두리 그림자 효과 */
+  .scroll-container {
+    transition: box-shadow 0.3s ease;
   }
   
-  .scroll-blur-bottom {
-    background: transparent;
-    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.08);
+  .scroll-container.show-top-shadow {
+    box-shadow: inset 0 8px 8px -8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .scroll-container.show-bottom-shadow {
+    box-shadow: inset 0 -8px 8px -8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .scroll-container.show-top-shadow.show-bottom-shadow {
+    box-shadow: 
+      inset 0 8px 8px -8px rgba(0, 0, 0, 0.1),
+      inset 0 -8px 8px -8px rgba(0, 0, 0, 0.1);
   }
 
   /* 초대하기 및 시작하기 버튼 호버 효과 */
