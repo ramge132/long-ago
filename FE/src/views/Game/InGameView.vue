@@ -16,10 +16,10 @@
             </div>
           </div>
           <div
-            class="absolute z-40 bg-[#ffffff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
+            class="absolute z-40 bg-[#ffffff] w-[120px] min-h-[30px] rounded-lg top-[20px] right-[-70px] after:absolute after:bottom-0 after:left-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-l-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 flex items-center justify-center px-3 py-1 hidden"
             :class="'speech-bubble' + index"
           >
-            <p></p>
+            <p class="text-center text-sm leading-tight"></p>
           </div>
           <div
             class="absolute z-40 bg-[#ffffff] w-[80px] min-h-[60px] rounded-full bottom-[30px] right-[-20px] after:absolute after:top-0 after:left-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-l-0 after:mt-[-10px] after:border-b-[#ffffff] after:w-0 after:h-0 flex justify-center items-center hidden"
@@ -101,10 +101,10 @@
               </div>
             </div>
             <div
-              class="absolute z-40 bg-[#ffffff] w-[120px] min-h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 pl-3 hidden"
+              class="absolute z-40 bg-[#ffffff] w-[120px] min-h-[30px] rounded-lg top-[20px] left-[-70px] after:absolute after:bottom-0 after:right-[10%] after:border-[15px] after:border-transparent after:border-b-0 after:border-r-0 after:mb-[-10px] after:border-t-[#ffffff] after:w-0 after:h-0 flex items-center justify-center px-3 py-1 hidden"
               :class="'speech-bubble' + index"
             >
-              <p></p>
+              <p class="text-center text-sm leading-tight"></p>
             </div>
             <div
               class="absolute z-40 bg-[#ffffff] w-[80px] min-h-[60px] rounded-full bottom-[30px] left-[-20px] after:absolute after:top-0 after:right-[10%] after:border-[20px] after:border-transparent after:border-t-0 after:border-r-0 after:mt-[-10px] after:border-b-[#ffffff] after:w-0 after:h-0 flex justify-center items-center hidden"
@@ -336,29 +336,32 @@ watch(() => props.participants.map(participant => participant.score),
 
 watch(
   () => props.receivedMessages,
-  () => {
-    props.inGameOrder.forEach((order, index) => {
-      if (
-        props.receivedMessages[props.receivedMessages.length - 1].sender != '시스템' &&
-        props.participants[order].name ==
-        props.receivedMessages[props.receivedMessages.length - 1].sender
-      ) {
+  async () => {
+    const lastMessage = props.receivedMessages[props.receivedMessages.length - 1];
+    if (!lastMessage || lastMessage.sender === '시스템') return;
+
+    props.inGameOrder.forEach(async (order, index) => {
+      if (props.participants[order].name === lastMessage.sender) {
         const select = ref();
         let type = 0;
-        if (
-          props.receivedMessages[props.receivedMessages.length - 1].form ==
-          "emoticon"
-        ) {
+        
+        if (lastMessage.form === "emoticon") {
           select.value = document.querySelector(".emoticon-bubble" + index);
           type = 1;
-          select.value.firstChild.src =
-            props.receivedMessages[props.receivedMessages.length - 1].message;
+          
+          // 이모티콘 즉시 표시를 위한 최적화
+          const img = select.value.firstChild;
+          img.src = lastMessage.message;
+          
+          // 이미지 로드 완료를 기다리지 않고 즉시 표시
+          select.value.classList.remove("hidden");
         } else {
           select.value = document.querySelector(".speech-bubble" + index);
-          select.value.firstChild.textContent =
-            props.receivedMessages[props.receivedMessages.length - 1].message;
+          select.value.firstChild.textContent = lastMessage.message;
+          select.value.classList.remove("hidden");
         }
-        select.value.classList.remove("hidden");
+        
+        // 기존 타이머 클리어 및 새 타이머 설정
         clearTimeout(chatTime.value[index][type]);
         chatTime.value[index][type] = setTimeout(() => {
           select.value.classList.add("hidden");
