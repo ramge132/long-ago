@@ -152,18 +152,27 @@ class ImageGenerationService:
 
         ref_image = None
         if prompt_entities["characters"]:
-            char_en = self.entity_manager.keywords['characters'].get(prompt_entities["characters"][0])
-            if char_en and char_en in character_references.get(game_id, {}):
-                ref_image = character_references[game_id][char_en]
+            # 프롬프트의 첫번째 캐릭터를 기준으로 레퍼런스 이미지를 찾음
+            char_kr = prompt_entities["characters"][0]
+            char_en = self.entity_manager.keywords['characters'].get(char_kr)
+            
+            game_refs = character_references.get(game_id)
+            if char_en and game_refs and char_en in game_refs:
+                ref_image = game_refs[char_en]
                 logger.info(f"-> Using reference image for '{char_en}'")
         
         image_data = await self._generate_with_gemini(dynamic_prompt, ref_image)
 
-        if turn_entities["characters"]:
-            char_en = self.entity_manager.keywords['characters'].get(turn_entities["characters"][0])
-            if char_en and char_en not in character_references.get(game_id, {}):
-                character_references.setdefault(game_id, {})[char_en] = image_data
-                logger.info(f"-> New reference saved for '{char_en}'")
+        # 레퍼런스 이미지가 없는 상태에서 '이번 턴에' 처음 캐릭터가 등장했다면 레퍼런스로 저장
+        if not ref_image and turn_entities["characters"]:
+            char_kr = turn_entities["characters"][0]
+            char_en = self.entity_manager.keywords['characters'].get(char_kr)
+            
+            if char_en:
+                game_refs = character_references.setdefault(game_id, {})
+                if char_en not in game_refs:
+                    game_refs[char_en] = image_data
+                    logger.info(f"-> New reference saved for '{char_en}'")
         
         logger.info("-> Scene generation complete.")
         return image_data
