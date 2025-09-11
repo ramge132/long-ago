@@ -437,102 +437,88 @@ class ImageGenerationService:
     
     async def _generate_cover_prompt_with_gpt(self, title: str, summary: str, characters: List[str]) -> str:
         """
-        GPT-5-nano를 사용하여 표지 이미지 프롬프트 생성
+        표지 이미지 프롬프트 생성 (GPT-5 API 비활성화, 기본 프롬프트 사용)
         """
-        if not OPENAI_API_KEY:
-            # GPT API 키가 없으면 기본 프롬프트 사용
-            logger.warning("OpenAI API key not found, using default cover prompt")
-            if characters:
-                return f"Book cover illustration for '{title}'. Featuring {', '.join(characters)}. {summary}. Epic composition, professional book cover design"
-            return f"Book cover illustration for '{title}'. {summary}. Epic composition, professional book cover design"
+        # GPT-5 API가 400 에러를 반환하므로 임시로 비활성화
+        # 캐릭터와 요약을 활용한 상세한 기본 프롬프트 생성
         
-        try:
-            prompt = f"""
-            Create a detailed image generation prompt for a book cover with:
-            Title: {title}
-            Summary: {summary}
-            Main characters: {', '.join(characters) if characters else 'No specific characters'}
-            
-            Generate an artistic and compelling prompt for the book cover illustration.
-            Focus on visual composition, mood, and style suitable for a storybook.
-            """
-            
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {OPENAI_API_KEY}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": "gpt-5-nano",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.7,
-                        "max_tokens": 200
-                    },
-                    timeout=10.0
-                )
-                response.raise_for_status()
-                result = response.json()
-                gpt_prompt = result['choices'][0]['message']['content']
-                logger.info(f"GPT-5-nano generated cover prompt: {gpt_prompt[:100]}...")
-                return gpt_prompt
-                
-        except Exception as e:
-            logger.error(f"GPT-5-nano cover prompt generation failed: {e}")
-            # 폴백: 기본 프롬프트 사용
-            if characters:
-                return f"Book cover illustration for '{title}'. Featuring {', '.join(characters)}. {summary}. Epic composition, professional book cover design"
-            return f"Book cover illustration for '{title}'. {summary}. Epic composition, professional book cover design"
+        if characters:
+            # 캐릭터가 있는 경우 상세한 프롬프트
+            character_desc = ", ".join(characters[:3])  # 최대 3명까지
+            prompt = (
+                f"Epic storybook cover illustration titled '{title}'. "
+                f"Featuring main characters: {character_desc} in the center. "
+                f"Story theme: {summary[:200]}. "
+                f"Magical and enchanting atmosphere with vibrant colors. "
+                f"Professional book cover design, centered composition, "
+                f"fantasy art style, detailed illustration"
+            )
+        else:
+            # 캐릭터가 없는 경우 분위기 중심 프롬프트
+            prompt = (
+                f"Beautiful storybook cover illustration for '{title}'. "
+                f"Story theme: {summary[:200]}. "
+                f"Whimsical and imaginative scene with rich details. "
+                f"Professional book cover design, centered composition, "
+                f"fantasy art style, vibrant colors"
+            )
+        
+        logger.info(f"Generated cover prompt (without GPT): {prompt[:100]}...")
+        return prompt
     
     async def _generate_title_from_story(self, story_content: str) -> str:
         """
-        스토리 내용으로부터 제목 생성 (GPT-5-nano 사용)
+        스토리 내용으로부터 제목 생성 (GPT-5 API 비활성화, 스마트한 기본 제목 생성)
         """
-        if not OPENAI_API_KEY:
-            # GPT API 키가 없으면 기본 제목 생성
-            logger.warning("OpenAI API key not found, generating default title")
-            # 첫 문장에서 제목 추출 시도
-            first_sentence = story_content.split('.')[0] if '.' in story_content else story_content[:50]
-            return f"이야기: {first_sentence[:30]}..."
+        # GPT-5 API가 400 에러를 반환하므로 임시로 비활성화
+        # 스토리 내용을 분석하여 의미있는 제목 생성
         
-        try:
-            prompt = f"""
-            다음 이야기를 읽고 적절한 제목을 생성해주세요.
-            제목은 간결하고 매력적이어야 하며, 이야기의 핵심을 담아야 합니다.
+        # 첫 문장에서 핵심 키워드 추출
+        sentences = story_content.split('.')
+        first_sentence = sentences[0] if sentences else story_content[:100]
+        
+        # 캐릭터 찾기
+        found_character = None
+        for character in self.entity_extractor.characters:
+            if character in first_sentence:
+                found_character = character
+                break
+        
+        # 사물 찾기
+        found_object = None
+        for obj in self.entity_extractor.objects:
+            if obj in first_sentence:
+                found_object = obj
+                break
+        
+        # 제목 생성 로직
+        if found_character and found_object:
+            # 캐릭터와 사물이 모두 있는 경우
+            title = f"{found_character}와 {found_object}의 이야기"
+        elif found_character:
+            # 캐릭터만 있는 경우
+            title = f"{found_character}의 모험"
+        elif found_object:
+            # 사물만 있는 경우
+            title = f"신비한 {found_object}"
+        else:
+            # 아무것도 없는 경우 첫 문장 활용
+            # 조사 제거하고 핵심만 추출
+            words = first_sentence.replace('는', '').replace('은', '').replace('이', '').replace('가', '')
+            words = words.replace('를', '').replace('을', '').replace('에', '').replace('로', '')
+            words = words.strip()
             
-            이야기:
-            {story_content[:1000]}
+            if len(words) > 20:
+                title = f"{words[:20]}..."
+            else:
+                title = words
             
-            제목만 출력하세요. 다른 설명은 불필요합니다.
-            """
-            
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {OPENAI_API_KEY}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": "gpt-5-nano",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.7,
-                        "max_tokens": 50
-                    },
-                    timeout=10.0
-                )
-                response.raise_for_status()
-                result = response.json()
-                title = result['choices'][0]['message']['content'].strip()
-                logger.info(f"GPT-5-nano generated title: {title}")
-                return title
-                
-        except Exception as e:
-            logger.error(f"GPT-5-nano title generation failed: {e}")
-            # 폴백: 첫 문장으로 제목 생성
-            first_sentence = story_content.split('.')[0] if '.' in story_content else story_content[:50]
-            return f"이야기: {first_sentence[:30]}..."
+            # 제목이 비어있거나 너무 짧으면 기본값
+            if not title or len(title) < 3:
+                title = "우리들의 이야기"
+        
+        logger.info(f"Generated title (without GPT): {title}")
+        return title
     
     async def generate_book_cover_with_style(
         self,
