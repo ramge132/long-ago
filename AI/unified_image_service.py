@@ -485,17 +485,68 @@ class ImageGenerationService:
                 return f"Book cover illustration for '{title}'. Featuring {', '.join(characters)}. {summary}. Epic composition, professional book cover design"
             return f"Book cover illustration for '{title}'. {summary}. Epic composition, professional book cover design"
     
-    async def generate_book_cover(
+    async def _generate_title_from_story(self, story_content: str) -> str:
+        """
+        스토리 내용으로부터 제목 생성 (GPT-5-nano 사용)
+        """
+        if not OPENAI_API_KEY:
+            # GPT API 키가 없으면 기본 제목 생성
+            logger.warning("OpenAI API key not found, generating default title")
+            # 첫 문장에서 제목 추출 시도
+            first_sentence = story_content.split('.')[0] if '.' in story_content else story_content[:50]
+            return f"이야기: {first_sentence[:30]}..."
+        
+        try:
+            prompt = f"""
+            다음 이야기를 읽고 적절한 제목을 생성해주세요.
+            제목은 간결하고 매력적이어야 하며, 이야기의 핵심을 담아야 합니다.
+            
+            이야기:
+            {story_content[:1000]}
+            
+            제목만 출력하세요. 다른 설명은 불필요합니다.
+            """
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {OPENAI_API_KEY}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "gpt-5-nano",
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": 0.7,
+                        "max_tokens": 50
+                    },
+                    timeout=10.0
+                )
+                response.raise_for_status()
+                result = response.json()
+                title = result['choices'][0]['message']['content'].strip()
+                logger.info(f"GPT-5-nano generated title: {title}")
+                return title
+                
+        except Exception as e:
+            logger.error(f"GPT-5-nano title generation failed: {e}")
+            # 폴백: 첫 문장으로 제목 생성
+            first_sentence = story_content.split('.')[0] if '.' in story_content else story_content[:50]
+            return f"이야기: {first_sentence[:30]}..."
+    
+    async def generate_book_cover_with_style(
         self,
         gameId: str,
         title: str,
-        summary: str
+        summary: str,
+        drawingStyle: int
     ) -> bytes:
         """
-        책 표지 생성 (GPT-5-nano로 프롬프트 생성 + 주요 캐릭터 포함)
+        특정 스타일로 책 표지 생성 (GPT-5-nano로 프롬프트 생성 + 주요 캐릭터 포함)
         """
-        logger.info(f"=== Book Cover Generation ===")
+        logger.info(f"=== Book Cover Generation with Style ===")
         logger.info(f"Title: {title}")
+        logger.info(f"Drawing Style: {drawingStyle}")
         
         context = game_contexts.get(gameId)
         
@@ -513,12 +564,30 @@ class ImageGenerationService:
             character_names = [char.name for char in main_characters]
             # 가장 많이 등장한 캐릭터의 레퍼런스 사용
             reference_image = main_characters[0].reference_image if main_characters else None
+            logger.info(f"Main characters for cover: {character_names}")
         
         # GPT-5-nano로 프롬프트 생성
-        prompt = await self._generate_cover_prompt_with_gpt(title, summary, character_names)
+        base_prompt = await self._generate_cover_prompt_with_gpt(title, summary, character_names)
+        
+        # 스타일 추가
+        style = DRAWING_STYLES[drawingStyle] if 0 <= drawingStyle < len(DRAWING_STYLES) else DRAWING_STYLES[0]
+        full_prompt = f"{base_prompt}, {style}, professional book cover design, centered composition"
+        
+        logger.info(f"Final cover prompt: {full_prompt[:200]}...")
         
         # 표지 생성 (더 많은 재시도)
-        return await self._call_gemini_api(prompt, reference_image, retry_count=5)
+        return await self._call_gemini_api(full_prompt, reference_image, retry_count=5)
+    
+    async def generate_book_cover(
+        self,
+        gameId: str,
+        title: str,
+        summary: str
+    ) -> bytes:
+        """
+        책 표지 생성 (기본 스타일, 하위 호환성 유지)
+        """
+        return await self.generate_book_cover_with_style(gameId, title, summary, 0)
 
 # ================== API 모델 ==================
 class SceneGenerationRequest(BaseModel):
@@ -534,6 +603,12 @@ class BookCoverRequest(BaseModel):
     gameId: str
     title: str
     summary: str
+
+class BookCoverRequestFromJava(BaseModel):
+    """Java 서비스에서 보내는 표지 생성 요청"""
+    storyContent: str
+    gameId: str
+    drawingStyle: int
 
 # ================== 서비스 인스턴스 ==================
 image_service = ImageGenerationService()
@@ -564,18 +639,35 @@ async def generate_scene_endpoint(request: SceneGenerationRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-cover")
-async def generate_cover_endpoint(request: BookCoverRequest):
-    """책 표지 생성 API"""
+async def generate_cover_endpoint(request: BookCoverRequestFromJava):
+    """책 표지 생성 API (Java 서비스 호환)"""
     try:
-        logger.info(f"Received cover generation request for game {request.gameId}")
+        logger.info(f"=== Java 서비스에서 표지 생성 요청 ===")
+        logger.info(f"gameId: {request.gameId}")
+        logger.info(f"drawingStyle: {request.drawingStyle}")
+        logger.info(f"storyContent 길이: {len(request.storyContent)} 글자")
         
-        content = await image_service.generate_book_cover(
+        # 스토리 컨텐츠를 요약으로 사용
+        summary = request.storyContent[:500] if len(request.storyContent) > 500 else request.storyContent
+        
+        # GPT-5-nano로 제목 생성
+        title = await image_service._generate_title_from_story(request.storyContent)
+        
+        # 표지 이미지 생성
+        image_data = await image_service.generate_book_cover_with_style(
             gameId=request.gameId,
-            title=request.title,
-            summary=request.summary
+            title=title,
+            summary=summary,
+            drawingStyle=request.drawingStyle
         )
         
-        return Response(content=content, media_type="image/png")
+        # Java가 기대하는 응답 형식으로 반환
+        response_data = {
+            "title": title,
+            "image_data": base64.b64encode(image_data).decode()
+        }
+        
+        return response_data
         
     except HTTPException:
         raise
