@@ -126,7 +126,7 @@ class ImageGenerationService:
                 logger.error(f"Gemini API call failed: {e}")
                 raise
 
-    async def generate_scene(self, user_prompt: str, selected_keywords: Optional[List[str]], drawing_style: int, is_ending: bool, game_id: str, turn: int) -> bytes:
+    async def generate_scene(self, user_prompt: str, selected_keywords: Optional[List[str]], drawing_style: int, is_ending: bool, game_id: str, turn: int, userId: str) -> bytes:
         logger.info(f"=== v2.10 Scene Request: game_id={game_id}, turn={turn}, selected_keywords={selected_keywords}")
         logger.info(f"Original User Prompt: [{user_prompt}]")
         
@@ -275,6 +275,7 @@ class SceneGenerationRequest(BaseModel):
 @app.post("/generate-scene")
 async def generate_scene_endpoint(request: SceneGenerationRequest):
     try:
+        # **request.model_dump()는 userId를 포함하므로, generate_scene 함수가 이를 받아야 함
         content = await image_service.generate_scene(**request.model_dump())
         return Response(content=content, media_type="image/png")
     except Exception as e:
