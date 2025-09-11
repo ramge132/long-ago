@@ -11,8 +11,12 @@
             <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
             <div
               class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
-              :class="currTurn === index ? 'border-4 border-color' : ''"
+              :class="currTurn === index ? 'siri-wave-container' : ''"
               >
+              <!-- Siri-like animated wave rings for current turn -->
+              <div v-if="currTurn === index" class="siri-wave-ring siri-wave-1"></div>
+              <div v-if="currTurn === index" class="siri-wave-ring siri-wave-2"></div>
+              <div v-if="currTurn === index" class="siri-wave-ring siri-wave-3"></div>
             </div>
           </div>
           <div
@@ -96,8 +100,12 @@
               <img :src="props.participants[order].image" class="absolute w-28 h-28 z-10" alt="프로필" />
               <div
                 class="rounded-full w-24 h-24 absolute left-1/2 -translate-x-1/2 translate-y-3 z-0 scale-[115%]"
-                :class="currTurn === index ? 'border-4 border-color' : ''"
+                :class="currTurn === index ? 'siri-wave-container' : ''"
                 >
+                <!-- Siri-like animated wave rings for current turn -->
+                <div v-if="currTurn === index" class="siri-wave-ring siri-wave-1"></div>
+                <div v-if="currTurn === index" class="siri-wave-ring siri-wave-2"></div>
+                <div v-if="currTurn === index" class="siri-wave-ring siri-wave-3"></div>
               </div>
             </div>
             <div
@@ -437,8 +445,119 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.border-color {
-  border-color: #72a0ff;
+/* Siri-like wave animation container */
+.siri-wave-container {
+  position: relative;
+  overflow: visible;
+}
+
+/* Base style for wave rings */
+.siri-wave-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Multiple wave layers with different timing */
+.siri-wave-1 {
+  width: 100%;
+  height: 100%;
+  background: conic-gradient(
+    from 0deg,
+    #ff6b9d,
+    #c44569,
+    #6c5ce7,
+    #a29bfe,
+    #fd79a8,
+    #e84393,
+    #8e44ad,
+    #ff6b9d
+  );
+  animation: siri-wave-rotate 4s linear infinite, siri-wave-pulse 2s ease-in-out infinite;
+  opacity: 0.8;
+}
+
+.siri-wave-2 {
+  width: 120%;
+  height: 120%;
+  background: conic-gradient(
+    from 180deg,
+    #fd79a8,
+    #e84393,
+    #8e44ad,
+    #6c5ce7,
+    #a29bfe,
+    #ff6b9d,
+    #c44569,
+    #fd79a8
+  );
+  animation: siri-wave-rotate 6s linear infinite reverse, siri-wave-pulse 2.5s ease-in-out infinite;
+  opacity: 0.6;
+  animation-delay: -0.5s;
+}
+
+.siri-wave-3 {
+  width: 140%;
+  height: 140%;
+  background: conic-gradient(
+    from 90deg,
+    #a29bfe,
+    #6c5ce7,
+    #8e44ad,
+    #e84393,
+    #fd79a8,
+    #ff6b9d,
+    #c44569,
+    #a29bfe
+  );
+  animation: siri-wave-rotate 8s linear infinite, siri-wave-pulse 3s ease-in-out infinite;
+  opacity: 0.4;
+  animation-delay: -1s;
+}
+
+/* Rotation animation */
+@keyframes siri-wave-rotate {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Pulsing animation */
+@keyframes siri-wave-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.6;
+  }
+}
+
+/* Apply mask to create ring effect */
+.siri-wave-1,
+.siri-wave-2,
+.siri-wave-3 {
+  mask: radial-gradient(
+    circle at center,
+    transparent 35%,
+    black 40%,
+    black 60%,
+    transparent 65%
+  );
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 35%,
+    black 40%,
+    black 60%,
+    transparent 65%
+  );
 }
 
 .plusScore {
