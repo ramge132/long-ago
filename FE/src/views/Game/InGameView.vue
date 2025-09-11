@@ -447,17 +447,17 @@ onBeforeUnmount(() => {
 .orb-glow-container::after {
   content: "";
   position: absolute;
-  top: -5%;
-  left: -5%;
+  top: -20%;
+  left: -20%;
   right: 0;
   z-index: -1;
-  height: 100%;
-  width: 100%;
+  height: 140%;
+  width: 140%;
   margin: 0 auto;
-  transform: scale(0.85);
-  filter: blur(8px);
-  background: linear-gradient(270deg, #ff6b9d, #8e44ad);
-  background-size: 150% 150%;
+  transform: scale(1.2);
+  filter: blur(15px);
+  background: linear-gradient(270deg, #00bfff, #1e3a8a, #3b82f6, #06b6d4);
+  background-size: 200% 200%;
   border-radius: 50%;
   animation: orb-glow-animation 8s linear infinite;
 }
@@ -465,52 +465,52 @@ onBeforeUnmount(() => {
 /* Orb glow animation - smooth movement and color shifting */
 @keyframes orb-glow-animation {
   0% {
-    top: -3%;
-    left: -3%;
+    top: -15%;
+    left: -15%;
     background-position: 0% 50%;
-    background-size: 150% 150%;
+    background-size: 200% 200%;
   }
   12.5% {
-    top: -3%;
-    left: 0%;
-    background-size: 70% 30%;
+    top: -15%;
+    left: -10%;
+    background-size: 120% 80%;
   }
   25% {
-    top: -3%;
-    left: 3%;
-    background-size: 100% 50%;
+    top: -15%;
+    left: -5%;
+    background-size: 160% 100%;
   }
   37.5% {
-    top: 0%;
-    left: 3%;
-    background-size: 70% 30%;
+    top: -10%;
+    left: -5%;
+    background-size: 120% 80%;
   }
   50% {
-    top: 3%;
-    left: 3%;
+    top: -5%;
+    left: -5%;
     background-position: 100% 50%;
-    background-size: 30% 30%;
+    background-size: 80% 80%;
   }
   62.5% {
-    top: 3%;
-    left: 0%;
-    background-size: 30% 70%;
+    top: -5%;
+    left: -10%;
+    background-size: 80% 120%;
   }
   75% {
-    top: 3%;
-    left: -3%;
-    background-size: 50% 100%;
+    top: -5%;
+    left: -15%;
+    background-size: 100% 160%;
   }
   87.5% {
-    top: 0%;
-    left: -3%;
-    background-size: 30% 70%;
+    top: -10%;
+    left: -15%;
+    background-size: 80% 120%;
   }
   100% {
-    top: -3%;
-    left: -3%;
+    top: -15%;
+    left: -15%;
     background-position: 0% 50%;
-    background-size: 150% 150%;
+    background-size: 200% 200%;
   }
 }
 
