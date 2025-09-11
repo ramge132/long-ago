@@ -447,70 +447,59 @@ onBeforeUnmount(() => {
 .orb-glow-container::after {
   content: "";
   position: absolute;
-  top: -10%;
-  left: -10%;
-  right: 0;
+  top: 50%;
+  left: 50%;
   z-index: -1;
-  height: 120%;
-  width: 120%;
-  margin: 0 auto;
-  transform: scale(1.0);
-  filter: blur(12px);
+  height: 100%;
+  width: 100%;
+  transform: translate(-50%, -50%) scale(0.9);
+  filter: blur(10px);
   background: linear-gradient(270deg, #00bfff, #3b82f6, #06b6d4, #87ceeb);
-  background-size: 180% 180%;
+  background-size: 150% 150%;
   border-radius: 50%;
-  animation: orb-glow-animation-v2 8s linear infinite;
+  animation: orb-glow-animation-v3 8s linear infinite;
 }
 
-/* Orb glow animation v2 - adjusted size and movement */
-@keyframes orb-glow-animation-v2 {
+/* Orb glow animation v3 - centered and smaller movement */
+@keyframes orb-glow-animation-v3 {
   0% {
-    top: -8%;
-    left: -8%;
+    transform: translate(-50%, -50%) scale(0.9);
     background-position: 0% 50%;
-    background-size: 180% 180%;
+    background-size: 150% 150%;
   }
   12.5% {
-    top: -8%;
-    left: -5%;
-    background-size: 100% 60%;
+    transform: translate(-48%, -48%) scale(0.85);
+    background-size: 120% 80%;
   }
   25% {
-    top: -8%;
-    left: -2%;
-    background-size: 140% 80%;
+    transform: translate(-46%, -50%) scale(0.9);
+    background-size: 130% 100%;
   }
   37.5% {
-    top: -5%;
-    left: -2%;
-    background-size: 100% 60%;
+    transform: translate(-48%, -52%) scale(0.85);
+    background-size: 120% 80%;
   }
   50% {
-    top: -2%;
-    left: -2%;
+    transform: translate(-50%, -54%) scale(0.9);
     background-position: 100% 50%;
-    background-size: 60% 60%;
+    background-size: 80% 80%;
   }
   62.5% {
-    top: -2%;
-    left: -5%;
-    background-size: 60% 100%;
+    transform: translate(-52%, -52%) scale(0.85);
+    background-size: 80% 120%;
   }
   75% {
-    top: -2%;
-    left: -8%;
-    background-size: 80% 140%;
+    transform: translate(-54%, -50%) scale(0.9);
+    background-size: 100% 130%;
   }
   87.5% {
-    top: -5%;
-    left: -8%;
-    background-size: 60% 100%;
+    transform: translate(-52%, -48%) scale(0.85);
+    background-size: 80% 120%;
   }
   100% {
-    top: -8%;
-    left: -8%;
+    transform: translate(-50%, -50%) scale(0.9);
     background-position: 0% 50%;
-    background-size: 180% 180%;
+    background-size: 150% 150%;
   }
 }
 
