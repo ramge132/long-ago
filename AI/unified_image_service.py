@@ -22,7 +22,7 @@ import io
 
 # ================== 프롬프트 설정 ==================
 # 컨텍스트 기반 프롬프트 템플릿
-CONTEXTUAL_PROMPT_TEMPLATE = "Understand the context from the previous story and generate an image for the current scene. Previous Story: {previous_story}, Current Scene: {current_scene}"
+CONTEXTUAL_PROMPT_TEMPLATE = "Please review the entire previous story to understand the context and generate an image for the current scene. Previous Story: {previous_story}, Current Scene: {current_scene}"
 
 # 기본 프롬프트 설정
 PROMPT_SUFFIX = "high quality, detailed illustration, consistent character appearance"
@@ -77,90 +77,64 @@ class GameContext:
     story_history: List[str] = field(default_factory=list)
     characters: Dict[str, CharacterInfo] = field(default_factory=dict)
     last_mentioned_character: Optional[str] = None
+    last_mentioned_object: Optional[str] = None  # 사물 대명사 처리용
     total_turns: int = 0
 
 # 전역 게임 컨텍스트 저장소
 game_contexts: Dict[str, GameContext] = {}
 
-# ================== GPT-5-nano 캐릭터 추출기 ==================
-class CharacterExtractor:
-    """GPT-5-nano를 사용한 동적 캐릭터 추출"""
+# ================== 엔티티 추출기 (하드코딩) ==================
+class EntityExtractor:
+    """init_db.sql 기반 하드코딩된 엔티티 추출"""
     
     def __init__(self):
-        self.api_key = OPENAI_API_KEY
-        
-    async def extract_characters(self, text: str, previous_story: str = "") -> List[str]:
-        """
-        텍스트에서 캐릭터 이름들을 추출
-        Returns: 캐릭터 이름 리스트 (예: ["공주", "용", "기사"])
-        """
-        if not self.api_key:
-            logger.warning("OpenAI API key not found, using fallback character detection")
-            return self._fallback_extraction(text)
-        
-        prompt = f"""
-        다음 문장에서 등장하는 캐릭터(인물, 동물, 생물)의 이름이나 호칭을 추출해주세요.
-        일반명사(예: 공주, 기사, 용)도 캐릭터로 간주합니다.
-        
-        이전 이야기: {previous_story}
-        현재 문장: {text}
-        
-        JSON 형식으로 응답해주세요:
-        {{"characters": ["캐릭터1", "캐릭터2", ...]}}
-        """
-        
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {self.api_key}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": "gpt-5-nano",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.3,
-                        "max_tokens": 100
-                    },
-                    timeout=10.0
-                )
-                response.raise_for_status()
-                result = response.json()
-                content = result['choices'][0]['message']['content']
-                
-                # JSON 파싱
-                try:
-                    data = json.loads(content)
-                    return data.get("characters", [])
-                except json.JSONDecodeError:
-                    logger.error(f"Failed to parse GPT response: {content}")
-                    return self._fallback_extraction(text)
-                    
-        except Exception as e:
-            logger.error(f"GPT-5-nano character extraction failed: {e}")
-            return self._fallback_extraction(text)
-    
-    def _fallback_extraction(self, text: str) -> List[str]:
-        """폴백: 미리 정의된 키워드 기반 추출"""
-        keywords = {
-            '공주', '왕자', '기사', '용', '마법사', '마녀', '요정', '거인',
-            '호랑이', '토끼', '늑대', '여우', '곰', '사자', '코끼리',
-            '소년', '소녀', '할아버지', '할머니', '농부', '상인', '도둑',
-            '신', '악마', '유령', '외계인', '로봇', '탐정', '의사', '선생님'
+        # init_db.sql에서 추출한 인물 카드 (17개)
+        self.characters = {
+            '호랑이', '유령', '농부', '상인', '신', '외계인', '박사', 
+            '아이돌', '마법사', '마왕', '소년', '소녀', '부자', '탐정', 
+            '노인', '가난뱅이', '공주', '닌자'
         }
         
-        found_characters = []
-        for keyword in keywords:
-            if keyword in text:
-                found_characters.append(keyword)
+        # init_db.sql에서 추출한 사물 카드 (20개)
+        self.objects = {
+            '핸드폰', '마차', '인형', '부적', '지도', '가면', '칼', 
+            '피리', '지팡이', '태양', '날개', '의자', '시계', '도장', 
+            '보석', 'UFO', '덫', '총', '타임머신', '감자'
+        }
         
-        return found_characters
+    def extract_entities(self, text: str, selected_keywords: Optional[List[str]] = None) -> Dict[str, List[str]]:
+        """
+        텍스트에서 캐릭터와 사물 추출
+        Returns: {"characters": [...], "objects": [...]}
+        """
+        found_entities = {
+            "characters": [],
+            "objects": []
+        }
+        
+        # selectedKeywords에서 먼저 확인
+        if selected_keywords:
+            for keyword in selected_keywords:
+                if keyword in self.characters:
+                    found_entities["characters"].append(keyword)
+                elif keyword in self.objects:
+                    found_entities["objects"].append(keyword)
+        
+        # userPrompt에서도 확인 (추가로)
+        for character in self.characters:
+            if character in text and character not in found_entities["characters"]:
+                found_entities["characters"].append(character)
+                
+        for obj in self.objects:
+            if obj in text and obj not in found_entities["objects"]:
+                found_entities["objects"].append(obj)
+        
+        return found_entities
 
 # ================== 이미지 생성 서비스 ==================
 class ImageGenerationService:
     def __init__(self):
-        self.character_extractor = CharacterExtractor()
+        self.entity_extractor = EntityExtractor()
         
     async def _call_gemini_api(
         self, 
@@ -182,16 +156,20 @@ class ImageGenerationService:
         parts = []
         
         if reference_image:
-            # Image-to-Image: 레퍼런스 이미지를 먼저 추가
+            # Image-to-Image: 레퍼런스 이미지를 먼저 추가 (Gemini 문서 권장사항)
             logger.info("Using Image-to-Image mode with reference image")
             parts.append({
-                "inlineData": {
-                    "mimeType": "image/png",
+                "inline_data": {
+                    "mime_type": "image/png",
                     "data": base64.b64encode(reference_image).decode()
                 }
             })
-            # 프롬프트 수정: 일관성 강조
-            enhanced_prompt = f"Based on the character in the reference image, {prompt}. Maintain exact same character appearance, clothing, and features."
+            # 프롬프트 수정: 캐릭터 일관성을 위한 강화된 지시
+            enhanced_prompt = (
+                f"Using the provided image of the character, create a new scene where {prompt}. "
+                f"Keep the character's face, hair, clothing style, and all physical features exactly the same as shown in the reference image. "
+                f"The character should be recognizable as the same person from the reference."
+            )
             parts.append({"text": enhanced_prompt})
         else:
             # Text-to-Image: 프롬프트만 추가
@@ -208,12 +186,6 @@ class ImageGenerationService:
                             "contents": [{
                                 "parts": parts
                             }],
-                            "generationConfig": {
-                                "temperature": 0.7,
-                                "topP": 0.95,
-                                "topK": 40,
-                                "maxOutputTokens": 8192,
-                            },
                             "safetySettings": [
                                 {
                                     "category": "HARM_CATEGORY_HATE_SPEECH",
@@ -247,12 +219,22 @@ class ImageGenerationService:
                     if 'content' not in candidate or 'parts' not in candidate['content']:
                         raise Exception("Invalid response structure")
                     
-                    parts = candidate['content']['parts']
-                    if not parts or 'inlineData' not in parts[0]:
+                    response_parts = candidate['content']['parts']
+                    # inline_data 또는 inlineData 둘 다 처리 (API 응답 형식 변화 대응)
+                    image_part = None
+                    for part in response_parts:
+                        if 'inline_data' in part:
+                            image_part = part['inline_data']
+                            break
+                        elif 'inlineData' in part:
+                            image_part = part['inlineData']
+                            break
+                    
+                    if not image_part:
                         raise Exception("No image data in response")
                     
                     # Base64 디코딩
-                    image_data = base64.b64decode(parts[0]['inlineData']['data'])
+                    image_data = base64.b64decode(image_part['data'])
                     logger.info(f"Successfully generated image (size: {len(image_data)} bytes)")
                     return image_data
                     
@@ -271,36 +253,80 @@ class ImageGenerationService:
         
         raise HTTPException(status_code=500, detail="Failed to generate image after all retries")
     
-    def _resolve_character_reference(
+    def _resolve_references(
         self, 
         text: str, 
         context: GameContext
-    ) -> Optional[str]:
+    ) -> str:
         """
-        대명사나 지시어를 실제 캐릭터 이름으로 변환
-        예: "그녀는" -> "공주는"
+        대명사나 지시어를 실제 엔티티 이름으로 변환
+        예: "그녀는" -> "공주는", "그것은" -> "칼은"
         """
-        if not context.last_mentioned_character:
-            return text
-            
-        pronouns = {
-            "그는": context.last_mentioned_character + "는",
-            "그가": context.last_mentioned_character + "가",
-            "그를": context.last_mentioned_character + "를",
-            "그의": context.last_mentioned_character + "의",
-            "그녀는": context.last_mentioned_character + "는",
-            "그녀가": context.last_mentioned_character + "가",
-            "그녀를": context.last_mentioned_character + "를",
-            "그녀의": context.last_mentioned_character + "의",
-            "그것은": context.last_mentioned_character + "은",
-            "그것이": context.last_mentioned_character + "이",
-        }
-        
         resolved_text = text
-        for pronoun, replacement in pronouns.items():
-            if pronoun in text:
-                resolved_text = resolved_text.replace(pronoun, replacement)
-                logger.info(f"Pronoun resolved: '{pronoun}' -> '{replacement}'")
+        
+        # 캐릭터 대명사 처리
+        if context.last_mentioned_character:
+            character_pronouns = {
+                "그는": context.last_mentioned_character + "는",
+                "그가": context.last_mentioned_character + "가",
+                "그를": context.last_mentioned_character + "를",
+                "그의": context.last_mentioned_character + "의",
+                "그녀는": context.last_mentioned_character + "는",
+                "그녀가": context.last_mentioned_character + "가",
+                "그녀를": context.last_mentioned_character + "를",
+                "그녀의": context.last_mentioned_character + "의",
+                "그들은": context.last_mentioned_character + "들은",
+                "그들이": context.last_mentioned_character + "들이",
+                "그들을": context.last_mentioned_character + "들을",
+                "그들의": context.last_mentioned_character + "들의",
+            }
+            
+            for pronoun, replacement in character_pronouns.items():
+                if pronoun in text:
+                    resolved_text = resolved_text.replace(pronoun, replacement)
+                    logger.info(f"Character pronoun resolved: '{pronoun}' -> '{replacement}'")
+        
+        # 사물 대명사 처리
+        if context.last_mentioned_object:
+            object_pronouns = {
+                # 단수
+                "그것은": context.last_mentioned_object + "은",
+                "그것이": context.last_mentioned_object + "이",
+                "그것을": context.last_mentioned_object + "을",
+                "그것의": context.last_mentioned_object + "의",
+                "이것은": context.last_mentioned_object + "은",
+                "이것이": context.last_mentioned_object + "이",
+                "이것을": context.last_mentioned_object + "을",
+                "이것의": context.last_mentioned_object + "의",
+                "저것은": context.last_mentioned_object + "은",
+                "저것이": context.last_mentioned_object + "이",
+                "저것을": context.last_mentioned_object + "을",
+                "저것의": context.last_mentioned_object + "의",
+                "이건": context.last_mentioned_object + "은",
+                "이게": context.last_mentioned_object + "가",
+                "그건": context.last_mentioned_object + "은",
+                "그게": context.last_mentioned_object + "가",
+                "저건": context.last_mentioned_object + "은",
+                "저게": context.last_mentioned_object + "가",
+                # 복수
+                "그것들은": context.last_mentioned_object + "들은",
+                "그것들이": context.last_mentioned_object + "들이",
+                "그것들을": context.last_mentioned_object + "들을",
+                "그것들의": context.last_mentioned_object + "들의",
+                "이것들은": context.last_mentioned_object + "들은",
+                "이것들이": context.last_mentioned_object + "들이",
+                "이것들을": context.last_mentioned_object + "들을",
+                "이것들의": context.last_mentioned_object + "들의",
+                "저것들은": context.last_mentioned_object + "들은",
+                "저것들이": context.last_mentioned_object + "들이",
+                "저것들을": context.last_mentioned_object + "들을",
+                "저것들의": context.last_mentioned_object + "들의",
+            }
+            
+            for pronoun, replacement in object_pronouns.items():
+                if pronoun in text:
+                    resolved_text = resolved_text.replace(pronoun, replacement)
+                    logger.info(f"Object pronoun resolved: '{pronoun}' -> '{replacement}'")
                 
         return resolved_text
     
@@ -328,18 +354,24 @@ class ImageGenerationService:
         context = game_contexts[gameId]
         context.total_turns = turn
         
-        # 이전 스토리 컨텍스트
-        previous_story = " ".join(context.story_history[-5:]) if context.story_history else ""
+        # 이전 스토리 컨텍스트 (전체 스토리 사용)
+        previous_story = " ".join(context.story_history) if context.story_history else ""
+        logger.info(f"Previous story length: {len(context.story_history)} sentences")
         
         # 대명사 해결
-        resolved_prompt = self._resolve_character_reference(userPrompt, context)
+        resolved_prompt = self._resolve_references(userPrompt, context)
         
-        # 캐릭터 추출
-        characters = await self.character_extractor.extract_characters(
-            resolved_prompt, 
-            previous_story
-        )
+        # 엔티티 추출 (캐릭터 & 사물)
+        entities = self.entity_extractor.extract_entities(resolved_prompt, selectedKeywords)
+        characters = entities.get("characters", [])
+        objects = entities.get("objects", [])
+        
         logger.info(f"Extracted characters: {characters}")
+        logger.info(f"Extracted objects: {objects}")
+        
+        # 마지막 언급된 사물 업데이트
+        if objects:
+            context.last_mentioned_object = objects[0]
         
         # 스토리 히스토리에 추가
         context.story_history.append(resolved_prompt)
@@ -382,6 +414,11 @@ class ImageGenerationService:
             else:
                 # 새 캐릭터: 첫 등장
                 logger.info(f"New character detected: {current_character}")
+        
+        # 최종 프롬프트 로그 출력
+        logger.info(f"=== Final Prompt to Gemini ===")
+        logger.info(f"Prompt: {full_prompt[:500]}..." if len(full_prompt) > 500 else f"Prompt: {full_prompt}")
+        logger.info(f"Using reference image: {reference_image is not None}")
         
         # 이미지 생성
         image_data = await self._call_gemini_api(full_prompt, reference_image)
