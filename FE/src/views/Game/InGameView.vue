@@ -447,70 +447,70 @@ onBeforeUnmount(() => {
 .orb-glow-container::after {
   content: "";
   position: absolute;
-  top: -20%;
-  left: -20%;
+  top: -10%;
+  left: -10%;
   right: 0;
   z-index: -1;
-  height: 140%;
-  width: 140%;
+  height: 120%;
+  width: 120%;
   margin: 0 auto;
-  transform: scale(1.2);
-  filter: blur(15px);
-  background: linear-gradient(270deg, #00bfff, #1e3a8a, #3b82f6, #06b6d4);
-  background-size: 200% 200%;
+  transform: scale(1.0);
+  filter: blur(12px);
+  background: linear-gradient(270deg, #00bfff, #3b82f6, #06b6d4, #87ceeb);
+  background-size: 180% 180%;
   border-radius: 50%;
-  animation: orb-glow-animation 8s linear infinite;
+  animation: orb-glow-animation-v2 8s linear infinite;
 }
 
-/* Orb glow animation - smooth movement and color shifting */
-@keyframes orb-glow-animation {
+/* Orb glow animation v2 - adjusted size and movement */
+@keyframes orb-glow-animation-v2 {
   0% {
-    top: -15%;
-    left: -15%;
+    top: -8%;
+    left: -8%;
     background-position: 0% 50%;
-    background-size: 200% 200%;
+    background-size: 180% 180%;
   }
   12.5% {
-    top: -15%;
-    left: -10%;
-    background-size: 120% 80%;
+    top: -8%;
+    left: -5%;
+    background-size: 100% 60%;
   }
   25% {
-    top: -15%;
-    left: -5%;
-    background-size: 160% 100%;
+    top: -8%;
+    left: -2%;
+    background-size: 140% 80%;
   }
   37.5% {
-    top: -10%;
-    left: -5%;
-    background-size: 120% 80%;
+    top: -5%;
+    left: -2%;
+    background-size: 100% 60%;
   }
   50% {
-    top: -5%;
-    left: -5%;
+    top: -2%;
+    left: -2%;
     background-position: 100% 50%;
-    background-size: 80% 80%;
+    background-size: 60% 60%;
   }
   62.5% {
-    top: -5%;
-    left: -10%;
-    background-size: 80% 120%;
+    top: -2%;
+    left: -5%;
+    background-size: 60% 100%;
   }
   75% {
-    top: -5%;
-    left: -15%;
-    background-size: 100% 160%;
+    top: -2%;
+    left: -8%;
+    background-size: 80% 140%;
   }
   87.5% {
-    top: -10%;
-    left: -15%;
-    background-size: 80% 120%;
+    top: -5%;
+    left: -8%;
+    background-size: 60% 100%;
   }
   100% {
-    top: -15%;
-    left: -15%;
+    top: -8%;
+    left: -8%;
     background-position: 0% 50%;
-    background-size: 200% 200%;
+    background-size: 180% 180%;
   }
 }
 
