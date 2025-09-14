@@ -465,7 +465,12 @@ const setupConnection = (conn) => {
         
         // 6. 상태 업데이트 후 오버레이 표시
         inProgress.value = false;
-        await showOverlay('whoTurn');
+        await showOverlay('whoTurn', {
+          turnIndex: data.currTurn,
+          participants: participants.value,
+          inGameOrder: inGameOrder.value,
+          peerId: peerId.value
+        });
         inProgress.value = true;
         break;
 
@@ -1361,9 +1366,10 @@ const startReceived = (data) => {
   });
 }
 
-const showOverlay = (message) => {
+const showOverlay = (message, options = {}) => {
   return new Promise((resolve) => {
     const overlay = document.querySelector(".overlay");
+
     if (message === 'start') {
       overlay.firstElementChild.src = startImage;
       overlay.lastElementChild.textContent = "당신의 차례는 " + (myTurn.value + 1) + "번 입니다.";
@@ -1374,7 +1380,15 @@ const showOverlay = (message) => {
       overlay.lastElementChild.style.letterSpacing = "0.025em";
       overlay.lastElementChild.style.textShadow = "-2px -2px 0 #ffffff, 2px -2px 0 #ffffff, -2px 2px 0 #ffffff, 2px 2px 0 #ffffff, 0 0 8px rgba(0,0,0,0.3)";
     } else {
-      if (participants.value[inGameOrder.value[currTurn.value]].id === peerId.value) {
+      // 파라미터로 전달받은 정보 사용, 없으면 현재 상태 사용
+      const currentTurnIndex = options.turnIndex !== undefined ? options.turnIndex : currTurn.value;
+      const currentParticipants = options.participants || participants.value;
+      const currentInGameOrder = options.inGameOrder || inGameOrder.value;
+      const currentPeerId = options.peerId || peerId.value;
+
+      const isMyTurn = currentParticipants[currentInGameOrder[currentTurnIndex]]?.id === currentPeerId;
+
+      if (isMyTurn) {
         overlay.firstElementChild.src = myTurnImage;
         overlay.lastElementChild.textContent = "하단의 멋진 이야기를 적어주세요!";
         overlay.lastElementChild.style.background = "linear-gradient(60deg, rgba(247,140,160,0.7) 0%, rgba(239,144,176,0.7) 25%, rgba(231,151,193,0.7) 50%, rgba(223,157,210,0.7) 75%, rgba(191,176,209,0.7) 100%)";
@@ -1385,7 +1399,8 @@ const showOverlay = (message) => {
         overlay.lastElementChild.style.textShadow = "-2px -2px 0 #ffffff, 2px -2px 0 #ffffff, -2px 2px 0 #ffffff, 2px 2px 0 #ffffff, 0 0 8px rgba(0,0,0,0.3)";
       } else {
         overlay.firstElementChild.src = currTurnImage;
-        overlay.lastElementChild.textContent = participants.value[inGameOrder.value[currTurn.value]].name + "님의 차례";
+        const currentPlayerName = currentParticipants[currentInGameOrder[currentTurnIndex]]?.name || "플레이어";
+        overlay.lastElementChild.textContent = currentPlayerName + "님의 차례";
         overlay.lastElementChild.style.background = "linear-gradient(60deg, rgba(221,124,175,0.7) 0%, rgba(191,176,209,0.7) 25%, rgba(193,164,204,0.7) 50%, rgba(159,186,204,0.7) 75%, rgba(232,193,147,0.7) 100%)";
         // 텍스트 스타일 향상
         overlay.lastElementChild.style.color = "#2d3748";
@@ -1394,6 +1409,7 @@ const showOverlay = (message) => {
         overlay.lastElementChild.style.textShadow = "-2px -2px 0 #ffffff, 2px -2px 0 #ffffff, -2px 2px 0 #ffffff, 2px 2px 0 #ffffff, 0 0 8px rgba(0,0,0,0.3)";
       }
     }
+
     overlay.classList.remove('scale-0');
     if (overlayTimeout.value) clearTimeout(overlayTimeout.value);
     overlayTimeout.value = setTimeout(() => {
@@ -1420,10 +1436,17 @@ const nextTurn = async (data) => {
     const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
     currentPlayer.score -= 1;
 
-    currTurn.value = (currTurn.value + 1) % participants.value.length;
+    const nextTurnIndex = (currTurn.value + 1) % participants.value.length;
+    currTurn.value = nextTurnIndex;
     inProgress.value = false;
-    
-    await showOverlay('whoTurn');
+
+    // 정확한 턴 정보를 즉시 전달
+    await showOverlay('whoTurn', {
+      turnIndex: nextTurnIndex,
+      participants: participants.value,
+      inGameOrder: inGameOrder.value,
+      peerId: peerId.value
+    });
     
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
@@ -1700,7 +1723,12 @@ const voteEnd = async (data) => {
                 }, p.connection);
               }
             });
-            await showOverlay('whoTurn');
+            await showOverlay('whoTurn', {
+              turnIndex: currTurn.value,
+              participants: participants.value,
+              inGameOrder: inGameOrder.value,
+              peerId: peerId.value
+            });
             inProgress.value = true;
           }
         } else {
