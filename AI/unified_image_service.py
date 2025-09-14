@@ -70,6 +70,7 @@ class CharacterInfo:
     reference_image: bytes
     description: str = ""
     appearance_count: int = 1
+    visual_description: str = ""  # 캐릭터의 시각적 특징 저장
 
 @dataclass
 class GameContext:
@@ -135,40 +136,109 @@ class EntityExtractor:
 class ImageGenerationService:
     def __init__(self):
         self.entity_extractor = EntityExtractor()
+        self.character_prompts = self._load_character_prompts()
+    
+    def _load_character_prompts(self) -> Dict[str, str]:
+        """
+        캐릭터별 프롬프트 파일 로드
+        AI/imageGeneration/characters/ 디렉토리에서 .txt 파일 읽기
+        """
+        # 한글 캐릭터명을 영어 파일명으로 매핑
+        character_file_mapping = {
+            '호랑이': 'tiger',  # tiger.txt 파일이 없을 경우 기본값 사용
+            '유령': 'ghost',
+            '농부': 'farmer',
+            '상인': 'merchant',
+            '신': 'god',
+            '외계인': 'alien',
+            '박사': 'doctor',
+            '아이돌': 'idol',
+            '마법사': 'wizard',
+            '마왕': 'demon',
+            '소년': 'boy',
+            '소녀': 'girl',
+            '부자': 'rich',
+            '탐정': 'detective',
+            '노인': 'oldman',
+            '가난뱅이': 'beggar',
+            '공주': 'princess',
+            '닌자': 'ninja'
+        }
+        
+        prompts = {}
+        base_path = "AI/imageGeneration/characters"
+        
+        for korean_name, english_file in character_file_mapping.items():
+            file_path = f"{base_path}/{english_file}.txt"
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    prompt = f.read().strip()
+                    prompts[korean_name] = prompt
+                    logger.info(f"Loaded prompt for {korean_name} from {file_path}")
+            except FileNotFoundError:
+                # 파일이 없는 경우 기본값 사용
+                default_prompts = {
+                    '호랑이': 'orange striped tiger with fierce eyes',
+                    '유령': 'translucent white ghost with flowing form',
+                    '마왕': 'demon lord with dark armor and horns',
+                    '신': 'divine being with golden aura and majestic appearance'
+                }
+                prompts[korean_name] = default_prompts.get(korean_name, f"{korean_name} character")
+                logger.warning(f"File not found: {file_path}, using default prompt")
+            except Exception as e:
+                logger.error(f"Error loading {file_path}: {e}")
+                prompts[korean_name] = f"{korean_name} character"
+        
+        return prompts
+    
+    def _generate_visual_description(self, character_name: str, context: str) -> str:
+        """
+        캐릭터별 프롬프트 파일에서 시각적 설명 가져오기
+        """
+        return self.character_prompts.get(character_name, f"{character_name} character")
         
     async def _call_gemini_api(
         self, 
         prompt: str, 
-        reference_image: Optional[bytes] = None,
+        reference_images: Optional[Dict[str, bytes]] = None,
         retry_count: int = 3
     ) -> bytes:
         """
-        Gemini API 호출 (Text-to-Image 또는 Image-to-Image)
+        Gemini API 호출 (Text-to-Image 또는 Multi-Image-to-Image)
         
         Args:
             prompt: 생성할 이미지의 텍스트 프롬프트
-            reference_image: 참조 이미지 (Image-to-Image용)
+            reference_images: 캐릭터별 참조 이미지 딕셔너리 {캐릭터명: 이미지}
             retry_count: 재시도 횟수
         """
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={GEMINI_API_KEY}"
         
-        # parts 구성 (Image-to-Image인 경우 이미지를 먼저 추가)
+        # parts 구성
         parts = []
         
-        if reference_image:
-            # Image-to-Image: 레퍼런스 이미지를 먼저 추가 (Gemini 문서 권장사항)
-            logger.info("Using Image-to-Image mode with reference image")
-            parts.append({
-                "inline_data": {
-                    "mime_type": "image/png",
-                    "data": base64.b64encode(reference_image).decode()
-                }
-            })
-            # 프롬프트 수정: 캐릭터 일관성을 위한 강화된 지시
+        if reference_images:
+            # Multi-Image-to-Image: 모든 레퍼런스 이미지를 추가
+            logger.info(f"Using Multi-Image-to-Image mode with {len(reference_images)} reference images")
+            
+            # 각 캐릭터의 레퍼런스 이미지 추가
+            character_descriptions = []
+            for idx, (char_name, ref_image) in enumerate(reference_images.items()):
+                parts.append({
+                    "inline_data": {
+                        "mime_type": "image/png",
+                        "data": base64.b64encode(ref_image).decode()
+                    }
+                })
+                character_descriptions.append(f"Image {idx+1} shows {char_name}")
+                logger.info(f"Added reference image {idx+1}: {char_name}")
+            
+            # 프롬프트 수정: 모든 캐릭터의 일관성 유지
             enhanced_prompt = (
-                f"Using the provided image of the character, create a new scene where {prompt}. "
-                f"Keep the character's face, hair, clothing style, and all physical features exactly the same as shown in the reference image. "
-                f"The character should be recognizable as the same person from the reference."
+                f"Using the provided reference images of characters ({', '.join(character_descriptions)}), "
+                f"create a new scene: {prompt}. "
+                f"IMPORTANT: Keep each character's face, hair, clothing style, and all physical features "
+                f"exactly the same as shown in their respective reference images. "
+                f"Each character must be clearly recognizable as the same person from their reference."
             )
             parts.append({"text": enhanced_prompt})
         else:
@@ -395,43 +465,62 @@ class ImageGenerationService:
         style = DRAWING_STYLES[drawingStyle] if 0 <= drawingStyle < len(DRAWING_STYLES) else DRAWING_STYLES[0]
         full_prompt = f"{base_prompt}, {style}, {PROMPT_SUFFIX}"
         
-        # 레퍼런스 이미지 선택
-        reference_image = None
-        current_character = None
+        # 캐릭터 처리 및 레퍼런스 이미지 수집
+        reference_images = {}  # 모든 기존 캐릭터의 레퍼런스 이미지 수집
+        existing_characters = []
+        new_characters = []
         
-        if characters:
-            # 첫 번째 캐릭터를 메인으로 사용
-            current_character = characters[0]
-            context.last_mentioned_character = current_character
-            
-            # 기존 캐릭터인지 확인
-            if current_character in context.characters:
-                # 기존 캐릭터: 레퍼런스 이미지 사용 (Image-to-Image)
-                char_info = context.characters[current_character]
-                reference_image = char_info.reference_image
-                char_info.appearance_count += 1
-                logger.info(f"Using reference for existing character: {current_character} (appearance #{char_info.appearance_count})")
+        # 모든 캐릭터 확인
+        for character in characters:
+            if character in context.characters:
+                existing_characters.append(character)
+                context.characters[character].appearance_count += 1
+                # 기존 캐릭터의 레퍼런스 이미지 수집
+                reference_images[character] = context.characters[character].reference_image
+                logger.info(f"Existing character detected: {character} (appearance #{context.characters[character].appearance_count})")
             else:
-                # 새 캐릭터: 첫 등장
-                logger.info(f"New character detected: {current_character}")
+                new_characters.append(character)
+                logger.info(f"New character detected: {character}")
+        
+        # 프롬프트에 등장하지 않았지만 스토리에 있는 중요 캐릭터도 포함 (선택적)
+        # 엔딩 장면이나 중요한 장면에서 유용
+        if isEnding and context.characters:
+            # 엔딩에서는 주요 캐릭터들도 포함
+            for char_name, char_info in context.characters.items():
+                if char_name not in reference_images and char_info.appearance_count > 1:
+                    reference_images[char_name] = char_info.reference_image
+                    logger.info(f"Added major character for ending: {char_name}")
+        
+        # 마지막 언급된 캐릭터 업데이트
+        if characters:
+            context.last_mentioned_character = characters[0]
         
         # 최종 프롬프트 로그 출력
         logger.info(f"=== Final Prompt to Gemini ===")
         logger.info(f"Prompt: {full_prompt[:500]}..." if len(full_prompt) > 500 else f"Prompt: {full_prompt}")
-        logger.info(f"Using reference image: {reference_image is not None}")
+        logger.info(f"Using reference images: {list(reference_images.keys()) if reference_images else 'None'}")
         
-        # 이미지 생성
-        image_data = await self._call_gemini_api(full_prompt, reference_image)
+        # 이미지 생성 (모든 기존 캐릭터의 레퍼런스 이미지 전달)
+        image_data = await self._call_gemini_api(
+            full_prompt, 
+            reference_images if reference_images else None
+        )
         
-        # 새 캐릭터인 경우 레퍼런스로 저장
-        if current_character and current_character not in context.characters:
-            context.characters[current_character] = CharacterInfo(
-                name=current_character,
-                first_appearance_turn=turn,
-                reference_image=image_data,
-                description=resolved_prompt
-            )
-            logger.info(f"Saved reference image for new character: {current_character}")
+        # 새 캐릭터들의 레퍼런스 저장
+        for new_char in new_characters:
+            # 처음 등장한 새 캐릭터만 저장 (한 장면에 여러 새 캐릭터가 동시에 등장할 수 있음)
+            if new_char not in context.characters:
+                # 기본 시각적 설명 생성 (캐릭터 타입에 따라)
+                visual_desc = self._generate_visual_description(new_char, resolved_prompt)
+                
+                context.characters[new_char] = CharacterInfo(
+                    name=new_char,
+                    first_appearance_turn=turn,
+                    reference_image=image_data,
+                    description=resolved_prompt,
+                    visual_description=visual_desc
+                )
+                logger.info(f"Saved reference image for new character: {new_char}")
         
         return image_data
     
@@ -528,7 +617,7 @@ class ImageGenerationService:
         drawingStyle: int
     ) -> bytes:
         """
-        특정 스타일로 책 표지 생성 (GPT-5-nano로 프롬프트 생성 + 주요 캐릭터 포함)
+        특정 스타일로 책 표지 생성 (모든 주요 캐릭터의 레퍼런스 활용)
         """
         logger.info(f"=== Book Cover Generation with Style ===")
         logger.info(f"Title: {title}")
@@ -536,21 +625,25 @@ class ImageGenerationService:
         
         context = game_contexts.get(gameId)
         
-        # 주요 캐릭터 정보 수집 (최대 3명)
+        # 주요 캐릭터 정보 수집 및 레퍼런스 이미지 수집
         character_names = []
-        reference_image = None
+        reference_images = {}  # 모든 주요 캐릭터의 레퍼런스 이미지
         
         if context and context.characters:
+            # 등장 횟수 기준으로 정렬하여 주요 캐릭터 선택 (최대 3명)
             main_characters = sorted(
                 context.characters.values(),
                 key=lambda x: x.appearance_count,
                 reverse=True
             )[:3]
             
-            character_names = [char.name for char in main_characters]
-            # 가장 많이 등장한 캐릭터의 레퍼런스 사용
-            reference_image = main_characters[0].reference_image if main_characters else None
+            # 각 주요 캐릭터의 이름과 레퍼런스 이미지 수집
+            for char_info in main_characters:
+                character_names.append(char_info.name)
+                reference_images[char_info.name] = char_info.reference_image
+                
             logger.info(f"Main characters for cover: {character_names}")
+            logger.info(f"Using {len(reference_images)} reference images for cover")
         
         # GPT-5-nano로 프롬프트 생성
         base_prompt = await self._generate_cover_prompt_with_gpt(title, summary, character_names)
@@ -561,8 +654,12 @@ class ImageGenerationService:
         
         logger.info(f"Final cover prompt: {full_prompt[:200]}...")
         
-        # 표지 생성 (더 많은 재시도)
-        return await self._call_gemini_api(full_prompt, reference_image, retry_count=5)
+        # 표지 생성 (모든 주요 캐릭터의 레퍼런스 이미지 활용, 더 많은 재시도)
+        return await self._call_gemini_api(
+            full_prompt, 
+            reference_images if reference_images else None, 
+            retry_count=5
+        )
     
     async def generate_book_cover(
         self,
