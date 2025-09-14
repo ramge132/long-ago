@@ -1982,27 +1982,22 @@ watch(
   0% {
     transform: translate(-50%, -50%) scale(0.3) rotateY(-180deg);
     opacity: 0;
-    filter: blur(10px);
   }
   30% {
     transform: translate(-50%, -50%) scale(1.1) rotateY(-45deg);
     opacity: 0.7;
-    filter: blur(3px);
   }
   60% {
     transform: translate(-50%, -50%) scale(0.95) rotateY(10deg);
     opacity: 0.9;
-    filter: blur(1px);
   }
   80% {
     transform: translate(-50%, -50%) scale(1.02) rotateY(-5deg);
     opacity: 1;
-    filter: blur(0px);
   }
   100% {
     transform: translate(-50%, -50%) scale(1) rotateY(0deg);
     opacity: 1;
-    filter: blur(0px);
   }
 }
 
@@ -2024,12 +2019,10 @@ watch(
   0% {
     transform: translateY(30px);
     opacity: 0;
-    filter: blur(5px);
   }
   100% {
     transform: translateY(0);
     opacity: 1;
-    filter: blur(0px);
   }
 }
 </style>
