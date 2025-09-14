@@ -13,11 +13,9 @@
       </Transition>
     </RouterView>
     <div
-      class="overlay fixed inset-0 flex flex-col justify-center items-center z-50 opacity-0 scale-75 blur-sm">
-      <div class="flex flex-col justify-center items-center gap-6">
-        <img :src="currTurnImage" alt="" class="max-w-md h-auto">
-        <div class="rounded-2xl px-6 py-3 bg-blue-400 text-xl font-bold text-white shadow-2xl backdrop-blur-sm border border-white/20"></div>
-      </div>
+      class="overlay absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center scale-0">
+      <img :src="currTurnImage" alt="">
+      <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
     
     <!-- 부적절한 콘텐츠 경고 모달 - 게임 테마 맞춤 디자인 -->
@@ -498,8 +496,7 @@ const setupConnection = (conn) => {
           // 오버레이를 즉시 숨김
           const overlay = document.querySelector(".overlay");
           if (overlay) {
-            overlay.classList.remove('show');
-            overlay.classList.add('hide');
+            overlay.classList.add('scale-0');
           }
         }
         
@@ -1382,13 +1379,11 @@ const showOverlay = (message) => {
         overlay.lastElementChild.style.background = "linear-gradient(60deg, rgba(221,124,175,0.7) 0%, rgba(191,176,209,0.7) 25%, rgba(193,164,204,0.7) 50%, rgba(159,186,204,0.7) 75%, rgba(232,193,147,0.7) 100%)";
       }
     }
-    overlay.classList.remove('hide');
-    overlay.classList.add('show');
+    overlay.classList.remove('scale-0');
     if (overlayTimeout.value) clearTimeout(overlayTimeout.value);
     overlayTimeout.value = setTimeout(() => {
-      overlay.classList.remove('show');
-      overlay.classList.add('hide');
-      setTimeout(resolve, 600); // 애니메이션 완료 후 resolve
+      overlay.classList.add('scale-0');
+      resolve();
     }, 2000);
   });
 }
@@ -1960,60 +1955,7 @@ watch(
   opacity: 0;
 }
 
-/* 2025 트렌드한 오버레이 애니메이션 */
 .overlay {
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(20px);
-  background: rgba(0, 0, 0, 0.1);
-}
-
-.overlay.show {
-  opacity: 1;
-  transform: scale(1);
-  filter: blur(0px);
-  animation: bounceInScale 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.overlay.hide {
-  opacity: 0;
-  transform: scale(0.9);
-  filter: blur(4px);
-  animation: fadeOutScale 0.6s cubic-bezier(0.4, 0, 1, 1) forwards;
-}
-
-/* 2025 트렌드 애니메이션 키프레임 */
-@keyframes bounceInScale {
-  0% {
-    opacity: 0;
-    transform: scale(0.3) rotate(-5deg);
-    filter: blur(10px);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05) rotate(2deg);
-    filter: blur(2px);
-  }
-  70% {
-    transform: scale(0.95) rotate(-1deg);
-    filter: blur(1px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-    filter: blur(0px);
-  }
-}
-
-@keyframes fadeOutScale {
-  0% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-    filter: blur(0px);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.85) rotate(-2deg);
-    filter: blur(8px);
-  }
+  transition: all 1s ease-in-out;
 }
 </style>
