@@ -24,14 +24,14 @@ import io
 # 컨텍스트 기반 프롬프트 템플릿
 CONTEXTUAL_PROMPT_TEMPLATE = "Please review the entire previous story to understand the context and generate an image for the current scene. Previous Story: {previous_story}, Current Scene: {current_scene}"
 
-# 기본 프롬프트 설정
-PROMPT_SUFFIX = "high quality, detailed illustration, consistent character appearance"
+# 기본 프롬프트 설정 (텍스트 제외 명시)
+PROMPT_SUFFIX = "high quality, detailed illustration, consistent character appearance, NO TEXT, no letters, no words, no writing, no speech bubbles, no captions, no titles, no labels, textless image only"
 
-# 그림 스타일 (9가지 모드)
+# 그림 스타일 (9가지 모드) - 텍스트 관련 요소 제거
 DRAWING_STYLES = [
     "anime style, vibrant colors",           # 0: 기본
     "3D rendered style, volumetric lighting", # 1: 3D
-    "comic strip style, speech bubbles",      # 2: 코믹북
+    "comic strip style, visual storytelling only",  # 2: 코믹북 (speech bubbles 제거)
     "clay animation style, stop motion",      # 3: 클레이
     "crayon drawing, childlike art",          # 4: 유치원
     "pixel art, 8-bit retro game",           # 5: 픽셀
@@ -232,13 +232,14 @@ class ImageGenerationService:
                 character_descriptions.append(f"Image {idx+1} shows {char_name}")
                 logger.info(f"Added reference image {idx+1}: {char_name}")
             
-            # 프롬프트 수정: 모든 캐릭터의 일관성 유지
+            # 프롬프트 수정: 모든 캐릭터의 일관성 유지 + 텍스트 제외
             enhanced_prompt = (
                 f"Using the provided reference images of characters ({', '.join(character_descriptions)}), "
                 f"create a new scene: {prompt}. "
                 f"IMPORTANT: Keep each character's face, hair, clothing style, and all physical features "
                 f"exactly the same as shown in their respective reference images. "
-                f"Each character must be clearly recognizable as the same person from their reference."
+                f"Each character must be clearly recognizable as the same person from their reference. "
+                f"CRITICAL: Generate image WITHOUT ANY TEXT, no letters, no words, no writing, no speech bubbles."
             )
             parts.append({"text": enhanced_prompt})
         else:
@@ -526,33 +527,35 @@ class ImageGenerationService:
     
     async def _generate_cover_prompt_with_gpt(self, title: str, summary: str, characters: List[str]) -> str:
         """
-        표지 이미지 프롬프트 생성 (GPT-5 API 비활성화, 기본 프롬프트 사용)
+        표지 이미지 프롬프트 생성 (텍스트 없는 이미지 생성)
         """
-        # GPT-5 API가 400 에러를 반환하므로 임시로 비활성화
-        # 캐릭터와 요약을 활용한 상세한 기본 프롬프트 생성
+        # 텍스트 제외를 명시적으로 지시
+        text_exclusion = "WITHOUT ANY TEXT, no title, no letters, no words, no writing, textless cover art only"
         
         if characters:
             # 캐릭터가 있는 경우 상세한 프롬프트
             character_desc = ", ".join(characters[:3])  # 최대 3명까지
             prompt = (
-                f"Epic storybook cover illustration titled '{title}'. "
+                f"Epic storybook cover illustration. "
                 f"Featuring main characters: {character_desc} in the center. "
-                f"Story theme: {summary[:200]}. "
+                f"Story theme: {summary[:100]}. "
                 f"Magical and enchanting atmosphere with vibrant colors. "
                 f"Professional book cover design, centered composition, "
-                f"fantasy art style, detailed illustration"
+                f"fantasy art style, detailed illustration. "
+                f"{text_exclusion}"
             )
         else:
             # 캐릭터가 없는 경우 분위기 중심 프롬프트
             prompt = (
-                f"Beautiful storybook cover illustration for '{title}'. "
-                f"Story theme: {summary[:200]}. "
+                f"Beautiful storybook cover illustration. "
+                f"Story theme: {summary[:100]}. "
                 f"Whimsical and imaginative scene with rich details. "
                 f"Professional book cover design, centered composition, "
-                f"fantasy art style, vibrant colors"
+                f"fantasy art style, vibrant colors. "
+                f"{text_exclusion}"
             )
         
-        logger.info(f"Generated cover prompt (without GPT): {prompt[:100]}...")
+        logger.info(f"Generated cover prompt (text-free): {prompt[:100]}...")
         return prompt
     
     async def _generate_title_from_story(self, story_content: str) -> str:
@@ -648,9 +651,9 @@ class ImageGenerationService:
         # GPT-5-nano로 프롬프트 생성
         base_prompt = await self._generate_cover_prompt_with_gpt(title, summary, character_names)
         
-        # 스타일 추가
+        # 스타일 추가 (텍스트 제외 강조)
         style = DRAWING_STYLES[drawingStyle] if 0 <= drawingStyle < len(DRAWING_STYLES) else DRAWING_STYLES[0]
-        full_prompt = f"{base_prompt}, {style}, professional book cover design, centered composition"
+        full_prompt = f"{base_prompt}, {style}, professional book cover design, centered composition, NO TEXT on image"
         
         logger.info(f"Final cover prompt: {full_prompt[:200]}...")
         
