@@ -41,29 +41,7 @@ DRAWING_STYLES = [
     "modern digital art illustration"         # 8: 일러스트
 ]
 
-# 캐릭터 포즈 및 액션 변화 (다양성을 위해)
-CHARACTER_POSES = [
-    "standing heroically", "running forward", "jumping in the air", 
-    "sitting down", "walking confidently", "kneeling down",
-    "arms crossed", "pointing forward", "hands on hips",
-    "looking back", "in mid-action", "dynamic movement",
-    "celebrating", "in battle stance", "reaching out",
-    "waving", "crouching", "leaning forward", "spinning around"
-]
-
-CHARACTER_ACTIONS = [
-    "laughing joyfully", "looking surprised", "smiling warmly",
-    "concentrating intensely", "shouting excitedly", "thinking deeply",
-    "looking determined", "expressing wonder", "showing courage",
-    "appearing thoughtful", "looking curious", "showing excitement"
-]
-
-# 장면별 상황 변화
-SCENE_CONTEXTS = [
-    "in dramatic lighting", "during sunset", "in morning light",
-    "under starry sky", "in misty atmosphere", "with wind blowing",
-    "in bright daylight", "during golden hour", "in soft lighting"
-]
+# 삭제 - 자연스러운 맥락 기반 프롬프팅으로 변경
 
 # ================== 기본 설정 ==================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -254,24 +232,14 @@ class ImageGenerationService:
                 character_descriptions.append(f"Image {idx+1} shows {char_name}")
                 logger.info(f"Added reference image {idx+1}: {char_name}")
             
-            # 포즈 다양성을 위한 랜덤 선택
-            pose_variations = []
-            for char_name in reference_images.keys():
-                random_pose = random.choice(CHARACTER_POSES)
-                random_action = random.choice(CHARACTER_ACTIONS)
-                pose_variations.append(f"{char_name} is {random_pose} and {random_action}")
-            
-            scene_context = random.choice(SCENE_CONTEXTS)
-            
-            # 프롬프트 수정: 캐릭터 일관성 + 포즈 변화 + 텍스트 제외
+            # 프롬프트 수정: 자연스러운 맥락 기반 행동 + 캐릭터 일관성 + 텍스트 제외
             enhanced_prompt = (
                 f"Using the provided reference images of characters ({', '.join(character_descriptions)}), "
-                f"create a new scene: {prompt}. "
-                f"Character poses: {'. '.join(pose_variations)}. "
-                f"Scene setting: {scene_context}. "
-                f"IMPORTANT: Keep each character's face, hair, and clothing EXACTLY the same as in reference images, "
-                f"but show them in NEW POSES and ACTIONS as described. "
-                f"Characters must be clearly recognizable but in different positions than reference images. "
+                f"create a new scene where {prompt}. "
+                f"Show the characters naturally acting and responding to the scene context. "
+                f"IMPORTANT: Keep each character's face, hair, and clothing style EXACTLY the same as in reference images, "
+                f"but show them in natural poses and actions that fit the story context. "
+                f"The characters should be clearly recognizable as the same people from the reference images. "
                 f"CRITICAL: Generate image WITHOUT ANY TEXT, no letters, no words, no writing, no speech bubbles."
             )
             parts.append({"text": enhanced_prompt})
@@ -560,30 +528,24 @@ class ImageGenerationService:
     
     async def _generate_cover_prompt_with_gpt(self, title: str, summary: str, characters: List[str]) -> str:
         """
-        표지 이미지 프롬프트 생성 (다이나믹 포즈 + 텍스트 없음)
+        표지 이미지 프롬프트 생성 (자연스러운 맥락 + 텍스트 없음)
         """
         # 텍스트 제외를 명시적으로 지시
         text_exclusion = "WITHOUT ANY TEXT, no title, no letters, no words, no writing, textless cover art only"
         
         if characters:
-            # 캐릭터별 다이나믹 포즈 생성
-            character_poses = []
-            for char in characters[:3]:
-                pose = random.choice(["heroic pose", "action pose", "dramatic stance", "dynamic movement"])
-                character_poses.append(f"{char} in {pose}")
-            
-            # 캐릭터가 있는 경우 상세한 프롬프트 (비율 관련 내용 제거)
+            # 캐릭터가 있는 경우 - 자연스러운 맥락 기반 프롬프트
+            character_list = ", ".join(characters[:3])
             prompt = (
-                f"Epic storybook cover illustration. "
-                f"Featuring: {', '.join(character_poses)}. "
-                f"Characters interacting dynamically with varied poses and expressions. "
-                f"Story theme: {summary[:100]}. "
+                f"Epic storybook cover illustration showing {character_list} "
+                f"as the main characters of this story: {summary[:100]}. "
+                f"The characters are naturally interacting and expressing emotions that fit the story. "
                 f"Magical and enchanting atmosphere with vibrant colors. "
                 f"Fantasy art style, detailed illustration. "
                 f"{text_exclusion}"
             )
         else:
-            # 캐릭터가 없는 경우 분위기 중심 프롬프트 (비율 관련 내용 제거)
+            # 캐릭터가 없는 경우 분위기 중심 프롬프트
             prompt = (
                 f"Beautiful storybook cover illustration. "
                 f"Story theme: {summary[:100]}. "
@@ -592,7 +554,7 @@ class ImageGenerationService:
                 f"{text_exclusion}"
             )
         
-        logger.info(f"Generated cover prompt (dynamic poses): {prompt[:100]}...")
+        logger.info(f"Generated cover prompt (context-based): {prompt[:100]}...")
         return prompt
     
     async def _generate_title_from_story(self, story_content: str) -> str:
