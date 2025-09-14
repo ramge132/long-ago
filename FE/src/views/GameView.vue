@@ -1979,9 +1979,11 @@ watch(
 
 .overlay.scale-0 {
   animation: fadeOutBlur 0.8s cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
 }
 
 .overlay:not(.scale-0) {
+  pointer-events: auto;
   animation: gameLogoReveal 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
