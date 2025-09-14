@@ -1367,16 +1367,16 @@ const showOverlay = (message) => {
     if (message === 'start') {
       overlay.firstElementChild.src = startImage;
       overlay.lastElementChild.textContent = "당신의 차례는 " + (myTurn.value + 1) + "번 입니다.";
-      overlay.lastElementChild.style.background = "linear-gradient(135deg, #E691D9 0%, #9B59B6 25%, #3498DB 75%, #00DDFF 100%)";
+      overlay.lastElementChild.style.background = "linear-gradient(60deg, rgba(232,193,147,0.8) 0%, rgba(193,164,204,0.8) 20%, rgba(221,124,175,0.8) 60%, rgba(191,176,209,0.8) 90%, rgba(159,186,204,0.8) 100%)";
     } else {
       if (participants.value[inGameOrder.value[currTurn.value]].id === peerId.value) {
         overlay.firstElementChild.src = myTurnImage;
         overlay.lastElementChild.textContent = "하단의 멋진 이야기를 적어주세요!";
-        overlay.lastElementChild.style.background = "linear-gradient(135deg, #FF69B4 0%, #DA70D6 25%, #9370DB 50%, #4169E1 75%, #00BFFF 100%)";
+        overlay.lastElementChild.style.background = "linear-gradient(60deg, rgba(247,140,160,0.7) 0%, rgba(239,144,176,0.7) 25%, rgba(231,151,193,0.7) 50%, rgba(223,157,210,0.7) 75%, rgba(191,176,209,0.7) 100%)";
       } else {
         overlay.firstElementChild.src = currTurnImage;
         overlay.lastElementChild.textContent = participants.value[inGameOrder.value[currTurn.value]].name + "님의 차례";
-        overlay.lastElementChild.style.background = "linear-gradient(135deg, #FF1493 0%, #FF69B4 25%, #DA70D6 50%, #9932CC 75%, #8A2BE2 100%)";
+        overlay.lastElementChild.style.background = "linear-gradient(60deg, rgba(221,124,175,0.7) 0%, rgba(191,176,209,0.7) 25%, rgba(193,164,204,0.7) 50%, rgba(159,186,204,0.7) 75%, rgba(232,193,147,0.7) 100%)";
       }
     }
     overlay.classList.remove('scale-0');
