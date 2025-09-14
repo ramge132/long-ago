@@ -42,6 +42,6 @@ export { default as WinningMusic } from "./musics/winning.mp3";
 export { default as MessageMusic } from "./musics/message.wav";
 
 // inGame
-export { default as myTurnImage } from "./images/inGame/myTurn.svg";
-export { default as currTurnImage } from "./images/inGame/currTurn.svg";
-export { default as startImage } from "./images/inGame/gameStart.svg";
+export { default as myTurnImage } from "./images/inGame/myTurn.png";
+export { default as currTurnImage } from "./images/inGame/currTurn.png";
+export { default as startImage } from "./images/inGame/gameStart.png";

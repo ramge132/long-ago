@@ -452,7 +452,7 @@ onBeforeUnmount(() => {
   z-index: -1;
   height: 100%;
   width: 100%;
-  transform: translate(-50%, -50%) scale(0.9);
+  transform: translate(-50%, -50%) scale(0.95);
   filter: blur(10px);
   background: linear-gradient(270deg, #00bfff, #3b82f6, #06b6d4, #87ceeb);
   background-size: 150% 150%;
@@ -463,7 +463,7 @@ onBeforeUnmount(() => {
 /* Orb glow animation v3 - centered and smaller movement */
 @keyframes orb-glow-animation-v3 {
   0% {
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.95);
     background-position: 0% 50%;
     background-size: 150% 150%;
   }
@@ -497,7 +497,7 @@ onBeforeUnmount(() => {
     background-size: 80% 120%;
   }
   100% {
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.95);
     background-position: 0% 50%;
     background-size: 150% 150%;
   }
