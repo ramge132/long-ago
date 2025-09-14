@@ -405,7 +405,7 @@ p {
 
 .book .page:nth-child(1) {
   /* background-color: #E5E091; */
-  background-image: url("/src/assets/images/bookCover.svg");
+  background-image: url("/src/assets/images/bookCover.png");
 }
 
 /* 페이지 테두리 효과 */
