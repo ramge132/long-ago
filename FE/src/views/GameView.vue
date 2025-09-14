@@ -1390,7 +1390,7 @@ const showOverlay = (message, options = {}) => {
 
       if (isMyTurn) {
         overlay.firstElementChild.src = myTurnImage;
-        overlay.lastElementChild.textContent = "하단의 멋진 이야기를 적어주세요!";
+        overlay.lastElementChild.textContent = "멋진 이야기를 적어주세요!";
         overlay.lastElementChild.style.background = "linear-gradient(60deg, rgba(247,140,160,0.7) 0%, rgba(239,144,176,0.7) 25%, rgba(231,151,193,0.7) 50%, rgba(223,157,210,0.7) 75%, rgba(191,176,209,0.7) 100%)";
         // 텍스트 스타일 향상
         overlay.lastElementChild.style.color = "#2d3748";
