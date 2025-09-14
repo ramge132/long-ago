@@ -10,6 +10,7 @@ import asyncio
 import base64
 import logging
 import json
+import random
 from typing import Optional, Dict, List, Tuple
 from dataclasses import dataclass, field
 
@@ -40,8 +41,29 @@ DRAWING_STYLES = [
     "modern digital art illustration"         # 8: 일러스트
 ]
 
-# 카메라 앵글 변화 (제거 - 일관성을 위해)
-# COMPOSITION_VARIATIONS = ["medium shot", "wide shot", "dramatic close-up", "low angle shot"]
+# 캐릭터 포즈 및 액션 변화 (다양성을 위해)
+CHARACTER_POSES = [
+    "standing heroically", "running forward", "jumping in the air", 
+    "sitting down", "walking confidently", "kneeling down",
+    "arms crossed", "pointing forward", "hands on hips",
+    "looking back", "in mid-action", "dynamic movement",
+    "celebrating", "in battle stance", "reaching out",
+    "waving", "crouching", "leaning forward", "spinning around"
+]
+
+CHARACTER_ACTIONS = [
+    "laughing joyfully", "looking surprised", "smiling warmly",
+    "concentrating intensely", "shouting excitedly", "thinking deeply",
+    "looking determined", "expressing wonder", "showing courage",
+    "appearing thoughtful", "looking curious", "showing excitement"
+]
+
+# 장면별 상황 변화
+SCENE_CONTEXTS = [
+    "in dramatic lighting", "during sunset", "in morning light",
+    "under starry sky", "in misty atmosphere", "with wind blowing",
+    "in bright daylight", "during golden hour", "in soft lighting"
+]
 
 # ================== 기본 설정 ==================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -232,13 +254,24 @@ class ImageGenerationService:
                 character_descriptions.append(f"Image {idx+1} shows {char_name}")
                 logger.info(f"Added reference image {idx+1}: {char_name}")
             
-            # 프롬프트 수정: 모든 캐릭터의 일관성 유지 + 텍스트 제외
+            # 포즈 다양성을 위한 랜덤 선택
+            pose_variations = []
+            for char_name in reference_images.keys():
+                random_pose = random.choice(CHARACTER_POSES)
+                random_action = random.choice(CHARACTER_ACTIONS)
+                pose_variations.append(f"{char_name} is {random_pose} and {random_action}")
+            
+            scene_context = random.choice(SCENE_CONTEXTS)
+            
+            # 프롬프트 수정: 캐릭터 일관성 + 포즈 변화 + 텍스트 제외
             enhanced_prompt = (
                 f"Using the provided reference images of characters ({', '.join(character_descriptions)}), "
                 f"create a new scene: {prompt}. "
-                f"IMPORTANT: Keep each character's face, hair, clothing style, and all physical features "
-                f"exactly the same as shown in their respective reference images. "
-                f"Each character must be clearly recognizable as the same person from their reference. "
+                f"Character poses: {'. '.join(pose_variations)}. "
+                f"Scene setting: {scene_context}. "
+                f"IMPORTANT: Keep each character's face, hair, and clothing EXACTLY the same as in reference images, "
+                f"but show them in NEW POSES and ACTIONS as described. "
+                f"Characters must be clearly recognizable but in different positions than reference images. "
                 f"CRITICAL: Generate image WITHOUT ANY TEXT, no letters, no words, no writing, no speech bubbles."
             )
             parts.append({"text": enhanced_prompt})
@@ -527,35 +560,39 @@ class ImageGenerationService:
     
     async def _generate_cover_prompt_with_gpt(self, title: str, summary: str, characters: List[str]) -> str:
         """
-        표지 이미지 프롬프트 생성 (텍스트 없는 이미지 생성)
+        표지 이미지 프롬프트 생성 (다이나믹 포즈 + 텍스트 없음)
         """
         # 텍스트 제외를 명시적으로 지시
         text_exclusion = "WITHOUT ANY TEXT, no title, no letters, no words, no writing, textless cover art only"
         
         if characters:
-            # 캐릭터가 있는 경우 상세한 프롬프트
-            character_desc = ", ".join(characters[:3])  # 최대 3명까지
+            # 캐릭터별 다이나믹 포즈 생성
+            character_poses = []
+            for char in characters[:3]:
+                pose = random.choice(["heroic pose", "action pose", "dramatic stance", "dynamic movement"])
+                character_poses.append(f"{char} in {pose}")
+            
+            # 캐릭터가 있는 경우 상세한 프롬프트 (비율 관련 내용 제거)
             prompt = (
                 f"Epic storybook cover illustration. "
-                f"Featuring main characters: {character_desc} in the center. "
+                f"Featuring: {', '.join(character_poses)}. "
+                f"Characters interacting dynamically with varied poses and expressions. "
                 f"Story theme: {summary[:100]}. "
                 f"Magical and enchanting atmosphere with vibrant colors. "
-                f"Professional book cover design, centered composition, "
-                f"fantasy art style, detailed illustration. "
+                f"Fantasy art style, detailed illustration. "
                 f"{text_exclusion}"
             )
         else:
-            # 캐릭터가 없는 경우 분위기 중심 프롬프트
+            # 캐릭터가 없는 경우 분위기 중심 프롬프트 (비율 관련 내용 제거)
             prompt = (
                 f"Beautiful storybook cover illustration. "
                 f"Story theme: {summary[:100]}. "
                 f"Whimsical and imaginative scene with rich details. "
-                f"Professional book cover design, centered composition, "
-                f"fantasy art style, vibrant colors. "
+                f"Fantasy art style, vibrant colors. "
                 f"{text_exclusion}"
             )
         
-        logger.info(f"Generated cover prompt (text-free): {prompt[:100]}...")
+        logger.info(f"Generated cover prompt (dynamic poses): {prompt[:100]}...")
         return prompt
     
     async def _generate_title_from_story(self, story_content: str) -> str:
@@ -651,9 +688,9 @@ class ImageGenerationService:
         # GPT-5-nano로 프롬프트 생성
         base_prompt = await self._generate_cover_prompt_with_gpt(title, summary, character_names)
         
-        # 스타일 추가 (텍스트 제외 강조)
+        # 스타일 추가 (텍스트 제외, 비율 관련 내용 제거)
         style = DRAWING_STYLES[drawingStyle] if 0 <= drawingStyle < len(DRAWING_STYLES) else DRAWING_STYLES[0]
-        full_prompt = f"{base_prompt}, {style}, professional book cover design, centered composition, NO TEXT on image"
+        full_prompt = f"{base_prompt}, {style}, professional book cover design, NO TEXT on image"
         
         logger.info(f"Final cover prompt: {full_prompt[:200]}...")
         
