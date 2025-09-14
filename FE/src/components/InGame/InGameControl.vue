@@ -38,14 +38,9 @@
       </div>
     </div>
     <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30]">
-      <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center relative"
+      <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
         v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
-        <!-- 베이지 톤 orb 효과 (본인 차례일 때만) -->
-        <div
-          class="absolute inset-0 rounded-full z-0"
-          :class="myTurn === currTurn && index === 1 ? 'chat-orb-glow-container' : ''"
-        ></div>
-        <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer z-10" @click="changeMode">
+        <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer" @click="changeMode">
           <p class="whitespace-nowrap absolute top-[-1.25rem] font-semibold" style="text-shadow: 2px 0 4px #fff, -2px 0 4px #fff, 0 2px 4px #fff, 0 -2px 4px #fff, 1px 1px #fff, -1px -1px 4px #fff, 1px -1px 4px #fff, -1px 1px 4px #fff;" v-text="mode.mark" :class="index === 1 ? 'text-[#c3b6a5]' : ''"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
@@ -476,53 +471,5 @@ const copy = async () => {
 }
 .card2 > :nth-child(2){
   transform: rotate(2deg) translateX(-10px);
-}
-
-/* 채팅창 베이지 톤 orb 효과 */
-.chat-orb-glow-container {
-  position: relative;
-  border-radius: 9999px;
-}
-
-.chat-orb-glow-container::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: -1;
-  height: 120%;
-  width: 120%;
-  transform: translate(-50%, -50%) scale(0.9);
-  filter: blur(8px);
-  background: linear-gradient(270deg, #c3b6a5, #d4c7b4, #e5d8c7, #f0e7d8);
-  background-size: 150% 150%;
-  border-radius: 9999px;
-  animation: chat-orb-glow-animation 6s linear infinite;
-}
-
-@keyframes chat-orb-glow-animation {
-  0% {
-    transform: translate(-50%, -50%) scale(0.85);
-    background-position: 0% 50%;
-    background-size: 150% 150%;
-  }
-  25% {
-    transform: translate(-48%, -48%) scale(0.9);
-    background-size: 120% 80%;
-  }
-  50% {
-    transform: translate(-50%, -52%) scale(0.85);
-    background-position: 100% 50%;
-    background-size: 80% 80%;
-  }
-  75% {
-    transform: translate(-52%, -48%) scale(0.9);
-    background-size: 100% 130%;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(0.85);
-    background-position: 0% 50%;
-    background-size: 150% 150%;
-  }
 }
 </style>
