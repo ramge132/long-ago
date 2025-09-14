@@ -1955,7 +1955,81 @@ watch(
   opacity: 0;
 }
 
+/* 2025 트렌드한 게임 로고 애니메이션 */
 .overlay {
-  transition: all 1s ease-in-out;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.overlay:not(.scale-0) {
+  animation: gameLogoReveal 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.overlay img {
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+  will-change: transform, filter;
+  animation: logoGlow 1.5s ease-in-out infinite alternate;
+}
+
+.overlay div {
+  will-change: transform;
+  animation: textSlideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s both;
+}
+
+/* 메인 로고 등장 애니메이션 */
+@keyframes gameLogoReveal {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3) rotateY(-180deg);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1.1) rotateY(-45deg);
+    opacity: 0.7;
+    filter: blur(3px);
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(0.95) rotateY(10deg);
+    opacity: 0.9;
+    filter: blur(1px);
+  }
+  80% {
+    transform: translate(-50%, -50%) scale(1.02) rotateY(-5deg);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotateY(0deg);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+/* 로고 글로우 효과 */
+@keyframes logoGlow {
+  0% {
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.2))
+            drop-shadow(0 0 30px rgba(255, 105, 180, 0.1));
+  }
+  100% {
+    filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.4))
+            drop-shadow(0 0 50px rgba(255, 105, 180, 0.2))
+            drop-shadow(0 0 80px rgba(64, 224, 255, 0.1));
+  }
+}
+
+/* 텍스트 슬라이드 업 */
+@keyframes textSlideUp {
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+    filter: blur(5px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0px);
+  }
 }
 </style>
