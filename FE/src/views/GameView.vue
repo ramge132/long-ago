@@ -13,7 +13,7 @@
       </Transition>
     </RouterView>
     <div
-      class="overlay absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center scale-0">
+      class="overlay absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center scale-0 opacity-0 invisible">
       <img :src="currTurnImage" alt="">
       <div class="rounded-md px-3 py-1 bg-blue-400 text-xl"></div>
     </div>
@@ -502,6 +502,8 @@ const setupConnection = (conn) => {
           const overlay = document.querySelector(".overlay");
           if (overlay) {
             overlay.classList.add('scale-0');
+            overlay.style.opacity = '0';
+            overlay.style.visibility = 'hidden';
           }
         }
         
@@ -1042,6 +1044,8 @@ const stopVotingAndShowWarning = async (data) => {
     const overlay = document.querySelector(".overlay");
     if (overlay) {
       overlay.classList.add('scale-0');
+      overlay.style.opacity = '0';
+      overlay.style.visibility = 'hidden';
     }
   }
   
@@ -1411,9 +1415,13 @@ const showOverlay = (message, options = {}) => {
     }
 
     overlay.classList.remove('scale-0');
+    overlay.style.opacity = '1';
+    overlay.style.visibility = 'visible';
     if (overlayTimeout.value) clearTimeout(overlayTimeout.value);
     overlayTimeout.value = setTimeout(() => {
       overlay.classList.add('scale-0');
+      overlay.style.opacity = '0';
+      overlay.style.visibility = 'hidden';
       resolve();
     }, 2000);
   });
@@ -2008,11 +2016,15 @@ watch(
 .overlay.scale-0 {
   animation: fadeOutBlur 0.8s cubic-bezier(0.4, 0, 1, 1) forwards;
   pointer-events: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
 
 .overlay:not(.scale-0) {
   pointer-events: auto;
   animation: gameLogoReveal 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .overlay img {
