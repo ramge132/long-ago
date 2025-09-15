@@ -92,7 +92,8 @@
       
       
       <div class="relative z-10">
-        <p class="font-omp text-lg font-semibold text-gray-700 mb-3 text-center">사용한 카드</p>
+        <p class="font-omp text-lg font-semibold text-gray-700 mb-3 text-center transition-opacity duration-300"
+           :class="fontLoaded ? 'opacity-100' : 'opacity-0'">사용한 카드</p>
         <div class="relative transform hover:scale-105 transition-transform duration-300" ref="cardRef">
           <img :src="usedCard.isEnding ? CardImage.endingCardBack : CardImage.storyCardBack" 
                alt="스토리카드" 
@@ -124,6 +125,7 @@ const cardRef = ref(null);
 const contentRef = ref(null);
 const contentSizes = ref([24, 20, 18, 16, 14, 12]); // px 단위로 변경
 const duration = ref(10);
+const fontLoaded = ref(false);
 const cardPanelHeight = ref(280);
 const currentFontSize = ref(24);
 const emit = defineEmits(['voteEnd', 'voteSelected']);
@@ -217,10 +219,21 @@ watch(() => props.prompt, () => {
 });
 
 onMounted(async () => {
+  // 폰트 로딩 감지
+  try {
+    await document.fonts.load('400 18px omp');
+    fontLoaded.value = true;
+  } catch (error) {
+    // 폰트 로딩 실패 시에도 표시 (fallback 폰트 사용)
+    setTimeout(() => {
+      fontLoaded.value = true;
+    }, 200);
+  }
+
   await adjustCardSize();
   // 진입 바운스 애니메이션(0.6초) 후 실제 투표시간 9초 + 퇴장 애니메이션(0.4초) = 총 10초
   duration.value = 9;
-  
+
   // 마운트 시 기본값을 부모 컴포넌트에 알림
   emit('voteSelected', "up");
 });
