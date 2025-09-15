@@ -227,7 +227,7 @@ const emit = defineEmits(['narration-complete']);
 const runBookSequence = async () => {
   // 동기적으로 initVoices() 실행 (만약 비동기라면 await 사용)
   await initVoices();
-  
+
   // 표지 제목은 읽지 않고 바로 책 내용부터 시작
   // 책 내용을 순서대로 처리: 0,1 페이지, 그 다음 2,3 페이지, ...
   for (const [i, element] of props.bookContents.entries()) {
@@ -237,16 +237,21 @@ const runBookSequence = async () => {
       flippedPages.add(i * 2);
       flippedPages.add(i * 2 + 1);
 
-      // 페이지 넘기는 효과음 재생
+      // 페이지 넘기는 효과음 재생 (sound 상태와 관계없이)
       if (audioStore.audioData) {
         const turningEffect = new Audio(TurningPage);
         turningEffect.volume = audioStore.audioVolume;  // 볼륨 적용
         turningEffect.play();
       }
+
+      // 페이지 넘김 애니메이션 대기 시간
+      await new Promise(resolve => setTimeout(resolve, 800));
     }
 
-    // TTS를 순차적으로 재생 (한 페이지씩)
-    await speakTextWithVolume(element.content, audioStore.audioVolume);
+    // TTS 진행 - audioStore를 전달해서 실시간 볼륨 조절 가능
+    if (element.content.trim()) {
+      await speakTextWithVolume(element.content, audioStore.audioVolume, audioStore);
+    }
   }
   
   // 모든 작업이 완료되면 표지로 되돌리기
@@ -285,12 +290,8 @@ watch(
       
       // 페이지 넘김 애니메이션이 완료되기를 기다린 후 나레이션 시작
       setTimeout(async () => {
-        if (audioStore.audioData) {
-          await runBookSequence();
-        } else {
-          // 모든 작업이 완료되면 클릭 잠금 해제
-          isClickLocked.value = false;
-        }
+        // sound off 상태여도 책 넘기기는 실행
+        await runBookSequence();
       }, 1500); // 페이지 넘김 애니메이션 시간
     }
   }

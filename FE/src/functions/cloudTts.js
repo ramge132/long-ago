@@ -149,30 +149,53 @@ export function stopAllTTS() {
  * @param {number} volume - 볼륨 (0.0 ~ 1.0)
  * @returns {Promise} - 재생 완료 시 resolve
  */
-export async function speakTextWithVolume(text, volume = 1.0) {
+export async function speakTextWithVolume(text, volume = 1.0, audioStore = null) {
   if (!text) return;
 
   try {
-    
+
     const audioData = await fetchTTSAudio(text);
     const context = initAudioContext();
-    
+
     const audioBuffer = await context.decodeAudioData(audioData);
     const source = context.createBufferSource();
     const gainNode = context.createGain();
-    
+
     source.buffer = audioBuffer;
     gainNode.gain.value = volume;
-    
+
     // source -> gainNode -> destination
     source.connect(gainNode);
     gainNode.connect(context.destination);
-    
+
     return new Promise((resolve) => {
-      source.onended = resolve;
+      // audioStore가 제공된 경우 실시간 볼륨/음소거 모니터링
+      if (audioStore) {
+        const volumeInterval = setInterval(() => {
+          if (audioStore.audioData) {
+            gainNode.gain.value = audioStore.audioVolume;
+          } else {
+            gainNode.gain.value = 0; // 음소거
+          }
+        }, 100); // 100ms마다 체크
+
+        const cleanup = () => {
+          clearInterval(volumeInterval);
+          resolve();
+        };
+
+        source.onended = cleanup;
+
+        // 수동 중단을 위한 참조 저장
+        source._cleanup = cleanup;
+      } else {
+        source.onended = resolve;
+      }
+
       source.start();
     });
-    
+
   } catch (error) {
+    return Promise.resolve();
   }
 }
