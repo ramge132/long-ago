@@ -4,7 +4,7 @@
       <Transition name="fade" mode="out-in">
         <component :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
           v-model:roomConfigs="roomConfigs" :participants="participants" :receivedMessages="receivedMessages"
-          :InviteLink="InviteLink" :gameStarted="gameStarted" :inGameOrder="inGameOrder" :currTurn="currTurn" :ISBN="ISBN"
+          :InviteLink="InviteLink" :gameStarted="gameStarted" :isEndingMode="isEndingMode" :inGameOrder="inGameOrder" :currTurn="currTurn" :ISBN="ISBN"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
           :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" :isPreview="isPreview" @on-room-configuration="onRoomConfiguration"
@@ -101,6 +101,8 @@ const maxParticipants = 6;
 const InviteLink = ref("");
 // 게임 시작 여부
 const gameStarted = ref(false);
+// 결말 모드 여부 (긴장감 100% 도달 시)
+const isEndingMode = ref(false);
 // 게임 정상 종료 : "champ" 비정상 종료 : "fail" 디폴트 : null
 const isForceStopped = ref(null);
 // 부적절한 콘텐츠 경고 모달 관련
@@ -305,6 +307,22 @@ const setupConnection = (conn) => {
           const messageMusic = new Audio(MessageMusic);
           messageMusic.volume = audioStore.audioVolume;  // 볼륨 적용
           messageMusic.play();
+        }
+        break;
+
+      case "endingModeActivated":
+        // 결말 모드로 전환
+        isEndingMode.value = true;
+        // 알림 표시
+        alert("긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!");
+        break;
+
+      case "scoreUpdate":
+        // 다른 플레이어의 점수 변화 처리
+        const targetPlayer = participants.value.find(p => p.id === data.userId);
+        if (targetPlayer) {
+          targetPlayer.score += data.scoreChange;
+          console.log(`${targetPlayer.name}님 점수 변화: ${data.scoreChange > 0 ? '+' : ''}${data.scoreChange}점 (${data.message})`);
         }
         break;
 
@@ -1763,12 +1781,34 @@ const voteEnd = async (data) => {
         }
 
         try {
-            await voteResultSend({
+            const response = await voteResultSend({
               gameId: gameID.value,
               userId: peerId.value,
               accepted: accepted,
               cardId: usedCard.value.id,
+              isEnding: usedCard.value.isEnding,
             });
+
+            // 백엔드에서 받은 점수 변화 정보 처리
+            if (response.data && response.data.scoreChange) {
+              const scoreChange = response.data.scoreChange;
+              currentPlayer.score += scoreChange;
+
+              console.log(`점수 변화: ${currentPlayer.name}님 ${scoreChange > 0 ? '+' : ''}${scoreChange}점`);
+
+              // 다른 플레이어들에게 점수 변화 알림
+              connectedPeers.value.forEach((p) => {
+                if (p.id !== peerId.value && p.connection.open) {
+                  sendMessage("scoreUpdate", {
+                    userId: peerId.value,
+                    scoreChange: scoreChange,
+                    playerIndex: currentPlayerIndex,
+                    message: response.data.message
+                  }, p.connection);
+                }
+              });
+            }
+
             if (accepted) {
               storyCards.value = storyCards.value.filter(card => card.id !== usedCard.value.id);
             }
@@ -1964,14 +2004,22 @@ const goLobby = () => {
   router.push("/game/lobby");
 };
 
-// 긴장감이 100 이상 진행 된 경우 전체 탈락
+// 긴장감이 100 이상 진행 된 경우 결말 모드로 전환
 watch(
   () => [percentage.value, usedCard.value, isElected.value],
   ([newPercent, newUsedCard, newIsElected], [oldPercent, oldUsedCard, oldIsElected]) => {
-    if (newPercent >= oldPercent && newPercent >= 100 && newUsedCard.isEnding == false && newIsElected) {
-      gameEnd(false);
-      // 전체 실패 쇼 오버레이
-      isForceStopped.value = "fail";
+    if (newPercent >= oldPercent && newPercent >= 100 && newUsedCard.isEnding == false && newIsElected && !isEndingMode.value) {
+      // 결말 모드로 전환
+      isEndingMode.value = true;
+
+      // 결말 모드 알림 표시
+      alert("긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!");
+
+      // WebRTC로 다른 플레이어들에게 결말 모드 전환 알림
+      broadcastMessage({
+        type: "endingModeActivated",
+        message: "긴장감이 100%에 도달했습니다! 이제 결말을 맺어야 할 때입니다!"
+      });
     }
   },
   { deep: true }

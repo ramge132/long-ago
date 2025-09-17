@@ -78,11 +78,12 @@
         @next-turn="nextTurn"
         @card-reroll="cardReroll"
         @go-lobby="goLobby"
-        :myTurn="myTurn"  
+        :myTurn="myTurn"
         :currTurn="currTurn"
         :storyCards="storyCards"
         :endingCard="endingCard"
         :gameStarted="gameStarted"
+        :isEndingMode="isEndingMode"
         :ISBN="ISBN"
       />
     </div>
@@ -288,6 +289,9 @@ const props = defineProps({
     Type: String,
   },
   gameStarted: {
+    Type: Boolean,
+  },
+  isEndingMode: {
     Type: Boolean,
   },
   isElected: {

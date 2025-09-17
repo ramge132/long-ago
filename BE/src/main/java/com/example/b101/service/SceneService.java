@@ -8,6 +8,7 @@ import com.example.b101.domain.PlayerStatus;
 import com.example.b101.dto.DeleteSceneRequest;
 import com.example.b101.dto.GenerateSceneRequest;
 import com.example.b101.dto.SceneRequest;
+import com.example.b101.dto.VoteResult;
 import com.example.b101.repository.GameRepository;
 import com.example.b101.repository.RedisSceneRepository;
 import com.example.b101.repository.StoryCardRepository;
@@ -175,17 +176,31 @@ public class SceneService {
                     request.getRequestURI());
         }
 
-        log.info("투표 결과 : {}",deleteSceneRequest.isAccepted());
+        Boolean isEndingValue = deleteSceneRequest.getIsEnding();
+        boolean isEnding = isEndingValue != null ? isEndingValue : false;
+
+        log.info("투표 결과 : {}, 결말 여부: {}", deleteSceneRequest.isAccepted(), isEnding);
+
         if(!deleteSceneRequest.isAccepted()){
             log.info("투표 결과 반대");
             //scene 데이터 삭제
             SceneRedis lastScene = scenes.get(scenes.size() - 1);
             redisSceneRepository.delete(lastScene);
 
-            // 새로운 API 시스템에서는 삭제 알림이 필요하지 않음
-            log.info("장면 삭제됨 - 새로운 API 시스템에서는 별도 알림 불필요");
+            // 결말 투표 실패 시 -1점
+            int scoreChange = isEnding ? -1 : 0;
 
-            return ApiResponseUtil.success(lastScene, "투표 결과에 따라 삭제됨", HttpStatus.OK, request.getRequestURI());
+            VoteResult voteResult = VoteResult.builder()
+                    .accepted(false)
+                    .userId(deleteSceneRequest.getUserId())
+                    .scoreChange(scoreChange)
+                    .isEnding(isEnding)
+                    .message(isEnding ? "결말 투표 실패로 -1점" : "투표 결과에 따라 삭제됨")
+                    .build();
+
+            log.info("장면 삭제됨 - 점수 변화: {}", scoreChange);
+
+            return ApiResponseUtil.success(voteResult, voteResult.getMessage(), HttpStatus.OK, request.getRequestURI());
         }
 
         //사용한 카드 삭제해야함
@@ -202,10 +217,23 @@ public class SceneService {
                 .ifPresent(ps -> ps.setStoryCards(playerStatus.getStoryCards()));
 
         gameRepository.update(game);
-        
+
         log.info("투표 결과 찬성");
 
-        return ApiResponseUtil.success(null, "투표 결과 찬성으로 장면이 승인됨", HttpStatus.OK, request.getRequestURI());
+        // 결말 투표 성공 시 +5점, 일반 투표 성공 시 0점
+        int scoreChange = isEnding ? 5 : 0;
+
+        VoteResult voteResult = VoteResult.builder()
+                .accepted(true)
+                .userId(deleteSceneRequest.getUserId())
+                .scoreChange(scoreChange)
+                .isEnding(isEnding)
+                .message(isEnding ? "결말 성공! +5점 획득" : "투표 결과 찬성으로 장면이 승인됨")
+                .build();
+
+        log.info("투표 결과 찬성 - 점수 변화: {}", scoreChange);
+
+        return ApiResponseUtil.success(voteResult, voteResult.getMessage(), HttpStatus.OK, request.getRequestURI());
     }
 
 

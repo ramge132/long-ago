@@ -13,5 +13,6 @@ public class DeleteSceneRequest {
 
     int cardId;
 
+    Boolean isEnding;
 
 }
