@@ -95,17 +95,26 @@
         <p class="font-omp text-lg font-semibold text-gray-700 mb-3 text-center transition-opacity duration-300"
            :class="fontLoaded ? 'opacity-100' : 'opacity-0'">사용한 카드</p>
         <div class="relative transform hover:scale-105 transition-transform duration-300" ref="cardRef">
-          <img :src="usedCard.isEnding ? CardImage.endingCardBack : CardImage.storyCardBack" 
-               alt="스토리카드" 
-               class="w-32 drop-shadow-lg">
-          <!-- 카드 글로우 효과 -->
-          <div class="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-orange-500/10 rounded-lg blur-sm -z-10"></div>
-          <div class="absolute inset-0 p-2 flex items-center justify-center font-katuri font-bold text-center leading-tight overflow-visible" 
-               :class="usedCard.isEnding ? 'endingcard text-[#fee09e]' : 'storycard text-[#eadfcd]'" 
-               ref="contentRef"
-               :style="{ fontSize: currentFontSize + 'px' }">
-            {{ props.usedCard.keyword }}
-          </div>
+          <!-- 엔딩 카드는 기존 방식, 스토리 카드는 개별 이미지 -->
+          <template v-if="usedCard.isEnding">
+            <img :src="CardImage.endingCardBack"
+                 alt="엔딩카드"
+                 class="w-32 drop-shadow-lg">
+            <!-- 카드 글로우 효과 -->
+            <div class="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-orange-500/10 rounded-lg blur-sm -z-10"></div>
+            <div class="absolute inset-0 p-2 flex items-center justify-center font-katuri font-bold text-center leading-tight overflow-visible endingcard text-[#fee09e]"
+                 ref="contentRef"
+                 :style="{ fontSize: currentFontSize + 'px' }">
+              {{ props.usedCard.keyword }}
+            </div>
+          </template>
+          <template v-else>
+            <img :src="CardImage.getStoryCardImage(usedCard.id)"
+                 :alt="`스토리카드 ${usedCard.keyword}`"
+                 class="w-32 drop-shadow-lg">
+            <!-- 카드 글로우 효과 -->
+            <div class="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-orange-500/10 rounded-lg blur-sm -z-10"></div>
+          </template>
         </div>
       </div>
     </div>
