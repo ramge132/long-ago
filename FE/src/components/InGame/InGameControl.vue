@@ -14,11 +14,7 @@
       <div v-else class="flex flex-col justify-center items-center w-3/4 mr-3">
           <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
             <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
-              <img :src="CardImage.storyCardBack" alt="스토리카드" class="w-28">
-              <div
-                class="storycard w-full h-full p-2 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#eadfcd] text-3xl leading-tight text-center">
-                <div v-html="formatCardText(card.keyword)"></div>
-              </div>
+              <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-28">
             </div>
           </transition-group>
       </div>
