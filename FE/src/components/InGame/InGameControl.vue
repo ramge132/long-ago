@@ -1,16 +1,16 @@
 <template>
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
     <div v-if="gameStarted" class="flex justify-center items-center grow">
-      <!-- 결말 모드일 때는 자유 작성 모드 표시 -->
+      <!-- 결말 모드일 때는 알림 메시지만 표시 -->
       <div v-if="isEndingMode" class="flex flex-col justify-center items-center w-3/4 mr-3">
         <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-xl font-katuri text-lg font-bold shadow-lg animate-pulse">
           🔥 결말 모드 🔥
         </div>
         <div class="text-gray-700 font-katuri text-sm mt-2 text-center">
-          카드 제한 없이 자유롭게<br>결말을 작성할 수 있습니다
+          스토리 카드 사용이 불가능합니다<br>결말 카드만 사용할 수 있습니다
         </div>
       </div>
-      <!-- 일반 모드일 때는 기존 카드 표시 -->
+      <!-- 일반 모드일 때는 스토리 카드 표시 -->
       <div v-else class="flex flex-col justify-center items-center w-3/4 mr-3">
           <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
             <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
@@ -19,18 +19,12 @@
           </transition-group>
       </div>
       <div class="flex flex-col flex-1 justify-center items-center">
-        <!-- 결말 모드가 아닐 때만 엔딩카드 표시 -->
-        <div v-if="!isEndingMode" class="relative endingcard cursor-pointer" @click="sendEndingCard" ref="cardRef">
+        <!-- 엔딩카드는 항상 표시 -->
+        <div class="relative endingcard cursor-pointer" @click="sendEndingCard" ref="cardRef">
           <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-28">
           <div
             class="endingcard-text w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e]" ref="contentRef">
             {{ endingCard.content }}</div>
-        </div>
-        <!-- 결말 모드일 때는 자유 작성 안내 -->
-        <div v-else class="text-center text-gray-600 font-katuri">
-          <div class="text-sm">결말 모드에서는</div>
-          <div class="text-sm">아래 채팅창에서</div>
-          <div class="text-sm font-bold text-red-600">자유롭게 결말을 작성하세요</div>
         </div>
       </div>
     </div>
@@ -195,17 +189,21 @@ const sendprompt = () => {
     toast.errorToast("게임 진행중에만 이야기를 제출할 수 있습니다!");
     return;
   }
+  if (props.isEndingMode) {
+    toast.errorToast("결말 모드에서는 이야기를 입력할 수 없습니다! 결말 카드를 사용하세요!");
+    return;
+  }
   if (props.myTurn !== props.currTurn) {
     toast.errorToast("자신의 턴에만 이야기를 제출할 수 있습니다!");
     return;
   }
   if (message.value.trim()) {
-    // 결말 모드일 때는 항상 결말로 처리
-    const isEndingSubmit = props.isEndingMode || message.value.trim() === props.endingCard.content.trim();
+    // 엔딩카드 내용과 일치하는 경우만 결말로 처리
+    const isEndingSubmit = message.value.trim() === props.endingCard.content.trim();
 
     emit("nextTurn", {
       prompt: message.value,
-      isEnding: isEndingSubmit, // 결말 모드이거나 엔딩카드 내용과 일치하는 경우
+      isEnding: isEndingSubmit,
     });
 
     message.value = "";
@@ -234,18 +232,26 @@ const sendEndingCard = () => {
   }
 }
 
-const chatMode = computed(() => [
-  {
-    mark: "대화",
-    fucntion: sendChat,
-    placeholder: "채팅 입력",
-  },
-  {
-    mark: props.isEndingMode ? "결말" : "이야기",
-    fucntion: sendprompt,
-    placeholder: props.isEndingMode ? "자유롭게 결말을 작성하세요" : "한 카드만 사용할 수 있습니다",
-  },
-]);
+const chatMode = computed(() => {
+  const modes = [
+    {
+      mark: "대화",
+      fucntion: sendChat,
+      placeholder: "채팅 입력",
+    }
+  ];
+
+  // 결말 모드가 아닐 때만 이야기 모드 추가
+  if (!props.isEndingMode) {
+    modes.push({
+      mark: "이야기",
+      fucntion: sendprompt,
+      placeholder: "한 카드만 사용할 수 있습니다",
+    });
+  }
+
+  return modes;
+});
 const currChatModeIdx = ref(0);
 
 window.addEventListener("keydown", (e) => {
