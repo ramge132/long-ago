@@ -57,6 +57,13 @@
         </button>
       </div>
     </div>
+
+    <!-- 현대적인 알람 모달 -->
+    <ModernAlert
+      v-if="showModernAlert"
+      :message="modernAlertMessage"
+      @close="showModernAlert = false"
+    />
   </div>
 </template>
 
@@ -67,6 +74,7 @@ import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
 import { useAudioStore } from "@/stores/audio";
+import ModernAlert from "@/components/Presets/ModernAlert.vue";
 import Peer from "peerjs";
 import { computed, nextTick, onMounted, ref, watch, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -108,6 +116,9 @@ const isForceStopped = ref(null);
 // 부적절한 콘텐츠 경고 모달 관련
 const showWarningModal = ref(false);
 const warningModalMessage = ref("");
+// 현대적인 알람 모달 관련
+const showModernAlert = ref(false);
+const modernAlertMessage = ref("");
 // 투표 타이머 관리
 let voteTimer = null;
 // 경고 후 상태 리셋 타이머 관리
@@ -313,8 +324,9 @@ const setupConnection = (conn) => {
       case "endingModeActivated":
         // 결말 모드로 전환
         isEndingMode.value = true;
-        // 알림 표시
-        alert("긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!");
+        // 현대적인 알림 표시
+        modernAlertMessage.value = "긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!";
+        showModernAlert.value = true;
         break;
 
       case "scoreUpdate":
@@ -2012,13 +2024,19 @@ watch(
       // 결말 모드로 전환
       isEndingMode.value = true;
 
-      // 결말 모드 알림 표시
-      alert("긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!");
+      // 현대적인 알림 표시 (모든 사용자에게)
+      modernAlertMessage.value = "긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!";
+      showModernAlert.value = true;
 
       // WebRTC로 다른 플레이어들에게 결말 모드 전환 알림
-      broadcastMessage({
-        type: "endingModeActivated",
-        message: "긴장감이 100%에 도달했습니다! 이제 결말을 맺어야 할 때입니다!"
+      connectedPeers.value.forEach((peer) => {
+        sendMessage(
+          "endingModeActivated",
+          {
+            message: "긴장감이 100%에 도달했습니다! 이제 결말을 맺어야 할 때입니다!"
+          },
+          peer.connection
+        );
       });
     }
   },

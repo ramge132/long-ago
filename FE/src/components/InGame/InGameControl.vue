@@ -1,17 +1,8 @@
 <template>
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
     <div v-if="gameStarted" class="flex justify-center items-center grow">
-      <!-- 결말 모드일 때는 알림 메시지만 표시 -->
-      <div v-if="isEndingMode" class="flex flex-col justify-center items-center w-3/4 mr-3">
-        <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-xl font-katuri text-lg font-bold shadow-lg animate-pulse">
-          🔥 결말 모드 🔥
-        </div>
-        <div class="text-gray-700 font-katuri text-sm mt-2 text-center">
-          스토리 카드 사용이 불가능합니다<br>결말 카드만 사용할 수 있습니다
-        </div>
-      </div>
-      <!-- 일반 모드일 때는 스토리 카드 표시 -->
-      <div v-else class="flex flex-col justify-center items-center w-3/4 mr-3">
+      <!-- 스토리 카드 영역 -->
+      <div class="flex flex-col justify-center items-center w-3/4 mr-3" :class="isEndingMode ? 'opacity-50' : ''">
           <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
             <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
               <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-28">
@@ -290,8 +281,9 @@ const updateClass = () => {
 };
 
 watch(() => props.currTurn, (newVal) => {
-  if(newVal === props.myTurn) {
-    currChatModeIdx.value = 1; // 내 턴이면 이야기 모드
+  // 채팅바는 항상 표시하되, 내 턴일 때만 이야기 모드로 전환
+  if(newVal === props.myTurn && chatMode.value.length > 1) {
+    currChatModeIdx.value = 1; // 내 턴이면 이야기 모드 (있는 경우)
   } else {
     currChatModeIdx.value = 0; // 내 턴이 아니면 대화 모드
   }
