@@ -45,8 +45,8 @@
         <img :src="ShareIcon" alt="" class="w-4">
       </div>
     </div>
-    <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30]">
-      <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center"
+    <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30] pointer-events-none">
+      <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center pointer-events-auto"
         v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
         <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer" @click="changeMode">
           <p class="whitespace-nowrap absolute top-[-1.25rem] font-semibold" style="text-shadow: 2px 0 4px #fff, -2px 0 4px #fff, 0 2px 4px #fff, 0 -2px 4px #fff, 1px 1px #fff, -1px -1px 4px #fff, 1px -1px 4px #fff, -1px 1px 4px #fff;" v-text="mode.mark" :class="index === 1 ? 'text-[#c3b6a5]' : ''"></p>
@@ -59,7 +59,7 @@
           <img :src="SendIcon" alt="보내기" class="object-scale-down w-3/4 h-3/4" />
         </button>
       </div>
-      <div class="relative w-10 h-10">
+      <div class="relative w-10 h-10 pointer-events-auto">
         <button
           class="bg-[#ffffff] hover:bg-gray-200 rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 absolute bottom-0 focus:outline-0"
           @click="toggleEmoticon = !toggleEmoticon">
@@ -82,7 +82,7 @@
       </div>
       <div
         v-if="gameStarted"
-        class="w-10 h-24 bg-[#ffffffdb] hover:bg-gray-100 rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer"
+        class="w-10 h-24 bg-[#ffffffdb] hover:bg-gray-100 rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer pointer-events-auto"
         @click="cardReroll">
         <img :src="RefreshIcon" alt="" class="w-6">
         <p>결말<br>새로고침</p>
