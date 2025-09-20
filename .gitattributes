@@ -3,3 +3,4 @@ lfs filter=lfs diff=lfs merge=lfs -text
 track filter=lfs diff=lfs merge=lfs -text
 FE/src/assets/cards/story_card_template.psd filter=lfs diff=lfs merge=lfs -text
 FE/src/assets/cards/ending_card_template.psd filter=lfs diff=lfs merge=lfs -text
+FE/src/assets/cards/new_ending_card_template.psd filter=lfs diff=lfs merge=lfs -text
