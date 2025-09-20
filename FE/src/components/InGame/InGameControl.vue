@@ -511,15 +511,22 @@ const analyzeInput = (inputText) => {
   }
 
   const matchedCards = [];
+  const cleanText = inputText.trim().toLowerCase();
 
   // 사용자가 소유한 카드들에 대해서만 검사
   props.storyCards.forEach(card => {
     const variants = cardVariants[card.id] || [];
 
-    // 각 변형어가 입력 텍스트에 포함되어 있는지 확인
-    const isMatched = variants.some(variant =>
-      inputText.toLowerCase().includes(variant.toLowerCase())
-    );
+    // 각 변형어가 입력 텍스트에 정확히 매칭되는지 확인
+    const isMatched = variants.some(variant => {
+      const cleanVariant = variant.toLowerCase();
+
+      // 정확한 단어 매칭 (띄어쓰기, 구두점, 문장 시작/끝 고려)
+      const regex = new RegExp(`(^|[\\s.,!?;:])${cleanVariant}($|[\\s.,!?;:])`, 'i');
+
+      // 정규식 매칭 또는 전체 텍스트가 변형어와 일치하는 경우
+      return regex.test(cleanText) || cleanText === cleanVariant;
+    });
 
     if (isMatched) {
       matchedCards.push(card.id);
@@ -529,12 +536,12 @@ const analyzeInput = (inputText) => {
   highlightedCards.value = matchedCards;
 };
 
-// 디바운스된 분석 함수
-const debouncedAnalyze = debounce(analyzeInput, 200);
+// 디바운스된 분석 함수 (더 빠른 반응을 위해 100ms로 설정)
+const debouncedAnalyze = debounce(analyzeInput, 100);
 
-// 카드 하이라이트 클래스 반환
+// 카드 orb 효과 클래스 반환
 const getCardHighlightClass = (cardId) => {
-  return highlightedCards.value.includes(cardId) ? 'card-highlighted' : '';
+  return highlightedCards.value.includes(cardId) ? 'card-with-orb' : '';
 };
 
 // 채팅 입력 감지
@@ -599,97 +606,72 @@ watch(() => message.value, (newValue) => {
   content: ' ';
 }
 
-/* 실시간 카드 하이라이트 효과 - 2025 트렌드 */
-.card-highlighted {
+/* 카드 뒤 Orb 효과 */
+.card-with-orb {
   position: relative;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  transform: translateY(-4px) scale(1.02);
-  box-shadow:
-    0 20px 40px rgba(192, 178, 160, 0.25),
-    0 0 30px rgba(230, 222, 206, 0.6),
-    0 0 60px rgba(192, 178, 160, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(192, 178, 160, 0.6);
-  z-index: 10;
-  will-change: transform, box-shadow;
-  backface-visibility: hidden;
 }
 
-/* 하이라이트된 카드의 글로우 애니메이션 */
-.card-highlighted::before {
+.card-with-orb::before {
   content: '';
   position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  background: linear-gradient(45deg,
-    #e6dece, #c0b2a0, #f5f0e8, #e6dece);
-  border-radius: inherit;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(230, 222, 206, 0.4) 0%,
+    rgba(192, 178, 160, 0.3) 30%,
+    rgba(230, 222, 206, 0.2) 60%,
+    transparent 100%
+  );
+  border-radius: 50%;
   z-index: -1;
-  opacity: 0.8;
-  filter: blur(8px);
-  animation: subtle-pulse 2s ease-in-out infinite;
+  animation: orb-pulse 2s ease-in-out infinite;
+  filter: blur(3px);
+  pointer-events: none;
 }
 
-/* 시머 효과 */
-.card-highlighted::after {
+.card-with-orb::after {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.15) 50%,
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  height: 80%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle at center,
+    rgba(230, 222, 206, 0.6) 0%,
+    rgba(192, 178, 160, 0.4) 40%,
     transparent 70%
   );
-  transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  animation: shimmer 3s ease-in-out infinite;
+  border-radius: 50%;
+  z-index: -1;
+  animation: orb-pulse 2s ease-in-out infinite reverse;
+  filter: blur(1px);
   pointer-events: none;
-  border-radius: inherit;
 }
 
-/* 부드러운 펄스 애니메이션 */
-@keyframes subtle-pulse {
+/* Orb 펄스 애니메이션 */
+@keyframes orb-pulse {
   0%, 100% {
-    opacity: 0.6;
-    transform: scale(1);
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(0.95);
   }
   50% {
-    opacity: 0.9;
-    transform: scale(1.02);
-  }
-}
-
-/* 시머 애니메이션 */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-    opacity: 0;
-  }
-  50% {
-    opacity: 0.8;
-  }
-  100% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-    opacity: 0;
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1.05);
   }
 }
 
 /* 성능 최적화를 위한 미디어 쿼리 */
 @media (prefers-reduced-motion: reduce) {
-  .card-highlighted,
-  .card-highlighted::before,
-  .card-highlighted::after {
+  .card-with-orb::before,
+  .card-with-orb::after {
     animation: none;
-    transition: none;
-  }
-
-  .card-highlighted {
-    box-shadow: 0 0 20px rgba(230, 222, 206, 0.6);
+    opacity: 0.5;
   }
 }
 
