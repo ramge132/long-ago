@@ -22,10 +22,7 @@
       <div class="flex justify-center items-end flex-1">
         <!-- 엔딩카드는 항상 표시 -->
         <div class="relative endingcard cursor-pointer -translate-y-6" @click="sendEndingCard" ref="cardRef">
-          <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-36">
-          <div
-            class="endingcard-text w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e]" ref="contentRef">
-            {{ endingCard.content }}</div>
+          <img :src="CardImage.getEndingCardImage(endingCard.id)" :alt="`엔딩카드 ${endingCard.id}`" class="w-36">
         </div>
       </div>
     </div>
@@ -136,10 +133,6 @@ const toggleEmoticon = ref(false);
 const message = ref("");
 const chatRefs = ref([]);
 const cardRef = ref(null);
-const contentRef = ref(null);
-const contentSizes = ref([
-  "xl", "lg", "sm", "xs"
-]);
 const rerollCount = ref(3);
 
 // 실시간 카드 매칭을 위한 상태
@@ -366,7 +359,7 @@ const chatMode = computed(() => {
     modes.push({
       mark: "이야기",
       fucntion: sendprompt,
-      placeholder: "한 카드만 사용할 수 있습니다",
+      placeholder: "카드는 자동으로 인식됩니다 (한 카드만 사용 가능)",
     });
   }
 
@@ -433,17 +426,6 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
   }
 });
 
-watch(() => props.endingCard, async () => {
-  await nextTick();
-  if(contentRef.value && cardRef.value) {
-    let index = 0;
-    contentRef.value.classList.add("text-" + contentSizes.value[index]);
-    while(contentRef.value.scrollHeight > cardRef.value.clientHeight && index < contentSizes.value.length - 1) {
-      contentRef.value.classList.remove("text-" + contentSizes.value[index++]);
-      contentRef.value.classList.add("text-" + contentSizes.value[index]);
-    }
-  }
-}, {deep: true, immediate: true});
 
 const setupCardHoverEffects = () => {
   nextTick(() => {
