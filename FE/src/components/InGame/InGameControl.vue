@@ -755,33 +755,33 @@ watch(() => message.value, (newValue) => {
 }
 
 .card4 > :nth-child(1){
-  transform: translateX(-35px);
+  transform: translateX(-25px);
 }
 
 .card4 > :nth-child(2){
-  transform: translateX(-10px);
+  transform: translateX(-8px);
 }
 .card4 > :nth-child(3){
-  transform: translateX(10px);
+  transform: translateX(8px);
 }
 .card4 > :nth-child(4){
-  transform: translateX(35px);
+  transform: translateX(25px);
 }
 
 .card3 > :nth-child(1){
-  transform: translateX(-18px);
+  transform: translateX(-12px);
 }
 .card3 > :nth-child(2){
   transform: translateX(0);
 }
 .card3 > :nth-child(3){
-  transform: translateX(18px);
+  transform: translateX(12px);
 }
 
 .card2 > :nth-child(1){
-  transform: translateX(-15px);
+  transform: translateX(-10px);
 }
 .card2 > :nth-child(2){
-  transform: translateX(15px);
+  transform: translateX(10px);
 }
 </style>
