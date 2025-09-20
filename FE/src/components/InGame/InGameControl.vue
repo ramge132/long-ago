@@ -10,7 +10,7 @@
               class="handCard relative transition-all duration-300"
               :class="getCardHighlightClass(card.id)"
             >
-              <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-28">
+              <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-36">
               <!-- 소프트 글로우 효과 -->
               <div
                 v-if="highlightedCards.includes(card.id)"
@@ -22,7 +22,7 @@
       <div class="flex flex-col flex-1 justify-center items-center">
         <!-- 엔딩카드는 항상 표시 -->
         <div class="relative endingcard cursor-pointer" @click="sendEndingCard" ref="cardRef">
-          <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-28">
+          <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-36">
           <div
             class="endingcard-text w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e]" ref="contentRef">
             {{ endingCard.content }}</div>
@@ -579,11 +579,11 @@ watch(() => message.value, (newValue) => {
 
 @keyframes swing {
   0% {
-    transform: rotate(-2deg);
+    transform: translateY(0px);
   }
 
   100% {
-    transform: rotate(2deg);
+    transform: translateY(-2px);
   }
 }
 
@@ -615,34 +615,34 @@ watch(() => message.value, (newValue) => {
 .card-with-orb::before {
   content: '';
   position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
   background: linear-gradient(-45deg, #e6dece, #c0b2a0, #f5f0e8, #e6dece);
   background-size: 400% 400%;
-  border-radius: 12px;
+  border-radius: 16px;
   z-index: -1;
   animation: gradient-shift 3s ease infinite;
-  filter: blur(8px);
-  opacity: 0.8;
+  filter: blur(12px);
+  opacity: 0.9;
   pointer-events: none;
 }
 
 .card-with-orb::after {
   content: '';
   position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
   background: linear-gradient(-45deg, #e6dece, #c0b2a0, #f5f0e8, #e6dece);
   background-size: 400% 400%;
-  border-radius: 12px;
+  border-radius: 16px;
   z-index: -1;
   animation: gradient-shift 3s ease infinite reverse;
-  filter: blur(4px);
-  opacity: 0.6;
+  filter: blur(8px);
+  opacity: 0.7;
   pointer-events: none;
 }
 
@@ -702,33 +702,33 @@ watch(() => message.value, (newValue) => {
 }
 
 .card4 > :nth-child(1){
-  transform: rotate(-10deg) translateY(13px);
+  transform: translateY(13px);
 }
 
 .card4 > :nth-child(2){
-  transform: rotate(-3deg) translateX(-10px);
+  transform: translateX(-10px);
 }
 .card4 > :nth-child(3){
-  transform: rotate(3deg) translateX(-20px);
+  transform: translateX(-20px);
 }
 .card4 > :nth-child(4){
-  transform: rotate(10deg) translateX(-30px) translateY(15px);
+  transform: translateX(-30px) translateY(15px);
 }
 
 .card3 > :nth-child(1){
-  transform: rotate(-3deg) translateY(3px) translateX(10px);
+  transform: translateY(3px) translateX(10px);
 }
 .card3 > :nth-child(2){
-  transform: rotate(0);
+  transform: translateY(0);
 }
 .card3 > :nth-child(3){
-  transform: rotate(3deg) translateY(3px) translateX(-10px);
+  transform: translateY(3px) translateX(-10px);
 }
 
 .card2 > :nth-child(1){
-  transform: rotate(-2deg);
+  transform: translateY(0);
 }
 .card2 > :nth-child(2){
-  transform: rotate(2deg) translateX(-10px);
+  transform: translateX(-10px);
 }
 </style>
