@@ -609,6 +609,7 @@ watch(() => message.value, (newValue) => {
 /* 카드 뒤 Orb 효과 */
 .card-with-orb {
   position: relative;
+  z-index: 1;
 }
 
 .card-with-orb::before {
@@ -616,20 +617,21 @@ watch(() => message.value, (newValue) => {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 100%;
-  height: 100%;
+  width: 140%;
+  height: 140%;
   transform: translate(-50%, -50%);
   background: radial-gradient(
     ellipse at center,
-    rgba(230, 222, 206, 0.4) 0%,
-    rgba(192, 178, 160, 0.3) 30%,
-    rgba(230, 222, 206, 0.2) 60%,
-    transparent 100%
+    rgba(230, 222, 206, 0.8) 0%,
+    rgba(192, 178, 160, 0.6) 20%,
+    rgba(230, 222, 206, 0.4) 40%,
+    rgba(192, 178, 160, 0.2) 60%,
+    transparent 80%
   );
   border-radius: 50%;
   z-index: -1;
   animation: orb-pulse 2s ease-in-out infinite;
-  filter: blur(3px);
+  filter: blur(4px);
   pointer-events: none;
 }
 
@@ -638,31 +640,38 @@ watch(() => message.value, (newValue) => {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 80%;
-  height: 80%;
+  width: 120%;
+  height: 120%;
   transform: translate(-50%, -50%);
   background: radial-gradient(
     circle at center,
-    rgba(230, 222, 206, 0.6) 0%,
-    rgba(192, 178, 160, 0.4) 40%,
+    rgba(230, 222, 206, 0.9) 0%,
+    rgba(192, 178, 160, 0.7) 30%,
+    rgba(230, 222, 206, 0.3) 50%,
     transparent 70%
   );
   border-radius: 50%;
   z-index: -1;
-  animation: orb-pulse 2s ease-in-out infinite reverse;
-  filter: blur(1px);
+  animation: orb-pulse 2.5s ease-in-out infinite reverse;
+  filter: blur(2px);
   pointer-events: none;
+}
+
+/* 카드 이미지가 orb 위에 보이도록 z-index 설정 */
+.card-with-orb img {
+  position: relative;
+  z-index: 2;
 }
 
 /* Orb 펄스 애니메이션 */
 @keyframes orb-pulse {
   0%, 100% {
-    opacity: 0.3;
-    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(0.9);
   }
   50% {
-    opacity: 0.7;
-    transform: translate(-50%, -50%) scale(1.05);
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.1);
   }
 }
 
@@ -671,7 +680,7 @@ watch(() => message.value, (newValue) => {
   .card-with-orb::before,
   .card-with-orb::after {
     animation: none;
-    opacity: 0.5;
+    opacity: 0.6;
   }
 }
 
