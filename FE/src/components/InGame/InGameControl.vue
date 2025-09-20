@@ -77,13 +77,22 @@
             <img :src="TrashIcon" alt="쓰레기통" class="w-6" />
           </button> -->
       </div>
-      <div
-        v-if="gameStarted"
-        class="w-10 h-24 bg-[#ffffffdb] hover:bg-gray-100 rounded-full flex flex-col items-center justify-center text-center text-[10px] cursor-pointer pointer-events-auto"
-        @click="cardReroll">
-        <img :src="RefreshIcon" alt="" class="w-6">
-        <p>결말<br>새로고침</p>
-        <p class="text-xl">{{ rerollCount }}</p>
+      <div v-if="gameStarted" class="relative w-10 h-10 pointer-events-auto">
+        <!-- 결말 새로고침 버튼 (호버 확장형) -->
+        <div
+          class="refresh-button-container absolute bottom-0 w-10 bg-[#ffffffa0] rounded-full overflow-hidden cursor-pointer transition-all duration-300 ease-in-out"
+          :class="'max-h-10 hover:max-h-24'"
+          @click="cardReroll">
+          <!-- 기본 상태 아이콘 버튼 (항상 표시) -->
+          <button class="bg-[#ffffff] hover:bg-gray-200 rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 relative focus:outline-0">
+            <img :src="RefreshIcon" alt="결말 새로고침" class="w-6" />
+          </button>
+          <!-- 확장 영역 (호버 시 표시) -->
+          <div class="expanded-content flex flex-col items-center justify-center text-center text-[10px] text-gray-700 pt-1 pb-2">
+            <p class="leading-tight">결말<br>새로고침</p>
+            <p class="text-lg font-bold">{{ rerollCount }}</p>
+          </div>
+        </div>
       </div>
 
       <!-- <div class="paper z-50 flex justify-center items-center">
@@ -560,6 +569,26 @@ watch(() => message.value, (newValue) => {
 
 .emoticon {
   transition: all 0.3s ease-in-out;
+}
+
+/* 결말 새로고침 버튼 호버 효과 */
+.refresh-button-container {
+  transition: max-height 0.3s ease-in-out, background-color 0.3s ease;
+}
+
+.refresh-button-container:hover {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.refresh-button-container .expanded-content {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.refresh-button-container:hover .expanded-content {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .handCard {
