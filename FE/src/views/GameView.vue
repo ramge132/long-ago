@@ -58,17 +58,12 @@
       </div>
     </div>
 
-    <!-- 현대적인 알람 모달 -->
-    <ModernAlert
-      v-if="showModernAlert"
-      :message="modernAlertMessage"
-      @close="showModernAlert = false"
-    />
-
-    <!-- 작은 알람 모달 (35% 도달용) -->
+    <!-- 작은 알람 모달 (35% 및 100% 도달용) -->
     <SmallAlert
       v-if="showSmallAlert"
       :message="smallAlertMessage"
+      :type="isEndingMode ? '100' : '35'"
+      :duration="isEndingMode ? 5000 : 3000"
       @close="showSmallAlert = false"
     />
   </div>
@@ -81,7 +76,6 @@ import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
 import { useAudioStore } from "@/stores/audio";
-import ModernAlert from "@/components/Presets/ModernAlert.vue";
 import SmallAlert from "@/components/Presets/SmallAlert.vue";
 import Peer from "peerjs";
 import { computed, nextTick, onMounted, ref, watch, onBeforeUnmount } from "vue";
@@ -124,10 +118,7 @@ const isForceStopped = ref(null);
 // 부적절한 콘텐츠 경고 모달 관련
 const showWarningModal = ref(false);
 const warningModalMessage = ref("");
-// 현대적인 알람 모달 관련
-const showModernAlert = ref(false);
-const modernAlertMessage = ref("");
-// 작은 알람 모달 관련 (35% 도달용)
+// 작은 알람 모달 관련 (35% 및 100% 도달용)
 const showSmallAlert = ref(false);
 const smallAlertMessage = ref("");
 // 35% 도달 체크용 플래그
@@ -200,14 +191,12 @@ watch(isForceStopped, (newValue) => {
   }
 });
 
-// 긴장감 퍼센트 (테스트용 - 이야기 하나만 입력해도 100%가 됨)
+// 긴장감 퍼센트
 const percentage = computed(() => {
   if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
     return 0
   } else {
-    // 테스트용: 이야기 하나만 입력해도 100%가 되도록 수정
-    return bookContents.value.length >= 2 ? 100 : Math.round((bookContents.value.length / 2) * 100)
-    // 원래 공식: return Math.round((bookContents.value.length / (participants.value.length * 3)) * 100)
+    return Math.round((bookContents.value.length / (participants.value.length * 3)) * 100)
   }
 });
 
@@ -339,9 +328,9 @@ const setupConnection = (conn) => {
       case "endingModeActivated":
         // 결말 모드로 전환
         isEndingMode.value = true;
-        // 현대적인 알림 표시
-        modernAlertMessage.value = "긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!";
-        showModernAlert.value = true;
+        // 작은 알림 표시 (100% 타입)
+        smallAlertMessage.value = "긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!";
+        showSmallAlert.value = true;
         break;
 
       case "endingCardAvailable":
@@ -2066,9 +2055,9 @@ watch(
       // 결말 모드로 전환
       isEndingMode.value = true;
 
-      // 현대적인 알림 표시 (모든 사용자에게)
-      modernAlertMessage.value = "긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!";
-      showModernAlert.value = true;
+      // 작은 알림 표시 (모든 사용자에게, 100% 타입)
+      smallAlertMessage.value = "긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!";
+      showSmallAlert.value = true;
 
       // WebRTC로 다른 플레이어들에게 결말 모드 전환 알림
       connectedPeers.value.forEach((peer) => {
