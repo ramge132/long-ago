@@ -5,10 +5,16 @@
       <div class="flex justify-center items-center w-3/4 mr-3" :class="isEndingMode ? 'opacity-50' : ''">
           <transition-group name="list" tag="div" class="cardList flex justify-center items-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
             <div
-              v-for="(card) in storyCards"
+              v-for="(card, index) in storyCards"
               :key="card.id"
-              class="handCard relative transition-all duration-300"
-              :class="getCardHighlightClass(card.id)"
+              class="handCard relative transition-all duration-150"
+              :class="[
+                getCardHighlightClass(card.id),
+                hoveredCardId === card.id ? 'card-hovered' : ''
+              ]"
+              :style="{ zIndex: getCardZIndex(card.id, index) }"
+              @mouseenter="setHoveredCard(card.id, index)"
+              @mouseleave="clearHoveredCard"
             >
               <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-36">
               <!-- 소프트 글로우 효과 -->
@@ -443,25 +449,13 @@ watch(() => props.endingCard, async () => {
   }
 }, {deep: true, immediate: true});
 
-onMounted(() => {
-  nextTick(() => {
-    document.querySelectorAll(".handCard").forEach((el, index, arr) => {
-    let computedStyle;
-    let transform;
-    el.addEventListener("mouseenter", () => {
-      arr.forEach((item, i) => item.style.zIndex = i); // 초기화
-      el.style.zIndex = arr.length; // hover된 요소를 가장 위로
-      computedStyle = window.getComputedStyle(el);
-      transform = computedStyle.transform;
-      el.style.setProperty("scale", "120%"); // CSS 변수 설정
-    });
-    el.addEventListener("mouseleave", () => {
-    el.style.zIndex = index; // 원래 z-index로 복원
-    el.style.setProperty("scale", "100%"); // CSS 변수 원래 값으로 복원
-  });
-  });
-  });
-});
+// Z-index 동적 계산
+const getCardZIndex = (cardId, index) => {
+  if (hoveredCardId.value === cardId) {
+    return 50; // 호버된 카드는 가장 위로
+  }
+  return index + 1; // 기본 z-index
+};
 
 onkeydown = (e) => {
   // 입력창이 이미 포커스되어 있지 않고, 일반 문자 키인 경우에만
@@ -541,6 +535,22 @@ const getCardHighlightClass = (cardId) => {
   return highlightedCards.value.includes(cardId) ? 'card-with-orb' : '';
 };
 
+// 호버 상태 관리
+const hoveredCardId = ref(null);
+const hoveredCardIndex = ref(null);
+
+// 카드 호버 설정
+const setHoveredCard = (cardId, index) => {
+  hoveredCardId.value = cardId;
+  hoveredCardIndex.value = index;
+};
+
+// 카드 호버 해제
+const clearHoveredCard = () => {
+  hoveredCardId.value = null;
+  hoveredCardIndex.value = null;
+};
+
 // 채팅 입력 감지 (즉시 반응)
 watch(() => message.value, (newValue) => {
   // 내 턴이고 이야기 모드일 때만 실행
@@ -563,7 +573,11 @@ watch(() => message.value, (newValue) => {
 }
 
 .handCard {
-  transform: var(--original-transform, none) scale(var(--hover-scale, 100%));
+  transition: transform 0.15s ease-out;
+}
+
+.card-hovered {
+  transform: scale(1.08);
 }
 
 .storycard {
