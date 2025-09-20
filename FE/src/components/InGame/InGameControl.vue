@@ -406,6 +406,8 @@ const setLeaveStyle = (el) => {
 const updateClass = () => {
   nextTick(() => {
     dynamicClass.value = `card${props.storyCards.length}`;
+    // 카드 변경 후 호버 효과 재설정
+    setupCardHoverEffects();
   });
 };
 
@@ -443,28 +445,39 @@ watch(() => props.endingCard, async () => {
   }
 }, {deep: true, immediate: true});
 
-onMounted(() => {
+const setupCardHoverEffects = () => {
   nextTick(() => {
-    document.querySelectorAll(".handCard").forEach((el, index, arr) => {
-    let computedStyle;
-    let transform;
-    el.addEventListener("mouseenter", () => {
-      arr.forEach((item, i) => item.style.zIndex = i); // 초기화
-      el.style.zIndex = arr.length; // hover된 요소를 가장 위로
-      computedStyle = window.getComputedStyle(el);
-      transform = computedStyle.transform;
-      el.style.transform = `${transform} translateY(-12px) rotateY(3deg)`;
-      el.style.filter = "brightness(1.1) saturate(1.1)";
-      el.style.boxShadow = "0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1)";
+    const cards = document.querySelectorAll(".handCard");
+    cards.forEach((el, index) => {
+      // 기존 이벤트 리스너 제거 (중복 방지)
+      el.removeEventListener("mouseenter", el._hoverEnter);
+      el.removeEventListener("mouseleave", el._hoverLeave);
+
+      const originalTransform = window.getComputedStyle(el).transform;
+
+      el._hoverEnter = () => {
+        cards.forEach((item, i) => item.style.zIndex = i); // 초기화
+        el.style.zIndex = cards.length; // hover된 요소를 가장 위로
+        el.style.transform = `${originalTransform} translateY(-12px) rotateY(3deg)`;
+        el.style.filter = "brightness(1.1) saturate(1.1)";
+        el.style.boxShadow = "0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1)";
+      };
+
+      el._hoverLeave = () => {
+        el.style.zIndex = index; // 원래 z-index로 복원
+        el.style.transform = originalTransform; // 원래 transform으로 복원
+        el.style.filter = "";
+        el.style.boxShadow = "";
+      };
+
+      el.addEventListener("mouseenter", el._hoverEnter);
+      el.addEventListener("mouseleave", el._hoverLeave);
     });
-    el.addEventListener("mouseleave", () => {
-    el.style.zIndex = index; // 원래 z-index로 복원
-    el.style.transform = transform; // 원래 transform으로 복원
-    el.style.filter = "";
-    el.style.boxShadow = "";
   });
-  });
-  });
+};
+
+onMounted(() => {
+  setupCardHoverEffects();
 });
 
 onkeydown = (e) => {
@@ -664,7 +677,7 @@ watch(() => message.value, (newValue) => {
 }
 
 .endingcard:hover {
-  transform: translateY(-8px) rotateY(5deg);
+  transform: translateY(-32px) rotateY(5deg);
   box-shadow:
     0 25px 50px rgba(0, 0, 0, 0.2),
     0 10px 20px rgba(0, 0, 0, 0.1);
