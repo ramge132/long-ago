@@ -142,7 +142,7 @@ INSERT INTO ending_card (id, content) VALUES
 (16, '그 덕분에 현대기술이 이렇게 발전할 수 있었습니다.'),
 (17, '결국 남은 생을 거지로 살았습니다.'),
 (18, '그리하여 그들은 다시는 싸우지 않기로 약속했습니다.'),
-(19, '그들이 가진 것은 그들의 자식들에게 이어졌습니다.');
+(19, '그것은 그들의 자식들에게 이어졌습니다.');
 
 INSERT INTO story_card_variants (story_card_id, variant) VALUES
 -- 인물 (변형어 없음)
