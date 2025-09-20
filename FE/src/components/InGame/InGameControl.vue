@@ -84,7 +84,7 @@
           :class="'max-h-10 hover:max-h-24'"
           @click="cardReroll">
           <!-- 기본 상태 아이콘 버튼 (항상 표시) -->
-          <button class="bg-[#ffffff] hover:bg-gray-200 rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 relative focus:outline-0">
+          <button class="bg-[#ffffff] rounded-full w-10 h-10 flex justify-center items-center drop-shadow-md z-10 relative focus:outline-0">
             <img :src="RefreshIcon" alt="결말 새로고침" class="w-6" />
           </button>
           <!-- 확장 영역 (호버 시 표시) -->
@@ -573,11 +573,7 @@ watch(() => message.value, (newValue) => {
 
 /* 결말 새로고침 버튼 호버 효과 */
 .refresh-button-container {
-  transition: max-height 0.3s ease-in-out, background-color 0.3s ease;
-}
-
-.refresh-button-container:hover {
-  background-color: rgba(255, 255, 255, 0.7);
+  transition: max-height 0.3s ease-in-out;
 }
 
 .refresh-button-container .expanded-content {
