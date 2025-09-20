@@ -588,7 +588,19 @@ watch(() => message.value, (newValue) => {
     0 0 30px rgba(230, 222, 206, 0.4);
 }
 
-.card-hovered::before {
+/* 호버 효과와 orb 효과가 함께 있을 때의 처리 */
+.card-hovered.card-with-orb::before {
+  opacity: 0.9;
+  filter: blur(12px);
+}
+
+.card-hovered.card-with-orb::after {
+  opacity: 0.7;
+  filter: blur(8px);
+}
+
+/* 호버만 있을 때의 오버레이 효과 */
+.card-hovered:not(.card-with-orb)::before {
   content: '';
   position: absolute;
   top: 0;
@@ -602,6 +614,7 @@ watch(() => message.value, (newValue) => {
   transition: opacity 0.3s ease;
   pointer-events: none;
   border-radius: inherit;
+  z-index: 1;
 }
 
 .storycard {
@@ -623,12 +636,15 @@ watch(() => message.value, (newValue) => {
 }
 
 .endingcard {
-  transition: transform 0.2s ease-in-out;
-  transform-origin: bottom center;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-origin: center center;
 }
 
 .endingcard:hover {
-  animation: swing 0.5s ease-in-out infinite alternate;
+  transform: scale(1.05) translateY(-8px);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 0 30px rgba(230, 222, 206, 0.4);
 }
 
 .paper {
@@ -741,29 +757,29 @@ watch(() => message.value, (newValue) => {
 }
 
 .card4 > :nth-child(2){
-  transform: translateX(-16px);
+  transform: translateX(-24px);
 }
 .card4 > :nth-child(3){
-  transform: translateX(-32px);
+  transform: translateX(-48px);
 }
 .card4 > :nth-child(4){
-  transform: translateX(-48px);
+  transform: translateX(-72px);
 }
 
 .card3 > :nth-child(1){
-  transform: translateX(16px);
+  transform: translateX(24px);
 }
 .card3 > :nth-child(2){
   transform: translateX(0);
 }
 .card3 > :nth-child(3){
-  transform: translateX(-16px);
+  transform: translateX(-24px);
 }
 
 .card2 > :nth-child(1){
   transform: translateX(0);
 }
 .card2 > :nth-child(2){
-  transform: translateX(-16px);
+  transform: translateX(-24px);
 }
 </style>
