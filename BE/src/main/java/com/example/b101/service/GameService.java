@@ -662,10 +662,14 @@ public class GameService {
         
         String style = drawingStyle < styles.length ? styles[drawingStyle] : "애니메이션 스타일";
         
-        // 표지 이미지 프롬프트 생성
-        String coverPrompt = "Create a beautiful book cover for a story titled '" + bookTitle + "'. " +
-                "Style: " + style + ". The cover should be artistic, captivating, and suitable for a storybook. " +
-                "Include the title text elegantly integrated into the design.";
+        // 여백 없는 full-size 표지 이미지 프롬프트 생성
+        String coverPrompt = "Create a full-frame illustration that completely fills the entire canvas without any borders, margins, or white space. " +
+                "Edge-to-edge artwork for the story '" + bookTitle + "'. " +
+                "Style: " + style + ". " +
+                "The illustration should be immersive and cover the whole image area from corner to corner. " +
+                "NO borders, NO margins, NO white space around edges, completely filled canvas. " +
+                "Create a captivating scene that represents the story's atmosphere and mood. " +
+                "NO text, NO title, NO letters - textless artwork only.";
         
         // 책표지 생성을 위해 재시도 횟수 증가
         return callGeminiWithRetryForCover(coverPrompt, 4); // 4회 재시도 (총 5번)
@@ -689,7 +693,8 @@ public class GameService {
                 // contents 배열 구성
                 Map<String, Object> content = new HashMap<>();
                 Map<String, Object> part = new HashMap<>();
-                String fullPrompt = "Generate an image: " + prompt + " portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution";
+                String fullPrompt = "Generate an image: " + prompt + " Portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution. " +
+                        "Fill the entire 720x1280 canvas completely, edge-to-edge coverage, no empty space, no borders.";
                 part.put("text", fullPrompt);
                 content.put("parts", List.of(part));
                 requestBody.put("contents", List.of(content));
