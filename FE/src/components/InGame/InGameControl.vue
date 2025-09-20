@@ -579,7 +579,7 @@ watch(() => message.value, (newValue) => {
   left: -8px;
   right: -8px;
   bottom: -8px;
-  background: linear-gradient(-45deg, #e6dece, #f5f0e8, #e6dece, #f5f0e8);
+  background: linear-gradient(-45deg, #ffffff, #f8f9fa, #ffffff, #f8f9fa);
   background-size: 400% 400%;
   border-radius: 16px;
   z-index: -1;
@@ -596,7 +596,7 @@ watch(() => message.value, (newValue) => {
   left: -6px;
   right: -6px;
   bottom: -6px;
-  background: linear-gradient(-45deg, #e6dece, #f5f0e8, #e6dece, #f5f0e8);
+  background: linear-gradient(-45deg, #ffffff, #f8f9fa, #ffffff, #f8f9fa);
   background-size: 400% 400%;
   border-radius: 16px;
   z-index: -1;
@@ -672,7 +672,7 @@ watch(() => message.value, (newValue) => {
   left: -8px;
   right: -8px;
   bottom: -8px;
-  background: linear-gradient(-45deg, #e6dece, #f5f0e8, #e6dece, #f5f0e8);
+  background: linear-gradient(-45deg, #ffffff, #f8f9fa, #ffffff, #f8f9fa);
   background-size: 400% 400%;
   border-radius: 16px;
   z-index: -1;
@@ -689,7 +689,7 @@ watch(() => message.value, (newValue) => {
   left: -6px;
   right: -6px;
   bottom: -6px;
-  background: linear-gradient(-45deg, #e6dece, #f5f0e8, #e6dece, #f5f0e8);
+  background: linear-gradient(-45deg, #ffffff, #f8f9fa, #ffffff, #f8f9fa);
   background-size: 400% 400%;
   border-radius: 16px;
   z-index: -1;
