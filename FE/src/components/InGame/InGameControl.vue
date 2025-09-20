@@ -544,8 +544,8 @@ const getCardHighlightClass = (cardId) => {
 
 // 채팅 입력 감지 (즉시 반응)
 watch(() => message.value, (newValue) => {
-  // 내 턴이고 이야기 모드일 때만 실행
-  if (props.myTurn === props.currTurn && currChatModeIdx.value === 1) {
+  // 이야기 모드일 때만 실행 (턴 관계없이)
+  if (currChatModeIdx.value === 1) {
     // 즉시 분석 (디바운싱 없이)
     analyzeInput(newValue);
   } else {
