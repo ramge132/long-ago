@@ -1,6 +1,6 @@
 <template>
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
-    <div v-if="gameStarted" class="flex justify-center items-center grow">
+    <div v-if="gameStarted" class="flex justify-center items-center grow" style="transform: translateX(3px);">
       <!-- 스토리 카드 영역 -->
       <div class="flex justify-center items-center w-3/4 mr-3 -translate-y-2" :class="isEndingMode ? 'opacity-50' : ''">
           <transition-group name="list" tag="div" class="cardList flex justify-center items-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
@@ -755,33 +755,33 @@ watch(() => message.value, (newValue) => {
 }
 
 .card4 > :nth-child(1){
-  transform: translateX(-3px);
+  transform: translateX(0);
 }
 
 .card4 > :nth-child(2){
-  transform: translateX(-1px);
+  transform: translateX(0);
 }
 .card4 > :nth-child(3){
-  transform: translateX(1px);
+  transform: translateX(0);
 }
 .card4 > :nth-child(4){
-  transform: translateX(3px);
+  transform: translateX(0);
 }
 
 .card3 > :nth-child(1){
-  transform: translateX(-2px);
+  transform: translateX(0);
 }
 .card3 > :nth-child(2){
   transform: translateX(0);
 }
 .card3 > :nth-child(3){
-  transform: translateX(2px);
+  transform: translateX(0);
 }
 
 .card2 > :nth-child(1){
-  transform: translateX(-1px);
+  transform: translateX(0);
 }
 .card2 > :nth-child(2){
-  transform: translateX(1px);
+  transform: translateX(0);
 }
 </style>
