@@ -265,17 +265,15 @@ public class GameService {
             byte[] coverImageBytes = null; // 기본값
             
             try {
-                log.info("🎮🎮🎮 === 1단계: 스토리 요약 및 제목 생성 시작 ===");
-                // 1단계: 스토리 요약 및 제목 생성
-                // Python 서비스로 제목과 이미지 통합 생성
-                log.info("🎮🎮🎮 === Python 서비스로 표지 통합 생성 시작 ===");
-                CoverResult coverResult = generateBookCover(sceneRedisList, game.getDrawingStyle());
-                
-                bookTitle = coverResult.getTitle();
-                coverImageBytes = coverResult.getImageBytes();
-                
-                log.info("🎮🎮🎮 Python로 생성된 책 제목: [{}]", bookTitle);
-                log.info("🎮🎮🎮 Python로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
+                log.info("🎮🎮🎮 === 1단계: GPT-5-nano로 제목 생성 시작 ===");
+                // 1단계: GPT-5-nano로 창의적인 제목 생성
+                bookTitle = generateBookTitle(sceneRedisList);
+                log.info("🎮🎮🎮 GPT-5-nano로 생성된 책 제목: [{}]", bookTitle);
+
+                log.info("🎮🎮🎮 === 2단계: Gemini로 표지 이미지 생성 시작 ===");
+                // 2단계: 생성된 제목으로 표지 이미지 생성
+                coverImageBytes = generateCoverImage(bookTitle, game.getDrawingStyle());
+                log.info("🎮🎮🎮 Gemini로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
                 
                 if (bookTitle == null || bookTitle.trim().isEmpty()) {
                     log.error("🎮🎮🎮 제목이 null이거나 비어있음!");
@@ -500,14 +498,30 @@ public class GameService {
                 // GPT-5 Responses API 요청 구조
                 Map<String, Object> requestBody = new HashMap<>();
                 requestBody.put("model", "gpt-5-nano");
-                requestBody.put("input", "다음 스토리를 10자 이내의 창의적인 제목으로 만들어주세요. 다른 설명 없이 제목만 말해주세요. 스토리: " + storyContent);
 
+                // 창의적이고 재미있는 프롬프트로 개선
+                String creativePrompt = String.format(
+                    "이 흥미진진한 모험 이야기를 위한 멋진 동화책 제목을 지어주세요!\n\n" +
+                    "📚 스토리: %s\n\n" +
+                    "💡 제목 요구사항:\n" +
+                    "- 8-15자 길이의 한국어 제목\n" +
+                    "- 호기심과 모험심을 자극하는 제목\n" +
+                    "- 주요 캐릭터나 사물을 활용한 창의적 표현\n" +
+                    "- 독자가 꼭 읽어보고 싶어지는 매력적인 제목\n\n" +
+                    "🎯 예시 스타일: '마법사와 황금 열쇠', '신비한 숲의 비밀', '용감한 소녀의 대모험'\n\n" +
+                    "제목만 답변해주세요:",
+                    storyContent
+                );
+
+                requestBody.put("input", creativePrompt);
+
+                // GPT-5-nano 최적화 설정 - 빠른 응답과 간결한 출력
                 Map<String, String> text = new HashMap<>();
-                text.put("verbosity", "low");
+                text.put("verbosity", "low");  // 간결한 응답
                 requestBody.put("text", text);
-                
+
                 Map<String, String> reasoning = new HashMap<>();
-                reasoning.put("effort", "minimal");
+                reasoning.put("effort", "minimal");  // 최소 추론으로 빠른 응답
                 requestBody.put("reasoning", reasoning);
                 
                 log.info("GPT-5 Responses API 요청 전송 중... (시도 {})", attempt);

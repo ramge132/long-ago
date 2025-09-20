@@ -9,7 +9,10 @@
       "Bash(cp:*)",
       "Bash(git push:*)",
       "Bash(git add:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:freefrontend.com)",
+      "WebFetch(domain:prismic.io)",
+      "WebFetch(domain:www.subframe.com)"
     ],
     "deny": [],
     "ask": []
