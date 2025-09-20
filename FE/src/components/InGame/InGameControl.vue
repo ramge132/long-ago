@@ -2,7 +2,7 @@
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
     <div v-if="gameStarted" class="flex justify-center items-center grow">
       <!-- 스토리 카드 영역 -->
-      <div class="flex justify-center items-center w-3/4 mr-3" :class="isEndingMode ? 'opacity-50' : ''">
+      <div class="flex justify-center items-center w-3/4 mr-3 -translate-y-2" :class="isEndingMode ? 'opacity-50' : ''">
           <transition-group name="list" tag="div" class="cardList flex justify-center items-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
             <div
               v-for="(card, index) in storyCards"
@@ -25,9 +25,9 @@
             </div>
           </transition-group>
       </div>
-      <div class="flex justify-center items-center flex-1">
+      <div class="flex justify-center items-end flex-1">
         <!-- 엔딩카드는 항상 표시 -->
-        <div class="relative endingcard cursor-pointer" @click="sendEndingCard" ref="cardRef">
+        <div class="relative endingcard cursor-pointer -translate-y-2" @click="sendEndingCard" ref="cardRef">
           <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-36">
           <div
             class="endingcard-text w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e]" ref="contentRef">
@@ -717,29 +717,29 @@ watch(() => message.value, (newValue) => {
 }
 
 .card4 > :nth-child(2){
-  transform: translateX(-10px);
+  transform: translateX(-12px);
 }
 .card4 > :nth-child(3){
-  transform: translateX(-20px);
+  transform: translateX(-24px);
 }
 .card4 > :nth-child(4){
-  transform: translateX(-30px);
+  transform: translateX(-36px);
 }
 
 .card3 > :nth-child(1){
-  transform: translateX(10px);
+  transform: translateX(12px);
 }
 .card3 > :nth-child(2){
   transform: translateX(0);
 }
 .card3 > :nth-child(3){
-  transform: translateX(-10px);
+  transform: translateX(-12px);
 }
 
 .card2 > :nth-child(1){
   transform: translateX(0);
 }
 .card2 > :nth-child(2){
-  transform: translateX(-10px);
+  transform: translateX(-12px);
 }
 </style>
