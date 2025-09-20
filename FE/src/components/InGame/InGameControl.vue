@@ -2,8 +2,8 @@
   <div class="row-span-2 flex flex-col justify-between py-2 relative">
     <div v-if="gameStarted" class="flex justify-center items-center grow">
       <!-- 스토리 카드 영역 -->
-      <div class="flex flex-col justify-center items-center w-3/4 mr-3" :class="isEndingMode ? 'opacity-50' : ''">
-          <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
+      <div class="flex justify-center items-center w-3/4 mr-3" :class="isEndingMode ? 'opacity-50' : ''">
+          <transition-group name="list" tag="div" class="cardList flex justify-center items-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
             <div
               v-for="(card) in storyCards"
               :key="card.id"
@@ -19,7 +19,7 @@
             </div>
           </transition-group>
       </div>
-      <div class="flex flex-col flex-1 justify-center items-center">
+      <div class="flex justify-center items-center flex-1">
         <!-- 엔딩카드는 항상 표시 -->
         <div class="relative endingcard cursor-pointer" @click="sendEndingCard" ref="cardRef">
           <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-36">
