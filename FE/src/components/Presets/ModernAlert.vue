@@ -1,13 +1,11 @@
 <template>
   <div
     v-if="isVisible"
-    class="modern-alert-overlay fixed inset-0 z-[9999] flex items-center justify-center"
-    @click="closeAlert"
+    class="modern-alert-overlay fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
   >
     <div
-      class="modern-alert-container relative transform transition-all duration-700 ease-out"
+      class="modern-alert-container relative transform transition-all duration-700 ease-out pointer-events-auto"
       :class="animationClass"
-      @click.stop
     >
       <!-- Background with glassmorphism effect -->
       <div class="modern-alert-bg absolute inset-0 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-white/30 to-white/10 border border-white/20 shadow-2xl"></div>
@@ -69,7 +67,7 @@ const props = defineProps({
   },
   duration: {
     type: Number,
-    default: 0 // 0이면 자동으로 닫히지 않음
+    default: 5000 // 5초 후 자동으로 닫힘
   }
 })
 
@@ -92,6 +90,7 @@ const show = async () => {
     isAnimating.value = true
   }, 50)
 
+  // 자동으로 닫기 (duration이 0보다 클 때)
   if (props.duration > 0) {
     setTimeout(() => {
       closeAlert()
@@ -118,10 +117,9 @@ defineExpose({
 </script>
 
 <style scoped>
-/* 오버레이 배경 */
+/* 오버레이 배경 - 블러 효과 없이 투명 */
 .modern-alert-overlay {
-  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 100%);
-  backdrop-filter: blur(4px);
+  background: transparent;
   animation: fadeIn 0.5s ease-out;
 }
 
