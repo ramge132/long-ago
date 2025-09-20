@@ -187,12 +187,14 @@ watch(isForceStopped, (newValue) => {
   }
 });
 
-// 긴장감 퍼센트
+// 긴장감 퍼센트 (테스트용 - 이야기 하나만 입력해도 100%가 됨)
 const percentage = computed(() => {
   if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
     return 0
   } else {
-    return Math.round((bookContents.value.length / (participants.value.length * 3)) * 100)
+    // 테스트용: 이야기 하나만 입력해도 100%가 되도록 수정
+    return bookContents.value.length >= 2 ? 100 : Math.round((bookContents.value.length / 2) * 100)
+    // 원래 공식: return Math.round((bookContents.value.length / (participants.value.length * 3)) * 100)
   }
 });
 
