@@ -699,7 +699,7 @@ watch(() => message.value, (newValue) => {
 }
 
 .card4 > :nth-child(1){
-  transform: translateY(13px);
+  transform: translateX(0);
 }
 
 .card4 > :nth-child(2){
@@ -709,21 +709,21 @@ watch(() => message.value, (newValue) => {
   transform: translateX(-20px);
 }
 .card4 > :nth-child(4){
-  transform: translateX(-30px) translateY(15px);
+  transform: translateX(-30px);
 }
 
 .card3 > :nth-child(1){
-  transform: translateY(3px) translateX(10px);
+  transform: translateX(10px);
 }
 .card3 > :nth-child(2){
-  transform: translateY(0);
+  transform: translateX(0);
 }
 .card3 > :nth-child(3){
-  transform: translateY(3px) translateX(-10px);
+  transform: translateX(-10px);
 }
 
 .card2 > :nth-child(1){
-  transform: translateY(0);
+  transform: translateX(0);
 }
 .card2 > :nth-child(2){
   transform: translateX(-10px);
