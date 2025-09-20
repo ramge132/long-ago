@@ -5,16 +5,10 @@
       <div class="flex justify-center items-center w-3/4 mr-3 -translate-y-2" :class="isEndingMode ? 'opacity-50' : ''">
           <transition-group name="list" tag="div" class="cardList flex justify-center items-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
             <div
-              v-for="(card, index) in storyCards"
+              v-for="(card) in storyCards"
               :key="card.id"
-              class="handCard relative transition-all duration-150"
-              :class="[
-                getCardHighlightClass(card.id),
-                hoveredCardId === card.id ? 'card-hovered' : ''
-              ]"
-              :style="{ zIndex: getCardZIndex(card.id, index) }"
-              @mouseenter="setHoveredCard(card.id, index)"
-              @mouseleave="clearHoveredCard"
+              class="handCard relative transition-all duration-300"
+              :class="getCardHighlightClass(card.id)"
             >
               <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-36">
               <!-- 소프트 글로우 효과 -->
@@ -449,13 +443,25 @@ watch(() => props.endingCard, async () => {
   }
 }, {deep: true, immediate: true});
 
-// Z-index 동적 계산
-const getCardZIndex = (cardId, index) => {
-  if (hoveredCardId.value === cardId) {
-    return 50; // 호버된 카드는 가장 위로
-  }
-  return index + 1; // 기본 z-index
-};
+onMounted(() => {
+  nextTick(() => {
+    document.querySelectorAll(".handCard").forEach((el, index, arr) => {
+    let computedStyle;
+    let transform;
+    el.addEventListener("mouseenter", () => {
+      arr.forEach((item, i) => item.style.zIndex = i); // 초기화
+      el.style.zIndex = arr.length; // hover된 요소를 가장 위로
+      computedStyle = window.getComputedStyle(el);
+      transform = computedStyle.transform;
+      el.style.setProperty("scale", "120%"); // CSS 변수 설정
+    });
+    el.addEventListener("mouseleave", () => {
+    el.style.zIndex = index; // 원래 z-index로 복원
+    el.style.setProperty("scale", "100%"); // CSS 변수 원래 값으로 복원
+  });
+  });
+  });
+});
 
 onkeydown = (e) => {
   // 입력창이 이미 포커스되어 있지 않고, 일반 문자 키인 경우에만
@@ -535,21 +541,6 @@ const getCardHighlightClass = (cardId) => {
   return highlightedCards.value.includes(cardId) ? 'card-with-orb' : '';
 };
 
-// 호버 상태 관리
-const hoveredCardId = ref(null);
-const hoveredCardIndex = ref(null);
-
-// 카드 호버 설정
-const setHoveredCard = (cardId, index) => {
-  hoveredCardId.value = cardId;
-  hoveredCardIndex.value = index;
-};
-
-// 카드 호버 해제
-const clearHoveredCard = () => {
-  hoveredCardId.value = null;
-  hoveredCardIndex.value = null;
-};
 
 // 채팅 입력 감지 (즉시 반응)
 watch(() => message.value, (newValue) => {
@@ -573,48 +564,7 @@ watch(() => message.value, (newValue) => {
 }
 
 .handCard {
-  position: relative;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transform: translateZ(0);
-  will-change: transform;
-}
-
-.card-hovered {
-  transform: scale(1.05) translateY(-8px) translateZ(0);
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.15),
-    0 0 30px rgba(230, 222, 206, 0.4);
-}
-
-/* 호버 효과와 orb 효과가 함께 있을 때의 처리 */
-.card-hovered.card-with-orb::before {
-  opacity: 0.9;
-  filter: blur(12px);
-}
-
-.card-hovered.card-with-orb::after {
-  opacity: 0.7;
-  filter: blur(8px);
-}
-
-/* 호버만 있을 때의 오버레이 효과 */
-.card-hovered:not(.card-with-orb)::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg,
-    rgba(230, 222, 206, 0.1),
-    rgba(245, 240, 232, 0.1));
-  opacity: 1;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  border-radius: inherit;
-  z-index: 1;
+  transform: var(--original-transform, none) scale(var(--hover-scale, 100%));
 }
 
 /* 카드 뒤 사각형 Orb 효과 */
@@ -805,33 +755,33 @@ watch(() => message.value, (newValue) => {
 }
 
 .card4 > :nth-child(1){
-  transform: translateX(54px);
+  transform: translateX(0);
 }
 
 .card4 > :nth-child(2){
-  transform: translateX(18px);
+  transform: translateX(-15px);
 }
 .card4 > :nth-child(3){
-  transform: translateX(-18px);
+  transform: translateX(-30px);
 }
 .card4 > :nth-child(4){
-  transform: translateX(-54px);
+  transform: translateX(-45px);
 }
 
 .card3 > :nth-child(1){
-  transform: translateX(36px);
+  transform: translateX(15px);
 }
 .card3 > :nth-child(2){
   transform: translateX(0);
 }
 .card3 > :nth-child(3){
-  transform: translateX(-36px);
+  transform: translateX(-15px);
 }
 
 .card2 > :nth-child(1){
-  transform: translateX(18px);
+  transform: translateX(0);
 }
 .card2 > :nth-child(2){
-  transform: translateX(-18px);
+  transform: translateX(-15px);
 }
 </style>
