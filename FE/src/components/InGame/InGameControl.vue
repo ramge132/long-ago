@@ -4,8 +4,18 @@
       <!-- 스토리 카드 영역 -->
       <div class="flex flex-col justify-center items-center w-3/4 mr-3" :class="isEndingMode ? 'opacity-50' : ''">
           <transition-group name="list" tag="div" class="cardList flex justify-center w-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
-            <div v-for="(card) in storyCards" :key="card.id" class="handCard relative">
+            <div
+              v-for="(card) in storyCards"
+              :key="card.id"
+              class="handCard relative transition-all duration-300"
+              :class="getCardHighlightClass(card.id)"
+            >
               <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-28">
+              <!-- 소프트 글로우 효과 -->
+              <div
+                v-if="highlightedCards.includes(card.id)"
+                class="card-glow-effect absolute inset-0 pointer-events-none"
+              ></div>
             </div>
           </transition-group>
       </div>
@@ -107,6 +117,19 @@ import emoji from "@/assets/images/emoticons";
 import toast from "@/functions/toast";
 import useCilpboard from "vue-clipboard3";
 
+// 디바운스 함수
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
 const userStore = useUserStore();
 const { toClipboard } = useCilpboard();
 const toggleEmoticon = ref(false);
@@ -118,6 +141,112 @@ const contentSizes = ref([
   "xl", "lg", "sm", "xs"
 ]);
 const rerollCount = ref(3);
+
+// 실시간 카드 매칭을 위한 상태
+const highlightedCards = ref([]);
+
+// 카드 변형어 데이터 (init_db.sql 기반)
+const cardVariants = {
+  // 인물
+  1: ['호랑이'],
+  2: ['유령'],
+  3: ['농부'],
+  4: ['상인'],
+  5: ['신'],
+  6: ['외계인'],
+  7: ['박사'],
+  8: ['아이돌'],
+  9: ['마법사'],
+  10: ['마왕'],
+  11: ['소녀', '소년'],
+  12: ['부자'],
+  13: ['탐정'],
+  14: ['노인'],
+  15: ['가난뱅이'],
+  16: ['공주'],
+  17: ['닌자'],
+
+  // 사물
+  18: ['핸드폰'],
+  19: ['인형'],
+  20: ['부적'],
+  21: ['지도'],
+  22: ['가면'],
+  23: ['칼'],
+  24: ['피리'],
+  25: ['지팡이'],
+  26: ['태양'],
+  27: ['날개'],
+  28: ['의자'],
+  29: ['시계'],
+  30: ['보석'],
+  31: ['UFO', 'ufo', '유에포', '유에프오', '유애포', '유애프오', '유예포', '유예프오'],
+  32: ['함정'],
+  33: ['총'],
+  34: ['타임머신'],
+
+  // 장소
+  35: ['바다'],
+  36: ['다리'],
+  37: ['묘지'],
+  38: ['식당'],
+  39: ['박물관'],
+  40: ['비밀'],
+  41: ['사막'],
+  42: ['저택'],
+  43: ['천국'],
+
+  // 사건
+  44: ['사망', '뒤졌', '뒤질', '뒤져'],
+  45: ['배신'],
+  46: ['계약'],
+  47: ['폭발'],
+  48: ['승리', '이김', '이긴', '이겨', '이겼', '이길'],
+  49: ['패배', '짐', '진', '져', '졌', '질'],
+  50: ['음모'],
+  51: ['공연'],
+  52: ['식사'],
+  53: ['시간이 지남', '시간이'],
+  54: ['떨어짐', '추락', '낙하', '하락', '무너짐', '넘어짐', '떨어'],
+  55: ['모험'],
+  56: ['희생'],
+  57: ['실패'],
+  58: ['유혹'],
+  59: ['중단', '멈춤', '멈춰', '멈췄', '멈출'],
+  60: ['의식'],
+  61: ['고백'],
+  62: ['짝사랑'],
+  63: ['진화'],
+  64: ['텔레파시'],
+  65: ['노화'],
+  66: ['멸망'],
+  67: ['결투'],
+  68: ['부활'],
+
+  // 상태
+  69: ['빛남', '빛난', '빛나', '빛났', '빛날', '빛내'],
+  70: ['굶주림', '굶주린', '굶주려', '굶주리', '굶주렸', '굶주릴', '굶은', '굶음', '굶었', '굶을', '굶긴', '굶어', '굶겨', '배고픔', '배고픈', '배고프다'],
+  71: ['착각'],
+  72: ['순진함', '순진한', '순진하', '순진했', '순진할'],
+  73: ['그리움', '그리운', '그리워', '그리웠', '그리울'],
+  74: ['집착'],
+  75: ['절망'],
+  76: ['흥분'],
+  77: ['실망'],
+  78: ['귀찮음', '귀찮은', '귀찮아', '귀찮았', '귀찮을', '귀찮게'],
+  79: ['자신만만함', '자신'],
+  80: ['메스꺼움', '메스꺼운', '메스꺼워', '메스꺼웠', '메스꺼울'],
+  81: ['들뜸', '들뜬', '들뜨', '들떴', '들뜰'],
+  82: ['격분'],
+  83: ['희열'],
+  84: ['호기심'],
+  85: ['지루함', '지루한', '지루하', '지루했', '지루할', '따분함', '무료함', '심심한', '심심하다', '무료하다'],
+  86: ['간절함', '간절한', '간절하', '간절했', '간절할', '간절하다', '간절하게', '간절히 바라다'],
+  87: ['잠재력'],
+  88: ['자존심'],
+  89: ['이쁨', '이쁜', '이쁘', '이쁠', '이뻤', '예쁜', '예쁘', '예뻤', '잘생긴', '잘생겨', '잘생겼', '잘생길', '잘생김', '이쁘다', '예쁘다', '잘생기다', '예뻐요', '이뻐요', '예쁨이 있다'],
+  90: ['거대함', '거대한', '거대하', '거대했', '거대할']
+};
 const emoticons = ref(
   [
     "laugh",
@@ -373,6 +502,50 @@ const copy = async () => {
     toast.errorToast("복사 실패");
   }
 };
+
+// 실시간 카드 매칭 함수
+const analyzeInput = (inputText) => {
+  if (!inputText || !props.storyCards) {
+    highlightedCards.value = [];
+    return;
+  }
+
+  const matchedCards = [];
+
+  // 사용자가 소유한 카드들에 대해서만 검사
+  props.storyCards.forEach(card => {
+    const variants = cardVariants[card.id] || [];
+
+    // 각 변형어가 입력 텍스트에 포함되어 있는지 확인
+    const isMatched = variants.some(variant =>
+      inputText.toLowerCase().includes(variant.toLowerCase())
+    );
+
+    if (isMatched) {
+      matchedCards.push(card.id);
+    }
+  });
+
+  highlightedCards.value = matchedCards;
+};
+
+// 디바운스된 분석 함수
+const debouncedAnalyze = debounce(analyzeInput, 200);
+
+// 카드 하이라이트 클래스 반환
+const getCardHighlightClass = (cardId) => {
+  return highlightedCards.value.includes(cardId) ? 'card-highlighted' : '';
+};
+
+// 채팅 입력 감지
+watch(() => message.value, (newValue) => {
+  // 내 턴이고 이야기 모드일 때만 실행
+  if (props.myTurn === props.currTurn && currChatModeIdx.value === 1) {
+    debouncedAnalyze(newValue);
+  } else {
+    highlightedCards.value = []; // 다른 경우에는 하이라이트 제거
+  }
+});
 </script>
 
 <style scoped>
@@ -424,6 +597,101 @@ const copy = async () => {
 .paper:before {
   background-image: radial-gradient(#C9B29C, #C9B29C);
   content: ' ';
+}
+
+/* 실시간 카드 하이라이트 효과 - 2025 트렌드 */
+.card-highlighted {
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 20px 40px rgba(192, 178, 160, 0.25),
+    0 0 30px rgba(230, 222, 206, 0.6),
+    0 0 60px rgba(192, 178, 160, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(192, 178, 160, 0.6);
+  z-index: 10;
+  will-change: transform, box-shadow;
+  backface-visibility: hidden;
+}
+
+/* 하이라이트된 카드의 글로우 애니메이션 */
+.card-highlighted::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  background: linear-gradient(45deg,
+    #e6dece, #c0b2a0, #f5f0e8, #e6dece);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.8;
+  filter: blur(8px);
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+/* 시머 효과 */
+.card-highlighted::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  animation: shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* 부드러운 펄스 애니메이션 */
+@keyframes subtle-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+/* 시머 애니메이션 */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+/* 성능 최적화를 위한 미디어 쿼리 */
+@media (prefers-reduced-motion: reduce) {
+  .card-highlighted,
+  .card-highlighted::before,
+  .card-highlighted::after {
+    animation: none;
+    transition: none;
+  }
+
+  .card-highlighted {
+    box-shadow: 0 0 20px rgba(230, 222, 206, 0.6);
+  }
+}
   position: absolute;
   top: 0px;
   right: 0px;
