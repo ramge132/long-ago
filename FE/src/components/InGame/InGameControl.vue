@@ -583,7 +583,7 @@ watch(() => message.value, (newValue) => {
   background-size: 400% 400%;
   border-radius: 16px;
   z-index: -1;
-  animation: gradient-shift 3s ease infinite;
+  animation: orb-fade-in 0.6s ease-out, gradient-shift 3s ease infinite;
   filter: blur(12px);
   opacity: 0.9;
   pointer-events: none;
@@ -600,7 +600,7 @@ watch(() => message.value, (newValue) => {
   background-size: 400% 400%;
   border-radius: 16px;
   z-index: -1;
-  animation: gradient-shift 3s ease infinite reverse;
+  animation: orb-fade-in 0.8s ease-out, gradient-shift 3s ease infinite reverse;
   filter: blur(8px);
   opacity: 0.7;
   pointer-events: none;
@@ -616,6 +616,22 @@ watch(() => message.value, (newValue) => {
   }
   100% {
     background-position: 0% 50%;
+  }
+}
+
+/* orb 페이드인 애니메이션 */
+@keyframes orb-fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -676,7 +692,7 @@ watch(() => message.value, (newValue) => {
   background-size: 400% 400%;
   border-radius: 16px;
   z-index: -1;
-  animation: gradient-shift 3s ease infinite;
+  animation: orb-fade-in 0.6s ease-out, gradient-shift 3s ease infinite;
   filter: blur(12px);
   opacity: 0.9;
   pointer-events: none;
@@ -693,7 +709,7 @@ watch(() => message.value, (newValue) => {
   background-size: 400% 400%;
   border-radius: 16px;
   z-index: -1;
-  animation: gradient-shift 3s ease infinite reverse;
+  animation: orb-fade-in 0.8s ease-out, gradient-shift 3s ease infinite reverse;
   filter: blur(8px);
   opacity: 0.7;
   pointer-events: none;
