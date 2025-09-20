@@ -25,9 +25,37 @@ const getEndingCardImage = (cardId) => {
   }
 }
 
+// 엔딩 카드 이미지 프리로딩 함수
+const preloadEndingCardImages = (cardIds = []) => {
+  return Promise.all(
+    cardIds.map(cardId => {
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => {
+          console.log(`Ending card ${cardId} preloaded successfully`)
+          resolve(cardId)
+        }
+        img.onerror = () => {
+          console.warn(`Failed to preload ending card ${cardId}`)
+          resolve(cardId) // resolve anyway to not block other images
+        }
+        img.src = getEndingCardImage(cardId)
+      })
+    })
+  )
+}
+
+// 모든 엔딩 카드 이미지 프리로딩 (1-19번)
+const preloadAllEndingCards = () => {
+  const allEndingCardIds = Array.from({length: 19}, (_, i) => i + 1)
+  return preloadEndingCardImages(allEndingCardIds)
+}
+
 export default {
     endingCardBack,
     storyCardBack,
     getStoryCardImage,
     getEndingCardImage,
+    preloadEndingCardImages,
+    preloadAllEndingCards,
 }

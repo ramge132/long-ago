@@ -72,6 +72,7 @@
 <script setup>
 import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend } from "@/apis/game";
 import { currTurnImage, myTurnImage, startImage, MessageMusic, WarningIcon } from "@/assets";
+import CardImage from "@/assets/cards";
 import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
@@ -433,6 +434,13 @@ const setupConnection = (conn) => {
         emit("startLoading", {value: true});
 
         startReceived(data).then(async () => {
+          // 엔딩카드 이미지 프리로딩 시작 (백그라운드에서)
+          CardImage.preloadAllEndingCards().then(() => {
+            console.log("✅ All ending card images preloaded successfully (guest)");
+          }).catch((error) => {
+            console.warn("⚠️ Some ending card images failed to preload (guest):", error);
+          });
+
           // 내 카드 받기와 라우터 이동을 동시에 처리
           const [response] = await Promise.all([
             enterGame({
@@ -447,7 +455,7 @@ const setupConnection = (conn) => {
 
           // 로딩 즉시 비활성화
           emit("startLoading", {value: false});
-          
+
           // 오버레이 표시
           await showOverlay('start');
           setTimeout(() => {
@@ -1312,9 +1320,16 @@ const gameStart = async (data) => {
   };
   // 로딩 애니메이션 활성화
   emit("startLoading", {value: true});
-  
+
   // 시연 모드 확인
   isPreview.value = data.isPreview;
+
+  // 엔딩카드 이미지 프리로딩 시작 (백그라운드에서)
+  CardImage.preloadAllEndingCards().then(() => {
+    console.log("✅ All ending card images preloaded successfully");
+  }).catch((error) => {
+    console.warn("⚠️ Some ending card images failed to preload:", error);
+  });
 
   // 게임 방 생성
   if(isPreview.value) {
