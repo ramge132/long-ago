@@ -457,7 +457,7 @@ const setupCardHoverEffects = () => {
 
       el._hoverEnter = () => {
         cards.forEach((item, i) => item.style.zIndex = i); // 초기화
-        el.style.zIndex = cards.length; // hover된 요소를 가장 위로
+        el.style.zIndex = 50; // 채팅창(z-30)보다 높게 설정
         el.style.transform = `${originalTransform} translateY(-12px) rotateY(3deg)`;
         el.style.filter = "brightness(1.1) saturate(1.1)";
         el.style.boxShadow = "0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1)";
@@ -682,6 +682,7 @@ watch(() => message.value, (newValue) => {
     0 25px 50px rgba(0, 0, 0, 0.2),
     0 10px 20px rgba(0, 0, 0, 0.1);
   filter: brightness(1.1) saturate(1.1);
+  z-index: 50;
 }
 
 .paper {
