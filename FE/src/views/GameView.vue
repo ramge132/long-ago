@@ -64,6 +64,13 @@
       :message="modernAlertMessage"
       @close="showModernAlert = false"
     />
+
+    <!-- 작은 알람 모달 (35% 도달용) -->
+    <SmallAlert
+      v-if="showSmallAlert"
+      :message="smallAlertMessage"
+      @close="showSmallAlert = false"
+    />
   </div>
 </template>
 
@@ -75,6 +82,7 @@ import { useUserStore } from "@/stores/auth";
 import { useGameStore } from "@/stores/game";
 import { useAudioStore } from "@/stores/audio";
 import ModernAlert from "@/components/Presets/ModernAlert.vue";
+import SmallAlert from "@/components/Presets/SmallAlert.vue";
 import Peer from "peerjs";
 import { computed, nextTick, onMounted, ref, watch, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -119,6 +127,11 @@ const warningModalMessage = ref("");
 // 현대적인 알람 모달 관련
 const showModernAlert = ref(false);
 const modernAlertMessage = ref("");
+// 작은 알람 모달 관련 (35% 도달용)
+const showSmallAlert = ref(false);
+const smallAlertMessage = ref("");
+// 35% 도달 체크용 플래그
+const hasReached35Percent = ref(false);
 // 투표 타이머 관리
 let voteTimer = null;
 // 경고 후 상태 리셋 타이머 관리
@@ -329,6 +342,12 @@ const setupConnection = (conn) => {
         // 현대적인 알림 표시
         modernAlertMessage.value = "긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!";
         showModernAlert.value = true;
+        break;
+
+      case "endingCardAvailable":
+        // 결말카드 사용 가능 알림 (35% 도달)
+        smallAlertMessage.value = "긴장감이 35%에 도달했습니다";
+        showSmallAlert.value = true;
         break;
 
       case "scoreUpdate":
@@ -2018,10 +2037,31 @@ const goLobby = () => {
   router.push("/game/lobby");
 };
 
-// 긴장감이 100 이상 진행 된 경우 결말 모드로 전환
+// 긴장감 변화 감지 (35% 및 100% 체크)
 watch(
   () => [percentage.value, usedCard.value, isElected.value],
   ([newPercent, newUsedCard, newIsElected], [oldPercent, oldUsedCard, oldIsElected]) => {
+    // 35% 도달 체크 (한 번만 실행)
+    if (newPercent >= 35 && !hasReached35Percent.value && newIsElected) {
+      hasReached35Percent.value = true;
+
+      // 작은 알림 표시 (모든 사용자에게)
+      smallAlertMessage.value = "긴장감이 35%에 도달했습니다";
+      showSmallAlert.value = true;
+
+      // WebRTC로 다른 플레이어들에게 결말카드 사용 가능 알림
+      connectedPeers.value.forEach((peer) => {
+        sendMessage(
+          "endingCardAvailable",
+          {
+            message: "긴장감이 35%에 도달했습니다"
+          },
+          peer.connection
+        );
+      });
+    }
+
+    // 100% 도달 체크 (결말 모드 전환)
     if (newPercent >= oldPercent && newPercent >= 100 && newUsedCard.isEnding == false && newIsElected && !isEndingMode.value) {
       // 결말 모드로 전환
       isEndingMode.value = true;

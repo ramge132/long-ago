@@ -24,23 +24,34 @@
 
         <!-- Title -->
         <h2 class="modern-alert-title text-3xl font-bold text-gray-800 mb-4 font-katuri">
-          🔥 긴장감 100% 도달! 🔥
+          긴장감 100% 도달!
         </h2>
 
         <!-- Message -->
-        <p class="modern-alert-message text-lg text-gray-700 mb-6 font-katuri leading-relaxed">
-          {{ message }}
+        <p class="modern-alert-message text-lg text-gray-700 mb-6 font-katuri leading-relaxed whitespace-pre-line">
+          긴장감이 100%에 도달했습니다!
+이제 결말을 맺어야 할 때입니다!
         </p>
 
-        <!-- Decorative line -->
-        <div class="w-24 h-1 bg-gradient-to-r from-red-400 to-orange-500 rounded-full mx-auto mb-6"></div>
+        <!-- Progress Bar -->
+        <div class="w-full mb-6">
+          <div class="bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div
+              class="progress-bar h-full bg-gradient-to-r from-red-500 to-orange-600 rounded-full transition-all duration-100 ease-linear"
+              :style="{ width: progressWidth + '%' }"
+            ></div>
+          </div>
+          <p class="text-sm text-gray-500 text-center mt-2 font-katuri">
+            {{ Math.ceil(remainingTime / 1000) }}초 후 자동으로 닫힙니다
+          </p>
+        </div>
 
         <!-- Button -->
         <button
           @click="closeAlert"
           class="modern-alert-button px-8 py-3 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-bold rounded-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 font-katuri"
         >
-          이제 결말을 맺어주세요! ✨
+          이제 결말을 맺어주세요!
         </button>
       </div>
 
@@ -75,6 +86,10 @@ const emit = defineEmits(['close'])
 
 const isVisible = ref(false)
 const isAnimating = ref(false)
+const progressWidth = ref(100)
+const remainingTime = ref(props.duration)
+let progressInterval = null
+let autoCloseTimeout = null
 
 const animationClass = computed(() => {
   if (isAnimating.value) {
@@ -92,13 +107,41 @@ const show = async () => {
 
   // 자동으로 닫기 (duration이 0보다 클 때)
   if (props.duration > 0) {
-    setTimeout(() => {
+    startProgressTimer()
+    autoCloseTimeout = setTimeout(() => {
       closeAlert()
     }, props.duration)
   }
 }
 
+const startProgressTimer = () => {
+  const interval = 100 // 100ms마다 업데이트
+  const totalSteps = props.duration / interval
+  let currentStep = 0
+
+  progressInterval = setInterval(() => {
+    currentStep++
+    const progress = ((totalSteps - currentStep) / totalSteps) * 100
+    progressWidth.value = Math.max(0, progress)
+    remainingTime.value = Math.max(0, props.duration - (currentStep * interval))
+
+    if (currentStep >= totalSteps) {
+      clearInterval(progressInterval)
+    }
+  }, interval)
+}
+
 const closeAlert = () => {
+  // 타이머들 정리
+  if (progressInterval) {
+    clearInterval(progressInterval)
+    progressInterval = null
+  }
+  if (autoCloseTimeout) {
+    clearTimeout(autoCloseTimeout)
+    autoCloseTimeout = null
+  }
+
   isAnimating.value = false
   setTimeout(() => {
     isVisible.value = false
