@@ -27,7 +27,7 @@
       </div>
       <div class="flex justify-center items-end flex-1">
         <!-- 엔딩카드는 항상 표시 -->
-        <div class="relative endingcard cursor-pointer -translate-y-2" @click="sendEndingCard" ref="cardRef">
+        <div class="relative endingcard cursor-pointer -translate-y-6" @click="sendEndingCard" ref="cardRef">
           <img :src="CardImage.endingCardBack" alt="엔딩카드" class="w-36">
           <div
             class="endingcard-text w-full h-full p-3 flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-katuri text-[#fee09e]" ref="contentRef">
@@ -573,11 +573,35 @@ watch(() => message.value, (newValue) => {
 }
 
 .handCard {
-  transition: transform 0.15s ease-out;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .card-hovered {
-  transform: scale(1.08);
+  transform: scale(1.05) translateY(-8px) translateZ(0);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 0 30px rgba(230, 222, 206, 0.4);
+}
+
+.card-hovered::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg,
+    rgba(230, 222, 206, 0.1),
+    rgba(245, 240, 232, 0.1));
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: inherit;
 }
 
 .storycard {
@@ -717,29 +741,29 @@ watch(() => message.value, (newValue) => {
 }
 
 .card4 > :nth-child(2){
-  transform: translateX(-12px);
+  transform: translateX(-16px);
 }
 .card4 > :nth-child(3){
-  transform: translateX(-24px);
+  transform: translateX(-32px);
 }
 .card4 > :nth-child(4){
-  transform: translateX(-36px);
+  transform: translateX(-48px);
 }
 
 .card3 > :nth-child(1){
-  transform: translateX(12px);
+  transform: translateX(16px);
 }
 .card3 > :nth-child(2){
   transform: translateX(0);
 }
 .card3 > :nth-child(3){
-  transform: translateX(-12px);
+  transform: translateX(-16px);
 }
 
 .card2 > :nth-child(1){
   transform: translateX(0);
 }
 .card2 > :nth-child(2){
-  transform: translateX(-12px);
+  transform: translateX(-16px);
 }
 </style>
