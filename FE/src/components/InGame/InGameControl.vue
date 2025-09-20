@@ -517,15 +517,12 @@ const analyzeInput = (inputText) => {
   props.storyCards.forEach(card => {
     const variants = cardVariants[card.id] || [];
 
-    // 각 변형어가 입력 텍스트에 정확히 매칭되는지 확인
+    // 각 변형어가 입력 텍스트에 포함되어 있는지 확인 (단순 포함 검사)
     const isMatched = variants.some(variant => {
       const cleanVariant = variant.toLowerCase();
 
-      // 정확한 단어 매칭 (띄어쓰기, 구두점, 문장 시작/끝 고려)
-      const regex = new RegExp(`(^|[\\s.,!?;:])${cleanVariant}($|[\\s.,!?;:])`, 'i');
-
-      // 정규식 매칭 또는 전체 텍스트가 변형어와 일치하는 경우
-      return regex.test(cleanText) || cleanText === cleanVariant;
+      // 단순히 키워드가 텍스트에 포함되어 있는지 확인
+      return cleanText.includes(cleanVariant);
     });
 
     if (isMatched) {
