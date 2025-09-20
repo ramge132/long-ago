@@ -692,6 +692,8 @@ watch(() => message.value, (newValue) => {
     box-shadow: 0 0 20px rgba(230, 222, 206, 0.6);
   }
 }
+
+.paper:before {
   position: absolute;
   top: 0px;
   right: 0px;
