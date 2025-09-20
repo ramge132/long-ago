@@ -693,8 +693,7 @@ public class GameService {
                 // contents 배열 구성
                 Map<String, Object> content = new HashMap<>();
                 Map<String, Object> part = new HashMap<>();
-                String fullPrompt = "Generate an image: " + prompt + " Portrait orientation, 9:16 aspect ratio, vertical format, 720x1280 resolution. " +
-                        "Fill the entire 720x1280 canvas completely, edge-to-edge coverage, no empty space, no borders.";
+                String fullPrompt = "Generate an image: " + prompt;
                 part.put("text", fullPrompt);
                 content.put("parts", List.of(part));
                 requestBody.put("contents", List.of(content));
