@@ -141,7 +141,7 @@ const inProgress = ref(false);
 // 내가 가지고있는 스토리카드
 const storyCards = ref([]);
 // 내가 가지고있는 엔딩카드
-const endingCard = ref({});
+const endingCard = ref({ id: 0, content: "" });
 // 턴 오버레이 애니메이션 지연
 const overlayTimeout = ref(null);
 // 책 리스트
@@ -1541,7 +1541,7 @@ const nextTurn = async (data) => {
         toast.errorToast("긴장감이 충분히 오르지 않았습니다!");
         return;
       }
-      usedCard.value.id = -1;
+      usedCard.value.id = endingCard.value.id;
       usedCard.value.keyword = data.prompt;
       usedCard.value.isEnding = isEnding;
     }
@@ -1699,6 +1699,7 @@ const cardReroll = async () => {
     gameId: gameID.value,
   });
 
+  endingCard.value.id = response.data.data.id;
   endingCard.value.content = response.data.data.content;
 };
 
