@@ -617,6 +617,58 @@ watch(() => message.value, (newValue) => {
   z-index: 1;
 }
 
+/* 카드 뒤 사각형 Orb 효과 */
+.card-with-orb {
+  position: relative;
+}
+
+.card-with-orb::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: linear-gradient(-45deg, #e6dece, #f5f0e8, #e6dece, #f5f0e8);
+  background-size: 400% 400%;
+  border-radius: 16px;
+  z-index: -1;
+  animation: gradient-shift 3s ease infinite;
+  filter: blur(12px);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.card-with-orb::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: linear-gradient(-45deg, #e6dece, #f5f0e8, #e6dece, #f5f0e8);
+  background-size: 400% 400%;
+  border-radius: 16px;
+  z-index: -1;
+  animation: gradient-shift 3s ease infinite reverse;
+  filter: blur(8px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* 그라데이션 시프트 애니메이션 */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .storycard {
   text-shadow: -1px 0px #9f876a, 0px 1px #9f876a, 1px 0px #9f876a, 0px -1px #9f876a;
 }
@@ -753,33 +805,33 @@ watch(() => message.value, (newValue) => {
 }
 
 .card4 > :nth-child(1){
-  transform: translateX(0);
+  transform: translateX(54px);
 }
 
 .card4 > :nth-child(2){
-  transform: translateX(-24px);
+  transform: translateX(18px);
 }
 .card4 > :nth-child(3){
-  transform: translateX(-48px);
+  transform: translateX(-18px);
 }
 .card4 > :nth-child(4){
-  transform: translateX(-72px);
+  transform: translateX(-54px);
 }
 
 .card3 > :nth-child(1){
-  transform: translateX(24px);
+  transform: translateX(36px);
 }
 .card3 > :nth-child(2){
   transform: translateX(0);
 }
 .card3 > :nth-child(3){
-  transform: translateX(-24px);
+  transform: translateX(-36px);
 }
 
 .card2 > :nth-child(1){
-  transform: translateX(0);
+  transform: translateX(18px);
 }
 .card2 > :nth-child(2){
-  transform: translateX(-24px);
+  transform: translateX(-18px);
 }
 </style>
