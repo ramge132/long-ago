@@ -544,11 +544,12 @@ const getCardHighlightClass = (cardId) => {
   return highlightedCards.value.includes(cardId) ? 'card-with-orb' : '';
 };
 
-// 채팅 입력 감지
+// 채팅 입력 감지 (즉시 반응)
 watch(() => message.value, (newValue) => {
   // 내 턴이고 이야기 모드일 때만 실행
   if (props.myTurn === props.currTurn && currChatModeIdx.value === 1) {
-    debouncedAnalyze(newValue);
+    // 즉시 분석 (디바운싱 없이)
+    analyzeInput(newValue);
   } else {
     highlightedCards.value = []; // 다른 경우에는 하이라이트 제거
   }
@@ -606,72 +607,55 @@ watch(() => message.value, (newValue) => {
   content: ' ';
 }
 
-/* 카드 뒤 Orb 효과 */
+/* 카드 뒤 사각형 Orb 효과 (프로필 이미지 스타일 기반) */
 .card-with-orb {
   position: relative;
-  z-index: 1;
 }
 
 .card-with-orb::before {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 140%;
-  height: 140%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(
-    ellipse at center,
-    rgba(230, 222, 206, 0.8) 0%,
-    rgba(192, 178, 160, 0.6) 20%,
-    rgba(230, 222, 206, 0.4) 40%,
-    rgba(192, 178, 160, 0.2) 60%,
-    transparent 80%
-  );
-  border-radius: 50%;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: linear-gradient(-45deg, #e6dece, #c0b2a0, #f5f0e8, #e6dece);
+  background-size: 400% 400%;
+  border-radius: 12px;
   z-index: -1;
-  animation: orb-pulse 2s ease-in-out infinite;
-  filter: blur(4px);
+  animation: gradient-shift 3s ease infinite;
+  filter: blur(8px);
+  opacity: 0.8;
   pointer-events: none;
 }
 
 .card-with-orb::after {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 120%;
-  height: 120%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(
-    circle at center,
-    rgba(230, 222, 206, 0.9) 0%,
-    rgba(192, 178, 160, 0.7) 30%,
-    rgba(230, 222, 206, 0.3) 50%,
-    transparent 70%
-  );
-  border-radius: 50%;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(-45deg, #e6dece, #c0b2a0, #f5f0e8, #e6dece);
+  background-size: 400% 400%;
+  border-radius: 12px;
   z-index: -1;
-  animation: orb-pulse 2.5s ease-in-out infinite reverse;
-  filter: blur(2px);
+  animation: gradient-shift 3s ease infinite reverse;
+  filter: blur(4px);
+  opacity: 0.6;
   pointer-events: none;
 }
 
-/* 카드 이미지가 orb 위에 보이도록 z-index 설정 */
-.card-with-orb img {
-  position: relative;
-  z-index: 2;
-}
-
-/* Orb 펄스 애니메이션 */
-@keyframes orb-pulse {
-  0%, 100% {
-    opacity: 0.4;
-    transform: translate(-50%, -50%) scale(0.9);
+/* 그라데이션 시프트 애니메이션 */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
   }
   50% {
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(1.1);
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 
@@ -680,7 +664,7 @@ watch(() => message.value, (newValue) => {
   .card-with-orb::before,
   .card-with-orb::after {
     animation: none;
-    opacity: 0.6;
+    opacity: 0.5;
   }
 }
 
