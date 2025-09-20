@@ -453,11 +453,15 @@ onMounted(() => {
       el.style.zIndex = arr.length; // hover된 요소를 가장 위로
       computedStyle = window.getComputedStyle(el);
       transform = computedStyle.transform;
-      el.style.setProperty("scale", "120%"); // CSS 변수 설정
+      el.style.transform = `${transform} translateY(-12px) rotateY(3deg)`;
+      el.style.filter = "brightness(1.1) saturate(1.1)";
+      el.style.boxShadow = "0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1)";
     });
     el.addEventListener("mouseleave", () => {
     el.style.zIndex = index; // 원래 z-index로 복원
-    el.style.setProperty("scale", "100%"); // CSS 변수 원래 값으로 복원
+    el.style.transform = transform; // 원래 transform으로 복원
+    el.style.filter = "";
+    el.style.boxShadow = "";
   });
   });
   });
@@ -564,7 +568,8 @@ watch(() => message.value, (newValue) => {
 }
 
 .handCard {
-  transform: var(--original-transform, none) scale(var(--hover-scale, 100%));
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-origin: center center;
 }
 
 /* 카드 뒤 사각형 Orb 효과 */
@@ -659,10 +664,11 @@ watch(() => message.value, (newValue) => {
 }
 
 .endingcard:hover {
-  transform: scale(1.05) translateY(-8px);
+  transform: translateY(-8px) rotateY(5deg);
   box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.15),
-    0 0 30px rgba(230, 222, 206, 0.4);
+    0 25px 50px rgba(0, 0, 0, 0.2),
+    0 10px 20px rgba(0, 0, 0, 0.1);
+  filter: brightness(1.1) saturate(1.1);
 }
 
 .paper {
