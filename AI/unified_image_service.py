@@ -232,13 +232,16 @@ class ImageGenerationService:
                 character_descriptions.append(f"Image {idx+1} shows {char_name}")
                 logger.info(f"Added reference image {idx+1}: {char_name}")
             
-            # 프롬프트 수정: 자연스러운 맥락 기반 행동 + 캐릭터 일관성 + 텍스트 제외
+            # 프롬프트 수정: 자연스러운 맥락 기반 행동 + 캐릭터 일관성 + 구성 다양성 + 텍스트 제외
             enhanced_prompt = (
                 f"Using the provided reference images of characters ({', '.join(character_descriptions)}), "
                 f"create a new scene where {prompt}. "
                 f"Show the characters naturally acting and responding to the scene context. "
                 f"IMPORTANT: Keep each character's face, hair, and clothing style EXACTLY the same as in reference images, "
                 f"but show them in natural poses and actions that fit the story context. "
+                f"MUST USE DIFFERENT POSES AND CAMERA ANGLES: Use completely different body poses, hand gestures, "
+                f"facial expressions, and camera viewpoints (close-up, wide shot, side view, over-the-shoulder, "
+                f"bird's eye view, etc.) to create visual variety and avoid repetitive compositions. "
                 f"The characters should be clearly recognizable as the same people from the reference images. "
                 f"CRITICAL: Generate image WITHOUT ANY TEXT, no letters, no words, no writing, no speech bubbles."
             )
