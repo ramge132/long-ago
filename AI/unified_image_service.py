@@ -602,45 +602,15 @@ class ImageGenerationService:
                     result = response.json()
                     logger.info(f"GPT-5-nano API 응답: {result}")
 
-                    generated_title = None
-
-                    # Java 코드와 동일한 방식으로 응답 처리 - output 배열 먼저 확인
-                    if "output" in result:
-                        output_array = result["output"]
-                        logger.info(f"output 배열 크기: {len(output_array)}")
-
-                        for i, output_node in enumerate(output_array):
-                            logger.info(f"output[{i}] 타입: {output_node.get('type', 'unknown')}")
-
-                            # 메시지 타입인 경우
-                            if output_node.get("type") == "message" and "content" in output_node:
-                                content_array = output_node["content"]
-                                if isinstance(content_array, list):
-                                    for content_item in content_array:
-                                        if content_item.get("type") == "text" and "text" in content_item:
-                                            generated_title = content_item["text"].strip()
-                                            logger.info(f"✅ output에서 제목 발견: [{generated_title}]")
-                                            break
-                                if generated_title:
-                                    break
-
-                    # output에서 찾지 못했다면 choices에서 찾기 (fallback)
-                    if not generated_title and "choices" in result:
-                        choices = result["choices"]
-                        if len(choices) > 0:
-                            first_choice = choices[0]
-                            if "message" in first_choice and "content" in first_choice["message"]:
-                                generated_title = first_choice["message"]["content"].strip()
-                                logger.info(f"✅ choices에서 제목 발견: [{generated_title}]")
-
-                    if generated_title and generated_title.strip():
+                    # GPT-5 Responses API는 output_text 필드를 직접 반환
+                    if "output_text" in result:
+                        generated_title = result["output_text"].strip()
                         # 불필요한 따옴표나 문장부호 제거
                         title = generated_title.strip("\"'").strip()
-                        logger.info(f"GPT-5-nano로 생성된 제목: {title}")
+                        logger.info(f"✅ GPT-5-nano로 생성된 제목: [{title}]")
                         return title
-
                     else:
-                        logger.warning(f"GPT-5-nano 응답에서 제목을 찾을 수 없음: {result}")
+                        logger.warning(f"GPT-5-nano 응답에 'output_text' 필드가 없음: {result}")
 
                 else:
                     logger.warning(f"GPT-5-nano 제목 생성 실패: {response.status_code}")
