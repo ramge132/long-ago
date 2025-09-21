@@ -581,10 +581,10 @@ class ImageGenerationService:
 
 제목만 답변해주세요:"""
 
-            # GPT-5-nano API 요청 (Java 코드와 동일한 설정)
+            # GPT-5-nano Responses API 요청 (Java 코드와 동일한 설정)
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
+                    "https://api.openai.com/v1/responses",
                     headers={
                         "Authorization": f"Bearer {OPENAI_API_KEY}",
                         "Content-Type": "application/json"
@@ -600,19 +600,61 @@ class ImageGenerationService:
 
                 if response.status_code == 200:
                     result = response.json()
-                    if "choices" in result and len(result["choices"]) > 0:
-                        title = result["choices"][0]["message"]["content"].strip()
+                    logger.info(f"GPT-5-nano API 응답: {result}")
+
+                    generated_title = None
+
+                    # Java 코드와 동일한 방식으로 응답 처리 - output 배열 먼저 확인
+                    if "output" in result:
+                        output_array = result["output"]
+                        logger.info(f"output 배열 크기: {len(output_array)}")
+
+                        for i, output_node in enumerate(output_array):
+                            logger.info(f"output[{i}] 타입: {output_node.get('type', 'unknown')}")
+
+                            # 메시지 타입인 경우
+                            if output_node.get("type") == "message" and "content" in output_node:
+                                content_array = output_node["content"]
+                                if isinstance(content_array, list):
+                                    for content_item in content_array:
+                                        if content_item.get("type") == "text" and "text" in content_item:
+                                            generated_title = content_item["text"].strip()
+                                            logger.info(f"✅ output에서 제목 발견: [{generated_title}]")
+                                            break
+                                if generated_title:
+                                    break
+
+                    # output에서 찾지 못했다면 choices에서 찾기 (fallback)
+                    if not generated_title and "choices" in result:
+                        choices = result["choices"]
+                        if len(choices) > 0:
+                            first_choice = choices[0]
+                            if "message" in first_choice and "content" in first_choice["message"]:
+                                generated_title = first_choice["message"]["content"].strip()
+                                logger.info(f"✅ choices에서 제목 발견: [{generated_title}]")
+
+                    if generated_title and generated_title.strip():
                         # 불필요한 따옴표나 문장부호 제거
-                        title = title.strip("\"'").strip()
+                        title = generated_title.strip("\"'").strip()
                         logger.info(f"GPT-5-nano로 생성된 제목: {title}")
                         return title
 
-                logger.warning(f"GPT-5-nano 제목 생성 실패: {response.status_code}")
+                    else:
+                        logger.warning(f"GPT-5-nano 응답에서 제목을 찾을 수 없음: {result}")
+
+                else:
+                    logger.warning(f"GPT-5-nano 제목 생성 실패: {response.status_code}")
+                    try:
+                        error_body = response.json()
+                        logger.warning(f"에러 응답: {error_body}")
+                    except:
+                        logger.warning(f"에러 응답 텍스트: {response.text}")
 
         except Exception as e:
             logger.error(f"제목 생성 중 오류: {e}")
 
         # 실패시 기본 제목 반환 (Java 코드와 동일)
+        logger.info("GPT-5-nano 제목 생성 실패, 기본 제목 사용: '아주 먼 옛날'")
         return "아주 먼 옛날"
     
     async def generate_book_cover_with_style(
