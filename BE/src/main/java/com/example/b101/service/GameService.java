@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatusCode;
+import reactor.core.publisher.Mono;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.Duration;
@@ -688,9 +690,7 @@ public class GameService {
                 .onStatus(
                     HttpStatusCode::isError,
                     clientResponse -> {
-                        log.error("Python 표지 생성 서비스 에러: {} {}",
-                                clientResponse.statusCode(),
-                                clientResponse.statusCode().getReasonPhrase());
+                        log.error("Python 표지 생성 서비스 에러: {}", clientResponse.statusCode());
                         return Mono.error(new RuntimeException("Python 표지 생성 서비스 에러: " + clientResponse.statusCode()));
                     }
                 )
