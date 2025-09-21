@@ -557,57 +557,63 @@ class ImageGenerationService:
     
     async def _generate_title_from_story(self, story_content: str) -> str:
         """
-        스토리 내용으로부터 제목 생성 (GPT-5 API 비활성화, 스마트한 기본 제목 생성)
+        GPT-5-nano를 사용하여 스토리 내용으로부터 제목 생성 (기존 Java 로직과 동일)
         """
-        # GPT-5 API가 400 에러를 반환하므로 임시로 비활성화
-        # 스토리 내용을 분석하여 의미있는 제목 생성
-        
-        # 첫 문장에서 핵심 키워드 추출
-        sentences = story_content.split('.')
-        first_sentence = sentences[0] if sentences else story_content[:100]
-        
-        # 캐릭터 찾기
-        found_character = None
-        for character in self.entity_extractor.characters:
-            if character in first_sentence:
-                found_character = character
-                break
-        
-        # 사물 찾기
-        found_object = None
-        for obj in self.entity_extractor.objects:
-            if obj in first_sentence:
-                found_object = obj
-                break
-        
-        # 제목 생성 로직
-        if found_character and found_object:
-            # 캐릭터와 사물이 모두 있는 경우
-            title = f"{found_character}와 {found_object}의 이야기"
-        elif found_character:
-            # 캐릭터만 있는 경우
-            title = f"{found_character}의 모험"
-        elif found_object:
-            # 사물만 있는 경우
-            title = f"신비한 {found_object}"
-        else:
-            # 아무것도 없는 경우 첫 문장 활용
-            # 조사 제거하고 핵심만 추출
-            words = first_sentence.replace('는', '').replace('은', '').replace('이', '').replace('가', '')
-            words = words.replace('를', '').replace('을', '').replace('에', '').replace('로', '')
-            words = words.strip()
-            
-            if len(words) > 20:
-                title = f"{words[:20]}..."
-            else:
-                title = words
-            
-            # 제목이 비어있거나 너무 짧으면 기본값
-            if not title or len(title) < 3:
-                title = "우리들의 이야기"
-        
-        logger.info(f"Generated title (without GPT): {title}")
-        return title
+        try:
+            # 스토리 내용 길이 제한 (200자) - Java 코드와 동일
+            if len(story_content) > 200:
+                story_content = story_content[:200]
+
+            logger.info(f"제목 생성을 위한 스토리 내용 길이: {len(story_content)} 글자")
+
+            # 기존 Java 코드와 동일한 GPT-5-nano 프롬프트
+            creative_prompt = f"""이 흥미진진한 모험 이야기를 위한 멋진 동화책 제목을 지어주세요!
+
+📚 스토리: {story_content}
+
+💡 제목 요구사항:
+- 8-15자 길이의 한국어 제목
+- 호기심과 모험심을 자극하는 제목
+- 주요 캐릭터나 사물을 활용한 창의적 표현
+- 독자가 꼭 읽어보고 싶어지는 매력적인 제목
+
+🎯 예시 스타일: '마법사와 황금 열쇠', '신비한 숲의 비밀', '용감한 소녀의 대모험'
+
+제목만 답변해주세요:"""
+
+            # GPT-5-nano API 요청 (Java 코드와 동일한 설정)
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {OPENAI_API_KEY}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "gpt-5-nano",
+                        "input": creative_prompt,
+                        "text": {"verbosity": "low"},  # 간결한 응답
+                        "reasoning": {"effort": "minimal"}  # 최소 추론으로 빠른 응답
+                    },
+                    timeout=30.0
+                )
+
+                if response.status_code == 200:
+                    result = response.json()
+                    if "choices" in result and len(result["choices"]) > 0:
+                        title = result["choices"][0]["message"]["content"].strip()
+                        # 불필요한 따옴표나 문장부호 제거
+                        title = title.strip("\"'").strip()
+                        logger.info(f"GPT-5-nano로 생성된 제목: {title}")
+                        return title
+
+                logger.warning(f"GPT-5-nano 제목 생성 실패: {response.status_code}")
+
+        except Exception as e:
+            logger.error(f"제목 생성 중 오류: {e}")
+
+        # 실패시 기본 제목 반환 (Java 코드와 동일)
+        return "아주 먼 옛날"
     
     async def generate_book_cover_with_style(
         self,
