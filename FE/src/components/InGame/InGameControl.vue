@@ -368,7 +368,7 @@ const chatMode = computed(() => {
     modes.push({
       mark: "이야기",
       fucntion: sendprompt,
-      placeholder: "카드는 자동으로 인식됩니다 (한 카드만 사용 가능)",
+      placeholder: "카드는 자동으로 인식됩니다 (한 장만 사용 가능)",
     });
   }
 

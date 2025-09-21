@@ -12,7 +12,7 @@
             </div>
             <div class="absolute bottom-16 left-1/2 -translate-x-1/2 text-center">
                 <div class="narration-text font-katuri text-[#f1f1f1] text-3xl">
-                    잠시 후 책을 읽어드리겠습니다
+                    잠시 후 책을 읽어드립니다
                 </div>
             </div>
         </div>
