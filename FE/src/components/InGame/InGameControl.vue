@@ -19,9 +19,9 @@
             </div>
           </transition-group>
       </div>
-      <div class="flex justify-center items-end flex-1">
+      <div class="flex justify-center items-center flex-1">
         <!-- 엔딩카드는 항상 표시 -->
-        <div class="relative endingcard cursor-pointer -translate-y-6" @click="sendEndingCard" ref="cardRef">
+        <div class="relative endingcard cursor-pointer -translate-y-2" @click="sendEndingCard" ref="cardRef">
           <img :src="CardImage.getEndingCardImage(endingCard.id)" :alt="`엔딩카드 ${endingCard.id}`" class="w-36">
         </div>
       </div>
@@ -680,11 +680,12 @@ watch(() => message.value, (newValue) => {
 
 .endingcard {
   transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transform-origin: center center;
+  transform-origin: center bottom;
 }
 
 .endingcard:hover {
-  transform: translateY(-32px) rotateY(5deg);
+  transform: translateY(-2px) scale(1.1) rotateY(5deg);
+  transform-origin: center bottom;
   box-shadow:
     0 25px 50px rgba(0, 0, 0, 0.2),
     0 10px 20px rgba(0, 0, 0, 0.1);
