@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.Duration;
@@ -265,15 +266,15 @@ public class GameService {
             byte[] coverImageBytes = null; // 기본값
             
             try {
-                log.info("🎮🎮🎮 === 1단계: GPT-5-nano로 제목 생성 시작 ===");
-                // 1단계: GPT-5-nano로 창의적인 제목 생성
-                bookTitle = generateBookTitle(sceneRedisList);
-                log.info("🎮🎮🎮 GPT-5-nano로 생성된 책 제목: [{}]", bookTitle);
+                log.info("🎮🎮🎮 === Python 서비스로 제목 생성 및 표지 이미지 생성 시작 ===");
+                // Python 서비스로 제목 생성과 표지 이미지 생성을 통합 처리
+                Map<String, Object> coverData = generateCoverDataViaPython(sceneRedisList, deleteGameRequest.getGameId(), game.getDrawingStyle());
 
-                log.info("🎮🎮🎮 === 2단계: Gemini로 표지 이미지 생성 시작 ===");
-                // 2단계: 생성된 제목으로 표지 이미지 생성
-                coverImageBytes = generateCoverImage(bookTitle, game.getDrawingStyle());
-                log.info("🎮🎮🎮 Gemini로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
+                bookTitle = (String) coverData.get("title");
+                coverImageBytes = (byte[]) coverData.get("imageData");
+
+                log.info("🎮🎮🎮 Python 서비스로 생성된 제목: [{}]", bookTitle);
+                log.info("🎮🎮🎮 Python 서비스로 생성된 표지 이미지 크기: {} bytes", coverImageBytes.length);
                 
                 if (bookTitle == null || bookTitle.trim().isEmpty()) {
                     log.error("🎮🎮🎮 제목이 null이거나 비어있음!");
@@ -471,7 +472,9 @@ public class GameService {
     
     /**
      * OpenAI GPT를 사용하여 스토리를 요약하고 책 제목 생성 (재시도 로직 포함)
+     * 현재 사용하지 않음 - Python 서비스로 이관됨
      */
+    /*
     private String generateBookTitle(List<SceneRedis> sceneRedisList) {
         log.info("=== 책 제목 생성 시작 ===");
         
@@ -649,10 +652,84 @@ public class GameService {
         log.error("🚨 CRITICAL: 책 제목 생성 로직 오류 - 이 지점에 도달하면 안 됨");
         throw new RuntimeException("책 제목 생성 로직 오류");
     }
-    
+    */
+
     /**
-     * Gemini 2.5 Flash Image Preview를 사용하여 표지 이미지 생성
+     * Python 서비스를 통한 표지 이미지 생성 (통합 아키텍처)
+     * 제목과 이미지를 함께 생성하여 반환
      */
+    private Map<String, Object> generateCoverDataViaPython(List<SceneRedis> sceneRedisList, String gameId, int drawingStyle) {
+        try {
+            // 스토리 내용 구성
+            StringBuilder storyContent = new StringBuilder();
+            for (SceneRedis scene : sceneRedisList) {
+                if (scene.getPrompt() != null && !scene.getPrompt().trim().isEmpty()) {
+                    storyContent.append(scene.getPrompt()).append(" ");
+                }
+            }
+
+            String storyText = storyContent.toString().trim();
+            log.info("Python 서비스로 전송할 스토리 내용 길이: {} 글자", storyText.length());
+
+            // Python 서비스 요청 데이터 구성
+            HashMap<String, Object> requestBody = new HashMap<>();
+            requestBody.put("storyContent", storyText);
+            requestBody.put("gameId", gameId);
+            requestBody.put("drawingStyle", drawingStyle);
+
+            log.info("Python 표지 생성 서비스 호출 요청: gameId={}, drawingStyle={}", gameId, drawingStyle);
+
+            // Python 서비스 호출 (JSON 응답: title + base64 이미지)
+            Map<String, Object> responseData = pythonImageServiceClient
+                .post()
+                .uri("/generate-cover")
+                .bodyValue(requestBody)
+                .retrieve()
+                .onStatus(
+                    HttpStatusCode::isError,
+                    clientResponse -> {
+                        log.error("Python 표지 생성 서비스 에러: {} {}",
+                                clientResponse.statusCode(),
+                                clientResponse.statusCode().getReasonPhrase());
+                        return Mono.error(new RuntimeException("Python 표지 생성 서비스 에러: " + clientResponse.statusCode()));
+                    }
+                )
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .block();
+
+            if (responseData == null) {
+                throw new RuntimeException("Python 서비스에서 null 응답 수신");
+            }
+
+            String title = (String) responseData.get("title");
+            String base64Image = (String) responseData.get("image_data");
+
+            if (title == null || base64Image == null) {
+                throw new RuntimeException("Python 서비스 응답에 필수 데이터 누락");
+            }
+
+            // Base64 이미지를 바이트 배열로 변환
+            byte[] imageData = java.util.Base64.getDecoder().decode(base64Image);
+
+            log.info("Python 서비스로부터 수신 완료 - 제목: [{}], 이미지: {} bytes", title, imageData.length);
+
+            // 제목과 이미지 데이터 반환
+            Map<String, Object> result = new HashMap<>();
+            result.put("title", title);
+            result.put("imageData", imageData);
+            return result;
+
+        } catch (Exception e) {
+            log.error("Python 표지 생성 서비스 호출 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("표지 이미지 생성 실패: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Gemini 2.5 Flash Image Preview를 사용하여 표지 이미지 생성 (레거시)
+     * 현재 사용하지 않음 - Python 서비스로 이관됨
+     */
+    /*
     private byte[] generateCoverImage(String bookTitle, int drawingStyle) {
         // 그림체 모드에 따른 스타일 정의
         String[] styles = {
@@ -671,11 +748,12 @@ public class GameService {
         // 책표지 생성을 위해 재시도 횟수 증가
         return callGeminiWithRetryForCover(coverPrompt, 4); // 4회 재시도 (총 5번)
     }
-    
+
     /**
      * 재시도 로직이 포함된 Gemini API 호출 (책 표지용)
-     * SceneService의 callGeminiWithRetry와 동일한 로직
+     * 현재 사용하지 않음 - Python 서비스로 이관됨
      */
+    /*
     private byte[] callGeminiWithRetryForCover(String prompt, int maxRetries) {
         log.info("=== Gemini 2.5 Flash Image Preview API 호출 시작 (최대 {}회 시도) - 책 표지 ===", maxRetries + 1);
         log.info("입력 프롬프트: [{}] (길이: {}자)", prompt, prompt.length());
@@ -842,6 +920,7 @@ public class GameService {
         
         throw new RuntimeException("Gemini API 재시도 로직 오류 - 책 표지"); // fallback
     }
+    */
 
     /**
      * Python 서비스를 사용하여 책 표지 제목과 이미지를 통합 생성
