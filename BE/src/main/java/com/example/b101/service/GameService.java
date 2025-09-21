@@ -662,13 +662,10 @@ public class GameService {
         
         String style = drawingStyle < styles.length ? styles[drawingStyle] : "애니메이션 스타일";
         
-        // 여백 없는 full-size 표지 이미지 프롬프트 생성
-        String coverPrompt = "Create a full-frame illustration that completely fills the entire canvas without any borders, margins, or white space. " +
-                "Edge-to-edge artwork for the story '" + bookTitle + "'. " +
+        // 표지 이미지 프롬프트 생성
+        String coverPrompt = "Create a captivating book cover illustration for the story '" + bookTitle + "'. " +
                 "Style: " + style + ". " +
-                "The illustration should be immersive and cover the whole image area from corner to corner. " +
-                "NO borders, NO margins, NO white space around edges, completely filled canvas. " +
-                "Create a captivating scene that represents the story's atmosphere and mood. " +
+                "Create a scene that represents the story's atmosphere and mood. " +
                 "NO text, NO title, NO letters - textless artwork only.";
         
         // 책표지 생성을 위해 재시도 횟수 증가
