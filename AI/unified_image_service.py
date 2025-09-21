@@ -453,13 +453,8 @@ class ImageGenerationService:
         
         # 프롬프트 생성
         if isEnding:
-            # 엔딩인 경우 모든 주요 캐릭터를 포함
-            main_characters = list(context.characters.keys())[:3]  # 최대 3명
-            if main_characters:
-                character_desc = ", ".join(main_characters)
-                base_prompt = f"Final scene with {character_desc}. {resolved_prompt}"
-            else:
-                base_prompt = f"Final scene: {resolved_prompt}"
+            # 엔딩인 경우 자연스러운 결말 장면 생성
+            base_prompt = f"Final scene: {resolved_prompt}"
         else:
             base_prompt = CONTEXTUAL_PROMPT_TEMPLATE.format(
                 previous_story=previous_story,
