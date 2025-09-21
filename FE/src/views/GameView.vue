@@ -429,7 +429,8 @@ const setupConnection = (conn) => {
           keyword: "",
           isEnding: false
         };
-        
+        isElected.value = false;
+
         // 로딩 애니메이션 활성화
         emit("startLoading", {value: true});
 
