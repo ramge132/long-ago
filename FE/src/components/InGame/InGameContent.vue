@@ -10,7 +10,9 @@
           :style="{ zIndex: calculateZIndex(0) }"
         >
         <!-- 표지 이미지 먼저 렌더링 (배경) -->
-        <img :src="bookCover.imageUrl" alt="책 표지" v-if="bookCover.imageUrl && bookCover.imageUrl !== null && bookCover.imageUrl !== 'null'" class="absolute inset-0 w-full h-full object-fill" style="backface-visibility: hidden; image-rendering: -webkit-optimize-contrast; will-change: transform;" loading="eager" fetchpriority="high">
+        <div v-if="bookCover.imageUrl && bookCover.imageUrl !== null && bookCover.imageUrl !== 'null'" class="absolute inset-0 w-full h-full overflow-hidden" style="backface-visibility: hidden;">
+          <img :src="bookCover.imageUrl" alt="책 표지" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" style="width: 100%; height: auto; min-height: 100%; object-fit: cover; image-rendering: -webkit-optimize-contrast; will-change: transform;" loading="eager" fetchpriority="high">
+        </div>
         <!-- 제목 텍스트 (전경, 이미지 위에 표시) - 중앙 배치 및 큰 크기 -->
         <p v-html="bookCover.title ? bookCover.title : `아주 먼 옛날`" class="break-keep absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-heirofLightBold text-white text-4xl lg:text-5xl z-10 text-center leading-tight" style="backface-visibility: hidden; text-shadow: 2px 2px 4px rgba(0,0,0,0.8)"></p>
         
