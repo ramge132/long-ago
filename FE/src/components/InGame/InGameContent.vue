@@ -91,10 +91,9 @@ watch(() => props.bookCover, (newValue, oldValue) => {
       preloadImg.fetchPriority = 'high';
       preloadImg.onload = () => {
         // 프리로드 완료 후 즉시 표시 가능
-        console.log('책 표지 이미지 프리로드 완료:', newValue.imageUrl);
       };
       preloadImg.onerror = (error) => {
-        console.warn('책 표지 이미지 로드 실패:', newValue.imageUrl, error);
+        // 책 표지 이미지 로드 실패 시 무시
       };
       preloadImg.src = newValue.imageUrl;
     }
@@ -197,10 +196,10 @@ watch(() => props.bookContents,
         preloadImg.loading = 'eager';
         preloadImg.fetchPriority = 'high';
         preloadImg.onload = () => {
-          console.log(`스토리 이미지 ${index + 1} 프리로드 완료:`, content.image);
+          // 스토리 이미지 프리로드 완료
         };
         preloadImg.onerror = (error) => {
-          console.warn(`스토리 이미지 ${index + 1} 로드 실패:`, content.image, error);
+          // 스토리 이미지 로드 실패 시 무시
         };
         preloadImg.src = content.image;
       }

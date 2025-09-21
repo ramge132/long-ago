@@ -259,7 +259,7 @@ onMounted(async () => {
   try {
     await preloadImages();
   } catch (error) {
-    console.error("이미지 프리로딩 실패:", error);
+    // 이미지 프리로딩 실패 시 무시
   } finally {
     // 모든 처리가 끝난 후 로딩 화면 제거
     nextTick(() => {

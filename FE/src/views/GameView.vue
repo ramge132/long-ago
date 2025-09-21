@@ -345,7 +345,7 @@ const setupConnection = (conn) => {
         const targetPlayer = participants.value.find(p => p.id === data.userId);
         if (targetPlayer) {
           targetPlayer.score += data.scoreChange;
-          console.log(`${targetPlayer.name}님 점수 변화: ${data.scoreChange > 0 ? '+' : ''}${data.scoreChange}점 (${data.message})`);
+          // 점수 변화 적용 완료
         }
         break;
 
@@ -436,9 +436,9 @@ const setupConnection = (conn) => {
         startReceived(data).then(async () => {
           // 엔딩카드 이미지 프리로딩 시작 (백그라운드에서)
           CardImage.preloadAllEndingCards().then(() => {
-            console.log("✅ All ending card images preloaded successfully (guest)");
+            // 엔딩카드 이미지 프리로드 성공 (guest)
           }).catch((error) => {
-            console.warn("⚠️ Some ending card images failed to preload (guest):", error);
+            // 엔딩카드 이미지 프리로드 실패 (guest)
           });
 
           // 내 카드 받기와 라우터 이동을 동시에 처리
@@ -772,13 +772,13 @@ const setupConnection = (conn) => {
 
       case "endingCardScoreUpdate":
         // 결말카드 점수 정산 (결과창 표시 전에 먼저 처리)
-        console.log("📊 [endingCardScoreUpdate] 결말카드 점수 정산 처리");
+        // 결말카드 점수 정산 처리
         if (data.scoreChange) {
           const targetPlayer = participants.value[data.scoreChange.playerIndex];
           if (targetPlayer) {
             if (data.scoreChange.type === "increase") {
               targetPlayer.score += data.scoreChange.amount;
-              console.log(`📊 결말카드 점수 증가: ${targetPlayer.name} +${data.scoreChange.amount}점 (${targetPlayer.score - data.scoreChange.amount} → ${targetPlayer.score})`);
+              // 결말카드 점수 증가 처리
             }
           }
         }
@@ -795,7 +795,7 @@ const setupConnection = (conn) => {
         }
         
         // 결과창 표시
-        console.log("🏆 [showResultsWithCover] 결과창 표시 (점수 정산은 이미 완료됨)");
+        // 결과창 표시 (점수 정산은 이미 완료됨)
         isForceStopped.value = "champ";
         break;
 
@@ -1068,24 +1068,21 @@ const hideWarningModal = () => {
 
 // 투표 중단 및 경고 표시 (모든 플레이어용)
 const stopVotingAndShowWarning = async (data) => {
-  console.log("🚨 [stopVotingAndShowWarning] 함수 시작");
-  console.log("  - 데이터:", JSON.stringify(data));
-  console.log("  - 현재 isVoted 상태:", isVoted.value);
-  console.log("  - 현재 타이머 상태:", { voteTimer: !!voteTimer, warningTimer: !!warningTimer, overlayTimeout: !!overlayTimeout.value });
+  // 투표 중단 및 경고 표시 함수 시작
   
   // 모든 타이머 즉시 정리 (오버레이 타이머 포함)
   if (voteTimer) {
-    console.log("  🔄 voteTimer 정리");
+    // voteTimer 정리
     clearTimeout(voteTimer);
     voteTimer = null;
   }
   if (warningTimer) {
-    console.log("  🔄 warningTimer 정리");
+    // warningTimer 정리
     clearTimeout(warningTimer);
     warningTimer = null;
   }
   if (overlayTimeout.value) {
-    console.log("  🔄 기존 overlayTimeout 정리 (애니메이션 중단)");
+    // 기존 overlayTimeout 정리 (애니메이션 중단)
     clearTimeout(overlayTimeout.value);
     overlayTimeout.value = null;
     // 오버레이를 즉시 숨김
@@ -1098,13 +1095,13 @@ const stopVotingAndShowWarning = async (data) => {
   }
   
   // 1. 투표 즉시 중단 (InGameView에서 투표 UI 숨김)
-  console.log("  📊 투표 UI 중단 처리");
+  // 투표 UI 중단 처리
   inProgress.value = false;
   
   // 버그 수정: isVoted를 true로 설정하지 않음
   // 대신 임시 플래그를 사용하여 투표 UI를 숨김
   const wasVotingActive = !isVoted.value; // 현재 투표가 활성화되어 있었는지 기록
-  console.log("  - 투표가 활성화되어 있었는가?:", wasVotingActive);
+  // 투표가 활성화되어 있었는지 기록
   
   // 투표 UI를 숨기기 위해 prompt를 초기화 (isVoted는 건드리지 않음)
   prompt.value = "";     // 프롬프트 초기화하여 투표 UI 제거
@@ -1119,27 +1116,27 @@ const stopVotingAndShowWarning = async (data) => {
   };
   currentVoteSelection.value = "up"; // 투표 선택값 초기화
   
-  console.log("  ✅ 투표 상태 초기화 완료");
-  console.log("    - isVoted (변경 안함):", isVoted.value);
-  console.log("    - prompt:", prompt.value);
-  console.log("    - votings:", JSON.stringify(votings.value));
+  // 투표 상태 초기화 완료
+  // isVoted 상태 변경 안함
+  // prompt 초기화
+  // votings 초기화
   
   
   // 2. 점수 동기화 (다른 플레이어들)
-  console.log("  💯 점수 동기화 처리");
+  // 점수 동기화 처리
   if (data.isInappropriate && !data.skipScoreDeduction) {
     const affectedPlayerIndex = data.currTurn === 0 ? participants.value.length - 1 : data.currTurn - 1;
     const affectedPlayer = participants.value[inGameOrder.value[affectedPlayerIndex]];
     if (affectedPlayer) {
-      console.log(`    - ${affectedPlayer.name}의 점수 -1 (${affectedPlayer.score} → ${affectedPlayer.score - 1})`);
+      // 점수 1점 차감
       affectedPlayer.score -= 1;
     }
   } else if (data.skipScoreDeduction) {
-    console.log("    - 점수 차감 건너뜀 (이미 처리됨)");
+    // 점수 차감 건너뜀 (이미 처리됨)
   }
   
   // 3. 책 내용 제거 (중복 제거 방지)
-  console.log("  📖 책 내용 제거 처리");
+  // 책 내용 제거 처리
   if (data.imageDelete === true && !data.skipBookContentRemoval) {
     const beforeLength = bookContents.value.length;
     if (bookContents.value.length === 1) {
@@ -1147,54 +1144,54 @@ const stopVotingAndShowWarning = async (data) => {
     } else {
       bookContents.value = bookContents.value.slice(0, -1);
     }
-    console.log(`    - 책 페이지 제거 (${beforeLength} → ${bookContents.value.length})`);
+    // 책 페이지 제거
   } else if (data.skipBookContentRemoval) {
-    console.log("    - 책 내용 제거 건너뜀 (이미 처리됨)");
+    // 책 내용 제거 건너뜀 (이미 처리됨)
   }
   
   // 4. 경고 모달 표시
-  console.log("  ⚠️ 경고 모달 표시");
+  // 경고 모달 표시
   showInappropriateWarningModal(data.warningData);
   
   // 5. 턴 정보 업데이트
-  console.log("  🔄 턴 정보 업데이트");
-  console.log(`    - totalTurn: ${totalTurn.value} → ${data.totalTurn}`);
-  console.log(`    - currTurn: ${currTurn.value} → ${data.currTurn}`);
+  // 턴 정보 업데이트
+  // 총 턴 수 업데이트
+  // 현재 턴 업데이트
   totalTurn.value = data.totalTurn;
   currTurn.value = data.currTurn;
   
   // 6. isVoted 상태를 즉시 false로 리셋 (버그 수정)
-  console.log("  🔧 isVoted 상태 즉시 리셋");
+  // isVoted 상태 즉시 리셋
   isVoted.value = false;  // 다음 투표를 위해 즉시 리셋
-  console.log("    - isVoted를 false로 설정 완료");
+  // isVoted를 false로 설정 완료
   
   // 7. 3초 후 whoTurn 오버레이 표시 (경고 모달이 먼저 표시된 후)
-  console.log("  ⏰ warningTimer 설정 (3초 후 whoTurn 오버레이)");
+  // warningTimer 설정 (3초 후 whoTurn 오버레이)
   warningTimer = setTimeout(async () => {
-    console.log("  ⏰ [warningTimer] 타이머 실행");
+    // warningTimer 타이머 실행
     
     // 타이머 실행 시점에 새로운 투표가 시작되었는지 확인
     if (prompt.value !== "" || voteTimer !== null) {
-      console.log("    → 새로운 투표가 이미 시작됨, whoTurn 오버레이 건너뜀");
+      // 새로운 투표가 이미 시작됨, whoTurn 오버레이 건너뜀
       warningTimer = null;
       return;
     }
     
-    console.log("    → whoTurn 오버레이 표시");
+    // whoTurn 오버레이 표시
     await showOverlay('whoTurn');
     
     // 다음 턴을 위한 상태 확인 (이미 false로 설정되어 있어야 함)
-    console.log("    - 현재 isVoted 상태:", isVoted.value);
-    console.log("    - 현재 currentVoteSelection:", currentVoteSelection.value);
+    // 현재 isVoted 상태 확인
+    // 현재 투표 선택값 확인
     
     currentVoteSelection.value = "up"; // 투표 선택값 초기화
     inProgress.value = true; // 다음 턴 대기 상태
     
     warningTimer = null; // 타이머 완료 후 null로 설정
-    console.log("  ✅ [warningTimer] 완료");
+    // warningTimer 완료
   }, 3000);  // 경고 모달이 표시되는 시간과 동일
   
-  console.log("🚨 [stopVotingAndShowWarning] 함수 종료");
+  // stopVotingAndShowWarning 함수 종료
   
 };
 
@@ -1326,9 +1323,9 @@ const gameStart = async (data) => {
 
   // 엔딩카드 이미지 프리로딩 시작 (백그라운드에서)
   CardImage.preloadAllEndingCards().then(() => {
-    console.log("✅ All ending card images preloaded successfully");
+    // 모든 엔딩카드 이미지 프리로드 성공
   }).catch((error) => {
-    console.warn("⚠️ Some ending card images failed to preload:", error);
+    // 일부 엔딩카드 이미지 프리로드 실패
   });
 
   // 게임 방 생성
@@ -1832,7 +1829,7 @@ const voteEnd = async (data) => {
               const scoreChange = response.data.scoreChange;
               currentPlayer.score += scoreChange;
 
-              console.log(`점수 변화: ${currentPlayer.name}님 ${scoreChange > 0 ? '+' : ''}${scoreChange}점`);
+              // 점수 변화 처리
 
               // 다른 플레이어들에게 점수 변화 알림
               connectedPeers.value.forEach((p) => {

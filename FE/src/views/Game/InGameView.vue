@@ -367,7 +367,7 @@ watch(
           
           // 이미지 로딩 에러 방지
           img.onerror = () => {
-            console.warn('이모티콘 로드 실패:', lastMessage.message);
+            // 이모티콘 로드 실패 시 무시
           };
         } else {
           select.value = document.querySelector(".speech-bubble" + index);

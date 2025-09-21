@@ -68,11 +68,11 @@ onMounted(() => {
         (window.adsbygoogle = window.adsbygoogle || []).push({})
       }
     } catch (error) {
-      console.error('광고 로드 오류:', error)
+      // 광고 로드 오류 시 무시
     }
   }
   
-  console.log(`광고 로드: ${props.adSlot}, 형식: ${props.adFormat}, 표시: ${shouldRenderAd.value}`)
+  // 광고 로드 정보
 })
 </script>
 

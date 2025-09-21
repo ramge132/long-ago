@@ -7,7 +7,7 @@ const getStoryCardImage = (cardId) => {
     // 동적 import를 위한 require 사용
     return new URL(`/src/assets/cards/story/story_${cardId}.png`, import.meta.url).href
   } catch (error) {
-    console.warn(`Story card image not found for ID: ${cardId}`)
+    // 스토리 카드 이미지를 찾을 수 없음
     // 기본 카드 뒷면 반환
     return storyCardBack
   }
@@ -19,7 +19,7 @@ const getEndingCardImage = (cardId) => {
     // 동적 import를 위한 require 사용
     return new URL(`/src/assets/cards/ending/ending_${cardId}.png`, import.meta.url).href
   } catch (error) {
-    console.warn(`Ending card image not found for ID: ${cardId}`)
+    // 엔딩 카드 이미지를 찾을 수 없음
     // 기본 카드 뒷면 반환
     return endingCardBack
   }
@@ -32,11 +32,11 @@ const preloadEndingCardImages = (cardIds = []) => {
       return new Promise((resolve, reject) => {
         const img = new Image()
         img.onload = () => {
-          console.log(`Ending card ${cardId} preloaded successfully`)
+          // 엔딩 카드 프리로드 성공
           resolve(cardId)
         }
         img.onerror = () => {
-          console.warn(`Failed to preload ending card ${cardId}`)
+          // 엔딩 카드 프리로드 실패 시 무시
           resolve(cardId) // resolve anyway to not block other images
         }
         img.src = getEndingCardImage(cardId)

@@ -344,9 +344,6 @@ const sendEndingCard = () => {
   if (props.myTurn !== props.currTurn) {
     toast.errorToast("자신의 턴에만 결말카드를 제출할 수 있습니다!");
   } else {
-    console.log("🎯 [DEBUG] sendEndingCard 호출됨");
-    console.log("🎯 [DEBUG] 엔딩카드 내용:", props.endingCard.content);
-    console.log("🎯 [DEBUG] isEnding 값:", true);
     emit("nextTurn", {
       prompt: props.endingCard.content,
       isEnding: true,
