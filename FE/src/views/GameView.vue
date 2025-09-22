@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend } from "@/apis/game";
+import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend, exchangeStoryCard } from "@/apis/game";
 import { currTurnImage, myTurnImage, startImage, MessageMusic, WarningIcon } from "@/assets";
 import CardImage from "@/assets/cards";
 import toast from "@/functions/toast";
@@ -2244,50 +2244,75 @@ const handleSendExchangeRequest = (data) => {
 };
 
 // 교환 수락 처리
-const handleCardExchanged = (data) => {
+const handleCardExchanged = async (data) => {
   console.log("=== 교환 수락 처리 시작 (수신자) ===");
   console.log("1. 받은 데이터:", data);
   console.log("2. 교환 전 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
 
-  // 수신자는 자신이 선택한 카드를 신청자의 카드로 교체
-  const myCardIndex = storyCards.value.findIndex(card => card.id === data.toCardId);
-
-  console.log("3. myCardIndex (내가 선택한 카드):", myCardIndex);
-  console.log("4. 받을 카드 데이터 (신청자 카드):", data.fromCard);
-
-  if (myCardIndex !== -1) {
-    console.log("5. 교환 전 내 카드:", storyCards.value[myCardIndex]);
-
-    // 내 카드를 신청자의 카드로 교체
-    storyCards.value[myCardIndex] = data.fromCard;
-
-    console.log("6. 교환 후 내 카드:", storyCards.value[myCardIndex]);
-  } else {
-    console.log("5. ERROR: 내가 선택한 카드를 찾을 수 없음");
-    console.log("   - toCardId:", data.toCardId, "index:", myCardIndex);
-  }
-
-  console.log("7. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
-
-  // 상대방에게 교환 응답 메시지 전송
-  const targetPeer = connectedPeers.value.find(peer => peer.id === data.fromUserId);
-  if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
-    const responseData = {
-      accepted: true,
+  // 백엔드에 교환 요청 (수신자 측)
+  try {
+    const exchangeResponse = await exchangeStoryCard({
+      gameId: gameID.value,
       fromUserId: data.fromUserId,
       toUserId: data.toUserId,
       fromCardId: data.fromCardId,
       toCardId: data.toCardId,
-      fromCard: data.fromCard,
-      toCard: data.toCard
-    };
-    console.log("8. 신청자에게 전송할 응답 데이터:", responseData);
+      status: 'accepted'
+    });
 
-    sendMessage("storyCardExchangeResponse", responseData, targetPeer.connection);
-    console.log("9. 교환 응답 메시지 전송 완료");
-  } else {
-    console.log("8. ERROR: targetPeer를 찾을 수 없음");
+    if (exchangeResponse.data.success) {
+      console.log("3. 백엔드 교환 처리 성공");
+
+      // 수신자는 자신이 선택한 카드를 신청자의 카드로 교체
+      const myCardIndex = storyCards.value.findIndex(card => card.id === data.toCardId);
+
+      console.log("4. myCardIndex (내가 선택한 카드):", myCardIndex);
+      console.log("5. 받을 카드 데이터 (신청자 카드):", data.fromCard);
+
+      if (myCardIndex !== -1) {
+        console.log("6. 교환 전 내 카드:", storyCards.value[myCardIndex]);
+
+        // 내 카드를 신청자의 카드로 교체
+        storyCards.value[myCardIndex] = data.fromCard;
+
+        console.log("7. 교환 후 내 카드:", storyCards.value[myCardIndex]);
+      } else {
+        console.log("6. ERROR: 내가 선택한 카드를 찾을 수 없음");
+        console.log("   - toCardId:", data.toCardId, "index:", myCardIndex);
+      }
+
+      console.log("8. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
+
+      // 상대방에게 교환 응답 메시지 전송
+      const targetPeer = connectedPeers.value.find(peer => peer.id === data.fromUserId);
+      if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
+        const responseData = {
+          accepted: true,
+          fromUserId: data.fromUserId,
+          toUserId: data.toUserId,
+          fromCardId: data.fromCardId,
+          toCardId: data.toCardId,
+          fromCard: data.fromCard,
+          toCard: data.toCard
+        };
+        console.log("9. 신청자에게 전송할 응답 데이터:", responseData);
+
+        sendMessage("storyCardExchangeResponse", responseData, targetPeer.connection);
+        console.log("10. 교환 응답 메시지 전송 완료");
+      } else {
+        console.log("9. ERROR: targetPeer를 찾을 수 없음");
+      }
+    } else {
+      console.log("3. 백엔드 교환 처리 실패:", exchangeResponse.data.message);
+      toast.errorToast("교환 처리 중 오류가 발생했습니다.");
+      return;
+    }
+  } catch (error) {
+    console.log("3. 백엔드 교환 API 호출 실패:", error);
+    toast.errorToast("교환 처리 중 오류가 발생했습니다.");
+    return;
   }
+
   console.log("=== 교환 수락 처리 끝 (수신자) ===");
 };
 
