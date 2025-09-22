@@ -697,6 +697,8 @@ const closeCardMenu = () => {
 };
 
 const openUserSelectModal = () => {
+  console.log("Debug - participants:", props.participants, "length:", props.participants?.length);
+  console.log("Debug - peerId:", props.peerId);
   showCardMenu.value = false;
   showUserSelectModal.value = true;
 };
@@ -707,6 +709,10 @@ const closeUserSelectModal = () => {
 
 const handleRefreshCard = async () => {
   try {
+    console.log("Debug - gameId:", props.gameId, "typeof:", typeof props.gameId);
+    console.log("Debug - peerId:", props.peerId, "typeof:", typeof props.peerId);
+    console.log("Debug - cardId:", selectedCard.value.id, "typeof:", typeof selectedCard.value.id);
+    console.log("Debug - all props:", props);
     const response = await refreshStoryCard({
       gameId: props.gameId,
       userId: props.peerId,
