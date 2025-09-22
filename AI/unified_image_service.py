@@ -781,10 +781,10 @@ async def generate_cover_endpoint(request: BookCoverRequestFromJava):
             drawingStyle=request.drawingStyle
         )
         
-        # Java가 기대하는 응답 형식으로 반환 (camelCase 필드명 사용)
+        # Java가 기대하는 응답 형식으로 반환 (Java 705줄에서 image_data로 읽음)
         response_data = {
             "title": title,
-            "imageData": base64.b64encode(image_data).decode()  # Java에서 imageData로 읽음
+            "image_data": base64.b64encode(image_data).decode()  # Java에서 image_data로 읽음
         }
         
         return response_data
