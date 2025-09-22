@@ -20,11 +20,13 @@
           :key="index"
         >
           <div
-            class="page cursor-pointer flex flex-col font-story text-4xl p-14 break-keep items-center justify-center"
+            class="page cursor-pointer flex flex-col font-story text-4xl p-14 break-keep items-center justify-center overflow-hidden"
             :class="{ flipped: isFlipped(index * 2 + 1) }"
             @click="handlePageClick(index * 2 + 1)"
             :style="{ zIndex: calculateZIndex(index * 2 + 1) }">
-            {{ content.content }}
+            <p class="w-full h-full flex items-center justify-center text-center leading-tight overflow-hidden break-words word-break-keep-all">
+              {{ content.content }}
+            </p>
           </div>
           <div
             class="page cursor-pointer flex flex-col items-center justify-center"
@@ -612,9 +614,22 @@ p {
 
 .ink-effect:hover img {
     filter: contrast(1.1) saturate(1.15);
-    box-shadow: 
+    box-shadow:
       inset 0 0 40px rgba(101, 67, 33, 0.35),
       inset 0 0 80px rgba(139, 69, 19, 0.25),
       inset 0 0 120px rgba(101, 67, 33, 0.15);
+}
+
+/* 책 페이지 텍스트 오버플로우 방지 */
+.page p {
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
 }
 </style>
