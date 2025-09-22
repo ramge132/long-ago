@@ -351,6 +351,32 @@ const sendEndingCard = () => {
   }
 }
 
+// 자유 결말 작성 함수 (새로 추가)
+const sendFreeEnding = () => {
+  if (props.gameStarted === false) {
+    toast.errorToast("게임 진행중에만 결말을 제출할 수 있습니다!");
+    return;
+  }
+  if (!props.isEndingMode) {
+    toast.errorToast("결말 모드에서만 자유 결말을 작성할 수 있습니다!");
+    return;
+  }
+  if (props.myTurn !== props.currTurn) {
+    toast.errorToast("자신의 턴에만 결말을 제출할 수 있습니다!");
+    return;
+  }
+  if (message.value.trim()) {
+    emit("nextTurn", {
+      prompt: message.value,
+      isEnding: true,  // 결말카드와 동일하게 isEnding: true
+      isFreeEnding: true,  // 자유 결말 구분용 플래그
+    });
+
+    message.value = "";
+    chatRefs.value[currChatModeIdx.value].blur();
+  }
+};
+
 const chatMode = computed(() => {
   const modes = [
     {
@@ -360,8 +386,16 @@ const chatMode = computed(() => {
     }
   ];
 
-  // 결말 모드가 아닐 때만 이야기 모드 추가
-  if (!props.isEndingMode) {
+  // 결말 모드에 따라 다른 모드 추가
+  if (props.isEndingMode) {
+    // 결말 모드: 자유 결말 작성 가능
+    modes.push({
+      mark: "결말",
+      fucntion: sendFreeEnding,
+      placeholder: "점수를 조금 얻지만 자유롭게 결말을 작성할 수 있습니다",
+    });
+  } else {
+    // 일반 모드: 이야기 모드
     modes.push({
       mark: "이야기",
       fucntion: sendprompt,

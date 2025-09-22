@@ -155,7 +155,8 @@ const prompt = ref("");
 const usedCard = ref({
   id: 0,
   keyword: "",
-  isEnding: false
+  isEnding: false,
+  isFreeEnding: false
 });
 // 투표 결과 표시
 const votings = ref([]);
@@ -431,7 +432,8 @@ const setupConnection = (conn) => {
         usedCard.value = {
           id: 0,
           keyword: "",
-          isEnding: false
+          isEnding: false,
+          isFreeEnding: false
         };
         isElected.value = false;
 
@@ -640,8 +642,10 @@ const setupConnection = (conn) => {
               isElected.value = true;
               
               if (usedCard.value.isEnding) {
-                currentPlayer.score += 5;
+                // 결말인 경우: 자유결말(3점) vs 결말카드(5점)
+                currentPlayer.score += usedCard.value.isFreeEnding ? 3 : 5;
               } else {
+                // 일반 스토리카드
                 currentPlayer.score += 2;
               }
 
@@ -654,7 +658,7 @@ const setupConnection = (conn) => {
                     sendMessage("endingCardScoreUpdate", {
                       scoreChange: {
                         type: "increase",
-                        amount: 5,
+                        amount: usedCard.value.isFreeEnding ? 3 : 5,
                         playerIndex: currentPlayerIndex
                       }
                     }, p.connection);
@@ -673,7 +677,8 @@ const setupConnection = (conn) => {
                   });
                 }, 1000);
               } else {
-                const scoreIncrease = usedCard.value.isEnding ? 5 : 2;
+                const scoreIncrease = usedCard.value.isEnding ?
+                  (usedCard.value.isFreeEnding ? 3 : 5) : 2;
                 
                 connectedPeers.value.forEach(async (p) => {
                   if (p.id !== peerId.value && p.connection.open) {
@@ -1132,7 +1137,8 @@ const stopVotingAndShowWarning = async (data) => {
   usedCard.value = {
     id: 0,
     keyword: "",
-    isEnding: false
+    isEnding: false,
+    isFreeEnding: false
   };
   currentVoteSelection.value = "up"; // 투표 선택값 초기화
   
@@ -1343,7 +1349,8 @@ const gameStart = async (data) => {
   usedCard.value = {
     id: 0,
     keyword: "",
-    isEnding: false
+    isEnding: false,
+    isFreeEnding: false
   };
 
   // 시연 모드 확인
@@ -1601,9 +1608,20 @@ const nextTurn = async (data) => {
         toast.errorToast("긴장감이 충분히 오르지 않았습니다!");
         return;
       }
-      usedCard.value.id = endingCard.value.id;
-      usedCard.value.keyword = data.prompt;
-      usedCard.value.isEnding = isEnding;
+
+      if (data.isFreeEnding) {
+        // 자유 결말 작성
+        usedCard.value.id = 'free_ending'; // 특별한 ID로 구분
+        usedCard.value.keyword = data.prompt;
+        usedCard.value.isEnding = isEnding;
+        usedCard.value.isFreeEnding = true; // 자유 결말 플래그
+      } else {
+        // 기존 결말카드 사용
+        usedCard.value.id = endingCard.value.id;
+        usedCard.value.keyword = data.prompt;
+        usedCard.value.isEnding = isEnding;
+        usedCard.value.isFreeEnding = false;
+      }
     }
 
     connectedPeers.value.forEach((peer) => {
@@ -1616,6 +1634,7 @@ const nextTurn = async (data) => {
               id: usedCard.value.id,
               keyword: usedCard.value.keyword,
               isEnding: usedCard.value.isEnding,
+              isFreeEnding: usedCard.value.isFreeEnding || false,
             },
           },
           peer.connection
@@ -1795,7 +1814,8 @@ const voteEnd = async (data) => {
         let accepted = voteAccepted;
         if (accepted) {
           isElected.value = true;
-          const scoreIncrease = usedCard.value.isEnding ? 5 : 2;
+          const scoreIncrease = usedCard.value.isEnding ?
+            (usedCard.value.isFreeEnding ? 3 : 5) : 2;
           currentPlayer.score += scoreIncrease;
 
           currTurn.value = (currTurn.value + 1) % participants.value.length;
@@ -1804,7 +1824,11 @@ const voteEnd = async (data) => {
             connectedPeers.value.forEach((p) => {
               if (p.id !== peerId.value && p.connection.open) {
                 sendMessage("endingCardScoreUpdate", {
-                  scoreChange: { type: "increase", amount: 5, playerIndex: currentPlayerIndex }
+                  scoreChange: {
+                    type: "increase",
+                    amount: usedCard.value.isFreeEnding ? 3 : 5,
+                    playerIndex: currentPlayerIndex
+                  }
                 }, p.connection);
               }
             });
@@ -2081,7 +2105,8 @@ const goLobby = () => {
   usedCard.value = {
     id: 0,
     keyword: "",
-    isEnding: false
+    isEnding: false,
+    isFreeEnding: false
   };
 
   router.push("/game/lobby");
