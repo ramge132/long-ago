@@ -410,6 +410,10 @@ const setupConnection = (conn) => {
         };
         break;
 
+      case "startLoading":
+        emit("startLoading", data);
+        break;
+
       case "gameStart":
         isPreview.value = data.isPreview;
         // 게임 관련 데이터 초기화
@@ -1297,6 +1301,16 @@ const onRoomConfiguration = (data) => {
 // 게임 진행 관련 부분 //
 ///////////////////////
 const gameStart = async (data) => {
+  // 🚀 즉시 모든 플레이어에게 로딩 시작 신호 전송
+  emit("startLoading", {value: true}); // 방장 로딩 시작
+
+  // 게스트들에게도 즉시 로딩 시작 신호 전송
+  connectedPeers.value.forEach((peer) => {
+    if (peer.connection.open) {
+      sendMessage("startLoading", {value: true}, peer.connection);
+    }
+  });
+
   // 게임 관련 데이터 초기화
   receivedMessages.value = [];
   currTurn.value = 0;
@@ -1316,8 +1330,6 @@ const gameStart = async (data) => {
     keyword: "",
     isEnding: false
   };
-  // 로딩 애니메이션 활성화
-  emit("startLoading", {value: true});
 
   // 시연 모드 확인
   isPreview.value = data.isPreview;
