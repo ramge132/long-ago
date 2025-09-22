@@ -900,20 +900,32 @@ const setupConnection = (conn) => {
         break;
 
       case "storyCardExchangeResponse":
+        console.log("=== 교환 응답 수신 처리 시작 (신청자) ===");
+        console.log("1. 받은 데이터:", data);
+        console.log("2. 교환 전 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
+
         if (data.accepted) {
           // 교환 성공 - 신청자 쪽에서 카드 교체
           const fromCardIndex = storyCards.value.findIndex(card => card.id === data.fromCardId);
-          const toCardIndex = storyCards.value.findIndex(card => card.id === data.toCardId);
+          console.log("3. fromCardIndex (내가 보낸 카드):", fromCardIndex);
+          console.log("4. 받을 카드 데이터:", data.toCard);
 
           if (fromCardIndex !== -1) {
+            console.log("5. 교환 전 내 카드:", storyCards.value[fromCardIndex]);
             // 신청자의 카드를 수락자의 카드로 교체
             storyCards.value[fromCardIndex] = data.toCard;
+            console.log("6. 교환 후 내 카드:", storyCards.value[fromCardIndex]);
+          } else {
+            console.log("5. ERROR: fromCardIndex를 찾을 수 없음");
           }
 
+          console.log("7. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
           toast.successToast("카드 교환이 완료되었습니다!");
         } else {
+          console.log("3. 교환 거절됨");
           toast.errorToast("상대방이 교환을 거절했습니다.");
         }
+        console.log("=== 교환 응답 수신 처리 끝 (신청자) ===");
         break;
     }
   });
@@ -2233,21 +2245,34 @@ const handleSendExchangeRequest = (data) => {
 
 // 교환 수락 처리
 const handleCardExchanged = (data) => {
-  // 로컬에서 카드 교환 먼저 수행
-  const fromCardIndex = storyCards.value.findIndex(card => card.id === data.fromCardId);
-  const toCardIndex = storyCards.value.findIndex(card => card.id === data.toCardId);
+  console.log("=== 교환 수락 처리 시작 (수신자) ===");
+  console.log("1. 받은 데이터:", data);
+  console.log("2. 교환 전 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
 
-  if (fromCardIndex !== -1 && toCardIndex !== -1) {
-    // 카드 교환
-    const temp = storyCards.value[fromCardIndex];
-    storyCards.value[fromCardIndex] = storyCards.value[toCardIndex];
-    storyCards.value[toCardIndex] = temp;
+  // 수신자는 자신이 선택한 카드를 신청자의 카드로 교체
+  const myCardIndex = storyCards.value.findIndex(card => card.id === data.toCardId);
+
+  console.log("3. myCardIndex (내가 선택한 카드):", myCardIndex);
+  console.log("4. 받을 카드 데이터 (신청자 카드):", data.fromCard);
+
+  if (myCardIndex !== -1) {
+    console.log("5. 교환 전 내 카드:", storyCards.value[myCardIndex]);
+
+    // 내 카드를 신청자의 카드로 교체
+    storyCards.value[myCardIndex] = data.fromCard;
+
+    console.log("6. 교환 후 내 카드:", storyCards.value[myCardIndex]);
+  } else {
+    console.log("5. ERROR: 내가 선택한 카드를 찾을 수 없음");
+    console.log("   - toCardId:", data.toCardId, "index:", myCardIndex);
   }
+
+  console.log("7. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
 
   // 상대방에게 교환 응답 메시지 전송
   const targetPeer = connectedPeers.value.find(peer => peer.id === data.fromUserId);
   if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
-    sendMessage("storyCardExchangeResponse", {
+    const responseData = {
       accepted: true,
       fromUserId: data.fromUserId,
       toUserId: data.toUserId,
@@ -2255,8 +2280,15 @@ const handleCardExchanged = (data) => {
       toCardId: data.toCardId,
       fromCard: data.fromCard,
       toCard: data.toCard
-    }, targetPeer.connection);
+    };
+    console.log("8. 신청자에게 전송할 응답 데이터:", responseData);
+
+    sendMessage("storyCardExchangeResponse", responseData, targetPeer.connection);
+    console.log("9. 교환 응답 메시지 전송 완료");
+  } else {
+    console.log("8. ERROR: targetPeer를 찾을 수 없음");
   }
+  console.log("=== 교환 수락 처리 끝 (수신자) ===");
 };
 
 // 교환 거절 처리
