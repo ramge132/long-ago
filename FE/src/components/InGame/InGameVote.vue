@@ -33,52 +33,50 @@
         <p class="text-lg lg:text-xl text-gray-700 font-medium leading-relaxed text-center relative z-10 break-words">{{ prompt }}</p>
       </div>
       
-      <!-- 모던한 투표 버튼들 -->
+      <!-- 카드 슬롯 투표 버튼들 -->
       <div class="grid grid-cols-2 w-full h-full gap-6 mt-2">
-        <!-- 찬성 버튼 -->
-        <div class="vote-button vote-up relative cursor-pointer transition-all duration-300" 
-             @click="selectVote('up')" 
-             :class="selected === 'up' ? 'selected' : ''">
-          <div class="neumorphic-button neumorphic-green h-full flex flex-col justify-center items-center gap-3 relative overflow-hidden"
-               :class="selected === 'up' ? 'neumorphic-pressed' : 'hover:neumorphic-hover'">
-            <!-- 선택된 상태 표시 - 내부 글로우 -->
-            <div v-if="selected === 'up'" class="absolute inset-4 bg-emerald-400/20 rounded-3xl animate-pulse-soft"></div>
-            <!-- 상단 선택 인디케이터 -->
-            <div v-if="selected === 'up'" class="absolute top-4 right-4 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
-              <div class="w-3 h-3 bg-white rounded-full"></div>
+        <!-- 찬성 카드 슬롯 -->
+        <div class="card-slot cursor-pointer h-full"
+             @click="selectVote('up')"
+             :class="selected === 'up' ? 'selected' : ''"
+             style="perspective: 1000px;">
+          <div class="card-inner relative w-full h-full transition-transform duration-400 ease-out"
+               style="transform-style: preserve-3d;"
+               :style="{ transform: selected === 'up' ? 'rotateY(180deg) translateZ(10px)' : '' }">
+            <!-- 카드 앞면 (기본 상태) -->
+            <div class="card-face card-front absolute w-full h-full rounded-2xl flex flex-col justify-center items-center gap-3"
+                 style="backface-visibility: hidden;">
+              <img :src="VoteUpLeftIcon" alt="찬성" class="w-16 h-16 opacity-75">
+              <span class="font-katuri text-lg font-bold text-gray-500">찬성</span>
             </div>
-            <!-- 아이콘과 텍스트 -->
-            <div class="flex flex-col items-center gap-2 transition-all duration-300"
-                 :class="selected === 'up' ? 'translate-y-0.5' : ''">
-              <img :src="VoteUpLeftIcon" alt="찬성" 
-                   class="w-16 h-16 transition-all duration-300"
-                   :class="selected === 'up' ? 'brightness-110 contrast-110' : 'brightness-95'">
-              <span class="font-katuri text-lg font-bold transition-all duration-300"
-                    :class="selected === 'up' ? 'text-emerald-700' : 'text-emerald-600'">찬성</span>
+            <!-- 카드 뒷면 (선택된 상태) -->
+            <div class="card-face card-back card-back-green absolute w-full h-full rounded-2xl flex flex-col justify-center items-center gap-3"
+                 style="backface-visibility: hidden; transform: rotateY(180deg);">
+              <img :src="VoteUpLeftIcon" alt="찬성" class="w-16 h-16 brightness-110">
+              <span class="font-katuri text-lg font-bold text-white drop-shadow-md">선택됨!</span>
             </div>
           </div>
         </div>
-        
-        <!-- 반대 버튼 -->
-        <div class="vote-button vote-down relative cursor-pointer transition-all duration-300" 
-             @click="selectVote('down')" 
-             :class="selected === 'down' ? 'selected' : ''">
-          <div class="neumorphic-button neumorphic-red h-full flex flex-col justify-center items-center gap-3 relative overflow-hidden"
-               :class="selected === 'down' ? 'neumorphic-pressed' : 'hover:neumorphic-hover'">
-            <!-- 선택된 상태 표시 - 내부 글로우 -->
-            <div v-if="selected === 'down'" class="absolute inset-4 bg-rose-400/20 rounded-3xl animate-pulse-soft"></div>
-            <!-- 상단 선택 인디케이터 -->
-            <div v-if="selected === 'down'" class="absolute top-4 right-4 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center">
-              <div class="w-3 h-3 bg-white rounded-full"></div>
+
+        <!-- 반대 카드 슬롯 -->
+        <div class="card-slot cursor-pointer h-full"
+             @click="selectVote('down')"
+             :class="selected === 'down' ? 'selected' : ''"
+             style="perspective: 1000px;">
+          <div class="card-inner relative w-full h-full transition-transform duration-400 ease-out"
+               style="transform-style: preserve-3d;"
+               :style="{ transform: selected === 'down' ? 'rotateY(180deg) translateZ(10px)' : '' }">
+            <!-- 카드 앞면 (기본 상태) -->
+            <div class="card-face card-front absolute w-full h-full rounded-2xl flex flex-col justify-center items-center gap-3"
+                 style="backface-visibility: hidden;">
+              <img :src="VoteDownRightIcon" alt="반대" class="w-16 h-16 opacity-75">
+              <span class="font-katuri text-lg font-bold text-gray-500">반대</span>
             </div>
-            <!-- 아이콘과 텍스트 -->
-            <div class="flex flex-col items-center gap-2 transition-all duration-300"
-                 :class="selected === 'down' ? 'translate-y-0.5' : ''">
-              <img :src="VoteDownRightIcon" alt="반대" 
-                   class="w-16 h-16 transition-all duration-300"
-                   :class="selected === 'down' ? 'brightness-110 contrast-110' : 'brightness-95'">
-              <span class="font-katuri text-lg font-bold transition-all duration-300"
-                    :class="selected === 'down' ? 'text-rose-700' : 'text-rose-600'">반대</span>
+            <!-- 카드 뒷면 (선택된 상태) -->
+            <div class="card-face card-back card-back-red absolute w-full h-full rounded-2xl flex flex-col justify-center items-center gap-3"
+                 style="backface-visibility: hidden; transform: rotateY(180deg);">
+              <img :src="VoteDownRightIcon" alt="반대" class="w-16 h-16 brightness-110">
+              <span class="font-katuri text-lg font-bold text-white drop-shadow-md">선택됨!</span>
             </div>
           </div>
         </div>
@@ -140,9 +138,12 @@ const startCount = () => {
 };
 
 const selectVote = (voteType) => {
-  selected.value = voteType;
-  // 부모 컴포넌트에 즉시 선택 값 전달
-  emit('voteSelected', voteType);
+  // 이미 선택된 것을 다시 클릭해도 선택 상태 유지
+  if (selected.value !== voteType) {
+    selected.value = voteType;
+    // 부모 컴포넌트에 선택 값 전달
+    emit('voteSelected', voteType);
+  }
 };
 const props = defineProps({
   prompt: {
@@ -322,76 +323,60 @@ onMounted(async () => {
   opacity: 1;
 }
 
-/* 뉴모피즘 버튼 스타일 */
-.neumorphic-button {
-  border-radius: 2rem;
-  padding: 2rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* 카드 슬롯 스타일 */
+.card-slot {
   position: relative;
+  height: 100%;
 }
 
-/* 찬성 버튼 - 녹색 뉴모피즘 */
-.neumorphic-green {
-  background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
-  box-shadow: 
-    20px 20px 40px rgba(34, 197, 94, 0.1),
-    -20px -20px 40px rgba(255, 255, 255, 0.9),
-    inset 0 0 0 rgba(34, 197, 94, 0);
-  border: 1px solid rgba(34, 197, 94, 0.1);
+.card-inner {
+  border-radius: 16px;
 }
 
-/* 반대 버튼 - 빨간색 뉴모피즘 */
-.neumorphic-red {
-  background: linear-gradient(145deg, #fef2f2, #fee2e2);
-  box-shadow: 
-    20px 20px 40px rgba(239, 68, 68, 0.1),
-    -20px -20px 40px rgba(255, 255, 255, 0.9),
-    inset 0 0 0 rgba(239, 68, 68, 0);
-  border: 1px solid rgba(239, 68, 68, 0.1);
+.card-face {
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
-/* 호버 효과 */
-.neumorphic-hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    25px 25px 50px rgba(0, 0, 0, 0.15),
-    -25px -25px 50px rgba(255, 255, 255, 0.95);
+.card-front {
+  background: linear-gradient(145deg, #f3f4f6, #e5e7eb);
+  color: #6b7280;
+  border: 2px solid #d1d5db;
 }
 
-.neumorphic-green:hover {
-  box-shadow: 
-    25px 25px 50px rgba(34, 197, 94, 0.15),
-    -25px -25px 50px rgba(255, 255, 255, 0.95),
-    inset 0 0 20px rgba(34, 197, 94, 0.05);
+.card-back-green {
+  background: linear-gradient(145deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
 }
 
-.neumorphic-red:hover {
-  box-shadow: 
-    25px 25px 50px rgba(239, 68, 68, 0.15),
-    -25px -25px 50px rgba(255, 255, 255, 0.95),
-    inset 0 0 20px rgba(239, 68, 68, 0.05);
+.card-back-red {
+  background: linear-gradient(145deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
 }
 
-/* 눌림 효과 (선택된 상태) */
-.neumorphic-pressed {
-  transform: translateY(2px);
-  box-shadow: 
-    inset 15px 15px 30px rgba(0, 0, 0, 0.1),
-    inset -15px -15px 30px rgba(255, 255, 255, 0.8);
+/* 카드 슬롯 호버 효과 */
+.card-slot:hover .card-inner {
+  transform: translateZ(5px);
 }
 
-.neumorphic-green.neumorphic-pressed {
-  background: linear-gradient(145deg, #dcfce7, #bbf7d0);
-  box-shadow: 
-    inset 15px 15px 30px rgba(34, 197, 94, 0.2),
-    inset -15px -15px 30px rgba(255, 255, 255, 0.9);
+.card-slot.selected:hover .card-inner {
+  transform: rotateY(180deg) translateZ(15px) !important;
 }
 
-.neumorphic-red.neumorphic-pressed {
-  background: linear-gradient(145deg, #fecaca, #fca5a5);
-  box-shadow: 
-    inset 15px 15px 30px rgba(239, 68, 68, 0.2),
-    inset -15px -15px 30px rgba(255, 255, 255, 0.9);
+/* 투표 버튼 기본 스타일 */
+.vote-button:not(.selected) {
+  opacity: 0.85;
+}
+
+.vote-button.selected {
+  opacity: 1;
+}
+
+.vote-button:not(.selected):hover {
+  opacity: 1;
 }
 
 /* 부드러운 펄스 애니메이션 */
