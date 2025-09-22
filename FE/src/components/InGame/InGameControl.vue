@@ -12,34 +12,42 @@
             >
               <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-36">
 
-              <!-- 플로팅 액션 버튼들 -->
-              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
-                <!-- 배경 오버레이 -->
-                <div class="absolute inset-0 bg-black/20 rounded-lg"></div>
-
-                <!-- 액션 버튼 컨테이너 -->
-                <div class="relative flex gap-3 z-10">
-                  <!-- 새로고침 버튼 -->
-                  <button
-                    @click.stop="refreshCard(card)"
-                    class="bg-gray-50 hover:bg-gray-200 p-3 rounded-full shadow-lg transform transition-all duration-200 hover:scale-110"
-                    title="카드 새로고침"
-                  >
-                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <!-- 플로팅 액션 버튼들 (카드 상단 중앙 배치) -->
+              <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                <!-- 새로고침 버튼 (호버 확장형) -->
+                <div
+                  class="refresh-button-container w-8 bg-[#ffffffa0] rounded-full overflow-hidden cursor-pointer transition-all duration-300 ease-in-out max-h-8 hover:max-h-16"
+                  @click.stop="refreshCard(card)"
+                >
+                  <!-- 기본 상태 아이콘 버튼 (항상 표시) -->
+                  <button class="bg-[#ffffff] rounded-full w-8 h-8 flex justify-center items-center drop-shadow-md z-10 relative focus:outline-0">
+                    <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
                   </button>
+                  <!-- 확장 영역 (호버 시 표시) -->
+                  <div class="expanded-content flex flex-col items-center justify-center text-center text-[9px] text-gray-700 pt-1 pb-1">
+                    <p class="leading-tight">새로고침</p>
+                    <p class="text-sm font-bold">{{ refreshCount }}</p>
+                  </div>
+                </div>
 
-                  <!-- 교환 버튼 -->
-                  <button
-                    @click.stop="openExchangeModal(card)"
-                    class="bg-gray-50 hover:bg-gray-200 p-3 rounded-full shadow-lg transform transition-all duration-200 hover:scale-110"
-                    title="카드 교환"
-                  >
-                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- 교환 버튼 (호버 확장형) -->
+                <div
+                  class="exchange-button-container w-8 bg-[#ffffffa0] rounded-full overflow-hidden cursor-pointer transition-all duration-300 ease-in-out max-h-8 hover:max-h-16"
+                  @click.stop="openExchangeModal(card)"
+                >
+                  <!-- 기본 상태 아이콘 버튼 (항상 표시) -->
+                  <button class="bg-[#ffffff] rounded-full w-8 h-8 flex justify-center items-center drop-shadow-md z-10 relative focus:outline-0">
+                    <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                     </svg>
                   </button>
+                  <!-- 확장 영역 (호버 시 표시) -->
+                  <div class="expanded-content flex flex-col items-center justify-center text-center text-[9px] text-gray-700 pt-1 pb-1">
+                    <p class="leading-tight">교환하기</p>
+                    <p class="text-sm font-bold">{{ exchangeCount }}</p>
+                  </div>
                 </div>
               </div>
 
