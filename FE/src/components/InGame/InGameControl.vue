@@ -44,7 +44,11 @@
     </div>
     <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30] pointer-events-none">
       <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center pointer-events-auto relative"
-        v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
+        v-for="(mode, index) in chatMode" :key="index"
+        :class="[
+          index == currChatModeIdx ? '' : 'hidden',
+          (index !== 0 && props.myTurn === props.currTurn) ? 'chat-with-orb' : ''
+        ]">
         <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer" @click="changeMode">
           <p class="whitespace-nowrap absolute top-[-1.25rem] font-semibold" style="text-shadow: 2px 0 4px #fff, -2px 0 4px #fff, 0 2px 4px #fff, 0 -2px 4px #fff, 1px 1px #fff, -1px -1px 4px #fff, 1px -1px 4px #fff, -1px 1px 4px #fff;" v-text="mode.mark" :class="index === 1 ? 'text-[#c3b6a5]' : ''"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
@@ -56,8 +60,7 @@
           :placeholder="mode.placeholder"
           :ref="(el) => (chatRefs[index] = el)" />
         <!-- 글자수 표시 (이야기/자유 결말 모드에서만) -->
-        <div v-if="index !== 0" class="absolute -top-8 right-3 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded-full"
-             style="text-shadow: none;">
+        <div v-if="index !== 0" class="absolute -top-6 right-3 text-sm text-gray-500">
           {{ message.length }}/40
         </div>
         <button class="rounded-full w-8 h-8 shrink-0 p-1 flex justify-center items-center focus:outline-0"
@@ -812,10 +815,51 @@ watch(() => message.value, (newValue) => {
 /* 성능 최적화를 위한 미디어 쿼리 */
 @media (prefers-reduced-motion: reduce) {
   .card-with-orb::before,
-  .card-with-orb::after {
+  .card-with-orb::after,
+  .chat-with-orb::before,
+  .chat-with-orb::after {
     animation: none;
     opacity: 0.5;
   }
+}
+
+/* 채팅창 orb 효과 - 카드 orb와 동일한 디자인 */
+.chat-with-orb {
+  position: relative;
+}
+
+.chat-with-orb::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: linear-gradient(-45deg, #fefefe, #f9f7f5, #fefefe, #f9f7f5);
+  background-size: 400% 400%;
+  border-radius: 24px; /* 채팅창에 맞게 더 둥글게 */
+  z-index: -1;
+  animation: orb-fade-in 0.25s ease-out, gradient-shift 3s ease infinite;
+  filter: blur(12px);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.chat-with-orb::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: linear-gradient(-45deg, #fefefe, #f9f7f5, #fefefe, #f9f7f5);
+  background-size: 400% 400%;
+  border-radius: 20px; /* 채팅창에 맞게 더 둥글게 */
+  z-index: -1;
+  animation: orb-fade-in 0.3s ease-out, gradient-shift 3s ease infinite reverse;
+  filter: blur(8px);
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .paper:before {
