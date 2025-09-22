@@ -258,7 +258,7 @@ const modes = ref([
     intervalId: null,
   },
   {
-    text: "PS1 모드",
+    text: "폴리곤 모드",
     value: 6,
     images: modeImages.Mode6,
     activeImageIndex: 0,
