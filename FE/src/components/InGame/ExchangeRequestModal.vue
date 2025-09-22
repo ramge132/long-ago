@@ -55,18 +55,18 @@
           </div>
         </div>
 
-        <!-- 버튼들 (macOS 스타일) -->
+        <!-- 버튼들 (트렌디 모던 스타일) -->
         <div class="flex space-x-3">
           <button
             @click="acceptExchange"
             :disabled="!selectedMyCard"
-            class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-sm border relative overflow-hidden"
+            class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 shadow-sm border relative overflow-hidden"
             :class="selectedMyCard
-              ? 'bg-blue-500 text-white border-blue-500 wave-button'
+              ? 'neon-button'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed border-gray-300'"
           >
             <span class="relative z-10">수락</span>
-            <div v-if="selectedMyCard" class="wave-effect"></div>
+            <div v-if="selectedMyCard" class="neon-shimmer"></div>
           </button>
           <button
             @click="rejectExchange"
@@ -136,34 +136,39 @@ const rejectExchange = () => {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* 웨이브 버튼 효과 */
-.wave-button {
+/* 네온 글로우 펄스 버튼 효과 (배경 글로우 제외) */
+.neon-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: transparent;
+  box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.75);
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
-.wave-effect {
+.neon-button:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px 0 rgba(102, 126, 234, 0.9);
+}
+
+.neon-shimmer {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.6s ease, height 0.6s ease;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.6s ease;
 }
 
-.wave-button:hover .wave-effect {
-  width: 300px;
-  height: 300px;
-}
-
-.wave-button:active .wave-effect {
-  width: 200px;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.4);
-  transition: width 0.3s ease, height 0.3s ease;
+.neon-button:hover .neon-shimmer {
+  left: 100%;
 }
 
 /* 모달 애니메이션 */

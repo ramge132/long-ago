@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수락 버튼 호버 효과 테스트 - 2025 트렌디 모던 스타일</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Effect 1: 현재 적용된 효과 - 3D 그라데이션 + 글로우 + 쉬머 */
+        .effect-1 {
+            position: relative;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            background-size: 200% 200%;
+            animation: gradient-pulse-1 3s ease-in-out infinite;
+            transform: perspective(1000px) rotateX(0deg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .effect-1:hover {
+            transform: perspective(1000px) rotateX(-2deg) translateY(-2px);
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3), 0 15px 25px rgba(147, 51, 234, 0.2);
+        }
+
+        .effect-1:hover .glow-1 {
+            opacity: 0.7;
+            animation: glow-rotate-1 2s linear infinite;
+        }
+
+        .effect-1:hover .shimmer-1 {
+            left: 100%;
+        }
+
+        .glow-1 {
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #3b82f6);
+            border-radius: 14px; opacity: 0; transition: opacity 0.3s ease; z-index: -1;
+        }
+
+        .shimmer-1 {
+            position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+
+        @keyframes gradient-pulse-1 {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes glow-rotate-1 {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Effect 2: 네온 글로우 펄스 */
+        .effect-2 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.75);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .effect-2:hover {
+            box-shadow: 0 8px 25px 0 rgba(102, 126, 234, 0.9), 0 0 50px rgba(118, 75, 162, 0.8);
+            transform: translateY(-3px) scale(1.02);
+        }
+
+        .effect-2::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .effect-2:hover::before {
+            left: 100%;
+        }
+
+        /* Effect 3: 리플 웨이브 */
+        .effect-3 {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .effect-3:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .effect-3::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .effect-3:hover::after {
+            width: 300px; height: 300px;
+        }
+
+        /* Effect 4: 홀로그램 쉬프팅 */
+        .effect-4 {
+            background: linear-gradient(45deg, #FF0080, #7928CA, #0070F3, #00DFD8);
+            background-size: 400% 400%;
+            animation: hologram 3s ease infinite;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .effect-4:hover {
+            animation-duration: 0.5s;
+            transform: rotateY(5deg) rotateX(-2deg);
+            box-shadow: 0 15px 35px rgba(255, 0, 128, 0.3), 0 5px 15px rgba(0, 223, 216, 0.2);
+        }
+
+        @keyframes hologram {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Effect 5: 모피즘 소프트 */
+        .effect-5 {
+            background: linear-gradient(145deg, #e6e6e6, #ffffff);
+            color: #333;
+            box-shadow: 20px 20px 60px #d9d9d9, -20px -20px 60px #ffffff;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .effect-5:hover {
+            box-shadow: inset 20px 20px 60px #d9d9d9, inset -20px -20px 60px #ffffff;
+            transform: translateY(2px);
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+        }
+
+        /* Effect 6: 글리치 효과 */
+        .effect-6 {
+            background: linear-gradient(45deg, #12c2e9, #c471ed, #f64f59);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .effect-6:hover {
+            animation: glitch 0.3s ease-in-out;
+            box-shadow: 0 0 20px rgba(18, 194, 233, 0.7);
+        }
+
+        .effect-6::before,
+        .effect-6::after {
+            content: '수락';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+        }
+
+        .effect-6::before {
+            color: #ff0000;
+            transform: translateX(-2px);
+        }
+
+        .effect-6::after {
+            color: #00ff00;
+            transform: translateX(2px);
+        }
+
+        .effect-6:hover::before,
+        .effect-6:hover::after {
+            opacity: 0.7;
+            animation: glitch-text 0.3s ease-in-out;
+        }
+
+        @keyframes glitch {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-2px) scaleX(1.1); }
+            20% { transform: translateX(2px) scaleY(1.1); }
+            30% { transform: translateX(-1px) scaleX(0.9); }
+            40% { transform: translateX(1px) scaleY(0.9); }
+            50% { transform: translateX(-2px) scaleX(1.05); }
+            60% { transform: translateX(2px) scaleY(1.05); }
+            70% { transform: translateX(-1px); }
+            80% { transform: translateX(1px); }
+            90% { transform: translateX(-2px); }
+        }
+
+        @keyframes glitch-text {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Effect 7: 유체 모피즘 */
+        .effect-7 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 30px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .effect-7:hover {
+            border-radius: 15px;
+            transform: scale(1.1) rotate(2deg);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .effect-7::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            transform: scale(0);
+            transition: transform 0.4s ease;
+        }
+
+        .effect-7:hover::before {
+            transform: scale(1);
+        }
+
+        /* Effect 8: 매트릭스 디지털 */
+        .effect-8 {
+            background: linear-gradient(45deg, #000428, #004e92);
+            color: #00ff41;
+            border: 2px solid #00ff41;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .effect-8:hover {
+            background: linear-gradient(45deg, #004e92, #000428);
+            box-shadow: 0 0 30px #00ff41, inset 0 0 30px rgba(0, 255, 65, 0.1);
+            text-shadow: 0 0 10px #00ff41;
+        }
+
+        .effect-8::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .effect-8:hover::after {
+            left: 100%;
+        }
+
+        /* 버튼 공통 스타일 */
+        .test-button {
+            width: 200px;
+            height: 50px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* 선택된 효과 표시 */
+        .selected-effect {
+            border: 3px solid #10b981 !important;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5) !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-4 text-gray-800">수락 버튼 호버 효과 테스트</h1>
+        <p class="text-center text-gray-600 mb-8">원하는 호버 효과를 선택해주세요. 각 버튼에 마우스를 올려보세요!</p>
+
+        <!-- 현재 선택된 효과 표시 -->
+        <div class="text-center mb-8">
+            <div class="inline-block bg-white rounded-lg shadow-md p-4">
+                <p class="text-sm text-gray-600 mb-2">현재 선택된 효과:</p>
+                <p id="selectedEffect" class="text-lg font-semibold text-blue-600">Effect 1: 3D 그라데이션 + 글로우 + 쉬머</p>
+            </div>
+        </div>
+
+        <!-- 효과 그리드 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+
+            <!-- Effect 1: 현재 적용된 효과 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center effect-card selected-effect" data-effect="1">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Effect 1</h3>
+                <p class="text-sm text-gray-600 mb-4">3D 그라데이션 + 글로우 + 쉬머</p>
+                <button class="test-button effect-1" onclick="selectEffect(1, '3D 그라데이션 + 글로우 + 쉬머')">
+                    <span style="position: relative; z-index: 10; transition: transform 0.3s ease;">수락</span>
+                    <div class="glow-1"></div>
+                    <div class="shimmer-1"></div>
+                </button>
+                <p class="text-xs text-gray-500 mt-2">현재 적용된 효과</p>
+            </div>
+
+            <!-- Effect 2: 네온 글로우 펄스 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center effect-card" data-effect="2">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Effect 2</h3>
+                <p class="text-sm text-gray-600 mb-4">네온 글로우 펄스</p>
+                <button class="test-button effect-2" onclick="selectEffect(2, '네온 글로우 펄스')">
+                    수락
+                </button>
+                <p class="text-xs text-gray-500 mt-2">부드러운 네온 효과</p>
+            </div>
+
+            <!-- Effect 3: 리플 웨이브 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center effect-card" data-effect="3">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Effect 3</h3>
+                <p class="text-sm text-gray-600 mb-4">리플 웨이브</p>
+                <button class="test-button effect-3" onclick="selectEffect(3, '리플 웨이브')">
+                    수락
+                </button>
+                <p class="text-xs text-gray-500 mt-2">물결 파동 효과</p>
+            </div>
+
+            <!-- Effect 4: 홀로그램 쉬프팅 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center effect-card" data-effect="4">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Effect 4</h3>
+                <p class="text-sm text-gray-600 mb-4">홀로그램 쉬프팅</p>
+                <button class="test-button effect-4" onclick="selectEffect(4, '홀로그램 쉬프팅')">
+                    수락
+                </button>
+                <p class="text-xs text-gray-500 mt-2">미래적 홀로그램</p>
+            </div>
+
+            <!-- Effect 5: 뉴모피즘 소프트 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center effect-card" data-effect="5">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Effect 5</h3>
+                <p class="text-sm text-gray-600 mb-4">뉴모피즘 소프트</p>
+                <button class="test-button effect-5" onclick="selectEffect(5, '뉴모피즘 소프트')">
+                    수락
+                </button>
+                <p class="text-xs text-gray-500 mt-2">부드러운 입체감</p>
+            </div>
+
+            <!-- Effect 6: 글리치 효과 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center effect-card" data-effect="6">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Effect 6</h3>
+                <p class="text-sm text-gray-600 mb-4">글리치 효과</p>
+                <button class="test-button effect-6" onclick="selectEffect(6, '글리치 효과')">
+                    <span style="position: relative; z-index: 10;">수락</span>
+                </button>
+                <p class="text-xs text-gray-500 mt-2">사이버펑크 스타일</p>
+            </div>
+
+            <!-- Effect 7: 유체 모피즘 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center effect-card" data-effect="7">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Effect 7</h3>
+                <p class="text-sm text-gray-600 mb-4">유체 모피즘</p>
+                <button class="test-button effect-7" onclick="selectEffect(7, '유체 모피즘')">
+                    수락
+                </button>
+                <p class="text-xs text-gray-500 mt-2">액체같은 변형</p>
+            </div>
+
+            <!-- Effect 8: 매트릭스 디지털 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center effect-card" data-effect="8">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Effect 8</h3>
+                <p class="text-sm text-gray-600 mb-4">매트릭스 디지털</p>
+                <button class="test-button effect-8" onclick="selectEffect(8, '매트릭스 디지털')">
+                    수락
+                </button>
+                <p class="text-xs text-gray-500 mt-2">사이버 네온 스타일</p>
+            </div>
+
+        </div>
+
+        <!-- 선택 안내 -->
+        <div class="mt-12 text-center">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-2xl mx-auto">
+                <h2 class="text-xl font-semibold text-blue-800 mb-2">선택 가이드</h2>
+                <p class="text-blue-700 text-sm mb-4">각 효과의 특징을 확인하고 원하는 스타일을 선택해주세요.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-blue-600">
+                    <div>
+                        <strong>고급스러운 느낌:</strong> Effect 1, 7
+                    </div>
+                    <div>
+                        <strong>게임/사이버 느낌:</strong> Effect 6, 8
+                    </div>
+                    <div>
+                        <strong>부드러운 느낌:</strong> Effect 2, 5
+                    </div>
+                    <div>
+                        <strong>역동적인 느낌:</strong> Effect 3, 4
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 코드 출력 영역 -->
+        <div class="mt-8 bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm overflow-x-auto">
+            <p class="text-white mb-2">선택된 효과의 CSS 코드:</p>
+            <pre id="cssCode">/* Effect 1: 3D 그라데이션 + 글로우 + 쉬머 CSS 코드가 여기에 표시됩니다 */</pre>
+        </div>
+    </div>
+
+    <script>
+        let selectedEffectNumber = 1;
+
+        function selectEffect(effectNumber, effectName) {
+            // 이전 선택 제거
+            document.querySelectorAll('.effect-card').forEach(card => {
+                card.classList.remove('selected-effect');
+            });
+
+            // 새로운 선택 추가
+            document.querySelector(`[data-effect="${effectNumber}"]`).classList.add('selected-effect');
+
+            // 선택된 효과 텍스트 업데이트
+            document.getElementById('selectedEffect').textContent = `Effect ${effectNumber}: ${effectName}`;
+
+            selectedEffectNumber = effectNumber;
+
+            // CSS 코드 표시
+            showCSSCode(effectNumber);
+        }
+
+        function showCSSCode(effectNumber) {
+            const cssCode = document.getElementById('cssCode');
+            const codes = {
+                1: `/* Effect 1: 3D 그라데이션 + 글로우 + 쉬머 */
+.modern-button {
+  position: relative;
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+  background-size: 200% 200%;
+  animation: gradient-pulse 3s ease-in-out infinite;
+  transform: perspective(1000px) rotateX(0deg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.modern-button:hover {
+  transform: perspective(1000px) rotateX(-2deg) translateY(-2px);
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3), 0 15px 25px rgba(147, 51, 234, 0.2);
+}`,
+                2: `/* Effect 2: 네온 글로우 펄스 */
+.accept-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.75);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.accept-button:hover {
+  box-shadow: 0 8px 25px 0 rgba(102, 126, 234, 0.9), 0 0 50px rgba(118, 75, 162, 0.8);
+  transform: translateY(-3px) scale(1.02);
+}`,
+                3: `/* Effect 3: 리플 웨이브 */
+.accept-button {
+  background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.accept-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(255, 107, 107, 0.4);
+}
+
+.accept-button::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 0; height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.accept-button:hover::after {
+  width: 300px; height: 300px;
+}`,
+                4: `/* Effect 4: 홀로그램 쉬프팅 */
+.accept-button {
+  background: linear-gradient(45deg, #FF0080, #7928CA, #0070F3, #00DFD8);
+  background-size: 400% 400%;
+  animation: hologram 3s ease infinite;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.accept-button:hover {
+  animation-duration: 0.5s;
+  transform: rotateY(5deg) rotateX(-2deg);
+  box-shadow: 0 15px 35px rgba(255, 0, 128, 0.3), 0 5px 15px rgba(0, 223, 216, 0.2);
+}
+
+@keyframes hologram {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}`,
+                5: `/* Effect 5: 뉴모피즘 소프트 */
+.accept-button {
+  background: linear-gradient(145deg, #e6e6e6, #ffffff);
+  color: #333;
+  box-shadow: 20px 20px 60px #d9d9d9, -20px -20px 60px #ffffff;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.accept-button:hover {
+  box-shadow: inset 20px 20px 60px #d9d9d9, inset -20px -20px 60px #ffffff;
+  transform: translateY(2px);
+  background: linear-gradient(145deg, #ffffff, #e6e6e6);
+}`,
+                6: `/* Effect 6: 글리치 효과 */
+.accept-button {
+  background: linear-gradient(45deg, #12c2e9, #c471ed, #f64f59);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.accept-button:hover {
+  animation: glitch 0.3s ease-in-out;
+  box-shadow: 0 0 20px rgba(18, 194, 233, 0.7);
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-2px) scaleX(1.1); }
+  20% { transform: translateX(2px) scaleY(1.1); }
+  30% { transform: translateX(-1px) scaleX(0.9); }
+  50% { transform: translateX(-2px) scaleX(1.05); }
+}`,
+                7: `/* Effect 7: 유체 모피즘 */
+.accept-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 30px;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  position: relative;
+  overflow: hidden;
+}
+
+.accept-button:hover {
+  border-radius: 15px;
+  transform: scale(1.1) rotate(2deg);
+  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+}`,
+                8: `/* Effect 8: 매트릭스 디지털 */
+.accept-button {
+  background: linear-gradient(45deg, #000428, #004e92);
+  color: #00ff41;
+  border: 2px solid #00ff41;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.accept-button:hover {
+  background: linear-gradient(45deg, #004e92, #000428);
+  box-shadow: 0 0 30px #00ff41, inset 0 0 30px rgba(0, 255, 65, 0.1);
+  text-shadow: 0 0 10px #00ff41;
+}`
+            };
+
+            cssCode.textContent = codes[effectNumber] || '/* CSS 코드를 불러오는 중... */';
+        }
+
+        // 페이지 로드 시 첫 번째 효과의 CSS 코드 표시
+        window.onload = function() {
+            showCSSCode(1);
+        };
+    </script>
+</body>
+</html>
