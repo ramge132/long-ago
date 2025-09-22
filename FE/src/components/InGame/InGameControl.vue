@@ -7,8 +7,9 @@
             <div
               v-for="(card) in storyCards"
               :key="card.id"
-              class="handCard relative transition-all duration-300"
+              class="handCard relative transition-all duration-300 cursor-pointer"
               :class="getCardHighlightClass(card.id)"
+              @click="openCardMenu(card)"
             >
               <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-36">
               <!-- 소프트 글로우 효과 -->
@@ -128,6 +129,37 @@
       </svg> -->
 
     </div>
+
+    <!-- 모달들 -->
+    <StoryCardMenu
+      :show="showCardMenu"
+      :selectedCard="selectedCard"
+      :exchangeCount="exchangeCount"
+      :refreshCount="refreshCount"
+      @close="closeCardMenu"
+      @exchange="openUserSelectModal"
+      @refresh="handleRefreshCard"
+    />
+
+    <UserSelectModal
+      :show="showUserSelectModal"
+      :selectedCard="selectedCard"
+      :participants="participants"
+      :myId="peerId"
+      @close="closeUserSelectModal"
+      @selectUser="handleUserSelect"
+    />
+
+    <ExchangeRequestModal
+      :show="showExchangeRequestModal"
+      :senderName="exchangeRequest.senderName"
+      :senderCard="exchangeRequest.senderCard"
+      :myCards="storyCards"
+      :exchangeData="exchangeRequest"
+      @close="closeExchangeRequestModal"
+      @accept="handleAcceptExchange"
+      @reject="handleRejectExchange"
+    />
   </div>
 </template>
 
@@ -139,6 +171,10 @@ import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";
 import toast from "@/functions/toast";
 import useCilpboard from "vue-clipboard3";
+import StoryCardMenu from "./StoryCardMenu.vue";
+import UserSelectModal from "./UserSelectModal.vue";
+import ExchangeRequestModal from "./ExchangeRequestModal.vue";
+import { refreshStoryCard, exchangeStoryCard } from "@/apis/game";
 
 // 디바운스 함수
 function debounce(func, wait) {
@@ -163,6 +199,23 @@ const rerollCount = ref(3);
 
 // 실시간 카드 매칭을 위한 상태
 const highlightedCards = ref([]);
+
+// 카드 관련 모달 상태
+const showCardMenu = ref(false);
+const showUserSelectModal = ref(false);
+const showExchangeRequestModal = ref(false);
+const selectedCard = ref({ id: 0, keyword: '' });
+const exchangeCount = ref(3);
+const refreshCount = ref(3);
+
+// 교환 요청 데이터
+const exchangeRequest = ref({
+  senderName: '',
+  senderCard: { id: 0, keyword: '' },
+  fromUserId: '',
+  toUserId: '',
+  fromCardId: 0
+});
 
 // 카드 변형어 데이터 (init_db.sql 기반)
 const cardVariants = {
@@ -308,11 +361,32 @@ const props = defineProps({
   ISBN: {
     Type: String,
   },
+  participants: {
+    Type: Array,
+    default: () => []
+  },
+  peerId: {
+    Type: String,
+    default: ''
+  },
+  gameId: {
+    Type: String,
+    default: ''
+  }
 });
 
 const dynamicClass = ref(`card${props.storyCards.length}`);
 
-const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll", "goLobby"]);
+const emit = defineEmits([
+  "broadcastMessage",
+  "nextTurn",
+  "cardReroll",
+  "goLobby",
+  "cardRefreshed",
+  "sendExchangeRequest",
+  "cardExchanged",
+  "rejectExchange"
+]);
 
 // 메시지 입력 핸들러 - 40자 제한 (이야기/자유 결말 모드에서만)
 const handleMessageInput = (event) => {
@@ -611,6 +685,112 @@ const getCardHighlightClass = (cardId) => {
 };
 
 
+// 카드 메뉴 관련 함수들
+const openCardMenu = (card) => {
+  selectedCard.value = card;
+  showCardMenu.value = true;
+};
+
+const closeCardMenu = () => {
+  showCardMenu.value = false;
+  selectedCard.value = { id: 0, keyword: '' };
+};
+
+const openUserSelectModal = () => {
+  showCardMenu.value = false;
+  showUserSelectModal.value = true;
+};
+
+const closeUserSelectModal = () => {
+  showUserSelectModal.value = false;
+};
+
+const handleRefreshCard = async () => {
+  try {
+    const response = await refreshStoryCard({
+      gameId: props.gameId,
+      userId: props.peerId,
+      cardId: selectedCard.value.id
+    });
+
+    if (response.data.success) {
+      // 카드 새로고침 성공
+      toast.successToast("카드가 새로고침되었습니다!");
+      refreshCount.value--;
+
+      // 부모 컴포넌트에 새로고침 알림
+      emit("cardRefreshed", {
+        oldCard: selectedCard.value,
+        newCard: response.data.data
+      });
+    }
+  } catch (error) {
+    if (error.response?.status === 400) {
+      toast.errorToast(error.response.data.message || "새로고침 실패");
+    } else {
+      toast.errorToast("새로고침 중 오류가 발생했습니다.");
+    }
+  }
+
+  closeCardMenu();
+};
+
+const handleUserSelect = (participant) => {
+  // P2P로 교환 신청 메시지 전송
+  emit("sendExchangeRequest", {
+    targetUser: participant,
+    card: selectedCard.value
+  });
+
+  closeUserSelectModal();
+  toast.successToast(`${participant.name}님에게 교환 신청을 보냈습니다.`);
+};
+
+// 교환 신청 수신 처리
+const showExchangeRequest = (requestData) => {
+  exchangeRequest.value = requestData;
+  showExchangeRequestModal.value = true;
+};
+
+const closeExchangeRequestModal = () => {
+  showExchangeRequestModal.value = false;
+  exchangeRequest.value = {
+    senderName: '',
+    senderCard: { id: 0, keyword: '' },
+    fromUserId: '',
+    toUserId: '',
+    fromCardId: 0
+  };
+};
+
+const handleAcceptExchange = async (exchangeData) => {
+  try {
+    const response = await exchangeStoryCard({
+      ...exchangeData,
+      status: 'accepted'
+    });
+
+    if (response.data.success) {
+      toast.successToast("카드 교환이 완료되었습니다!");
+      exchangeCount.value--;
+
+      // 부모 컴포넌트에 교환 완료 알림
+      emit("cardExchanged", response.data.data);
+    }
+  } catch (error) {
+    toast.errorToast("교환 중 오류가 발생했습니다.");
+  }
+
+  closeExchangeRequestModal();
+};
+
+const handleRejectExchange = (exchangeData) => {
+  // P2P로 거절 메시지 전송
+  emit("rejectExchange", exchangeData);
+  closeExchangeRequestModal();
+  toast.infoToast("교환 신청을 거절했습니다.");
+};
+
 // 채팅 입력 감지 (즉시 반응)
 watch(() => message.value, (newValue) => {
   // 이야기 모드일 때만 실행 (턴 관계없이)
@@ -619,6 +799,15 @@ watch(() => message.value, (newValue) => {
     analyzeInput(newValue);
   } else {
     highlightedCards.value = []; // 다른 경우에는 하이라이트 제거
+  }
+});
+
+// 외부에서 접근할 수 있는 함수들
+defineExpose({
+  showExchangeRequest,
+  updateCounts: (newRefreshCount, newExchangeCount) => {
+    refreshCount.value = newRefreshCount;
+    exchangeCount.value = newExchangeCount;
   }
 });
 </script>

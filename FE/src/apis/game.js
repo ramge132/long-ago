@@ -91,6 +91,29 @@ export const voteResultSend = async (data) => {
   }
 } 
 
+// 이야기카드 새로고침
+export const refreshStoryCard = async (data) => {
+  try {
+    const response = await apiClient.patch("/apis/game/story-card/refresh",
+      {},
+      { params: { gameId: data.gameId, userId: data.userId, cardId: data.cardId } }
+    );
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}
+
+// 이야기카드 교환
+export const exchangeStoryCard = async (data) => {
+  try {
+    const response = await apiClient.post("/apis/game/story-card/exchange", data);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}
+
 // 시연 모드 게임 시작
 export const testGame = async (data) => {
   try {

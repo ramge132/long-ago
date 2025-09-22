@@ -7,9 +7,11 @@
           :InviteLink="InviteLink" :gameStarted="gameStarted" :isEndingMode="isEndingMode" :inGameOrder="inGameOrder" :currTurn="currTurn" :ISBN="ISBN"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
-          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" :isPreview="isPreview" @on-room-configuration="onRoomConfiguration"
+          :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" :isPreview="isPreview"
+          :gameId="gameID" @on-room-configuration="onRoomConfiguration"
           @broadcast-message="broadcastMessage" @game-start="gameStart" @game-exit="gameStarted = false" @next-turn="nextTurn"
-          @card-reroll="cardReroll" @vote-end="voteEnd" @vote-selected="onVoteSelected" @go-lobby="goLobby" @winner-shown="onWinnerShown" @narration-complete="onNarrationComplete" @start-narration="onStartNarration" />
+          @card-reroll="cardReroll" @vote-end="voteEnd" @vote-selected="onVoteSelected" @go-lobby="goLobby" @winner-shown="onWinnerShown" @narration-complete="onNarrationComplete" @start-narration="onStartNarration"
+          @card-refreshed="handleCardRefreshed" @send-exchange-request="handleSendExchangeRequest" @card-exchanged="handleCardExchanged" @reject-exchange="handleRejectExchange" />
       </Transition>
     </RouterView>
     <div

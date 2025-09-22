@@ -471,6 +471,171 @@ public class GameService {
                 HttpStatus.OK,
                 request.getRequestURI());
     }
+
+    //이야기카드 새로고침
+    public ResponseEntity<?> refreshStoryCard(String gameId, String userId, int cardId, HttpServletRequest request) {
+        log.info("[refreshStoryCard] 이야기카드 새로고침 요청: gameId={}, userId={}, cardId={}", gameId, userId, cardId);
+
+        //해당 gameId를 가진 게임 조회
+        Game game = gameRepository.findById(gameId);
+        if (game == null) {
+            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        //해당 userId를 가진 플레이어 찾기
+        PlayerStatus playerStatus = null;
+        for (PlayerStatus status : game.getPlayerStatuses()) {
+            if (status.getUserId().equals(userId)) {
+                playerStatus = status;
+                break;
+            }
+        }
+
+        if (playerStatus == null) {
+            return ApiResponseUtil.failure("해당 userId는 게임에 존재하지 않습니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        //새로고침 횟수 체크
+        if (playerStatus.getRefreshCount() <= 0) {
+            return ApiResponseUtil.failure("이야기카드 새로고침 횟수를 모두 사용했습니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        //교체할 카드가 플레이어의 카드 목록에 있는지 확인
+        StoryCard targetCard = null;
+        for (StoryCard card : playerStatus.getStoryCards()) {
+            if (card.getId() == cardId) {
+                targetCard = card;
+                break;
+            }
+        }
+
+        if (targetCard == null) {
+            return ApiResponseUtil.failure("해당 카드는 플레이어가 소유하지 않습니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        //같은 속성의 새로운 카드 가져오기
+        String attribute = targetCard.getAttribute();
+        List<StoryCard> availableCards = cardService.shuffleStoryCard(1).stream()
+                .flatMap(List::stream)
+                .filter(card -> card.getAttribute().equals(attribute))
+                .filter(card -> card.getId() != cardId) // 현재 카드 제외
+                .toList();
+
+        if (availableCards.isEmpty()) {
+            return ApiResponseUtil.failure("새로고침할 카드가 없습니다.",
+                    HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI());
+        }
+
+        //새로운 카드로 교체
+        StoryCard newCard = availableCards.get(0);
+        playerStatus.getStoryCards().removeIf(card -> card.getId() == cardId);
+        playerStatus.getStoryCards().add(newCard);
+
+        //새로고침 횟수 차감
+        playerStatus.setRefreshCount(playerStatus.getRefreshCount() - 1);
+
+        //게임 데이터 업데이트
+        gameRepository.update(game);
+
+        log.info("[refreshStoryCard] 이야기카드 새로고침 완료: {} -> {}", targetCard.getKeyword(), newCard.getKeyword());
+
+        return ApiResponseUtil.success(newCard,
+                "이야기카드 새로고침 성공",
+                HttpStatus.OK,
+                request.getRequestURI());
+    }
+
+    //이야기카드 교환 처리
+    public ResponseEntity<?> exchangeStoryCard(CardExchangeRequest exchangeRequest, HttpServletRequest request) {
+        log.info("[exchangeStoryCard] 이야기카드 교환 요청: {}", exchangeRequest.toString());
+
+        //게임 조회
+        Game game = gameRepository.findById(exchangeRequest.getGameId());
+        if (game == null) {
+            return ApiResponseUtil.failure("해당 gameId는 존재하지 않습니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        //신청자와 대상자 찾기
+        PlayerStatus fromPlayer = null;
+        PlayerStatus toPlayer = null;
+
+        for (PlayerStatus status : game.getPlayerStatuses()) {
+            if (status.getUserId().equals(exchangeRequest.getFromUserId())) {
+                fromPlayer = status;
+            }
+            if (status.getUserId().equals(exchangeRequest.getToUserId())) {
+                toPlayer = status;
+            }
+        }
+
+        if (fromPlayer == null || toPlayer == null) {
+            return ApiResponseUtil.failure("플레이어를 찾을 수 없습니다.",
+                    HttpStatus.BAD_REQUEST, request.getRequestURI());
+        }
+
+        //교환 처리 ("accepted" 상태인 경우)
+        if ("accepted".equals(exchangeRequest.getStatus())) {
+            //교환 횟수 체크
+            if (fromPlayer.getExchangeCount() <= 0 || toPlayer.getExchangeCount() <= 0) {
+                return ApiResponseUtil.failure("교환 횟수를 모두 사용했습니다.",
+                        HttpStatus.BAD_REQUEST, request.getRequestURI());
+            }
+
+            //카드 찾기
+            StoryCard fromCard = fromPlayer.getStoryCards().stream()
+                    .filter(card -> card.getId() == exchangeRequest.getFromCardId())
+                    .findFirst()
+                    .orElse(null);
+
+            StoryCard toCard = toPlayer.getStoryCards().stream()
+                    .filter(card -> card.getId() == exchangeRequest.getToCardId())
+                    .findFirst()
+                    .orElse(null);
+
+            if (fromCard == null || toCard == null) {
+                return ApiResponseUtil.failure("교환할 카드를 찾을 수 없습니다.",
+                        HttpStatus.BAD_REQUEST, request.getRequestURI());
+            }
+
+            //카드 교환 수행
+            fromPlayer.getStoryCards().remove(fromCard);
+            fromPlayer.getStoryCards().add(toCard);
+            toPlayer.getStoryCards().remove(toCard);
+            toPlayer.getStoryCards().add(fromCard);
+
+            //교환 횟수 차감
+            fromPlayer.setExchangeCount(fromPlayer.getExchangeCount() - 1);
+            toPlayer.setExchangeCount(toPlayer.getExchangeCount() - 1);
+
+            //게임 데이터 업데이트
+            gameRepository.update(game);
+
+            log.info("[exchangeStoryCard] 카드 교환 완료: {} <-> {}", fromCard.getKeyword(), toCard.getKeyword());
+
+            CardExchangeResponse response = CardExchangeResponse.builder()
+                    .status("success")
+                    .message("카드 교환이 완료되었습니다.")
+                    .newCard(toCard)
+                    .remainingExchangeCount(fromPlayer.getExchangeCount())
+                    .build();
+
+            return ApiResponseUtil.success(response,
+                    "이야기카드 교환 성공",
+                    HttpStatus.OK,
+                    request.getRequestURI());
+        }
+
+        //그 외의 경우 (신청 접수 등)는 단순히 성공 응답
+        return ApiResponseUtil.success(null,
+                "교환 요청 처리 완료",
+                HttpStatus.OK,
+                request.getRequestURI());
+    }
     
     /**
      * OpenAI GPT를 사용하여 스토리를 요약하고 책 제목 생성 (재시도 로직 포함)
