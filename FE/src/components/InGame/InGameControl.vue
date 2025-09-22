@@ -16,8 +16,11 @@
               <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
                 <!-- 새로고침 버튼 (호버 확장형) -->
                 <div
-                  class="refresh-button-container w-8 bg-[#ffffffa0] rounded-full overflow-hidden cursor-pointer transition-all duration-300 ease-in-out max-h-8 hover:max-h-16"
-                  @click.stop="refreshCard(card)"
+                  class="refresh-button-container w-8 bg-[#ffffffa0] rounded-full overflow-hidden transition-all duration-300 ease-in-out max-h-8"
+                  :class="[
+                    refreshCount <= 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:max-h-16'
+                  ]"
+                  @click.stop="refreshCount > 0 ? refreshCard(card) : null"
                 >
                   <!-- 기본 상태 아이콘 버튼 (항상 표시) -->
                   <button class="bg-[#e6dece] rounded-full w-8 h-8 flex justify-center items-center drop-shadow-md z-10 relative focus:outline-0">

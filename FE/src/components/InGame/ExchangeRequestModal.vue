@@ -41,7 +41,7 @@
 
         <!-- 내 카드 목록 -->
         <div class="mb-4">
-          <p class="text-gray-700 text-xs mb-2">교환할 카드를 선택하세요:</p>
+          <p class="text-gray-700 text-xs mb-2">교환할 카드를 선택하세요</p>
           <div class="grid grid-cols-4 gap-1">
             <div
               v-for="card in myCards"
@@ -51,7 +51,6 @@
               :class="selectedMyCard?.id === card.id ? 'glassmorphism-white border border-blue-300' : 'hover:bg-white/20'"
             >
               <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-full rounded">
-              <p class="text-xs text-center mt-1 text-gray-700">{{ card.keyword }}</p>
             </div>
           </div>
         </div>
@@ -61,12 +60,13 @@
           <button
             @click="acceptExchange"
             :disabled="!selectedMyCard"
-            class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-sm border"
+            class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-sm border relative overflow-hidden"
             :class="selectedMyCard
-              ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
+              ? 'bg-blue-500 text-white border-blue-500 wave-button'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed border-gray-300'"
           >
-            수락
+            <span class="relative z-10">수락</span>
+            <div v-if="selectedMyCard" class="wave-effect"></div>
           </button>
           <button
             @click="rejectExchange"
@@ -134,6 +134,36 @@ const rejectExchange = () => {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 웨이브 버튼 효과 */
+.wave-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.wave-effect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.wave-button:hover .wave-effect {
+  width: 300px;
+  height: 300px;
+}
+
+.wave-button:active .wave-effect {
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.4);
+  transition: width 0.3s ease, height 0.3s ease;
 }
 
 /* 모달 애니메이션 */
