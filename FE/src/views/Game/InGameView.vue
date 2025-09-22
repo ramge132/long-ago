@@ -85,6 +85,13 @@
         :gameStarted="gameStarted"
         :isEndingMode="isEndingMode"
         :ISBN="ISBN"
+        :participants="participants"
+        :peerId="peerId"
+        :gameId="gameId"
+        @card-refreshed="$emit('card-refreshed', $event)"
+        @send-exchange-request="$emit('send-exchange-request', $event)"
+        @card-exchanged="$emit('card-exchanged', $event)"
+        @reject-exchange="$emit('reject-exchange', $event)"
       />
     </div>
       <div class="h-full row-span-2 grid grid-rows-3 justify-end">
@@ -205,7 +212,7 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "voteSelected", "goLobby", "winner-shown", "narration-complete"]);
+const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "voteSelected", "goLobby", "winner-shown", "narration-complete", "card-refreshed", "send-exchange-request", "card-exchanged", "reject-exchange"]);
 
 const broadcastMessage = (data) => {
   emit("broadcastMessage", data);
@@ -241,74 +248,82 @@ const onNarrationComplete = () => {
 
 const props = defineProps({
   roomConfigs: {
-    Type: Object,
+    type: Object,
   },
   connectedPeers: {
-    Type: Array,
+    type: Array,
   },
   receivedMessages: {
-    Type: Array,
+    type: Array,
   },
   participants: {
-    Type: Array,
+    type: Array,
   },
   inGameOrder: {
-    Type: Array,
+    type: Array,
   },
   currTurn: {
-    Type: Number,
+    type: Number,
   },
   inProgress: {
-    Type: Boolean,
+    type: Boolean,
   },
   myTurn: {
-    Type: Number,
+    type: Number,
   },
   bookContents: {
-    Type: Array,
+    type: Array,
   },
   storyCards:{
-    Type: Array,
+    type: Array,
   },
   endingCard:{
-    Type: Object,
+    type: Object,
   },
   prompt: {
-    Type: String,
+    type: String,
   },
   votings: {
-    Type: Array,
+    type: Array,
   },
   percentage: {
-    Type: Number,
+    type: Number,
   },
   usedCard: {
-    Type: Object,
+    type: Object,
   },
   isForceStopped: {
-    Type: String,
+    type: String,
   },
   gameStarted: {
-    Type: Boolean,
+    type: Boolean,
   },
   isEndingMode: {
-    Type: Boolean,
+    type: Boolean,
   },
   isElected: {
-    Type: Boolean,
+    type: Boolean,
   },
   isVoted: {
-    Type: Boolean,
+    type: Boolean,
   },
   bookCover: {
-    Type: Object,
+    type: Object,
   },
   ISBN: {
-    Type: String,
+    type: String,
   },
   isPreview: {
-    Type: Boolean,
+    type: Boolean,
   },
+  peerId: {
+    type: String,
+    default: ''
+  },
+  gameId: {
+    type: String,
+    default: ''
+  }
 });
 
 watch(() => props.participants.map(participant => participant.score),
