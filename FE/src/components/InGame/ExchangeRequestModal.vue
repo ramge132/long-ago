@@ -81,7 +81,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue'
+import { ref, defineProps, defineEmits, watch } from 'vue'
 import CardImage from "@/assets/cards"
 
 const props = defineProps({
@@ -107,6 +107,13 @@ const props = defineProps({
 const emit = defineEmits(['close', 'accept', 'reject'])
 
 const selectedMyCard = ref(null)
+
+// 모달이 열릴 때마다 선택된 카드 초기화
+watch(() => props.show, (newShow) => {
+  if (newShow) {
+    selectedMyCard.value = null
+  }
+})
 
 const selectMyCard = (card) => {
   selectedMyCard.value = card
