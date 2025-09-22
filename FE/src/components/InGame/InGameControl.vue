@@ -390,9 +390,9 @@ const chatMode = computed(() => {
   if (props.isEndingMode) {
     // 결말 모드: 자유 결말 작성 가능
     modes.push({
-      mark: "결말",
+      mark: "자유 결말",
       fucntion: sendFreeEnding,
-      placeholder: "점수를 조금 얻지만 자유롭게 결말을 맺을 수 있습니다",
+      placeholder: "자유 결말은 카드보다 점수를 조금 얻습니다",
     });
   } else {
     // 일반 모드: 이야기 모드
