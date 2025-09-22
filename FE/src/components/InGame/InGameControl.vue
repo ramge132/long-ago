@@ -578,10 +578,25 @@ const setLeaveStyle = (el) => {
 
 // transition 끝난 후 class 업데이트
 const updateClass = () => {
+  // 모든 카드의 인라인 스타일 강제 초기화
+  const cards = document.querySelectorAll(".handCard");
+  cards.forEach((el) => {
+    el.style.transform = "";
+    el.style.filter = "";
+    el.style.boxShadow = "";
+    el.style.zIndex = "";
+    el.style.transition = "";
+    el.style.opacity = "";
+  });
+
   nextTick(() => {
+    // 클래스 업데이트
     dynamicClass.value = `card${props.storyCards.length}`;
-    // 카드 변경 후 호버 효과 재설정
-    setupCardHoverEffects();
+
+    // DOM 업데이트 후 충분한 지연을 두고 호버 효과 재설정
+    setTimeout(() => {
+      setupCardHoverEffects();
+    }, 100);
   });
 };
 
@@ -609,34 +624,61 @@ watch(currChatModeIdx, async (newIndex, oldIndex) => {
 
 
 const setupCardHoverEffects = () => {
-  nextTick(() => {
-    const cards = document.querySelectorAll(".handCard");
-    cards.forEach((el, index) => {
-      // 기존 이벤트 리스너 제거 (중복 방지)
-      el.removeEventListener("mouseenter", el._hoverEnter);
-      el.removeEventListener("mouseleave", el._hoverLeave);
+  // 이전 타이머가 있다면 취소
+  if (setupCardHoverEffects._timeout) {
+    clearTimeout(setupCardHoverEffects._timeout);
+  }
 
-      const originalTransform = window.getComputedStyle(el).transform;
+  setupCardHoverEffects._timeout = setTimeout(() => {
+    nextTick(() => {
+      // 추가적인 프레임 지연으로 DOM 완전 업데이트 보장
+      requestAnimationFrame(() => {
+        const cards = document.querySelectorAll(".handCard");
 
-      el._hoverEnter = () => {
-        cards.forEach((item, i) => item.style.zIndex = i); // 초기화
-        el.style.zIndex = 50; // 채팅창(z-30)보다 높게 설정
-        el.style.transform = `${originalTransform} translateY(-12px) rotateY(3deg)`;
-        el.style.filter = "brightness(1.1) saturate(1.1)";
-        el.style.boxShadow = "0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1)";
-      };
+        cards.forEach((el, index) => {
+          // 기존 이벤트 리스너 제거 (중복 방지)
+          el.removeEventListener("mouseenter", el._hoverEnter);
+          el.removeEventListener("mouseleave", el._hoverLeave);
 
-      el._hoverLeave = () => {
-        el.style.zIndex = index; // 원래 z-index로 복원
-        el.style.transform = originalTransform; // 원래 transform으로 복원
-        el.style.filter = "";
-        el.style.boxShadow = "";
-      };
+          // 강제로 인라인 스타일 초기화 (이전 애니메이션 잔여물 제거)
+          el.style.transform = "";
+          el.style.filter = "";
+          el.style.boxShadow = "";
+          el.style.zIndex = "";
 
-      el.addEventListener("mouseenter", el._hoverEnter);
-      el.addEventListener("mouseleave", el._hoverLeave);
+          // 다음 프레임에서 원본 transform 계산 (CSS 적용 후)
+          requestAnimationFrame(() => {
+            const computedStyle = window.getComputedStyle(el);
+            const originalTransform = computedStyle.transform;
+
+            el._hoverEnter = () => {
+              // 다른 카드들의 z-index 초기화
+              cards.forEach((item, i) => {
+                if (item !== el) {
+                  item.style.zIndex = i;
+                }
+              });
+
+              el.style.zIndex = 50; // 채팅창(z-30)보다 높게 설정
+              el.style.transform = `${originalTransform} translateY(-12px) rotateY(3deg)`;
+              el.style.filter = "brightness(1.1) saturate(1.1)";
+              el.style.boxShadow = "0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1)";
+            };
+
+            el._hoverLeave = () => {
+              el.style.zIndex = index; // 원래 z-index로 복원
+              el.style.transform = originalTransform; // 원래 transform으로 복원
+              el.style.filter = "";
+              el.style.boxShadow = "";
+            };
+
+            el.addEventListener("mouseenter", el._hoverEnter);
+            el.addEventListener("mouseleave", el._hoverLeave);
+          });
+        });
+      });
     });
-  });
+  }, 50); // 50ms 디바운스
 };
 
 onMounted(() => {
