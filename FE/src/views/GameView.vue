@@ -2,7 +2,7 @@
   <div class="w-full h-full rounded-lg">
     <RouterView v-slot="{ Component }">
       <Transition name="fade" mode="out-in">
-        <component :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
+        <component ref="currentViewRef" :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
           v-model:roomConfigs="roomConfigs" :participants="participants" :receivedMessages="receivedMessages"
           :InviteLink="InviteLink" :gameStarted="gameStarted" :isEndingMode="isEndingMode" :inGameOrder="inGameOrder" :currTurn="currTurn" :ISBN="ISBN"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
@@ -93,6 +93,8 @@ const router = useRouter();
 // 내 피어 객체
 const peer = ref(null);
 const peerId = ref("");
+// 현재 RouterView 컴포넌트 참조
+const currentViewRef = ref(null);
 // 인코딩 된 방장 고유 ID
 const compressedId = ref("");
 // 나 포함 연결된 피어 객체들
@@ -869,28 +871,30 @@ const setupConnection = (conn) => {
         console.log("=== 교환 신청 수신 처리 시작 ===");
         console.log("1. 수신한 data:", data);
 
-        // 교환 신청 수신 처리 - InGameControl의 showExchangeRequestModal 함수 호출
-        const targetComponent = document.querySelector('canvas')?.closest('.game-container');
-        console.log("2. targetComponent 찾기:", !!targetComponent);
+        const exchangeRequestData = {
+          senderName: data.fromUserName,
+          senderCard: data.fromCard,
+          fromUserId: data.fromUserId,
+          toUserId: data.toUserId,
+          fromCardId: data.fromCardId
+        };
+        console.log("2. 교환 요청 데이터:", exchangeRequestData);
+        console.log("3. currentViewRef.value:", currentViewRef.value);
 
-        if (targetComponent) {
-          // InGameControl 컴포넌트에 교환 요청 알림
-          const exchangeRequestData = {
-            senderName: data.fromUserName,
-            senderCard: data.fromCard,
-            fromUserId: data.fromUserId,
-            toUserId: data.toUserId,
-            fromCardId: data.fromCardId
-          };
-          console.log("3. 전역 이벤트 데이터:", exchangeRequestData);
+        // InGameView 컴포넌트의 showExchangeRequest 함수 직접 호출
+        if (currentViewRef.value && currentViewRef.value.showExchangeRequest) {
+          console.log("4. InGameView의 showExchangeRequest 함수 호출");
+          currentViewRef.value.showExchangeRequest(exchangeRequestData);
+        } else {
+          console.log("4. ERROR: currentViewRef나 showExchangeRequest 함수를 찾을 수 없음");
+          console.log("   - currentViewRef.value:", currentViewRef.value);
+          console.log("   - showExchangeRequest 함수:", currentViewRef.value?.showExchangeRequest);
 
-          // 전역 이벤트를 통해 InGameControl에 알림
+          // 대안: 전역 이벤트 발송
+          console.log("   - 대안: 전역 이벤트 발송");
           window.dispatchEvent(new CustomEvent('showExchangeRequest', {
             detail: exchangeRequestData
           }));
-          console.log("4. 전역 이벤트 발송 완료");
-        } else {
-          console.log("4. ERROR: targetComponent를 찾을 수 없음");
         }
         console.log("=== 교환 신청 수신 처리 끝 ===");
         break;

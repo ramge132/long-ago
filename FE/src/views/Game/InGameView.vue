@@ -74,6 +74,7 @@
         @narration-complete="onNarrationComplete"
       />
       <InGameControl
+        ref="inGameControlRef"
         @broadcast-message="broadcastMessage"
         @next-turn="nextTurn"
         @card-reroll="cardReroll"
@@ -190,7 +191,7 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { nextTick, onBeforeUnmount, ref, watch, defineExpose } from "vue";
 import { StarIcon, VoteUpLeftIcon, VoteUpRightIcon, VoteDownLeftIcon, VoteDownRightIcon, VoteUpLeftgif, VoteUpRightgif, VoteDownLeftgif, VoteDownRightgif } from "@/assets";
 import Profile from "@/assets/images/profiles";
 import {
@@ -211,6 +212,9 @@ const chatTime = ref([
   [undefined, undefined],
   [undefined, undefined],
 ]);
+
+// InGameControl 컴포넌트 참조
+const inGameControlRef = ref(null);
 
 const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "voteSelected", "goLobby", "winner-shown", "narration-complete", "card-refreshed", "send-exchange-request", "card-exchanged", "reject-exchange"]);
 
@@ -449,6 +453,26 @@ watch(
   },
   { deep: true },
 );
+
+// 교환 신청 표시 함수
+const showExchangeRequest = (exchangeRequestData) => {
+  console.log("=== InGameView: showExchangeRequest 호출 ===");
+  console.log("1. 받은 데이터:", exchangeRequestData);
+
+  if (inGameControlRef.value && inGameControlRef.value.showExchangeRequest) {
+    console.log("2. InGameControl의 showExchangeRequest 함수 호출");
+    inGameControlRef.value.showExchangeRequest(exchangeRequestData);
+  } else {
+    console.log("2. ERROR: InGameControl ref나 showExchangeRequest 함수를 찾을 수 없음");
+    console.log("   - inGameControlRef.value:", inGameControlRef.value);
+    console.log("   - showExchangeRequest 함수:", inGameControlRef.value?.showExchangeRequest);
+  }
+};
+
+// 외부에서 접근 가능하게 expose
+defineExpose({
+  showExchangeRequest
+});
 
 onBeforeUnmount(() => {
   emit("gameExit");
