@@ -621,15 +621,23 @@ class ImageGenerationService:
                     result = response.json()
                     logger.info(f"GPT-5-nano API 응답: {result}")
 
-                    # GPT-5 Responses API는 output_text 필드를 직접 반환
-                    if "output_text" in result:
-                        generated_title = result["output_text"].strip()
-                        # 불필요한 따옴표나 문장부호 제거
-                        title = generated_title.strip("\"'").strip()
-                        logger.info(f"✅ GPT-5-nano로 생성된 제목: [{title}]")
-                        return title
+                    # GPT-5 Responses API는 output 배열 안에 메시지가 있음
+                    if "output" in result and isinstance(result["output"], list):
+                        for output_item in result["output"]:
+                            if output_item.get("type") == "message" and "content" in output_item:
+                                content_list = output_item["content"]
+                                if isinstance(content_list, list):
+                                    for content_item in content_list:
+                                        if content_item.get("type") == "output_text" and "text" in content_item:
+                                            generated_title = content_item["text"].strip()
+                                            # 불필요한 따옴표나 문장부호 제거
+                                            title = generated_title.strip("\"'").strip()
+                                            logger.info(f"✅ GPT-5-nano로 생성된 제목: [{title}]")
+                                            return title
+
+                        logger.warning(f"GPT-5-nano 응답에서 output_text를 찾을 수 없음: {result}")
                     else:
-                        logger.warning(f"GPT-5-nano 응답에 'output_text' 필드가 없음: {result}")
+                        logger.warning(f"GPT-5-nano 응답에 'output' 배열이 없음: {result}")
 
                 else:
                     logger.warning(f"GPT-5-nano 제목 생성 실패: {response.status_code}")
