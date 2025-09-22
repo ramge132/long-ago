@@ -9,7 +9,7 @@
       id="tiger"
       src="@/assets/ink.gif"
       alt="Tiger"
-      class="w-[300px] h-auto fixed"
+      class="w-1/5 h-auto fixed"
     />
 
     <!-- 순차적으로 등장하는 텍스트 -->
