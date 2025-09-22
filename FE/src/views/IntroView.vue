@@ -45,7 +45,7 @@
     <!-- 초기 ink.gif 로딩 오버레이 -->
     <Transition name="fade">
       <div v-if="introLoading" class="absolute inset-0 bg-white flex justify-center items-center z-10">
-        <img src="@/assets/ink.gif" alt="Loading..." style="width: 300px; height: auto;"/>
+        <img src="@/assets/ink.gif" alt="Loading..." style="width: 100px; height: auto;"/>
       </div>
     </Transition>
 
