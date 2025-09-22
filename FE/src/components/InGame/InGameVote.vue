@@ -94,7 +94,7 @@
       <div class="relative z-10">
         <p class="font-omp text-lg font-semibold text-gray-700 mb-3 text-center transition-opacity duration-300"
            :class="fontLoaded ? 'opacity-100' : 'opacity-0'">
-           {{ usedCard.isFreeEnding ? '자유 엔딩' : '사용한 카드' }}
+           {{ usedCard.isFreeEnding ? '자유 결말' : '사용한 카드' }}
         </p>
         <div class="relative transform hover:scale-105 transition-transform duration-300" ref="cardRef">
           <!-- 엔딩 카드는 이미지로 표시, 스토리 카드는 개별 이미지 -->
