@@ -876,10 +876,24 @@ const handleRefreshCard = async () => {
   closeCardMenu();
 };
 
+// 교환 신청 진행 중인 카드들을 추적
+const pendingExchangeCards = ref(new Set());
+
 const handleUserSelect = (participant) => {
   console.log("=== InGameControl: 사용자 선택 처리 ===");
   console.log("1. 선택된 participant:", participant);
   console.log("2. 선택된 카드:", selectedCard.value);
+
+  // 이미 교환 신청 중인 카드인지 확인
+  if (pendingExchangeCards.value.has(selectedCard.value.id)) {
+    toast.errorToast("이미 교환 신청 중인 카드입니다.");
+    closeUserSelectModal();
+    closeCardMenu();
+    return;
+  }
+
+  // 교환 신청 중인 카드로 등록
+  pendingExchangeCards.value.add(selectedCard.value.id);
 
   // P2P로 교환 신청 메시지 전송
   const requestData = {
@@ -898,6 +912,12 @@ const handleUserSelect = (participant) => {
   closeUserSelectModal();
   closeCardMenu();
   toast.successToast(`${participant.name}님에게 교환 신청을 보냈습니다.`);
+
+  // 3초 후 pending 상태 해제 (타임아웃)
+  setTimeout(() => {
+    pendingExchangeCards.value.delete(selectedCard.value.id);
+  }, 3000);
+
   console.log("=== InGameControl: 사용자 선택 처리 완료 ===");
 };
 
@@ -964,9 +984,15 @@ watch(() => message.value, (newValue) => {
   }
 });
 
+// 교환 완료 시 pending 상태 해제
+const clearPendingExchange = (cardId) => {
+  pendingExchangeCards.value.delete(cardId);
+};
+
 // 외부에서 접근할 수 있는 함수들
 defineExpose({
   showExchangeRequest,
+  clearPendingExchange,
   updateCounts: (newRefreshCount, newExchangeCount) => {
     refreshCount.value = newRefreshCount;
     exchangeCount.value = newExchangeCount;

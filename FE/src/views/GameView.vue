@@ -921,9 +921,19 @@ const setupConnection = (conn) => {
 
           console.log("7. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
           toast.successToast("카드 교환이 완료되었습니다!");
+
+          // 교환 완료 시 pending 상태 해제
+          if (inGameControlRef.value) {
+            inGameControlRef.value.clearPendingExchange(data.fromCardId);
+          }
         } else {
           console.log("3. 교환 거절됨");
           toast.errorToast("상대방이 교환을 거절했습니다.");
+
+          // 교환 거절 시에도 pending 상태 해제
+          if (inGameControlRef.value) {
+            inGameControlRef.value.clearPendingExchange(data.fromCardId);
+          }
         }
         console.log("=== 교환 응답 수신 처리 끝 (신청자) ===");
         break;
@@ -2243,10 +2253,29 @@ const handleSendExchangeRequest = (data) => {
   console.log("=== 교환 신청 처리 끝 ===");
 };
 
+// 교환 처리 중인지 추적
+const isExchangeProcessing = ref(false);
+
 // 교환 수락 처리
 const handleCardExchanged = async (data) => {
   console.log("=== 교환 수락 처리 시작 (수신자) ===");
   console.log("1. 받은 데이터:", data);
+
+  // 이미 교환 처리 중이면 중단
+  if (isExchangeProcessing.value) {
+    console.log("1-1. 이미 교환 처리 중 - 중단");
+    return;
+  }
+
+  // 교환할 카드가 내 카드 목록에 있는지 확인
+  const hasMyCard = storyCards.value.some(card => card.id === data.toCardId);
+  if (!hasMyCard) {
+    console.log("1-2. 교환할 내 카드를 찾을 수 없음 - 중단");
+    toast.errorToast("이미 교환된 카드입니다.");
+    return;
+  }
+
+  isExchangeProcessing.value = true;
   console.log("2. 교환 전 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
 
   // 백엔드에 교환 요청 (수신자 측)
@@ -2305,12 +2334,13 @@ const handleCardExchanged = async (data) => {
     } else {
       console.log("3. 백엔드 교환 처리 실패:", exchangeResponse.data.message);
       toast.errorToast("교환 처리 중 오류가 발생했습니다.");
-      return;
     }
   } catch (error) {
     console.log("3. 백엔드 교환 API 호출 실패:", error);
     toast.errorToast("교환 처리 중 오류가 발생했습니다.");
-    return;
+  } finally {
+    // 교환 처리 완료 후 플래그 해제
+    isExchangeProcessing.value = false;
   }
 
   console.log("=== 교환 수락 처리 끝 (수신자) ===");
