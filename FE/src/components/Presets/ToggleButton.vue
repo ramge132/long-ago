@@ -27,8 +27,8 @@
       >ON</span
     >
 
-    <!-- 오디오 -->
-    <audio ref="audioRef" :src="route.path === '/game/rank' ? RankingMusic : LobbyMusic" loop></audio>
+    <!-- 오디오 (메인페이지 제외) -->
+    <audio v-if="route.path !== '/'" ref="audioRef" :src="route.path === '/game/rank' ? RankingMusic : LobbyMusic" loop></audio>
   </div>
     <div v-show="audioStore.audioData" class="flex items-center gap-x-3">
       <span class="font-semibold text-sm">VOLUME</span>
@@ -56,22 +56,34 @@ const audioRef = ref(null);
 
 // 음악 재생/정지 로직
 const toggleAudio = () => {
+  // 메인페이지에서는 음악 재생하지 않음
+  if (route.path === '/') {
+    return;
+  }
+
   if (audioRef.value) {
     if (audioStore.audioData) {
       audioStore.audioPlay = true;
       audioRef.value.play();
     } else {
       audioStore.audioPlay = false;
-      audioRef.value.pause(); 
+      audioRef.value.pause();
     }
   }
 };
 
 watch(() => audioStore.audioVolume, () => {
-  audioRef.value.volume = audioStore.audioVolume;
+  if (audioRef.value) {
+    audioRef.value.volume = audioStore.audioVolume;
+  }
 });
 
-watch(() => audioStore.audioPlay,  () => {
+watch(() => audioStore.audioPlay, () => {
+  // 메인페이지에서는 음악 재생하지 않음
+  if (route.path === '/' || !audioRef.value) {
+    return;
+  }
+
   if (audioStore.audioPlay) {
     audioRef.value.play();
   } else {
