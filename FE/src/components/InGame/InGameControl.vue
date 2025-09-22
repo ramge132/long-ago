@@ -836,6 +836,9 @@ const handleUserSelect = (participant) => {
   emit("sendExchangeRequest", requestData);
   console.log("4. sendExchangeRequest 이벤트 발송 완료");
 
+  // 교환 신청 시 횟수 차감
+  exchangeCount.value--;
+
   closeUserSelectModal();
   closeCardMenu();
   toast.successToast(`${participant.name}님에게 교환 신청을 보냈습니다.`);
@@ -883,7 +886,6 @@ const handleAcceptExchange = async (exchangeData) => {
     accepted: true
   });
 
-  exchangeCount.value--;
   closeExchangeRequestModal();
   toast.successToast("교환 신청을 수락했습니다!");
 };
