@@ -17,24 +17,22 @@
         </div>
 
         <!-- 교환할 카드 정보 -->
-        <div class="flex justify-center items-center mb-4 gap-3">
+        <div class="flex justify-center items-center mb-4 gap-4">
           <!-- 상대방 카드 -->
           <div class="text-center">
-            <img :src="CardImage.getStoryCardImage(senderCard.id)" :alt="`스토리카드 ${senderCard.keyword}`" class="w-16 mx-auto mb-1">
-            <p class="text-gray-700 text-xs font-medium">{{ senderCard.keyword }}</p>
+            <img :src="CardImage.getStoryCardImage(senderCard.id)" :alt="`스토리카드 ${senderCard.keyword}`" class="w-20 h-28 mx-auto object-cover rounded-lg">
           </div>
 
           <!-- 교환 화살표 -->
-          <div class="text-gray-600 text-xl">⇄</div>
+          <div class="text-gray-600 text-2xl">⇄</div>
 
           <!-- 내 카드 (선택 영역) -->
           <div class="text-center">
-            <div v-if="!selectedMyCard" class="w-16 h-20 border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center mx-auto mb-1">
-              <span class="text-xs text-gray-500">선택</span>
+            <div v-if="!selectedMyCard" class="w-20 h-28 border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center mx-auto">
+              <span class="text-sm text-gray-500">선택</span>
             </div>
             <div v-else>
-              <img :src="CardImage.getStoryCardImage(selectedMyCard.id)" :alt="`스토리카드 ${selectedMyCard.keyword}`" class="w-16 mx-auto mb-1">
-              <p class="text-gray-700 text-xs font-medium">{{ selectedMyCard.keyword }}</p>
+              <img :src="CardImage.getStoryCardImage(selectedMyCard.id)" :alt="`스토리카드 ${selectedMyCard.keyword}`" class="w-20 h-28 mx-auto object-cover rounded-lg">
             </div>
           </div>
         </div>
@@ -143,20 +141,20 @@ const rejectExchange = () => {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* 네온 글로우 펄스 버튼 효과 (배경 글로우 제외) */
+/* 네온 글로우 펄스 버튼 효과 (파스텔 블루톤) */
 .neon-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #87ceeb 0%, #add8e6 100%);
   color: white;
   border: transparent;
-  box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.75);
+  box-shadow: 0 4px 15px 0 rgba(135, 206, 235, 0.6);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
 .neon-button:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 25px 0 rgba(102, 126, 234, 0.9);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px 0 rgba(135, 206, 235, 0.8);
 }
 
 .neon-shimmer {
