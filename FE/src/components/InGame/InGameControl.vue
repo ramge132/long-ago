@@ -7,11 +7,42 @@
             <div
               v-for="(card) in storyCards"
               :key="card.id"
-              class="handCard relative transition-all duration-300 cursor-pointer"
+              class="handCard relative transition-all duration-300 cursor-pointer group"
               :class="getCardHighlightClass(card.id)"
-              @click="openCardMenu(card)"
             >
               <img :src="CardImage.getStoryCardImage(card.id)" :alt="`스토리카드 ${card.keyword}`" class="w-36">
+
+              <!-- 플로팅 액션 버튼들 -->
+              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+                <!-- 배경 오버레이 -->
+                <div class="absolute inset-0 bg-black/20 rounded-lg"></div>
+
+                <!-- 액션 버튼 컨테이너 -->
+                <div class="relative flex gap-3 z-10">
+                  <!-- 새로고침 버튼 -->
+                  <button
+                    @click.stop="refreshCard(card)"
+                    class="bg-gray-50 hover:bg-gray-200 p-3 rounded-full shadow-lg transform transition-all duration-200 hover:scale-110"
+                    title="카드 새로고침"
+                  >
+                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                  </button>
+
+                  <!-- 교환 버튼 -->
+                  <button
+                    @click.stop="openExchangeModal(card)"
+                    class="bg-gray-50 hover:bg-gray-200 p-3 rounded-full shadow-lg transform transition-all duration-200 hover:scale-110"
+                    title="카드 교환"
+                  >
+                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
               <!-- 소프트 글로우 효과 -->
               <div
                 v-if="highlightedCards.includes(card.id)"
@@ -131,15 +162,7 @@
     </div>
 
     <!-- 모달들 -->
-    <StoryCardMenu
-      :show="showCardMenu"
-      :selectedCard="selectedCard"
-      :exchangeCount="exchangeCount"
-      :refreshCount="refreshCount"
-      @close="closeCardMenu"
-      @exchange="openUserSelectModal"
-      @refresh="handleRefreshCard"
-    />
+    <!-- 플로팅 액션 버튼들은 카드 내부에 직접 렌더링됨 -->
 
     <UserSelectModal
       :show="showUserSelectModal"
@@ -171,7 +194,7 @@ import { useUserStore } from "@/stores/auth";
 import emoji from "@/assets/images/emoticons";
 import toast from "@/functions/toast";
 import useCilpboard from "vue-clipboard3";
-import StoryCardMenu from "./StoryCardMenu.vue";
+// StoryCardMenu는 플로팅 액션 버튼으로 교체됨
 import UserSelectModal from "./UserSelectModal.vue";
 import ExchangeRequestModal from "./ExchangeRequestModal.vue";
 import { refreshStoryCard, exchangeStoryCard } from "@/apis/game";
@@ -713,7 +736,41 @@ const getCardHighlightClass = (cardId) => {
 };
 
 
-// 카드 메뉴 관련 함수들
+// 플로팅 액션 버튼 함수들
+const refreshCard = async (card) => {
+  try {
+    const response = await refreshStoryCard({
+      gameId: props.gameId,
+      userId: props.peerId,
+      cardId: card.id
+    });
+
+    if (response.data.success) {
+      // 카드 새로고침 성공
+      toast.successToast("카드가 새로고침되었습니다!");
+      refreshCount.value--;
+
+      // 부모 컴포넌트에 새로고침 알림
+      emit("cardRefreshed", {
+        oldCard: card,
+        newCard: response.data.data
+      });
+    }
+  } catch (error) {
+    if (error.response?.status === 400) {
+      toast.errorToast(error.response.data.message || "새로고침 실패");
+    } else {
+      toast.errorToast("새로고침 중 오류가 발생했습니다.");
+    }
+  }
+};
+
+const openExchangeModal = (card) => {
+  selectedCard.value = card;
+  showUserSelectModal.value = true;
+};
+
+// 기존 함수들 (호환성 유지)
 const openCardMenu = (card) => {
   selectedCard.value = card;
   showCardMenu.value = true;
