@@ -849,6 +849,53 @@ const setupConnection = (conn) => {
       case "heartbeat_back":
         conn.lastHeartbeat = Date.now();
         break;
+
+      case "storyCardRefreshed":
+        // 다른 플레이어의 카드 새로고침 동기화
+        if (data.userId !== peerId.value) {
+          const cardIndex = storyCards.value.findIndex(card => card.id === data.oldCard.id);
+          if (cardIndex !== -1) {
+            storyCards.value[cardIndex] = data.newCard;
+          }
+        }
+        break;
+
+      case "storyCardExchangeRequest":
+        // 교환 신청 수신 처리 - InGameControl의 showExchangeRequestModal 함수 호출
+        const targetComponent = document.querySelector('canvas')?.closest('.game-container');
+        if (targetComponent) {
+          // InGameControl 컴포넌트에 교환 요청 알림
+          const exchangeRequestData = {
+            senderName: data.fromUserName,
+            senderCard: data.fromCard,
+            fromUserId: data.fromUserId,
+            toUserId: data.toUserId,
+            fromCardId: data.fromCardId
+          };
+
+          // 전역 이벤트를 통해 InGameControl에 알림
+          window.dispatchEvent(new CustomEvent('showExchangeRequest', {
+            detail: exchangeRequestData
+          }));
+        }
+        break;
+
+      case "storyCardExchangeResponse":
+        if (data.accepted) {
+          // 교환 성공 - 신청자 쪽에서 카드 교체
+          const fromCardIndex = storyCards.value.findIndex(card => card.id === data.fromCardId);
+          const toCardIndex = storyCards.value.findIndex(card => card.id === data.toCardId);
+
+          if (fromCardIndex !== -1) {
+            // 신청자의 카드를 수락자의 카드로 교체
+            storyCards.value[fromCardIndex] = data.toCard;
+          }
+
+          toast.successToast("카드 교환이 완료되었습니다!");
+        } else {
+          toast.errorToast("상대방이 교환을 거절했습니다.");
+        }
+        break;
     }
   });
 
@@ -2112,6 +2159,80 @@ const goLobby = () => {
   };
 
   router.push("/game/lobby");
+};
+
+// 카드 새로고침 처리
+const handleCardRefreshed = (data) => {
+  // storyCards에서 oldCard를 찾아 newCard로 교체
+  const cardIndex = storyCards.value.findIndex(card => card.id === data.oldCard.id);
+  if (cardIndex !== -1) {
+    storyCards.value[cardIndex] = data.newCard;
+  }
+
+  // P2P 메시지로 다른 플레이어들에게 알림
+  connectedPeers.value.forEach(peer => {
+    if (peer.connection && peer.connection.open) {
+      sendMessage("storyCardRefreshed", {
+        userId: peerId.value,
+        oldCard: data.oldCard,
+        newCard: data.newCard
+      }, peer.connection);
+    }
+  });
+};
+
+// 교환 신청 처리
+const handleSendExchangeRequest = (data) => {
+  const targetPeer = connectedPeers.value.find(peer => peer.id === data.targetUserId);
+  if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
+    sendMessage("storyCardExchangeRequest", {
+      fromUserId: peerId.value,
+      fromUserName: participants.value.find(p => p.id === peerId.value)?.name || '',
+      fromCardId: data.cardId,
+      fromCard: data.card,
+      toUserId: data.targetUserId
+    }, targetPeer.connection);
+  }
+};
+
+// 교환 수락 처리
+const handleCardExchanged = (data) => {
+  // 로컬에서 카드 교환 먼저 수행
+  const fromCardIndex = storyCards.value.findIndex(card => card.id === data.fromCardId);
+  const toCardIndex = storyCards.value.findIndex(card => card.id === data.toCardId);
+
+  if (fromCardIndex !== -1 && toCardIndex !== -1) {
+    // 카드 교환
+    const temp = storyCards.value[fromCardIndex];
+    storyCards.value[fromCardIndex] = storyCards.value[toCardIndex];
+    storyCards.value[toCardIndex] = temp;
+  }
+
+  // 상대방에게 교환 응답 메시지 전송
+  const targetPeer = connectedPeers.value.find(peer => peer.id === data.fromUserId);
+  if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
+    sendMessage("storyCardExchangeResponse", {
+      accepted: true,
+      fromUserId: data.fromUserId,
+      toUserId: data.toUserId,
+      fromCardId: data.fromCardId,
+      toCardId: data.toCardId,
+      fromCard: data.fromCard,
+      toCard: data.toCard
+    }, targetPeer.connection);
+  }
+};
+
+// 교환 거절 처리
+const handleRejectExchange = (data) => {
+  const targetPeer = connectedPeers.value.find(peer => peer.id === data.fromUserId);
+  if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
+    sendMessage("storyCardExchangeResponse", {
+      accepted: false,
+      fromUserId: data.fromUserId,
+      toUserId: peerId.value
+    }, targetPeer.connection);
+  }
 };
 
 // 긴장감 변화 감지 (35% 및 100% 체크)

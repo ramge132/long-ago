@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted, computed } from "vue";
+import { ref, watch, nextTick, onMounted, onBeforeUnmount, computed } from "vue";
 import { RefreshIcon, SendIcon, EmoticonIcon, ChangeIcon, TrashIcon, ReturnIcon, ShareIcon } from "@/assets";
 import CardImage from "@/assets/cards"
 import { useUserStore } from "@/stores/auth";
@@ -604,6 +604,26 @@ const setupCardHoverEffects = () => {
 
 onMounted(() => {
   setupCardHoverEffects();
+
+  // 교환 요청 전역 이벤트 리스너
+  const handleExchangeRequest = (event) => {
+    const data = event.detail;
+    exchangeRequest.value = {
+      senderName: data.senderName,
+      senderCard: data.senderCard,
+      fromUserId: data.fromUserId,
+      toUserId: data.toUserId,
+      fromCardId: data.fromCardId
+    };
+    showExchangeRequestModal.value = true;
+  };
+
+  window.addEventListener('showExchangeRequest', handleExchangeRequest);
+
+  // 컴포넌트 언마운트 시 이벤트 리스너 제거
+  onBeforeUnmount(() => {
+    window.removeEventListener('showExchangeRequest', handleExchangeRequest);
+  });
 });
 
 onkeydown = (e) => {
@@ -738,11 +758,13 @@ const handleRefreshCard = async () => {
 const handleUserSelect = (participant) => {
   // P2P로 교환 신청 메시지 전송
   emit("sendExchangeRequest", {
-    targetUser: participant,
+    targetUserId: participant.id,
+    cardId: selectedCard.value.id,
     card: selectedCard.value
   });
 
   closeUserSelectModal();
+  closeCardMenu();
   toast.successToast(`${participant.name}님에게 교환 신청을 보냈습니다.`);
 };
 
@@ -764,24 +786,32 @@ const closeExchangeRequestModal = () => {
 };
 
 const handleAcceptExchange = async (exchangeData) => {
-  try {
-    const response = await exchangeStoryCard({
-      ...exchangeData,
-      status: 'accepted'
-    });
-
-    if (response.data.success) {
-      toast.successToast("카드 교환이 완료되었습니다!");
-      exchangeCount.value--;
-
-      // 부모 컴포넌트에 교환 완료 알림
-      emit("cardExchanged", response.data.data);
-    }
-  } catch (error) {
-    toast.errorToast("교환 중 오류가 발생했습니다.");
+  if (!exchangeData.toCardId) {
+    toast.errorToast("교환할 카드를 선택하세요.");
+    return;
   }
 
+  // 선택한 내 카드 찾기
+  const myCard = props.storyCards.find(card => card.id === exchangeData.toCardId);
+  if (!myCard) {
+    toast.errorToast("선택한 카드를 찾을 수 없습니다.");
+    return;
+  }
+
+  // P2P로 교환 수락 메시지 전송
+  emit("cardExchanged", {
+    fromUserId: exchangeData.fromUserId,
+    toUserId: exchangeData.toUserId,
+    fromCardId: exchangeData.fromCardId,
+    toCardId: exchangeData.toCardId,
+    fromCard: exchangeData.senderCard,
+    toCard: myCard,
+    accepted: true
+  });
+
+  exchangeCount.value--;
   closeExchangeRequestModal();
+  toast.successToast("교환 신청을 수락했습니다!");
 };
 
 const handleRejectExchange = (exchangeData) => {
