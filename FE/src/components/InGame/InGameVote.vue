@@ -2,9 +2,8 @@
   <div class="absolute w-full h-full rounded-lg bg-gradient-to-br from-black/20 via-black/15 to-black/20 flex justify-center">
     
     <!-- 메인 투표 패널 -->
-    <div class="w-1/2 max-w-2xl bg-gradient-to-br from-white/95 to-white/85 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 flex flex-col items-center p-6 gap-4 z-20 relative overflow-hidden"
+    <div class="w-1/2 max-w-2xl h-2/3 bg-gradient-to-br from-white/95 to-white/85 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 flex flex-col items-center p-6 gap-4 z-20 relative overflow-hidden"
          :class="voteEnded ? 'bounce-reverse' : 'bounce'"
-         :style="{ minHeight: votePanelHeight + 'px', maxHeight: '80vh' }"
          @animationend="handleAnimationEnd">
       
       
@@ -29,15 +28,17 @@
       </div>
       
       <!-- 프롬프트 박스 -->
-      <div class="w-full bg-gradient-to-br from-gray-50 to-white border border-gray-200/50 rounded-2xl p-4 shadow-inner backdrop-blur-sm relative overflow-visible min-h-[60px]"
-           ref="promptBox">
+      <div class="w-full bg-gradient-to-br from-gray-50 to-white border border-gray-200/50 rounded-2xl p-4 shadow-inner backdrop-blur-sm relative"
+           ref="promptBox"
+           style="overflow: visible; min-height: auto;">
         <div class="absolute inset-0 bg-gradient-to-r from-blue-50/20 via-transparent to-purple-50/20 rounded-2xl"></div>
-        <p class="text-lg lg:text-xl text-gray-700 font-medium leading-relaxed text-center relative z-10 break-words whitespace-pre-wrap"
-           ref="promptText">{{ prompt }}</p>
+        <p class="text-lg lg:text-xl text-gray-700 font-medium leading-relaxed text-center relative z-10 break-words"
+           ref="promptText"
+           style="white-space: pre-wrap; word-wrap: break-word;">{{ prompt }}</p>
       </div>
       
       <!-- 카드 슬롯 투표 버튼들 -->
-      <div class="grid grid-cols-2 w-full gap-6 mt-2" style="height: 120px;">
+      <div class="grid grid-cols-2 w-full h-full gap-6 mt-2">
         <!-- 찬성 카드 슬롯 -->
         <div class="card-slot cursor-pointer h-full"
              @click="selectVote('up')"
@@ -137,7 +138,6 @@ const duration = ref(10);
 const fontLoaded = ref(false);
 const cardPanelHeight = ref(280);
 const currentFontSize = ref(24);
-const votePanelHeight = ref(380); // 기본 투표창 높이
 const emit = defineEmits(['voteEnd', 'voteSelected']);
 const startCount = () => {
   countStarted.value = true;
@@ -186,24 +186,6 @@ const handleAnimationEnd = (event) => {
   }
 };
 
-// 프롬프트 텍스트 높이에 따라 투표창 높이 조정
-const adjustVotePanelHeight = async () => {
-  await nextTick();
-  if (promptText.value && promptBox.value) {
-    const textHeight = promptText.value.scrollHeight;
-    const baseHeight = 380; // 기본 투표창 높이
-    const baseTextHeight = 24; // 한 줄 기본 높이
-
-    // 텍스트가 한 줄보다 클 때만 조정
-    if (textHeight > baseTextHeight) {
-      const extraHeight = textHeight - baseTextHeight;
-      votePanelHeight.value = baseHeight + extraHeight + 30; // 여유 공간 30px 추가
-    } else {
-      votePanelHeight.value = baseHeight;
-    }
-  }
-};
-
 const adjustCardSize = async () => {
   await nextTick();
   if(contentRef.value && cardRef.value) {
@@ -232,8 +214,8 @@ watch(() => props.usedCard.keyword, async () => {
   await adjustCardSize();
 }, { deep: true });
 
-// 새로운 투표 시작 시 모든 상태 초기화 + 투표창 높이 조정
-watch(() => props.prompt, async () => {
+// 새로운 투표 시작 시 모든 상태 초기화
+watch(() => props.prompt, () => {
   if (props.prompt) {
     // 모든 상태를 초기값으로 리셋
     selected.value = "up";
@@ -243,10 +225,6 @@ watch(() => props.prompt, async () => {
     cardPanelHeight.value = 280;
     currentFontSize.value = 24;
     duration.value = 10;
-    votePanelHeight.value = 380;
-
-    // 프롬프트 높이에 맞춰 투표창 높이 조정
-    await adjustVotePanelHeight();
 
     // 기본값을 부모 컴포넌트에 알림
     emit('voteSelected', "up");
@@ -266,7 +244,6 @@ onMounted(async () => {
   }
 
   await adjustCardSize();
-  await adjustVotePanelHeight(); // 마운트 시에도 투표창 높이 조정
   // 진입 바운스 애니메이션(0.6초) 후 실제 투표시간 9초 + 퇴장 애니메이션(0.4초) = 총 10초
   duration.value = 9;
 
