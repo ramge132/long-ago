@@ -607,6 +607,10 @@ onMounted(() => {
 
   // 교환 요청 전역 이벤트 리스너
   const handleExchangeRequest = (event) => {
+    console.log("=== InGameControl: 전역 이벤트 수신 ===");
+    console.log("1. 이벤트 수신:", event);
+    console.log("2. event.detail:", event.detail);
+
     const data = event.detail;
     exchangeRequest.value = {
       senderName: data.senderName,
@@ -615,7 +619,11 @@ onMounted(() => {
       toUserId: data.toUserId,
       fromCardId: data.fromCardId
     };
+    console.log("3. exchangeRequest 설정:", exchangeRequest.value);
+
     showExchangeRequestModal.value = true;
+    console.log("4. 모달 표시 설정:", showExchangeRequestModal.value);
+    console.log("=== InGameControl: 전역 이벤트 처리 완료 ===");
   };
 
   window.addEventListener('showExchangeRequest', handleExchangeRequest);
@@ -756,16 +764,25 @@ const handleRefreshCard = async () => {
 };
 
 const handleUserSelect = (participant) => {
+  console.log("=== InGameControl: 사용자 선택 처리 ===");
+  console.log("1. 선택된 participant:", participant);
+  console.log("2. 선택된 카드:", selectedCard.value);
+
   // P2P로 교환 신청 메시지 전송
-  emit("sendExchangeRequest", {
+  const requestData = {
     targetUserId: participant.id,
     cardId: selectedCard.value.id,
     card: selectedCard.value
-  });
+  };
+  console.log("3. emit할 데이터:", requestData);
+
+  emit("sendExchangeRequest", requestData);
+  console.log("4. sendExchangeRequest 이벤트 발송 완료");
 
   closeUserSelectModal();
   closeCardMenu();
   toast.successToast(`${participant.name}님에게 교환 신청을 보냈습니다.`);
+  console.log("=== InGameControl: 사용자 선택 처리 완료 ===");
 };
 
 // 교환 신청 수신 처리

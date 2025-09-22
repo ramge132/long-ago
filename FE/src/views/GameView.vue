@@ -284,11 +284,16 @@ const setupConnection = (conn) => {
   }
 
   conn.on("data", async (data) => {
+    // 모든 P2P 메시지 수신 로그
+    if (data.type === "storyCardExchangeRequest" || data.type === "storyCardExchangeResponse") {
+      console.log(`🔄 P2P 메시지 수신 [${data.type}]:`, data);
+    }
+
     // 중요한 메시지들은 로그 출력
     if (["showResultsWithCover", "bookCover", "gameEnd", "showResults"].includes(data.type)) {
-      
+
     }
-    
+
     switch (data.type) {
       case "newParticipant":
         // 현재 참가자 목록 전송
@@ -861,8 +866,13 @@ const setupConnection = (conn) => {
         break;
 
       case "storyCardExchangeRequest":
+        console.log("=== 교환 신청 수신 처리 시작 ===");
+        console.log("1. 수신한 data:", data);
+
         // 교환 신청 수신 처리 - InGameControl의 showExchangeRequestModal 함수 호출
         const targetComponent = document.querySelector('canvas')?.closest('.game-container');
+        console.log("2. targetComponent 찾기:", !!targetComponent);
+
         if (targetComponent) {
           // InGameControl 컴포넌트에 교환 요청 알림
           const exchangeRequestData = {
@@ -872,12 +882,17 @@ const setupConnection = (conn) => {
             toUserId: data.toUserId,
             fromCardId: data.fromCardId
           };
+          console.log("3. 전역 이벤트 데이터:", exchangeRequestData);
 
           // 전역 이벤트를 통해 InGameControl에 알림
           window.dispatchEvent(new CustomEvent('showExchangeRequest', {
             detail: exchangeRequestData
           }));
+          console.log("4. 전역 이벤트 발송 완료");
+        } else {
+          console.log("4. ERROR: targetComponent를 찾을 수 없음");
         }
+        console.log("=== 교환 신청 수신 처리 끝 ===");
         break;
 
       case "storyCardExchangeResponse":
@@ -2183,16 +2198,33 @@ const handleCardRefreshed = (data) => {
 
 // 교환 신청 처리
 const handleSendExchangeRequest = (data) => {
+  console.log("=== 교환 신청 처리 시작 ===");
+  console.log("1. 전달받은 data:", data);
+  console.log("2. targetUserId:", data.targetUserId);
+  console.log("3. 현재 connectedPeers:", connectedPeers.value.map(p => ({id: p.id, connectionOpen: p.connection?.open})));
+
   const targetPeer = connectedPeers.value.find(peer => peer.id === data.targetUserId);
+  console.log("4. 찾은 targetPeer:", targetPeer ? {id: targetPeer.id, connectionOpen: targetPeer.connection?.open} : null);
+
   if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
-    sendMessage("storyCardExchangeRequest", {
+    const messageData = {
       fromUserId: peerId.value,
       fromUserName: participants.value.find(p => p.id === peerId.value)?.name || '',
       fromCardId: data.cardId,
       fromCard: data.card,
       toUserId: data.targetUserId
-    }, targetPeer.connection);
+    };
+    console.log("5. 전송할 메시지 데이터:", messageData);
+
+    sendMessage("storyCardExchangeRequest", messageData, targetPeer.connection);
+    console.log("6. P2P 메시지 전송 완료");
+  } else {
+    console.log("6. ERROR: targetPeer를 찾을 수 없거나 연결이 닫혀있음");
+    console.log("   - targetPeer 존재:", !!targetPeer);
+    console.log("   - connection 존재:", !!targetPeer?.connection);
+    console.log("   - connection.open:", targetPeer?.connection?.open);
   }
+  console.log("=== 교환 신청 처리 끝 ===");
 };
 
 // 교환 수락 처리
