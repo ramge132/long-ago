@@ -20,7 +20,7 @@
         <div class="flex justify-center items-center mb-4 gap-4">
           <!-- 상대방 카드 -->
           <div class="text-center">
-            <img :src="CardImage.getStoryCardImage(senderCard.id)" :alt="`스토리카드 ${senderCard.keyword}`" class="w-20 h-28 mx-auto object-cover rounded-lg">
+            <img :src="CardImage.getStoryCardImage(senderCard.id)" :alt="`스토리카드 ${senderCard.keyword}`" class="w-20 mx-auto rounded-lg">
           </div>
 
           <!-- 교환 화살표 -->
@@ -28,11 +28,11 @@
 
           <!-- 내 카드 (선택 영역) -->
           <div class="text-center">
-            <div v-if="!selectedMyCard" class="w-20 h-28 border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center mx-auto">
+            <div v-if="!selectedMyCard" class="w-20 h-24 border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center mx-auto">
               <span class="text-sm text-gray-500">선택</span>
             </div>
             <div v-else>
-              <img :src="CardImage.getStoryCardImage(selectedMyCard.id)" :alt="`스토리카드 ${selectedMyCard.keyword}`" class="w-20 h-28 mx-auto object-cover rounded-lg">
+              <img :src="CardImage.getStoryCardImage(selectedMyCard.id)" :alt="`스토리카드 ${selectedMyCard.keyword}`" class="w-20 mx-auto rounded-lg">
             </div>
           </div>
         </div>
@@ -141,12 +141,12 @@ const rejectExchange = () => {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* 네온 글로우 펄스 버튼 효과 (파스텔 블루톤) */
+/* 네온 글로우 펄스 버튼 효과 (투표창 찬성 컬러와 동일) */
 .neon-button {
-  background: linear-gradient(135deg, #87ceeb 0%, #add8e6 100%);
-  color: white;
+  background: linear-gradient(145deg, #93c5fd, #7dd3fc);
+  color: #1e3a8a;
   border: transparent;
-  box-shadow: 0 4px 15px 0 rgba(135, 206, 235, 0.6);
+  box-shadow: 0 4px 15px 0 rgba(147, 197, 253, 0.6);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -154,7 +154,7 @@ const rejectExchange = () => {
 
 .neon-button:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px 0 rgba(135, 206, 235, 0.8);
+  box-shadow: 0 8px 25px 0 rgba(147, 197, 253, 0.8);
 }
 
 .neon-shimmer {
