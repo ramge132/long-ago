@@ -3,7 +3,7 @@
     <div v-if="gameStarted" class="flex justify-center items-center grow" style="transform: translateX(3px);">
       <!-- 스토리 카드 영역 -->
       <div class="flex justify-center items-end w-3/4 mr-3 h-48 -translate-y-8" :class="isEndingMode ? 'opacity-50' : ''">
-          <transition-group name="list" tag="div" class="cardList flex justify-center items-end w-full h-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
+          <transition-group name="wave" tag="div" class="cardList flex justify-center items-end w-full h-full" :class="dynamicClass" @before-leave="setLeaveStyle" @after-leave="updateClass">
             <div
               v-for="(card) in storyCards"
               :key="card.id"
@@ -1088,6 +1088,21 @@ defineExpose({
   100% {
     transform: translateY(-2px);
   }
+}
+
+/* 부드러운 웨이브 카드 교체 애니메이션 */
+.wave-enter-active, .wave-leave-active {
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.wave-enter-from {
+  opacity: 0;
+  transform: translateY(30px) rotate(3deg) scale(0.96);
+  filter: blur(2px);
+}
+.wave-leave-to {
+  opacity: 0;
+  transform: translateY(-30px) rotate(-3deg) scale(0.96);
+  filter: blur(2px);
 }
 
 .endingcard {

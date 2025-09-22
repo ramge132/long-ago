@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카드 교체 애니메이션 테스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 애니메이션 1: 플립 (현재 사용중) */
+        .flip-enter-active, .flip-leave-active {
+            transition: all 0.6s ease;
+        }
+        .flip-enter-from {
+            opacity: 0;
+            transform: rotateY(-90deg);
+        }
+        .flip-leave-to {
+            opacity: 0;
+            transform: rotateY(90deg);
+        }
+
+        /* 애니메이션 2: 슬라이드 페이드 */
+        .slide-fade-enter-active, .slide-fade-leave-active {
+            transition: all 0.5s ease;
+        }
+        .slide-fade-enter-from {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.9);
+        }
+        .slide-fade-leave-to {
+            opacity: 0;
+            transform: translateY(30px) scale(0.9);
+        }
+
+        /* 애니메이션 3: 스케일 바운스 */
+        .scale-bounce-enter-active {
+            animation: scaleIn 0.6s ease-out;
+        }
+        .scale-bounce-leave-active {
+            animation: scaleOut 0.4s ease-in;
+        }
+        @keyframes scaleIn {
+            0% { transform: scale(0) rotate(180deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(90deg); opacity: 0.7; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes scaleOut {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: scale(0) rotate(-180deg); opacity: 0; }
+        }
+
+        /* 애니메이션 4: 타이핑머신 */
+        .typewriter-enter-active {
+            animation: typeIn 0.8s ease-out;
+        }
+        .typewriter-leave-active {
+            animation: typeOut 0.4s ease-in;
+        }
+        @keyframes typeIn {
+            0% { width: 0; height: 100%; opacity: 0; transform: translateX(-100%); }
+            50% { width: 100%; height: 100%; opacity: 0.5; transform: translateX(0%); }
+            100% { width: 100%; height: 100%; opacity: 1; transform: translateX(0%); }
+        }
+        @keyframes typeOut {
+            0% { width: 100%; height: 100%; opacity: 1; transform: translateX(0%); }
+            100% { width: 0; height: 100%; opacity: 0; transform: translateX(100%); }
+        }
+
+        /* 애니메이션 5: 3D 큐브 회전 */
+        .cube-rotate-enter-active, .cube-rotate-leave-active {
+            transition: all 0.7s ease;
+        }
+        .cube-rotate-enter-from {
+            opacity: 0;
+            transform: perspective(800px) rotateX(-90deg) rotateY(45deg) scale(0.8);
+        }
+        .cube-rotate-leave-to {
+            opacity: 0;
+            transform: perspective(800px) rotateX(90deg) rotateY(-45deg) scale(0.8);
+        }
+
+        /* 애니메이션 6: 원형 스핀 */
+        .circle-spin-enter-active {
+            animation: circleSpinIn 0.8s ease-out;
+        }
+        .circle-spin-leave-active {
+            animation: circleSpinOut 0.5s ease-in;
+        }
+        @keyframes circleSpinIn {
+            0% {
+                transform: rotate(0deg) scale(0) translateY(-200px);
+                opacity: 0;
+                border-radius: 50%;
+            }
+            50% {
+                transform: rotate(180deg) scale(0.5) translateY(-100px);
+                opacity: 0.5;
+                border-radius: 30%;
+            }
+            100% {
+                transform: rotate(360deg) scale(1) translateY(0px);
+                opacity: 1;
+                border-radius: 12px;
+            }
+        }
+        @keyframes circleSpinOut {
+            0% {
+                transform: rotate(0deg) scale(1) translateY(0px);
+                opacity: 1;
+                border-radius: 12px;
+            }
+            50% {
+                transform: rotate(-180deg) scale(0.5) translateY(100px);
+                opacity: 0.5;
+                border-radius: 30%;
+            }
+            100% {
+                transform: rotate(-360deg) scale(0) translateY(200px);
+                opacity: 0;
+                border-radius: 50%;
+            }
+        }
+
+        /* 애니메이션 7: 매트릭스 디지털 */
+        .matrix-enter-active {
+            animation: matrixIn 1s ease-out;
+        }
+        .matrix-leave-active {
+            animation: matrixOut 0.6s ease-in;
+        }
+        @keyframes matrixIn {
+            0% {
+                opacity: 0;
+                transform: scaleY(0) skewX(45deg);
+                filter: blur(10px) hue-rotate(0deg);
+            }
+            25% {
+                opacity: 0.3;
+                transform: scaleY(0.3) skewX(25deg);
+                filter: blur(8px) hue-rotate(90deg);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scaleY(0.7) skewX(10deg);
+                filter: blur(4px) hue-rotate(180deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scaleY(1) skewX(0deg);
+                filter: blur(0px) hue-rotate(360deg);
+            }
+        }
+        @keyframes matrixOut {
+            0% {
+                opacity: 1;
+                transform: scaleY(1) skewX(0deg);
+                filter: blur(0px) hue-rotate(0deg);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scaleY(0.5) skewX(-25deg);
+                filter: blur(6px) hue-rotate(-180deg);
+            }
+            100% {
+                opacity: 0;
+                transform: scaleY(0) skewX(-45deg);
+                filter: blur(15px) hue-rotate(-360deg);
+            }
+        }
+
+        /* 애니메이션 8: 부드러운 웨이브 */
+        .wave-enter-active, .wave-leave-active {
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .wave-enter-from {
+            opacity: 0;
+            transform: translateY(40px) rotate(5deg) scale(0.95);
+            filter: blur(3px);
+        }
+        .wave-leave-to {
+            opacity: 0;
+            transform: translateY(-40px) rotate(-5deg) scale(0.95);
+            filter: blur(3px);
+        }
+
+        .card {
+            width: 120px;
+            height: 150px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        }
+
+        .container {
+            perspective: 1000px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">카드 교체 애니메이션 테스트</h1>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+
+            <!-- 애니메이션 1: 플립 (현재) -->
+            <div class="text-center">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">1. 플립 (현재)</h3>
+                <div class="container h-64 flex items-center justify-center">
+                    <transition name="flip" mode="out-in">
+                        <div :key="cards.flip" class="card">{{ cards.flip }}</div>
+                    </transition>
+                </div>
+                <button @click="changeCard('flip')" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    교체하기
+                </button>
+            </div>
+
+            <!-- 애니메이션 2: 슬라이드 페이드 -->
+            <div class="text-center">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">2. 슬라이드 페이드</h3>
+                <div class="container h-64 flex items-center justify-center">
+                    <transition name="slide-fade" mode="out-in">
+                        <div :key="cards.slideFade" class="card">{{ cards.slideFade }}</div>
+                    </transition>
+                </div>
+                <button @click="changeCard('slideFade')" class="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    교체하기
+                </button>
+            </div>
+
+            <!-- 애니메이션 3: 스케일 바운스 -->
+            <div class="text-center">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">3. 스케일 바운스</h3>
+                <div class="container h-64 flex items-center justify-center">
+                    <transition name="scale-bounce" mode="out-in">
+                        <div :key="cards.scaleBounce" class="card">{{ cards.scaleBounce }}</div>
+                    </transition>
+                </div>
+                <button @click="changeCard('scaleBounce')" class="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">
+                    교체하기
+                </button>
+            </div>
+
+            <!-- 애니메이션 4: 타이핑머신 -->
+            <div class="text-center">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">4. 타이핑머신</h3>
+                <div class="container h-64 flex items-center justify-center">
+                    <transition name="typewriter" mode="out-in">
+                        <div :key="cards.typewriter" class="card">{{ cards.typewriter }}</div>
+                    </transition>
+                </div>
+                <button @click="changeCard('typewriter')" class="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                    교체하기
+                </button>
+            </div>
+
+            <!-- 애니메이션 5: 3D 큐브 회전 -->
+            <div class="text-center">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">5. 3D 큐브 회전</h3>
+                <div class="container h-64 flex items-center justify-center">
+                    <transition name="cube-rotate" mode="out-in">
+                        <div :key="cards.cubeRotate" class="card">{{ cards.cubeRotate }}</div>
+                    </transition>
+                </div>
+                <button @click="changeCard('cubeRotate')" class="mt-4 px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
+                    교체하기
+                </button>
+            </div>
+
+            <!-- 애니메이션 6: 원형 스핀 -->
+            <div class="text-center">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">6. 원형 스핀</h3>
+                <div class="container h-64 flex items-center justify-center">
+                    <transition name="circle-spin" mode="out-in">
+                        <div :key="cards.circleSpin" class="card">{{ cards.circleSpin }}</div>
+                    </transition>
+                </div>
+                <button @click="changeCard('circleSpin')" class="mt-4 px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">
+                    교체하기
+                </button>
+            </div>
+
+            <!-- 애니메이션 7: 매트릭스 디지털 -->
+            <div class="text-center">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">7. 매트릭스 디지털</h3>
+                <div class="container h-64 flex items-center justify-center">
+                    <transition name="matrix" mode="out-in">
+                        <div :key="cards.matrix" class="card">{{ cards.matrix }}</div>
+                    </transition>
+                </div>
+                <button @click="changeCard('matrix')" class="mt-4 px-4 py-2 bg-green-400 text-white rounded hover:bg-green-500">
+                    교체하기
+                </button>
+            </div>
+
+            <!-- 애니메이션 8: 부드러운 웨이브 -->
+            <div class="text-center">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">8. 부드러운 웨이브</h3>
+                <div class="container h-64 flex items-center justify-center">
+                    <transition name="wave" mode="out-in">
+                        <div :key="cards.wave" class="card">{{ cards.wave }}</div>
+                    </transition>
+                </div>
+                <button @click="changeCard('wave')" class="mt-4 px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600">
+                    교체하기
+                </button>
+            </div>
+
+        </div>
+
+        <div class="mt-12 text-center">
+            <button @click="changeAllCards" class="px-8 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 text-lg font-semibold">
+                모든 카드 동시 교체하기
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                const cardTexts = ['마법사', '공주', '용사', '도적', '아이돌', '농부', '의사', '탐정'];
+
+                const cards = ref({
+                    flip: '마법사',
+                    slideFade: '마법사',
+                    scaleBounce: '마법사',
+                    typewriter: '마법사',
+                    cubeRotate: '마법사',
+                    circleSpin: '마법사',
+                    matrix: '마법사',
+                    wave: '마법사'
+                });
+
+                const changeCard = (type) => {
+                    const currentText = cards.value[type];
+                    const availableTexts = cardTexts.filter(text => text !== currentText);
+                    const randomText = availableTexts[Math.floor(Math.random() * availableTexts.length)];
+                    cards.value[type] = randomText;
+                };
+
+                const changeAllCards = () => {
+                    Object.keys(cards.value).forEach(type => {
+                        setTimeout(() => changeCard(type), Math.random() * 300);
+                    });
+                };
+
+                return {
+                    cards,
+                    changeCard,
+                    changeAllCards
+                };
+            }
+        }).mount('body');
+    </script>
+</body>
+</html>
