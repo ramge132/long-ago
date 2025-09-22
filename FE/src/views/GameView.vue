@@ -439,35 +439,50 @@ const setupConnection = (conn) => {
         emit("startLoading", {value: true});
 
         startReceived(data).then(async () => {
-          // 엔딩카드 이미지 프리로딩 시작 (백그라운드에서)
-          CardImage.preloadAllEndingCards().then(() => {
-            // 엔딩카드 이미지 프리로드 성공 (guest)
-          }).catch((error) => {
-            // 엔딩카드 이미지 프리로드 실패 (guest)
-          });
-
-          // 내 카드 받기와 라우터 이동을 동시에 처리
-          const [response] = await Promise.all([
-            enterGame({
+          try {
+            // 1. 내 카드 받기
+            const response = await enterGame({
               userId: peerId.value,
               gameId: gameID.value,
-            }),
-            router.push("/game/play")
-          ]);
-
-          storyCards.value = response.data.data.storyCards;
-          endingCard.value = response.data.data.endingCard;
-
-          // 로딩 즉시 비활성화
-          emit("startLoading", {value: false});
-
-          // 오버레이 표시
-          await showOverlay('start');
-          setTimeout(() => {
-            showOverlay('whoTurn').then(() => {
-              inProgress.value = true;
             });
-          }, 500); // 딜레이 단축
+
+            storyCards.value = response.data.data.storyCards;
+            endingCard.value = response.data.data.endingCard;
+
+            // 2. 내 카드 정보 추출
+            const storyCardIds = storyCards.value.map(card => card.id);
+            const endingCardId = endingCard.value.id;
+
+            console.log('🎯 게스트 카드 이미지 프리로딩 시작...', {
+              storyCards: storyCardIds,
+              endingCard: endingCardId
+            });
+
+            // 3. 모든 카드 이미지 프리로드 완료까지 대기
+            await CardImage.preloadPlayerCards(storyCardIds, endingCardId);
+
+            console.log('✅ 게스트 모든 카드 이미지 프리로딩 완료!');
+
+            // 4. 게임 화면으로 전환
+            await router.push("/game/play");
+
+            // 5. 로딩 화면 종료
+            emit("startLoading", {value: false});
+
+            // 6. 오버레이 표시
+            await showOverlay('start');
+            setTimeout(() => {
+              showOverlay('whoTurn').then(() => {
+                inProgress.value = true;
+              });
+            }, 500);
+
+          } catch (error) {
+            console.error('❌ 게스트 카드 프리로딩 실패:', error);
+            // 에러가 발생해도 게임은 계속 진행
+            await router.push("/game/play");
+            emit("startLoading", {value: false});
+          }
         });
         break;
 
@@ -1396,23 +1411,43 @@ const gameStart = async (data) => {
       myTurn.value = turnIndex; // inGameOrder에서의 내 위치 (무작위 턴 순서)
     }
   });
-  // API 호출과 라우터 이동을 병렬로 처리하여 시간 단축
-  Promise.all([
-    // 게임 시작 API 호출들을 여기에 넣을 수 있습니다.
-    router.push("/game/play")
-  ]).then(() => {
-    // 로딩 즉시 비활성화
+  // 카드 이미지 프리로딩 후 게임 화면으로 전환
+  try {
+    // 1. 내 카드 정보 추출
+    const storyCardIds = storyCards.value.map(card => card.id);
+    const endingCardId = endingCard.value.id;
+
+    console.log('🎯 카드 이미지 프리로딩 시작...', {
+      storyCards: storyCardIds,
+      endingCard: endingCardId
+    });
+
+    // 2. 모든 카드 이미지 프리로드 완료까지 대기
+    await CardImage.preloadPlayerCards(storyCardIds, endingCardId);
+
+    console.log('✅ 모든 카드 이미지 프리로딩 완료!');
+
+    // 3. 게임 화면으로 전환
+    await router.push("/game/play");
+
+    // 4. 로딩 화면 종료
     emit("startLoading", {value: false});
 
-    // 오버레이 표시
+    // 5. 오버레이 표시
     showOverlay('start').then(() => {
       setTimeout(() => {
         showOverlay('whoTurn').then(() => {
           inProgress.value = true;
         });
-      }, 500); // 딜레이 단축
+      }, 500);
     });
-  });
+
+  } catch (error) {
+    console.error('❌ 카드 프리로딩 실패:', error);
+    // 에러가 발생해도 게임은 계속 진행
+    await router.push("/game/play");
+    emit("startLoading", {value: false});
+  }
 };
 
 const startReceived = (data) => {

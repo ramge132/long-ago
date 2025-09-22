@@ -45,10 +45,47 @@ const preloadEndingCardImages = (cardIds = []) => {
   )
 }
 
+// 스토리 카드 이미지 프리로딩 함수
+const preloadStoryCardImages = (cardIds = []) => {
+  return Promise.all(
+    cardIds.map(cardId => {
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => {
+          // 스토리 카드 프리로드 성공
+          resolve(cardId)
+        }
+        img.onerror = () => {
+          // 스토리 카드 프리로드 실패 시 무시
+          resolve(cardId) // resolve anyway to not block other images
+        }
+        img.src = getStoryCardImage(cardId)
+      })
+    })
+  )
+}
+
 // 모든 엔딩 카드 이미지 프리로딩 (1-19번)
 const preloadAllEndingCards = () => {
   const allEndingCardIds = Array.from({length: 19}, (_, i) => i + 1)
   return preloadEndingCardImages(allEndingCardIds)
+}
+
+// 특정 플레이어의 카드들만 프리로딩 (게임 시작 시 사용)
+const preloadPlayerCards = (storyCardIds = [], endingCardId = null) => {
+  const promises = []
+
+  // 스토리 카드들 프리로드
+  if (storyCardIds.length > 0) {
+    promises.push(preloadStoryCardImages(storyCardIds))
+  }
+
+  // 엔딩 카드 프리로드
+  if (endingCardId) {
+    promises.push(preloadEndingCardImages([endingCardId]))
+  }
+
+  return Promise.all(promises)
 }
 
 export default {
@@ -57,5 +94,7 @@ export default {
     getStoryCardImage,
     getEndingCardImage,
     preloadEndingCardImages,
+    preloadStoryCardImages,
     preloadAllEndingCards,
+    preloadPlayerCards,
 }
