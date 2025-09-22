@@ -53,14 +53,19 @@
           <p class="whitespace-nowrap absolute top-[-1.25rem] font-semibold" style="text-shadow: 2px 0 4px #fff, -2px 0 4px #fff, 0 2px 4px #fff, 0 -2px 4px #fff, 1px 1px #fff, -1px -1px 4px #fff, 1px -1px 4px #fff, -1px 1px 4px #fff;" v-text="mode.mark" :class="index === 1 ? 'text-[#c3b6a5]' : ''"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
-        <input type="text" class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2 focus:outline-0" v-model="message"
+        <input type="text"
+          :class="[
+            'pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2 focus:outline-0',
+            index !== 0 ? 'pr-12' : 'pr-0'
+          ]"
+          v-model="message"
           @keyup.enter="mode.fucntion"
           @input="handleMessageInput"
           :maxlength="index === 0 ? null : 40"
           :placeholder="mode.placeholder"
           :ref="(el) => (chatRefs[index] = el)" />
-        <!-- 글자수 표시 (이야기/자유 결말 모드에서만) -->
-        <div v-if="index !== 0" class="absolute -top-6 right-3 text-sm text-gray-500">
+        <!-- 글자수 표시 (이야기/자유 결말 모드에서만) - 채팅창 내부 절대 위치 -->
+        <div v-if="index !== 0" class="absolute right-12 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
           {{ message.length }}/40
         </div>
         <button class="rounded-full w-8 h-8 shrink-0 p-1 flex justify-center items-center focus:outline-0"
@@ -831,34 +836,34 @@ watch(() => message.value, (newValue) => {
 .chat-with-orb::before {
   content: '';
   position: absolute;
-  top: -8px;
-  left: -8px;
-  right: -8px;
-  bottom: -8px;
-  background: linear-gradient(-45deg, #fefefe, #f9f7f5, #fefefe, #f9f7f5);
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: linear-gradient(-45deg, #f8f8f8, #f5f5f5, #f8f8f8, #f5f5f5);
   background-size: 400% 400%;
   border-radius: 24px; /* 채팅창에 맞게 더 둥글게 */
   z-index: -1;
-  animation: orb-fade-in 0.25s ease-out, gradient-shift 3s ease infinite;
-  filter: blur(12px);
-  opacity: 0.9;
+  animation: orb-fade-in 0.25s ease-out, gradient-shift 4s ease infinite;
+  filter: blur(10px);
+  opacity: 0.4;
   pointer-events: none;
 }
 
 .chat-with-orb::after {
   content: '';
   position: absolute;
-  top: -6px;
-  left: -6px;
-  right: -6px;
-  bottom: -6px;
-  background: linear-gradient(-45deg, #fefefe, #f9f7f5, #fefefe, #f9f7f5);
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: linear-gradient(-45deg, #f8f8f8, #f5f5f5, #f8f8f8, #f5f5f5);
   background-size: 400% 400%;
   border-radius: 20px; /* 채팅창에 맞게 더 둥글게 */
   z-index: -1;
-  animation: orb-fade-in 0.3s ease-out, gradient-shift 3s ease infinite reverse;
-  filter: blur(8px);
-  opacity: 0.7;
+  animation: orb-fade-in 0.3s ease-out, gradient-shift 4s ease infinite reverse;
+  filter: blur(6px);
+  opacity: 0.3;
   pointer-events: none;
 }
 
