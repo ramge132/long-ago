@@ -43,14 +43,23 @@
       </div>
     </div>
     <div class="absolute bottom-4 flex justify-center items-end gap-x-2 w-full z-[30] pointer-events-none">
-      <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center pointer-events-auto"
+      <div class="rounded-full bg-[#ffffffdb] drop-shadow-md h-10 flex flex-1 px-3 items-center pointer-events-auto relative"
         v-for="(mode, index) in chatMode" :key="index" :class="index == currChatModeIdx ? '' : 'hidden'">
         <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer" @click="changeMode">
           <p class="whitespace-nowrap absolute top-[-1.25rem] font-semibold" style="text-shadow: 2px 0 4px #fff, -2px 0 4px #fff, 0 2px 4px #fff, 0 -2px 4px #fff, 1px 1px #fff, -1px -1px 4px #fff, 1px -1px 4px #fff, -1px 1px 4px #fff;" v-text="mode.mark" :class="index === 1 ? 'text-[#c3b6a5]' : ''"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
         <input type="text" class="pl-3 bg-transparent w-full h-full text-2xl font-semibold mx-2 focus:outline-0" v-model="message"
-          @keyup.enter="mode.fucntion" :placeholder="mode.placeholder" :ref="(el) => (chatRefs[index] = el)" />
+          @keyup.enter="mode.fucntion"
+          @input="handleMessageInput"
+          :maxlength="index === 0 ? null : 40"
+          :placeholder="mode.placeholder"
+          :ref="(el) => (chatRefs[index] = el)" />
+        <!-- 글자수 표시 (이야기/자유 결말 모드에서만) -->
+        <div v-if="index !== 0" class="absolute -top-8 right-3 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded-full"
+             style="text-shadow: none;">
+          {{ message.length }}/40
+        </div>
         <button class="rounded-full w-8 h-8 shrink-0 p-1 flex justify-center items-center focus:outline-0"
           @click="mode.fucntion">
           <img :src="SendIcon" alt="보내기" class="object-scale-down w-3/4 h-3/4" />
@@ -296,6 +305,19 @@ const props = defineProps({
 const dynamicClass = ref(`card${props.storyCards.length}`);
 
 const emit = defineEmits(["broadcastMessage", "nextTurn", "cardReroll", "goLobby"]);
+
+// 메시지 입력 핸들러 - 40자 제한 (이야기/자유 결말 모드에서만)
+const handleMessageInput = (event) => {
+  const value = event.target.value;
+  const currentIndex = currChatModeIdx.value;
+
+  // 대화 모드(index 0)는 제한 없음, 이야기/자유 결말 모드는 40자 제한
+  if (currentIndex !== 0 && value.length > 40) {
+    message.value = value.slice(0, 40);
+  } else {
+    message.value = value;
+  }
+};
 
 const sendChat = () => {
   if (message.value.trim()) {

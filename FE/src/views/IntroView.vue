@@ -63,8 +63,14 @@
           type="text"
           class="w-full h-12 font-medium rounded-xl border border-[#00000090] bg-neutral-100/50 px-3"
           v-model="nickname"
+          maxlength="10"
+          @input="handleNicknameInput"
           @keydown.enter="start"
+          placeholder="닉네임 (최대 10자)"
         />
+        <div class="text-sm text-gray-500 mt-1 text-right">
+          {{ nickname.length }}/10
+        </div>
       </div>
       <div
         class="w-80 h-16 font-semibold text-2xl rounded-xl bg-black text-white cursor-pointer flex justify-center items-center startBtn"
@@ -204,9 +210,20 @@ const refresh = () => {
   do {
     randomIndex = Math.floor(Math.random() * profiles.value.length);
   } while (randomIndex === currentIndex.value && profiles.value.length > 1);
-  
+
   currentIndex.value = randomIndex;
   currentProfile.value = profiles.value[randomIndex];
+};
+
+// 닉네임 입력 핸들러 - 10자 제한
+const handleNicknameInput = (event) => {
+  const value = event.target.value;
+  if (value.length > 10) {
+    // 10자를 초과하면 10자까지만 자르기
+    nickname.value = value.slice(0, 10);
+  } else {
+    nickname.value = value;
+  }
 };
 
 const start = () => {
