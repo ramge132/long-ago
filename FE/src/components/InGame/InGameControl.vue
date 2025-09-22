@@ -392,7 +392,7 @@ const chatMode = computed(() => {
     modes.push({
       mark: "결말",
       fucntion: sendFreeEnding,
-      placeholder: "점수를 조금 얻지만 자유롭게 결말을 작성할 수 있습니다",
+      placeholder: "점수를 조금 얻지만 자유롭게 결말을 맺을 수 있습니다",
     });
   } else {
     // 일반 모드: 이야기 모드

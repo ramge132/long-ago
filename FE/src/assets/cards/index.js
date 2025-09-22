@@ -16,6 +16,11 @@ const getStoryCardImage = (cardId) => {
 // 엔딩 카드 이미지 매핑 함수
 const getEndingCardImage = (cardId) => {
   try {
+    // 자유 엔딩인 경우 특별한 이미지 반환
+    if (cardId === 'free_ending') {
+      return new URL(`/src/assets/cards/ending/ending_free.png`, import.meta.url).href
+    }
+
     // 동적 import를 위한 require 사용
     return new URL(`/src/assets/cards/ending/ending_${cardId}.png`, import.meta.url).href
   } catch (error) {
@@ -65,9 +70,10 @@ const preloadStoryCardImages = (cardIds = []) => {
   )
 }
 
-// 모든 엔딩 카드 이미지 프리로딩 (1-19번)
+// 모든 엔딩 카드 이미지 프리로딩 (1-19번 + 자유 엔딩)
 const preloadAllEndingCards = () => {
   const allEndingCardIds = Array.from({length: 19}, (_, i) => i + 1)
+  allEndingCardIds.push('free_ending') // 자유 엔딩 카드도 포함
   return preloadEndingCardImages(allEndingCardIds)
 }
 
