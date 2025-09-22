@@ -56,19 +56,21 @@
           </div>
         </div>
 
-        <!-- 버튼들 -->
+        <!-- 버튼들 (macOS 스타일) -->
         <div class="flex space-x-3">
           <button
             @click="acceptExchange"
             :disabled="!selectedMyCard"
-            class="flex-1 py-2 px-4 glassmorphism-white rounded-xl text-gray-700 font-medium transition-all duration-200"
-            :class="selectedMyCard ? 'hover:bg-white/30' : 'opacity-50 cursor-not-allowed'"
+            class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-sm border"
+            :class="selectedMyCard
+              ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed border-gray-300'"
           >
             수락
           </button>
           <button
             @click="rejectExchange"
-            class="flex-1 py-2 px-4 glassmorphism-white hover:bg-white/30 rounded-xl text-gray-700 font-medium transition-all duration-200"
+            class="flex-1 py-3 px-4 bg-white hover:bg-gray-50 border border-gray-300 rounded-xl text-gray-700 font-semibold transition-all duration-200 shadow-sm"
           >
             거절
           </button>

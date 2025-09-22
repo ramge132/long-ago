@@ -1,23 +1,12 @@
 <template>
   <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center">
-    <!-- 배경 오버레이 (투명) -->
-    <div class="absolute inset-0 bg-black/20" @click="closeModal"></div>
-
     <!-- 화이트 글래스모피즘 사용자 선택 모달 -->
-    <div class="relative glassmorphism-white rounded-2xl p-6 max-w-sm w-full mx-4">
+    <div class="relative glassmorphism-white rounded-2xl p-5 max-w-xs w-full mx-4">
       <div class="text-center">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">교환할 플레이어</h3>
-
-        <!-- 선택된 카드 정보 -->
-        <div class="glassmorphism-white rounded-xl p-3 mb-4">
-          <div class="flex items-center justify-center">
-            <img :src="CardImage.getStoryCardImage(selectedCard.id)" :alt="`스토리카드 ${selectedCard.keyword}`" class="w-12 mr-2">
-            <span class="text-gray-700 font-medium">{{ selectedCard.keyword }}</span>
-          </div>
-        </div>
+        <h3 class="text-base font-bold text-gray-800 mb-3">교환할 플레이어</h3>
 
         <!-- 플레이어 목록 -->
-        <div class="space-y-2 mb-4">
+        <div class="space-y-2 mb-3">
           <button
             v-for="participant in filteredParticipants"
             :key="participant.id"
