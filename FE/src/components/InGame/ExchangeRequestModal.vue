@@ -29,7 +29,6 @@
           <!-- 내 카드 (선택 영역) -->
           <div class="text-center">
             <div v-if="!selectedMyCard" class="w-20 h-24 border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center mx-auto">
-              <span class="text-sm text-gray-500">선택</span>
             </div>
             <div v-else>
               <img :src="CardImage.getStoryCardImage(selectedMyCard.id)" :alt="`스토리카드 ${selectedMyCard.keyword}`" class="w-20 mx-auto rounded-lg">
@@ -141,20 +140,19 @@ const rejectExchange = () => {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* 네온 글로우 펄스 버튼 효과 (투표창 찬성 컬러와 동일) */
+/* 네온 글로우 펄스 버튼 효과 (진한 파스텔 블루톤) */
 .neon-button {
-  background: linear-gradient(145deg, #93c5fd, #7dd3fc);
-  color: #1e3a8a;
+  background: linear-gradient(145deg, #60a5fa, #3b82f6);
+  color: #e0f2fe;
   border: transparent;
-  box-shadow: 0 4px 15px 0 rgba(147, 197, 253, 0.6);
+  box-shadow: 0 4px 15px 0 rgba(96, 165, 250, 0.6);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
 .neon-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px 0 rgba(147, 197, 253, 0.8);
+  box-shadow: 0 8px 25px 0 rgba(96, 165, 250, 0.8);
 }
 
 .neon-shimmer {
