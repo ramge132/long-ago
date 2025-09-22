@@ -42,12 +42,7 @@
       <h3>AI는 어떤 그림을 그려주나요?</h3>
       <p>AI는 당신이 작성한 이야기를 분석해서 그에 맞는 삽화를 실시간으로 생성합니다. 9가지 다양한 아트 스타일 중에서 선택할 수 있습니다.</p>
     </div>
-    <!-- 초기 ink.gif 로딩 오버레이 -->
-    <Transition name="fade">
-      <div v-if="introLoading" class="absolute inset-0 bg-white flex justify-center items-center z-10">
-        <img src="@/assets/ink.gif" alt="Loading..." style="width: 300px; height: auto;"/>
-      </div>
-    </Transition>
+    <!-- IntroView 로딩 제거 - TigerAnimation으로 통합 -->
 
     <div class="flex flex-col items-center justify-center gap-y-6">
       <div class="flex items-center relative">
@@ -155,7 +150,6 @@ const audioStore = useAudioStore();
 const router = useRouter();
 const route = useRoute();
 const nickname = ref("닉네임");
-const introLoading = ref(true); // 인트로 화면 자체 로딩 상태
 
 const profiles = ref([
   Profile.cat_1,
@@ -255,16 +249,11 @@ const preloadImages = () => {
 };
 
 onMounted(async () => {
-  // 이미지 프리로딩
+  // 이미지 프리로딩 (로딩 화면 없이 백그라운드에서)
   try {
     await preloadImages();
   } catch (error) {
     // 이미지 프리로딩 실패 시 무시
-  } finally {
-    // 모든 처리가 끝난 후 로딩 화면 제거
-    nextTick(() => {
-      introLoading.value = false;
-    });
   }
   
   const randomIndex = Math.floor(Math.random() * profiles.value.length);
