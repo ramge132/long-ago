@@ -341,36 +341,36 @@ const emoticons = ref(
 
 const props = defineProps({
   myTurn: {
-    Type: Number,
+    type: Number,
   },
   currTurn: {
-    Type: Number,
+    type: Number,
   },
   storyCards: {
-    Type: Array,
+    type: Array,
   },
   endingCard: {
-    Type: Object,
+    type: Object,
   },
   gameStarted: {
-    Type: Boolean,
+    type: Boolean,
   },
   isEndingMode: {
-    Type: Boolean,
+    type: Boolean,
   },
   ISBN: {
-    Type: String,
+    type: String,
   },
   participants: {
-    Type: Array,
+    type: Array,
     default: () => []
   },
   peerId: {
-    Type: String,
+    type: String,
     default: ''
   },
   gameId: {
-    Type: String,
+    type: String,
     default: ''
   }
 });
