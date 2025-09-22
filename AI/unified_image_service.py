@@ -342,6 +342,7 @@ class ImageGenerationService:
         # 캐릭터 대명사 처리
         if context.last_mentioned_character:
             character_pronouns = {
+                # 3인칭 대명사 (기존)
                 "그는": context.last_mentioned_character + "는",
                 "그가": context.last_mentioned_character + "가",
                 "그를": context.last_mentioned_character + "를",
@@ -354,6 +355,24 @@ class ImageGenerationService:
                 "그들이": context.last_mentioned_character + "들이",
                 "그들을": context.last_mentioned_character + "들을",
                 "그들의": context.last_mentioned_character + "들의",
+
+                # 1인칭 대명사 (캐릭터 관점에서 자신을 지칭)
+                "나는": context.last_mentioned_character + "는",
+                "나가": context.last_mentioned_character + "가",
+                "내가": context.last_mentioned_character + "가",
+                "나를": context.last_mentioned_character + "를",
+                "나의": context.last_mentioned_character + "의",
+                "내": context.last_mentioned_character + "의",
+                "제가": context.last_mentioned_character + "가",
+                "저는": context.last_mentioned_character + "는",
+                "저를": context.last_mentioned_character + "를",
+                "저의": context.last_mentioned_character + "의",
+
+                # 1인칭 복수 (캐릭터가 포함된 그룹)
+                "우리는": context.last_mentioned_character + "들은",
+                "우리가": context.last_mentioned_character + "들이",
+                "우리를": context.last_mentioned_character + "들을",
+                "우리의": context.last_mentioned_character + "들의",
             }
             
             for pronoun, replacement in character_pronouns.items():
@@ -762,10 +781,10 @@ async def generate_cover_endpoint(request: BookCoverRequestFromJava):
             drawingStyle=request.drawingStyle
         )
         
-        # Java가 기대하는 응답 형식으로 반환
+        # Java가 기대하는 응답 형식으로 반환 (camelCase 필드명 사용)
         response_data = {
             "title": title,
-            "image_data": base64.b64encode(image_data).decode()
+            "imageData": base64.b64encode(image_data).decode()  # Java에서 imageData로 읽음
         }
         
         return response_data
