@@ -273,10 +273,21 @@ const runBookSequence = async () => {
 
 watch(
   () => props.gameStarted,
-  async (newValue) => {
+  async (newValue, oldValue) => {
+    // 새 게임이 시작될 때 (로비에서 게임으로 전환) 상태 초기화
+    if (newValue === true && oldValue === false) {
+      // 페이지 상태 완전 초기화
+      flippedPages.clear();
+      animationCompleted.clear();
+      isClickLocked.value = false;
+
+      // 첫 번째 페이지 클릭 효과 (표지 열기)
+      handlePageClick(0);
+    }
+
     if (newValue === false) {
       isClickLocked.value = true;
-      
+
       // 첫 페이지로 이동 (표지를 넘김)
       flippedPages.clear();
       flippedPages.add(0);
@@ -301,9 +312,13 @@ watch(
 
 onMounted(() => {
   updatePagesZIndex();
-  
+
+  // 컴포넌트 마운트 시 상태 초기화
+  flippedPages.clear();
+  animationCompleted.clear();
+
   // 읽기 모드가 아닐 때만 초기 페이지 클릭 (게임 중에는 페이지를 열어둠)
-  if (!props.isReadingMode) {
+  if (!props.isReadingMode && props.gameStarted) {
     handlePageClick(0);
   }
   // 읽기 모드일 때는 표지만 보여줌 (flippedPages가 비어있으면 표지만 표시됨)

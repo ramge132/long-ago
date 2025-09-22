@@ -2181,6 +2181,7 @@ const goLobby = () => {
   // 게임 관련 데이터 초기화
   receivedMessages.value = [];
   currTurn.value = 0;
+  totalTurn.value = 1;
   bookContents.value = [{ content: "", image: null }];
   bookCover.value = {title: "", imageUrl: ""};
   ISBN.value = "";
@@ -2189,9 +2190,41 @@ const goLobby = () => {
   inProgress.value = false;
   inGameOrder.value = [];
   isForceStopped.value = null;
+
+  // 투표 및 선출 관련 상태 초기화
+  isElected.value = false;
+  isVoted.value = false;
+
+  // 게임 모드 및 설정 초기화
+  isEndingMode.value = false;
+  hasReached35Percent.value = false;
+  isPreview.value = false;
+
+  // 모달 및 알림 상태 초기화
+  showWarningModal.value = false;
+  warningModalMessage.value = "";
+  showSmallAlert.value = false;
+  smallAlertMessage.value = "";
+
+  // 프롬프트 상태 초기화
+  prompt.value = "";
+
+  // 카드 상태 초기화
+  storyCards.value = [];
+  endingCard.value = { id: 0, content: "" };
+
+  // 방 설정 초기화
+  roomConfigs.value = {
+    currTurnTime: 30,
+    currMode: 0,
+  };
+
+  // 참가자 점수 초기화
   participants.value.forEach((participant) => {
     participant.score = 10;
   });
+
+  // 사용된 카드 초기화
   usedCard.value = {
     id: 0,
     keyword: "",
