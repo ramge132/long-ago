@@ -429,7 +429,7 @@ const chatMode = computed(() => {
     modes.push({
       mark: "이야기",
       fucntion: sendprompt,
-      placeholder: "카드는 자동으로 인식됩니다 (한 장만 사용 가능)",
+      placeholder: "카드는 자동 인식됩니다 (한 장만 사용 가능)",
     });
   }
 
@@ -836,34 +836,34 @@ watch(() => message.value, (newValue) => {
 .chat-with-orb::before {
   content: '';
   position: absolute;
-  top: -6px;
-  left: -6px;
-  right: -6px;
-  bottom: -6px;
-  background: linear-gradient(-45deg, #f8f8f8, #f5f5f5, #f8f8f8, #f5f5f5);
+  top: -7px;
+  left: -7px;
+  right: -7px;
+  bottom: -7px;
+  background: linear-gradient(-45deg, #fafafa, #f7f7f7, #fafafa, #f7f7f7);
   background-size: 400% 400%;
   border-radius: 24px; /* 채팅창에 맞게 더 둥글게 */
   z-index: -1;
-  animation: orb-fade-in 0.25s ease-out, gradient-shift 4s ease infinite;
-  filter: blur(10px);
-  opacity: 0.4;
+  animation: orb-fade-in 0.25s ease-out, gradient-shift 3.5s ease infinite;
+  filter: blur(12px);
+  opacity: 0.7;
   pointer-events: none;
 }
 
 .chat-with-orb::after {
   content: '';
   position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
-  background: linear-gradient(-45deg, #f8f8f8, #f5f5f5, #f8f8f8, #f5f5f5);
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: linear-gradient(-45deg, #fafafa, #f7f7f7, #fafafa, #f7f7f7);
   background-size: 400% 400%;
   border-radius: 20px; /* 채팅창에 맞게 더 둥글게 */
   z-index: -1;
-  animation: orb-fade-in 0.3s ease-out, gradient-shift 4s ease infinite reverse;
-  filter: blur(6px);
-  opacity: 0.3;
+  animation: orb-fade-in 0.3s ease-out, gradient-shift 3.5s ease infinite reverse;
+  filter: blur(8px);
+  opacity: 0.5;
   pointer-events: none;
 }
 
