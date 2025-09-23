@@ -145,6 +145,8 @@ const myTurn = ref(null);
 const inProgress = ref(false);
 // 내가 가지고있는 스토리카드
 const storyCards = ref([]);
+// 다른 플레이어들의 카드 정보 추적 (중복 방지용)
+const otherPlayersCards = ref(new Map()); // Map<userId, cardIds[]>
 // 내가 가지고있는 엔딩카드
 const endingCard = ref({ id: 0, content: "" });
 // 턴 오버레이 애니메이션 지연
@@ -731,10 +733,7 @@ const setupConnection = (conn) => {
                   };
                 });
 
-                // 현재 플레이어의 사용한 카드도 패에서 제거 (자유 결말이 아닌 경우에만)
-                if (!usedCard.value.isFreeEnding) {
-                  storyCards.value = storyCards.value.filter(card => card.id !== usedCard.value.id);
-                }
+                // 카드는 이미 프롬프트 필터링 시점에 제거됨
 
                 await showOverlay('whoTurn');
                 inProgress.value = true;
@@ -882,12 +881,24 @@ const setupConnection = (conn) => {
         conn.lastHeartbeat = Date.now();
         break;
 
+      case "playerCardsSync":
+        // 다른 플레이어의 카드 정보 동기화
+        if (data.userId !== peerId.value) {
+          otherPlayersCards.value.set(data.userId, data.cardIds);
+          console.log(`플레이어 ${data.userId}의 카드 정보 동기화:`, data.cardIds);
+        }
+        break;
+
       case "storyCardRefreshed":
         // 다른 플레이어의 카드 새로고침 동기화
         if (data.userId !== peerId.value) {
-          const cardIndex = storyCards.value.findIndex(card => card.id === data.oldCard.id);
-          if (cardIndex !== -1) {
-            storyCards.value[cardIndex] = data.newCard;
+          // 다른 플레이어의 카드 목록 업데이트
+          const playerCards = otherPlayersCards.value.get(data.userId);
+          if (playerCards) {
+            const cardIndex = playerCards.findIndex(cardId => cardId === data.oldCard.id);
+            if (cardIndex !== -1) {
+              playerCards[cardIndex] = data.newCard.id;
+            }
           }
         }
         break;
@@ -1523,6 +1534,19 @@ const gameStart = async (data) => {
       peer.connection,
     );
   });
+
+  // 게임 시작 후 내 카드 정보를 다른 플레이어들에게 공유
+  setTimeout(() => {
+    const myCardIds = storyCards.value.map(card => card.id);
+    connectedPeers.value.forEach((peer) => {
+      if (peer.connection && peer.connection.open) {
+        sendMessage("playerCardsSync", {
+          userId: peerId.value,
+          cardIds: myCardIds
+        }, peer.connection);
+      }
+    });
+  }, 1000); // 게임 시작 1초 후 카드 정보 동기화
   
   // myTurn을 inGameOrder에서의 위치로 설정 (무작위 순서)
   participants.value.forEach((p, i) => {
@@ -1713,6 +1737,21 @@ const nextTurn = async (data) => {
             usedCard.value.keyword = card.keyword;
           }
         })
+
+        // 백엔드에서 결정한 사용된 카드를 즉시 패에서 제거
+        storyCards.value = storyCards.value.filter(card => card.id !== usedCard.value.id);
+        console.log(`카드 사용으로 제거됨: ID ${usedCard.value.id}, keyword: ${usedCard.value.keyword}`);
+
+        // 내 카드 정보 업데이트 (다른 플레이어들에게 전송)
+        const myCardIds = storyCards.value.map(card => card.id);
+        connectedPeers.value.forEach((peer) => {
+          if (peer.connection && peer.connection.open) {
+            sendMessage("playerCardsSync", {
+              userId: peerId.value,
+              cardIds: myCardIds
+            }, peer.connection);
+          }
+        });
       } catch (error) {
         toast.errorToast(error.response?.data?.message || "프롬프트 필터링 중 오류가 발생했습니다.");
         return;
@@ -2008,10 +2047,7 @@ const voteEnd = async (data) => {
               }
             });
 
-            // 현재 플레이어의 사용한 카드도 패에서 제거 (자유 결말이 아닌 경우에만)
-            if (!usedCard.value.isFreeEnding) {
-              storyCards.value = storyCards.value.filter(card => card.id !== usedCard.value.id);
-            }
+            // 카드는 이미 프롬프트 필터링 시점에 제거됨
 
             // 투표 찬성 후 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
             if (!wasEndingCard) {
@@ -2356,23 +2392,59 @@ const goLobby = () => {
 };
 
 // 카드 새로고침 처리
-const handleCardRefreshed = (data) => {
-  // storyCards에서 oldCard를 찾아 newCard로 교체
-  const cardIndex = storyCards.value.findIndex(card => card.id === data.oldCard.id);
-  if (cardIndex !== -1) {
-    storyCards.value[cardIndex] = data.newCard;
-  }
-
-  // P2P 메시지로 다른 플레이어들에게 알림
-  connectedPeers.value.forEach(peer => {
-    if (peer.connection && peer.connection.open) {
-      sendMessage("storyCardRefreshed", {
-        userId: peerId.value,
-        oldCard: data.oldCard,
-        newCard: data.newCard
-      }, peer.connection);
-    }
+const handleCardRefreshed = async (data) => {
+  // 다른 플레이어들이 보유한 모든 카드 ID 수집
+  const allOtherPlayerCards = [];
+  otherPlayersCards.value.forEach((cardIds) => {
+    allOtherPlayerCards.push(...cardIds);
   });
+
+  console.log("새로고침 시 제외할 카드들:", allOtherPlayerCards);
+
+  try {
+    // 백엔드에 새로고침 요청 (다른 플레이어 카드 제외)
+    const response = await refreshStoryCard({
+      gameId: data.gameId || gameID.value,
+      userId: data.userId || peerId.value,
+      cardId: data.oldCard.id,
+      excludeCardIds: allOtherPlayerCards // 다른 플레이어 카드 제외
+    });
+
+    if (response.data.success) {
+      const newCard = response.data.data;
+
+      // storyCards에서 oldCard를 찾아 newCard로 교체
+      const cardIndex = storyCards.value.findIndex(card => card.id === data.oldCard.id);
+      if (cardIndex !== -1) {
+        storyCards.value[cardIndex] = newCard;
+      }
+
+      // 내 카드 정보 업데이트 (다른 플레이어들에게 전송용)
+      const myCardIds = storyCards.value.map(card => card.id);
+
+      // P2P 메시지로 다른 플레이어들에게 알림
+      connectedPeers.value.forEach(peer => {
+        if (peer.connection && peer.connection.open) {
+          sendMessage("storyCardRefreshed", {
+            userId: peerId.value,
+            oldCard: data.oldCard,
+            newCard: newCard
+          }, peer.connection);
+
+          // 업데이트된 내 카드 목록도 전송
+          sendMessage("playerCardsSync", {
+            userId: peerId.value,
+            cardIds: myCardIds
+          }, peer.connection);
+        }
+      });
+
+      console.log(`카드 새로고침 완료: ${data.oldCard.keyword} → ${newCard.keyword}`);
+    }
+  } catch (error) {
+    console.error("카드 새로고침 중 오류:", error);
+    throw error; // InGameControl에서 처리하도록 다시 던짐
+  }
 };
 
 // 교환 신청 처리
