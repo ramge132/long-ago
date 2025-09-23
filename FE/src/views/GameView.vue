@@ -192,6 +192,8 @@ const emit = defineEmits(["startLoading"]);
 // 투표 결과를 보냈는 지 여부
 const isVoted = ref(false);
 const currentVoteSelection = ref("up"); // 현재 선택된 투표 값 추적
+// 투표 대기 중인 임시 이미지 저장
+const pendingImage = ref(null);
 // 게임 종료 애니메이션
 watch(isForceStopped, (newValue) => {
   if (newValue !== null) {
@@ -517,6 +519,12 @@ const setupConnection = (conn) => {
           console.log("투표 거절로 인한 책 내용 삭제 처리");
           console.log("삭제 전 책 내용:", bookContents.value);
 
+          // 투표 반대로 인한 삭제 시 임시 이미지도 함께 삭제
+          if (pendingImage.value) {
+            console.log("nextTurn: 투표 반대로 임시 이미지 삭제");
+            pendingImage.value = null;
+          }
+
           if (data.voteRejected && data.rejectedPrompt) {
             console.log("거절된 이야기:", data.rejectedPrompt);
 
@@ -671,7 +679,9 @@ const setupConnection = (conn) => {
         const receivedArrayBuffer = data.imageBlob;
         const receivedBlob = new Blob([receivedArrayBuffer]);
         const imageBlob = URL.createObjectURL(receivedBlob);
-        bookContents.value[bookContents.value.length - 1].image = imageBlob;
+        // 즉시 책에 추가하지 않고 투표 결과까지 임시 저장
+        pendingImage.value = imageBlob;
+        console.log("다른 플레이어로부터 이미지 수신 - 투표 결과 대기 중");
         break;
 
       case "warningNotification":
@@ -1879,7 +1889,7 @@ const nextTurn = async (data) => {
       
       const imageBlob = URL.createObjectURL(responseImage.data);
       const arrayBuffer = await responseImage.data.arrayBuffer();
-      
+
       connectedPeers.value.forEach((peer, index) => {
         if (peer.id !== peerId.value && peer.connection.open) {
           sendMessage(
@@ -1889,8 +1899,10 @@ const nextTurn = async (data) => {
           )
         }
       });
-      
-      bookContents.value[bookContents.value.length - 1].image = imageBlob;
+
+      // 즉시 책에 추가하지 않고 투표 결과까지 임시 저장
+      pendingImage.value = imageBlob;
+      console.log("이미지 생성 완료 - 투표 결과 대기 중");
       
     } catch (error) {
       let errorMessage = "";
@@ -2061,6 +2073,13 @@ const voteEnd = async (data) => {
           const wasFreeEnding = usedCard.value.isFreeEnding; // 상태 초기화 전에 저장
           currentPlayer.score += scoreIncrease;
 
+          // 투표 찬성 시 임시 이미지를 책에 추가
+          if (pendingImage.value) {
+            bookContents.value[bookContents.value.length - 1].image = pendingImage.value;
+            console.log("투표 찬성 - 임시 이미지를 책에 등록");
+            pendingImage.value = null; // 임시 이미지 초기화
+          }
+
           currTurn.value = (currTurn.value + 1) % participants.value.length;
           if (wasEndingCard) {
             gameEnd(true);
@@ -2123,6 +2142,12 @@ const voteEnd = async (data) => {
           }
         } else {
           accepted = false;
+
+          // 투표 반대 시 임시 이미지 삭제
+          if (pendingImage.value) {
+            console.log("투표 반대 - 임시 이미지 삭제");
+            pendingImage.value = null;
+          }
 
           // 결말카드가 반대된 경우 상태 초기화
           if (usedCard.value.isEnding) {
@@ -2229,6 +2254,14 @@ const voteEnd = async (data) => {
 
         if (voteAccepted) {
           isElected.value = true;
+
+          // 투표 찬성 시 임시 이미지를 책에 추가
+          if (pendingImage.value) {
+            bookContents.value[bookContents.value.length - 1].image = pendingImage.value;
+            console.log("게스트: 투표 찬성 - 임시 이미지를 책에 등록");
+            pendingImage.value = null; // 임시 이미지 초기화
+          }
+
           // 투표 찬성 후 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
           if (!wasEndingCard) {
             usedCard.value = {
@@ -2239,6 +2272,12 @@ const voteEnd = async (data) => {
             };
           }
         } else {
+          // 투표 반대 시 임시 이미지 삭제
+          if (pendingImage.value) {
+            console.log("게스트: 투표 반대 - 임시 이미지 삭제");
+            pendingImage.value = null;
+          }
+
           // 투표 반대 시 - 게스트도 상태 초기화 필요
           if (usedCard.value.isEnding) {
             isEndingMode.value = false;
@@ -2430,6 +2469,7 @@ const goLobby = () => {
   // 투표 및 선출 관련 상태 초기화
   isElected.value = false;
   isVoted.value = false;
+  pendingImage.value = null; // 임시 이미지 초기화
 
   // 게임 모드 및 설정 초기화
   isEndingMode.value = false;
