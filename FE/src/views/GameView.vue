@@ -197,12 +197,20 @@ watch(isForceStopped, (newValue) => {
   }
 });
 
-// 긴장감 퍼센트
+// 긴장감 퍼센트 (결말카드는 제외)
 const percentage = computed(() => {
   if (bookContents.value.length == 1 && bookContents.value[0].content == "") {
     return 0
   } else {
-    return Math.round((bookContents.value.length / (participants.value.length * 3)) * 100)
+    // 결말카드는 긴장감 계산에서 제외
+    const nonEndingContents = bookContents.value.filter((content, index) => {
+      // 첫 번째는 빈 content이므로 제외, 마지막이 결말카드인 경우 제외
+      if (index === 0 && content.content === "") return false;
+      // 현재 마지막 콘텐츠가 결말카드인지 확인 (usedCard.isEnding으로 판단)
+      if (index === bookContents.value.length - 1 && usedCard.value.isEnding) return false;
+      return true;
+    });
+    return Math.round((nonEndingContents.length / (participants.value.length * 3)) * 100)
   }
 });
 
@@ -1855,7 +1863,41 @@ const nextTurn = async (data) => {
           }
         }
       } else {
-        toast.errorToast("이미지 생성에 실패했습니다: " + (error?.message || "알 수 없는 오류"));
+        // 일반 에러 시 즉시 턴 넘기기 (재시도하지 않음)
+        if (currTurn.value === myTurn.value) {
+          const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+          currentPlayer.score -= 1; // 에러로 인한 점수 차감
+
+          // 마지막 추가된 bookContent 제거 (이미지 실패로 인해)
+          if (bookContents.value.length === 1) {
+            bookContents.value = [{ content: "", image: null }];
+          } else {
+            bookContents.value = bookContents.value.slice(0, -1);
+          }
+
+          currTurn.value = (currTurn.value + 1) % participants.value.length;
+
+          // 다른 플레이어들에게 턴 넘김 알림
+          connectedPeers.value.forEach((peer) => {
+            if (peer.id !== peerId.value && peer.connection.open) {
+              sendMessage("nextTurn", {
+                currTurn: currTurn.value,
+                imageDelete: true,
+                totalTurn: totalTurn.value,
+                scoreChange: { type: "decrease", amount: 1, playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1] },
+                reason: "이미지 생성 실패"
+              }, peer.connection);
+            }
+          });
+
+          toast.errorToast("이미지 생성에 실패하여 턴이 넘어갑니다: " + (error?.message || "알 수 없는 오류"));
+
+          // 다음 턴 오버레이 표시
+          await showOverlay('whoTurn');
+          inProgress.value = true;
+        } else {
+          toast.errorToast("이미지 생성에 실패했습니다: " + (error?.message || "알 수 없는 오류"));
+        }
       }
     }
   }
