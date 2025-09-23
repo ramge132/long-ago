@@ -884,7 +884,7 @@ const setupConnection = (conn) => {
                       }, p.connection);
                     }
                   });
-                }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
+                }, 4000); // 2초 → 4초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
               } else {
                 const scoreIncrease = usedCard.value.isEnding ?
                   (usedCard.value.isFreeEnding ? 3 : 5) : 2;
@@ -1013,7 +1013,7 @@ const setupConnection = (conn) => {
                       }, p.connection);
                     }
                   });
-                }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
+                }, 4000); // 2초 → 4초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
               } else {
                 // ✅ 수정: 게스트 플레이어도 nextTurn 메시지 대기 (현재 턴 플레이어가 보낼 것임)
                 console.log("게스트 플레이어 - nextTurn 메시지 대기 중");
@@ -2206,14 +2206,14 @@ const nextTurn = async (data) => {
     let retryNotificationTimer = null;
 
     try {
-      // 이미지 생성 중 재시도 알림 타이머 설정 (5초 후)
+      // 이미지 생성 중 재시도 알림 타이머 설정 (15초 후)
       retryNotificationTimer = setTimeout(() => {
         const retryWarningMessage = {
           type: "retryingContent",
-          message: "부적절한 이미지가 나왔어요!\n다시 그려볼게요!"
+          message: "그림이 조금 이상하네요!\n다시 그려볼게요!"
         };
         showInappropriateWarningModal(retryWarningMessage);
-      }, 5000);
+      }, 15000);
 
       const responseImage = await createImage({
         gameId: gameID.value,
@@ -2315,7 +2315,7 @@ const nextTurn = async (data) => {
           if (usedCard.value.isEnding) {
             setTimeout(() => {
               isForceStopped.value = "champ";
-            }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
+            }, 4000); // 2초 → 4초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
             
             await gameEnd(true).then(() => {
               connectedPeers.value.forEach(async (p) => {
@@ -2505,7 +2505,7 @@ const voteEnd = async (data) => {
                   }, p.connection);
                 }
               });
-            }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
+            }, 4000); // 2초 → 4초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
           } else {
             console.log("=== 일반카드 처리 - 다음 턴 진행 ===");
             console.log("다음 턴으로 전환하는 메시지 전송 중...");
@@ -2714,7 +2714,7 @@ const voteEnd = async (data) => {
                 }, p.connection);
               }
             });
-          }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
+          }, 4000); // 2초 → 4초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
         }
       }
     }
