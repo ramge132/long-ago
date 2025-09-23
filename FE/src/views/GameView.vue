@@ -1208,15 +1208,8 @@ const setupConnection = (conn) => {
         } else {
           console.log("3. 교환 거절됨");
 
-          // 교환 거절 - 신청자도 교환 횟수 차감 (거절되어도 시도 비용)
-          console.log("3-1. 신청자 교환 거절 - exchangeCount 차감");
-          if (currentViewRef.value && currentViewRef.value.updateCounts) {
-            // 현재 exchangeCount에서 1 차감
-            const currentExchangeCount = document.querySelector('.exchange-button-container .expanded-content p:last-child')?.textContent || "3";
-            const newExchangeCount = Math.max(0, parseInt(currentExchangeCount) - 1);
-            console.log(`3-2. 신청자 교환 거절 시 exchangeCount 업데이트: ${currentExchangeCount} → ${newExchangeCount}`);
-            currentViewRef.value.updateCounts(null, newExchangeCount);
-          }
+          // 교환 거절 시에는 exchangeCount를 차감하지 않음 (거절은 시도 비용 없음)
+          console.log("3-1. 교환 거절 - exchangeCount 차감하지 않음");
 
           toast.errorToast("상대방이 교환을 거절했습니다.");
 
@@ -2948,10 +2941,18 @@ const handleSendExchangeRequest = (data) => {
   }
 
   console.log("2. targetUserId:", data.targetUserId);
-  console.log("3. 현재 connectedPeers:", connectedPeers.value.map(p => ({id: p.id, connectionOpen: p.connection?.open})));
+  console.log("3. 현재 participants:", participants.value.map(p => ({id: p.id, name: p.name})));
+  console.log("4. 현재 connectedPeers:", connectedPeers.value.map(p => ({id: p.id, connectionOpen: p.connection?.open})));
+
+  // participants와 connectedPeers 동기화 상태 확인
+  const participantIds = participants.value.map(p => p.id).sort();
+  const connectedPeerIds = connectedPeers.value.map(p => p.id).sort();
+  console.log("5. participants IDs:", participantIds);
+  console.log("6. connectedPeers IDs:", connectedPeerIds);
+  console.log("7. 동기화 상태:", JSON.stringify(participantIds) === JSON.stringify(connectedPeerIds) ? "OK" : "불일치");
 
   const targetPeer = connectedPeers.value.find(peer => peer.id === data.targetUserId);
-  console.log("4. 찾은 targetPeer:", targetPeer ? {id: targetPeer.id, connectionOpen: targetPeer.connection?.open} : null);
+  console.log("8. 찾은 targetPeer:", targetPeer ? {id: targetPeer.id, connectionOpen: targetPeer.connection?.open} : null);
 
   if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
     // 디바운싱 적용하여 중복 요청 방지
