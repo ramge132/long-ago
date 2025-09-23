@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend, exchangeStoryCard } from "@/apis/game";
+import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend, exchangeStoryCard, refreshStoryCard } from "@/apis/game";
 import { currTurnImage, myTurnImage, startImage, MessageMusic, WarningIcon } from "@/assets";
 import CardImage from "@/assets/cards";
 import toast from "@/functions/toast";
