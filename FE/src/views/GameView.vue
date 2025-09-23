@@ -180,6 +180,13 @@ const isPreview = ref(false);
 
 watch(isElected, (newValue) => {
   if (newValue === true) {
+    // ✅ 수정: 투표 통과 시 임시 이미지를 책에 추가
+    if (pendingImage.value) {
+      bookContents.value[bookContents.value.length - 1].image = pendingImage.value;
+      console.log("✅ isElected watch: 임시 이미지를 책에 등록");
+      pendingImage.value = null; // 임시 이미지 초기화
+    }
+
     setTimeout(() => {
       isElected.value = false;
     }, 1000);
@@ -2166,12 +2173,8 @@ const voteEnd = async (data) => {
           currentPlayer.score += scoreIncrease;
           console.log("새 점수:", currentPlayer.score);
 
-          // 투표 찬성 시 임시 이미지를 책에 추가
-          if (pendingImage.value) {
-            bookContents.value[bookContents.value.length - 1].image = pendingImage.value;
-            console.log("투표 찬성 - 임시 이미지를 책에 등록");
-            pendingImage.value = null; // 임시 이미지 초기화
-          }
+          // ✅ 수정: 이미지 추가는 isElected watch에서 처리됨
+          console.log("투표 찬성 - 이미지는 isElected watch에서 처리됨");
 
           console.log("현재 턴 변경 전:", currTurn.value);
           currTurn.value = (currTurn.value + 1) % participants.value.length;
@@ -2367,12 +2370,8 @@ const voteEnd = async (data) => {
         if (voteAccepted) {
           isElected.value = true;
 
-          // 투표 찬성 시 임시 이미지를 책에 추가
-          if (pendingImage.value) {
-            bookContents.value[bookContents.value.length - 1].image = pendingImage.value;
-            console.log("게스트: 투표 찬성 - 임시 이미지를 책에 등록");
-            pendingImage.value = null; // 임시 이미지 초기화
-          }
+          // ✅ 수정: 이미지 추가는 isElected watch에서 처리됨
+          console.log("게스트: 투표 찬성 - 이미지는 isElected watch에서 처리됨");
 
           // 투표 찬성 후 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
           if (!wasEndingCard) {
