@@ -731,6 +731,11 @@ const setupConnection = (conn) => {
                   };
                 });
 
+                // 현재 플레이어의 사용한 카드도 패에서 제거 (자유 결말이 아닌 경우에만)
+                if (!usedCard.value.isFreeEnding) {
+                  storyCards.value = storyCards.value.filter(card => card.id !== usedCard.value.id);
+                }
+
                 await showOverlay('whoTurn');
                 inProgress.value = true;
               };
@@ -2002,6 +2007,12 @@ const voteEnd = async (data) => {
                 }, p.connection);
               }
             });
+
+            // 현재 플레이어의 사용한 카드도 패에서 제거 (자유 결말이 아닌 경우에만)
+            if (!usedCard.value.isFreeEnding) {
+              storyCards.value = storyCards.value.filter(card => card.id !== usedCard.value.id);
+            }
+
             // 투표 찬성 후 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
             if (!wasEndingCard) {
               usedCard.value = {
