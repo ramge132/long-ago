@@ -471,7 +471,17 @@ const showExchangeRequest = (exchangeRequestData) => {
 
 // 외부에서 접근 가능하게 expose
 defineExpose({
-  showExchangeRequest
+  showExchangeRequest,
+  updateCounts: (newRefreshCount, newExchangeCount) => {
+    console.log("=== InGameView updateCounts 중계 ===");
+    console.log("inGameControlRef.value:", inGameControlRef.value);
+    if (inGameControlRef.value && inGameControlRef.value.updateCounts) {
+      console.log("InGameControl로 updateCounts 호출 중계");
+      inGameControlRef.value.updateCounts(newRefreshCount, newExchangeCount);
+    } else {
+      console.error("❌ InGameControl ref 또는 updateCounts 메서드가 없습니다!");
+    }
+  }
 });
 
 onBeforeUnmount(() => {

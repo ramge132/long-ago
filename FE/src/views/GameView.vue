@@ -2819,6 +2819,7 @@ const handleCardRefreshed = async (data) => {
         console.log("currentViewRef.value:", currentViewRef.value);
         if (currentViewRef.value) {
           console.log("currentViewRef의 메서드들:", Object.keys(currentViewRef.value));
+        console.log("currentViewRef의 모든 속성들:", currentViewRef.value);
         }
       }
     } else {
