@@ -999,12 +999,22 @@ defineExpose({
   onCardRefreshSuccess,
   onCardRefreshError,
   updateCounts: (newRefreshCount, newExchangeCount) => {
+    console.log("=== InGameControl updateCounts 함수 호출됨 ===");
+    console.log("현재 refreshCount:", refreshCount.value);
+    console.log("받은 newRefreshCount:", newRefreshCount);
+    console.log("받은 newExchangeCount:", newExchangeCount);
+
     if (newRefreshCount !== null && newRefreshCount !== undefined) {
+      console.log(`refreshCount 업데이트: ${refreshCount.value} → ${newRefreshCount}`);
       refreshCount.value = newRefreshCount;
     }
     if (newExchangeCount !== null && newExchangeCount !== undefined) {
+      console.log(`exchangeCount 업데이트: ${exchangeCount.value} → ${newExchangeCount}`);
       exchangeCount.value = newExchangeCount;
     }
+
+    console.log("업데이트 후 refreshCount:", refreshCount.value);
+    console.log("=== updateCounts 완료 ===");
   }
 });
 </script>

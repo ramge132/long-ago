@@ -861,6 +861,12 @@ const setupConnection = (conn) => {
               accepted = false;
               console.log("=== 투표 거절 처리 시작 ===");
 
+              // ✅ 수정: 투표 거절 시 pendingImage 정리
+              if (pendingImage.value) {
+                console.log("현재 턴 플레이어: 투표 거절 - pendingImage 정리");
+                pendingImage.value = null;
+              }
+
               // ✅ 수정: 투표 거절 시 사용된 카드를 패에 복원
               if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
                 storyCards.value.push(usedCardBackup.value);
@@ -956,6 +962,12 @@ const setupConnection = (conn) => {
             } else {
               // ✅ 수정: 게스트 플레이어도 투표 거절 시 카드 복원
               console.log("게스트 플레이어 - 투표 거절 처리");
+
+              // ✅ 수정: 투표 거절 시 pendingImage 정리
+              if (pendingImage.value) {
+                console.log("게스트 플레이어: 투표 거절 - pendingImage 정리");
+                pendingImage.value = null;
+              }
 
               // 투표 거절 시 사용된 카드를 패에 복원
               if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
@@ -2733,6 +2745,11 @@ const handleCardRefreshed = async (data) => {
       const newCard = responseData.newCard;
       const updatedRefreshCount = responseData.refreshCount;
 
+      console.log("=== 백엔드 새로고침 응답 ===");
+      console.log("새 카드:", newCard);
+      console.log("업데이트된 새로고침 횟수:", updatedRefreshCount);
+      console.log("응답 전체 데이터:", responseData);
+
       // storyCards에서 oldCard를 찾아 newCard로 교체
       const cardIndex = storyCards.value.findIndex(card => card.id === data.oldCard.id);
       if (cardIndex !== -1) {
@@ -2786,7 +2803,12 @@ const handleCardRefreshed = async (data) => {
       // InGameControl의 refreshCount 동기화
       if (currentViewRef.value && currentViewRef.value.updateCounts) {
         // exchangeCount는 현재 값 유지하고 refreshCount만 업데이트
+        console.log("=== handleCardRefreshed에서 updateCounts 호출 ===");
+        console.log("전달할 updatedRefreshCount:", updatedRefreshCount);
+        console.log("exchangeCount는 null로 유지");
+
         currentViewRef.value.updateCounts(updatedRefreshCount, null);
+        console.log("=== updateCounts 호출 완료 ===");
       }
     } else {
       // 새로고침 실패
