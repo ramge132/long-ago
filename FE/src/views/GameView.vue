@@ -2575,7 +2575,12 @@ const handleCardRefreshed = async (data) => {
       }
     }
   } catch (error) {
-    console.error("카드 새로고침 중 오류:", error);
+    console.error("=== 카드 새로고침 중 오류 ===");
+    console.error("에러 상태:", error.response?.status);
+    console.error("에러 데이터:", error.response?.data);
+    console.error("게임 ID:", data.gameId || gameID.value);
+    console.error("사용자 ID:", data.userId || peerId.value);
+    console.error("전체 에러:", error);
 
     // InGameControl에 에러 알림
     if (currentViewRef.value && currentViewRef.value.onCardRefreshError) {

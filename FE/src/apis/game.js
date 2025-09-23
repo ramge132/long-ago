@@ -119,7 +119,12 @@ export const refreshStoryCard = async (data) => {
     console.log("API 응답 성공:", response.data);
     return response;
   } catch (error) {
-    console.error("API 호출 에러:", error);
+    console.error("=== refreshStoryCard API 에러 ===");
+    console.error("에러 상태:", error.response?.status);
+    console.error("에러 메시지:", error.response?.data);
+    console.error("요청 URL:", error.config?.url);
+    console.error("요청 파라미터:", error.config?.params);
+    console.error("전체 에러:", error);
     throw error;
   }
 }
