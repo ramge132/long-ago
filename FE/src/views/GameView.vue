@@ -469,10 +469,11 @@ const setupConnection = (conn) => {
 
       case "gameStart":
         isPreview.value = data.isPreview;
-        // 게임 관련 데이터 초기화
+        // 게임 관련 데이터 초기화 (게스트용)
         participants.value = data.participants;
         receivedMessages.value = [];
         currTurn.value = 0;
+        totalTurn.value = 1;
         bookContents.value = [{ content: "", image: null }];
         bookCover.value = {title: "", imageUrl: ""};
         ISBN.value = "";
@@ -481,13 +482,36 @@ const setupConnection = (conn) => {
         inProgress.value = false;
         inGameOrder.value = [];
         isForceStopped.value = null;
+        isEndingMode.value = false;
+        hasReached35Percent.value = false;
         usedCard.value = {
           id: 0,
           keyword: "",
           isEnding: false,
           isFreeEnding: false
         };
+
+        // 투표 관련 초기화 (게스트용)
         isElected.value = false;
+        isVoted.value = false;
+        currentVoteSelection.value = "up";
+        usedCardBackup.value = null;
+        pendingImage.value = null;
+
+        // 프롬프트 초기화 (게스트용)
+        prompt.value = "";
+
+        // 교환 시스템 초기화 (게스트용)
+        otherPlayersCards.value = new Map();
+        isExchangeProcessing.value = false;
+        cardExchangeStatus.value = new Map();
+        exchangeDebounceTimers.value = new Map();
+
+        // 알림/모달 상태 초기화 (게스트용)
+        showWarningModal.value = false;
+        warningModalMessage.value = "";
+        showSmallAlert.value = false;
+        smallAlertMessage.value = "";
 
         // 로딩 애니메이션 활성화
         emit("startLoading", {value: true});
@@ -1736,6 +1760,7 @@ const gameStart = async (data) => {
   // 게임 관련 데이터 초기화
   receivedMessages.value = [];
   currTurn.value = 0;
+  totalTurn.value = 1;
   bookContents.value = [{ content: "", image: null }];
   bookCover.value = {title: "", imageUrl: ""};
   ISBN.value = "";
@@ -1744,6 +1769,8 @@ const gameStart = async (data) => {
   inProgress.value = false;
   inGameOrder.value = [];
   isForceStopped.value = null;
+  isEndingMode.value = false;
+  hasReached35Percent.value = false;
   participants.value.forEach((participant) => {
     participant.score = 10;
   })
@@ -1753,6 +1780,28 @@ const gameStart = async (data) => {
     isEnding: false,
     isFreeEnding: false
   };
+
+  // 투표 관련 초기화
+  isElected.value = false;
+  isVoted.value = false;
+  currentVoteSelection.value = "up";
+  usedCardBackup.value = null;
+  pendingImage.value = null;
+
+  // 프롬프트 초기화
+  prompt.value = "";
+
+  // 교환 시스템 초기화
+  otherPlayersCards.value = new Map();
+  isExchangeProcessing.value = false;
+  cardExchangeStatus.value = new Map();
+  exchangeDebounceTimers.value = new Map();
+
+  // 알림/모달 상태 초기화
+  showWarningModal.value = false;
+  warningModalMessage.value = "";
+  showSmallAlert.value = false;
+  smallAlertMessage.value = "";
 
   // 시연 모드 확인
   isPreview.value = data.isPreview;
