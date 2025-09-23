@@ -859,7 +859,28 @@ const setupConnection = (conn) => {
               };
             } else {
               accepted = false;
-              
+              console.log("=== 투표 거절 처리 시작 ===");
+
+              // ✅ 수정: 투표 거절 시 사용된 카드를 패에 복원
+              if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+                storyCards.value.push(usedCardBackup.value);
+                console.log(`투표 거절로 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
+              } else {
+                console.log("카드 복원 불가:", {
+                  hasBackup: !!usedCardBackup.value,
+                  isFreeEnding: usedCard.value.isFreeEnding
+                });
+              }
+
+              // 백업 정보 및 usedCard 상태 초기화
+              usedCardBackup.value = null;
+              usedCard.value = {
+                id: 0,
+                keyword: "",
+                isEnding: false,
+                isFreeEnding: false
+              };
+
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               connectedPeers.value.forEach((peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
@@ -874,15 +895,15 @@ const setupConnection = (conn) => {
                   )
                 }
               });
-              
+
               if (bookContents.value.length === 1) {
                 bookContents.value = [{ content: "", image: null }];
               } else {
                 bookContents.value = bookContents.value.slice(0, -1);
               }
-              
+
               currentPlayer.score -= 1;
-              
+
               await showOverlay('whoTurn');
               inProgress.value = true;
             }
@@ -933,8 +954,25 @@ const setupConnection = (conn) => {
                 console.log("게스트 플레이어 - nextTurn 메시지 대기 중");
               }
             } else {
-              // ✅ 수정: 투표 거절 시 게스트도 nextTurn 메시지 대기
-              console.log("게스트 플레이어 - 투표 거절, nextTurn 메시지 대기 중");
+              // ✅ 수정: 게스트 플레이어도 투표 거절 시 카드 복원
+              console.log("게스트 플레이어 - 투표 거절 처리");
+
+              // 투표 거절 시 사용된 카드를 패에 복원
+              if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+                storyCards.value.push(usedCardBackup.value);
+                console.log(`게스트: 투표 거절로 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
+              }
+
+              // 백업 정보 및 usedCard 상태 초기화
+              usedCardBackup.value = null;
+              usedCard.value = {
+                id: 0,
+                keyword: "",
+                isEnding: false,
+                isFreeEnding: false
+              };
+
+              console.log("게스트 플레이어 - nextTurn 메시지 대기 중");
             }
           }
         }
