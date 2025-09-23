@@ -1149,6 +1149,23 @@ const setupConnection = (conn) => {
           console.log("7. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
           toast.successToast("카드 교환이 완료되었습니다!");
 
+          // 교환받은 카드 이미지 프리로딩 (신청자)
+          try {
+            const receivedCardImageUrl = CardImage.getStoryCardImage(data.toCard.id);
+            console.log(`🎯 교환받은 카드 이미지 프리로딩 (신청자): ${data.toCard.keyword} (ID: ${data.toCard.id})`);
+
+            const img = new Image();
+            img.onload = () => {
+              console.log(`✅ 교환받은 카드 이미지 로드 완료 (신청자): ${data.toCard.keyword}`);
+            };
+            img.onerror = () => {
+              console.warn(`❌ 교환받은 카드 이미지 로드 실패 (신청자): ${data.toCard.keyword}`);
+            };
+            img.src = receivedCardImageUrl;
+          } catch (error) {
+            console.warn(`❌ 교환받은 카드 이미지 프리로딩 중 오류 (신청자): ${data.toCard.keyword}`, error);
+          }
+
           // 교환 완료 후 내 카드 정보 업데이트 (다른 플레이어들에게 전송)
           const myCardIds = storyCards.value.map(card => card.id);
           connectedPeers.value.forEach((peer) => {
@@ -1164,6 +1181,10 @@ const setupConnection = (conn) => {
           if (inGameControlRef.value) {
             inGameControlRef.value.clearPendingExchange(data.fromCardId);
           }
+
+          // 교환 성공 시 카드 상태 초기화
+          setCardExchangeStatus(data.fromCardId, EXCHANGE_STATUS.IDLE);
+          setCardExchangeStatus(data.toCard.id, EXCHANGE_STATUS.IDLE);
         } else {
           console.log("3. 교환 거절됨");
           toast.errorToast("상대방이 교환을 거절했습니다.");
@@ -1172,6 +1193,9 @@ const setupConnection = (conn) => {
           if (inGameControlRef.value) {
             inGameControlRef.value.clearPendingExchange(data.fromCardId);
           }
+
+          // 교환 거절 시 카드 상태 초기화
+          setCardExchangeStatus(data.fromCardId, EXCHANGE_STATUS.IDLE);
         }
         console.log("=== 교환 응답 수신 처리 끝 (신청자) ===");
         break;
@@ -1606,6 +1630,24 @@ addEventListener("beforeunload", () => {
 
 // 컴포넌트 언마운트 전에 peer 객체 정리
 onBeforeUnmount(() => {
+  // 교환 관련 정리
+  console.log("🧹 컴포넌트 정리 시작 - 교환 상태 및 타이머 정리");
+
+  // 모든 교환 디바운스 타이머 정리
+  exchangeDebounceTimers.value.forEach((timer, cardId) => {
+    clearTimeout(timer);
+    console.log(`⏰ 교환 타이머 정리: 카드 ${cardId}`);
+  });
+  exchangeDebounceTimers.value.clear();
+
+  // 모든 카드 교환 상태 초기화
+  cardExchangeStatus.value.clear();
+
+  // 전역 교환 처리 플래그 초기화
+  isExchangeProcessing.value = false;
+
+  console.log("✅ 교환 관련 정리 완료");
+
   // connectedPeers 중 내가 아닌 peer들에게 연결 종료를 알림
   connectedPeers.value.forEach((peer) => {
     sendMessage(
@@ -2848,6 +2890,22 @@ const handleCardRefreshed = async (data) => {
 const handleSendExchangeRequest = (data) => {
   console.log("=== 교환 신청 처리 시작 ===");
   console.log("1. 전달받은 data:", data);
+
+  // 카드 상태 확인
+  const cardStatus = getCardExchangeStatus(data.cardId);
+  if (cardStatus !== EXCHANGE_STATUS.IDLE) {
+    console.log(`1-1. 카드 ${data.cardId}가 이미 교환 상태 ${cardStatus} - 중단`);
+    toast.warningToast("해당 카드는 이미 교환 요청 중입니다.");
+    return;
+  }
+
+  // 전역 교환 처리 중이면 중단
+  if (isExchangeProcessing.value) {
+    console.log("1-2. 이미 전역 교환 처리 중 - 중단");
+    toast.warningToast("다른 교환이 진행 중입니다. 잠시 후 다시 시도해주세요.");
+    return;
+  }
+
   console.log("2. targetUserId:", data.targetUserId);
   console.log("3. 현재 connectedPeers:", connectedPeers.value.map(p => ({id: p.id, connectionOpen: p.connection?.open})));
 
@@ -2855,17 +2913,34 @@ const handleSendExchangeRequest = (data) => {
   console.log("4. 찾은 targetPeer:", targetPeer ? {id: targetPeer.id, connectionOpen: targetPeer.connection?.open} : null);
 
   if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
-    const messageData = {
-      fromUserId: peerId.value,
-      fromUserName: participants.value.find(p => p.id === peerId.value)?.name || '',
-      fromCardId: data.cardId,
-      fromCard: data.card,
-      toUserId: data.targetUserId
-    };
-    console.log("5. 전송할 메시지 데이터:", messageData);
+    // 디바운싱 적용하여 중복 요청 방지
+    debounceExchangeRequest(data.cardId, () => {
+      // 재검증 (디바운싱 지연 시간 동안 상태가 변경될 수 있음)
+      const currentStatus = getCardExchangeStatus(data.cardId);
+      if (currentStatus !== EXCHANGE_STATUS.IDLE) {
+        console.log(`4-1. 디바운싱 후 재검증 실패: 카드 ${data.cardId} 상태 ${currentStatus}`);
+        toast.warningToast("해당 카드는 이미 교환 요청 중입니다.");
+        return;
+      }
 
-    sendMessage("storyCardExchangeRequest", messageData, targetPeer.connection);
-    console.log("6. P2P 메시지 전송 완료");
+      // 교환 요청 상태로 설정
+      setCardExchangeStatus(data.cardId, EXCHANGE_STATUS.REQUESTING);
+
+      const messageData = {
+        fromUserId: peerId.value,
+        fromUserName: participants.value.find(p => p.id === peerId.value)?.name || '',
+        fromCardId: data.cardId,
+        fromCard: data.card,
+        toUserId: data.targetUserId
+      };
+      console.log("5. 전송할 메시지 데이터:", messageData);
+
+      sendMessage("storyCardExchangeRequest", messageData, targetPeer.connection);
+      console.log("6. P2P 메시지 전송 완료");
+
+      // 요청 완료 후 상태를 PENDING으로 변경 (응답 대기 중)
+      setCardExchangeStatus(data.cardId, EXCHANGE_STATUS.PENDING);
+    }, 500); // 500ms 디바운싱
   } else {
     console.log("6. ERROR: targetPeer를 찾을 수 없거나 연결이 닫혀있음");
     console.log("   - targetPeer 존재:", !!targetPeer);
@@ -2878,26 +2953,79 @@ const handleSendExchangeRequest = (data) => {
 // 교환 처리 중인지 추적
 const isExchangeProcessing = ref(false);
 
+// 카드별 교환 상태 추적 (Map<cardId, status>)
+const cardExchangeStatus = ref(new Map());
+
+// 교환 요청 디바운싱을 위한 타이머 저장
+const exchangeDebounceTimers = ref(new Map());
+
+// 교환 상태 열거형
+const EXCHANGE_STATUS = {
+  IDLE: 'idle',
+  REQUESTING: 'requesting',
+  PENDING: 'pending',
+  PROCESSING: 'processing'
+};
+
+// 카드 교환 상태 설정 함수
+const setCardExchangeStatus = (cardId, status) => {
+  console.log(`🔄 카드 ${cardId} 교환 상태 변경: ${cardExchangeStatus.value.get(cardId) || 'none'} → ${status}`);
+  cardExchangeStatus.value.set(cardId, status);
+};
+
+// 카드 교환 상태 확인 함수
+const getCardExchangeStatus = (cardId) => {
+  return cardExchangeStatus.value.get(cardId) || EXCHANGE_STATUS.IDLE;
+};
+
+// 교환 요청 디바운싱 함수
+const debounceExchangeRequest = (cardId, action, delay = 1000) => {
+  // 기존 타이머가 있으면 취소
+  if (exchangeDebounceTimers.value.has(cardId)) {
+    clearTimeout(exchangeDebounceTimers.value.get(cardId));
+  }
+
+  // 새 타이머 설정
+  const timer = setTimeout(() => {
+    action();
+    exchangeDebounceTimers.value.delete(cardId);
+  }, delay);
+
+  exchangeDebounceTimers.value.set(cardId, timer);
+};
+
 // 교환 수락 처리
 const handleCardExchanged = async (data) => {
   console.log("=== 교환 수락 처리 시작 (수신자) ===");
   console.log("1. 받은 데이터:", data);
 
-  // 이미 교환 처리 중이면 중단
+  // 전역 교환 처리 중이면 중단
   if (isExchangeProcessing.value) {
-    console.log("1-1. 이미 교환 처리 중 - 중단");
+    console.log("1-1. 이미 전역 교환 처리 중 - 중단");
+    toast.warningToast("다른 교환이 진행 중입니다. 잠시 후 다시 시도해주세요.");
+    return;
+  }
+
+  // 내 카드의 교환 상태 확인
+  const myCardStatus = getCardExchangeStatus(data.toCardId);
+  if (myCardStatus !== EXCHANGE_STATUS.IDLE) {
+    console.log(`1-2. 내 카드 ${data.toCardId}가 이미 교환 상태 ${myCardStatus} - 중단`);
+    toast.warningToast("해당 카드는 이미 교환 중입니다.");
     return;
   }
 
   // 교환할 카드가 내 카드 목록에 있는지 확인
   const hasMyCard = storyCards.value.some(card => card.id === data.toCardId);
   if (!hasMyCard) {
-    console.log("1-2. 교환할 내 카드를 찾을 수 없음 - 중단");
+    console.log("1-3. 교환할 내 카드를 찾을 수 없음 - 중단");
     toast.errorToast("이미 교환된 카드입니다.");
     return;
   }
 
+  // 교환 상태 설정
   isExchangeProcessing.value = true;
+  setCardExchangeStatus(data.toCardId, EXCHANGE_STATUS.PROCESSING);
+  setCardExchangeStatus(data.fromCardId, EXCHANGE_STATUS.PROCESSING);
   console.log("2. 교환 전 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
 
   // 백엔드에 교환 요청 (수신자 측)
@@ -2951,6 +3079,23 @@ const handleCardExchanged = async (data) => {
         sendMessage("storyCardExchangeResponse", responseData, targetPeer.connection);
         console.log("10. 교환 응답 메시지 전송 완료");
 
+        // 교환받은 카드 이미지 프리로딩 (수신자)
+        try {
+          const receivedCardImageUrl = CardImage.getStoryCardImage(data.fromCardId);
+          console.log(`🎯 교환받은 카드 이미지 프리로딩 (수신자): ${data.fromCard.keyword} (ID: ${data.fromCardId})`);
+
+          const img = new Image();
+          img.onload = () => {
+            console.log(`✅ 교환받은 카드 이미지 로드 완료 (수신자): ${data.fromCard.keyword}`);
+          };
+          img.onerror = () => {
+            console.warn(`❌ 교환받은 카드 이미지 로드 실패 (수신자): ${data.fromCard.keyword}`);
+          };
+          img.src = receivedCardImageUrl;
+        } catch (error) {
+          console.warn(`❌ 교환받은 카드 이미지 프리로딩 중 오류 (수신자): ${data.fromCard.keyword}`, error);
+        }
+
         // 교환 완료 후 내 카드 정보 업데이트 (다른 플레이어들에게 전송)
         const myCardIds = storyCards.value.map(card => card.id);
         connectedPeers.value.forEach((peer) => {
@@ -2972,8 +3117,11 @@ const handleCardExchanged = async (data) => {
     console.log("3. 백엔드 교환 API 호출 실패:", error);
     toast.errorToast("교환 처리 중 오류가 발생했습니다.");
   } finally {
-    // 교환 처리 완료 후 플래그 해제
+    // 교환 처리 완료 후 모든 상태 해제
     isExchangeProcessing.value = false;
+    setCardExchangeStatus(data.toCardId, EXCHANGE_STATUS.IDLE);
+    setCardExchangeStatus(data.fromCardId, EXCHANGE_STATUS.IDLE);
+    console.log("📋 교환 상태 정리 완료");
   }
 
   console.log("=== 교환 수락 처리 끝 (수신자) ===");
@@ -2981,14 +3129,28 @@ const handleCardExchanged = async (data) => {
 
 // 교환 거절 처리
 const handleRejectExchange = (data) => {
+  console.log("=== 교환 거절 처리 시작 ===");
+  console.log("거절할 교환 요청:", data);
+
   const targetPeer = connectedPeers.value.find(peer => peer.id === data.fromUserId);
   if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
     sendMessage("storyCardExchangeResponse", {
       accepted: false,
       fromUserId: data.fromUserId,
-      toUserId: peerId.value
+      toUserId: peerId.value,
+      fromCardId: data.fromCardId // 상대방의 카드 ID 포함
     }, targetPeer.connection);
+
+    console.log("교환 거절 응답 전송 완료");
   }
+
+  // 거절 처리 시 내 카드 상태 초기화 (만약 처리 중이었다면)
+  if (data.toCardId) {
+    setCardExchangeStatus(data.toCardId, EXCHANGE_STATUS.IDLE);
+    console.log(`내 카드 ${data.toCardId} 상태 초기화`);
+  }
+
+  console.log("=== 교환 거절 처리 완료 ===");
 };
 
 // 긴장감 변화 감지 (35% 및 100% 체크)
