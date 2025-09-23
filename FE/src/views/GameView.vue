@@ -514,11 +514,44 @@ const setupConnection = (conn) => {
         
         // 1. 책 내용 삭제 (투표 거부 시)
         if (data.imageDelete === true) {
-          if (bookContents.value.length === 1) {
-            bookContents.value = [{ content: "", image: null }];
+          console.log("투표 거절로 인한 책 내용 삭제 처리");
+          console.log("삭제 전 책 내용:", bookContents.value);
+
+          if (data.voteRejected && data.rejectedPrompt) {
+            console.log("거절된 이야기:", data.rejectedPrompt);
+
+            // 거절된 이야기와 일치하는 항목을 찾아서 제거
+            const rejectedIndex = bookContents.value.findIndex(content =>
+              content.content === data.rejectedPrompt
+            );
+
+            if (rejectedIndex !== -1) {
+              console.log(`거절된 이야기 찾음 - 인덱스: ${rejectedIndex}`);
+              bookContents.value.splice(rejectedIndex, 1);
+
+              // 만약 모든 내용이 제거되었다면 빈 항목 추가
+              if (bookContents.value.length === 0) {
+                bookContents.value = [{ content: "", image: null }];
+              }
+            } else {
+              console.log("거절된 이야기를 찾을 수 없음 - 기본 제거 로직 사용");
+              // 기본 로직: 마지막 항목 제거
+              if (bookContents.value.length === 1) {
+                bookContents.value = [{ content: "", image: null }];
+              } else {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
+            }
           } else {
-            bookContents.value = bookContents.value.slice(0, -1);
+            // 기본 로직: 마지막 항목 제거
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+            } else {
+              bookContents.value = bookContents.value.slice(0, -1);
+            }
           }
+
+          console.log("삭제 후 책 내용:", bookContents.value);
         }
         
         // 2. 점수 처리
@@ -2130,16 +2163,24 @@ const voteEnd = async (data) => {
                 currTurn: currTurn.value,
                 imageDelete: true,
                 totalTurn: totalTurn.value,
-                resetEndingState: true // 다른 플레이어들도 결말상태 리셋 알림
+                resetEndingState: true, // 다른 플레이어들도 결말상태 리셋 알림
+                voteRejected: true, // 투표 거절 명시적 표시
+                rejectedPrompt: prompt.value // 거절된 이야기 내용
               }, peer.connection);
             }
           });
 
+          console.log("투표 거절로 인한 책 내용 삭제 처리 (작성자)");
+          console.log("삭제 전 책 내용:", bookContents.value);
+
           if (bookContents.value.length === 1) {
             bookContents.value = [{ content: "", image: null }];
           } else {
+            // 마지막 항목(거절된 이야기와 이미지) 완전 제거
             bookContents.value = bookContents.value.slice(0, -1);
           }
+
+          console.log("삭제 후 책 내용:", bookContents.value);
           currentPlayer.score -= 1;
           await showOverlay('whoTurn');
           inProgress.value = true;
