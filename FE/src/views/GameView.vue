@@ -545,7 +545,19 @@ const setupConnection = (conn) => {
         if (data.cardRemoval) {
           storyCards.value = storyCards.value.filter(card => card.id !== data.cardRemoval.cardId);
         }
-        
+
+        // 4.5. 결말 상태 리셋 처리 (결말카드 투표 반대 시)
+        if (data.resetEndingState) {
+          isEndingMode.value = false;
+          usedCard.value = {
+            id: 0,
+            keyword: "",
+            isEnding: false,
+            isFreeEnding: false
+          };
+          console.log("다른 플레이어로부터 결말상태 리셋 수신");
+        }
+
         // 5. 턴 정보 업데이트
         totalTurn.value = data.totalTurn;
         currTurn.value = data.currTurn;
@@ -1942,23 +1954,25 @@ const voteEnd = async (data) => {
       if (currTurn.value === myTurn.value) {
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
         const currentPlayerIndex = inGameOrder.value[currTurn.value];
-        
+        const wasEndingCard = usedCard.value.isEnding; // 상태 초기화 전에 저장
+
         let accepted = voteAccepted;
         if (accepted) {
           isElected.value = true;
-          const scoreIncrease = usedCard.value.isEnding ?
+          const scoreIncrease = wasEndingCard ?
             (usedCard.value.isFreeEnding ? 3 : 5) : 2;
+          const wasFreeEnding = usedCard.value.isFreeEnding; // 상태 초기화 전에 저장
           currentPlayer.score += scoreIncrease;
 
           currTurn.value = (currTurn.value + 1) % participants.value.length;
-          if (usedCard.value.isEnding) {
+          if (wasEndingCard) {
             gameEnd(true);
             connectedPeers.value.forEach((p) => {
               if (p.id !== peerId.value && p.connection.open) {
                 sendMessage("endingCardScoreUpdate", {
                   scoreChange: {
                     type: "increase",
-                    amount: usedCard.value.isFreeEnding ? 3 : 5,
+                    amount: wasFreeEnding ? 3 : 5,
                     playerIndex: currentPlayerIndex
                   }
                 }, p.connection);
@@ -1988,6 +2002,16 @@ const voteEnd = async (data) => {
                 }, p.connection);
               }
             });
+            // 투표 찬성 후 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
+            if (!wasEndingCard) {
+              usedCard.value = {
+                id: 0,
+                keyword: "",
+                isEnding: false,
+                isFreeEnding: false
+              };
+            }
+
             await showOverlay('whoTurn', {
               turnIndex: currTurn.value,
               participants: participants.value,
@@ -1998,6 +2022,21 @@ const voteEnd = async (data) => {
           }
         } else {
           accepted = false;
+
+          // 결말카드가 반대된 경우 상태 초기화
+          if (usedCard.value.isEnding) {
+            isEndingMode.value = false; // 결말모드 해제
+            console.log("결말카드 투표 반대 - 결말모드 해제");
+          }
+
+          // usedCard 상태 초기화
+          usedCard.value = {
+            id: 0,
+            keyword: "",
+            isEnding: false,
+            isFreeEnding: false
+          };
+
           currTurn.value = (currTurn.value + 1) % participants.value.length;
           connectedPeers.value.forEach((peer) => {
             if (peer.id !== peerId.value && peer.connection.open) {
@@ -2005,10 +2044,11 @@ const voteEnd = async (data) => {
                 currTurn: currTurn.value,
                 imageDelete: true,
                 totalTurn: totalTurn.value,
+                resetEndingState: true // 다른 플레이어들도 결말상태 리셋 알림
               }, peer.connection);
             }
           });
-          
+
           if (bookContents.value.length === 1) {
             bookContents.value = [{ content: "", image: null }];
           } else {
@@ -2057,8 +2097,35 @@ const voteEnd = async (data) => {
             }
         }
       } else {
-        if (voteAccepted) isElected.value = true;
-        if (voteAccepted && usedCard.value.isEnding && participants.value[0].id === peerId.value) {
+        // 게스트 플레이어 투표 처리
+        const wasEndingCard = usedCard.value.isEnding; // 상태 초기화 전에 저장
+
+        if (voteAccepted) {
+          isElected.value = true;
+          // 투표 찬성 후 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
+          if (!wasEndingCard) {
+            usedCard.value = {
+              id: 0,
+              keyword: "",
+              isEnding: false,
+              isFreeEnding: false
+            };
+          }
+        } else {
+          // 투표 반대 시 - 게스트도 상태 초기화 필요
+          if (usedCard.value.isEnding) {
+            isEndingMode.value = false;
+            console.log("게스트: 결말카드 투표 반대 - 결말모드 해제");
+          }
+          usedCard.value = {
+            id: 0,
+            keyword: "",
+            isEnding: false,
+            isFreeEnding: false
+          };
+        }
+
+        if (voteAccepted && wasEndingCard && participants.value[0].id === peerId.value) {
           gameEnd(true);
           setTimeout(() => {
             isForceStopped.value = "champ";
