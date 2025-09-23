@@ -714,7 +714,23 @@ const setupConnection = (conn) => {
         const imageBlob = URL.createObjectURL(receivedBlob);
         // 즉시 책에 추가하지 않고 투표 결과까지 임시 저장
         pendingImage.value = imageBlob;
-        console.log("다른 플레이어로부터 이미지 수신 - 투표 결과 대기 중");
+        console.log("📷 다른 플레이어로부터 이미지 수신");
+        console.log("📷 현재 투표 수:", votings.value.length, "/ 필요 수:", participants.value.length);
+
+        // ✅ 수정: 이미지 수신 후 투표가 이미 완료되었다면 즉시 isElected 트리거
+        if (votings.value.length === participants.value.length) {
+          console.log("📷 투표 이미 완료됨 - 즉시 isElected 트리거");
+          const upCount = votings.value.filter(v => v.selected === 'up').length;
+          const downCount = votings.value.filter(v => v.selected === 'down').length;
+          const voteAccepted = upCount >= downCount;
+
+          if (voteAccepted) {
+            console.log("📷 투표 통과 확인 - isElected 설정");
+            isElected.value = true;
+          }
+        } else {
+          console.log("📷 투표 결과 대기 중");
+        }
         break;
 
       case "warningNotification":
@@ -762,8 +778,13 @@ const setupConnection = (conn) => {
 
           let accepted = voteAccepted;
           if (accepted) {
-            // ✅ 수정: 모든 플레이어가 isElected 설정 (책 페이지 넘김 동기화)
-            isElected.value = true;
+            // ✅ 수정: pendingImage가 있을 때만 isElected 설정
+            if (pendingImage.value) {
+              console.log("✅ pendingImage 존재 - isElected 설정");
+              isElected.value = true;
+            } else {
+              console.log("⏳ pendingImage 대기 중 - isElected 설정 보류");
+            }
           }
 
           // 현재 턴 플레이어만 점수 및 턴 전환 처리
