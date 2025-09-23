@@ -984,7 +984,7 @@ const clearPendingExchange = (cardId) => {
 // 카드 새로고침 성공 콜백
 const onCardRefreshSuccess = () => {
   toast.successToast("카드가 새로고침되었습니다!");
-  refreshCount.value--;
+  // refreshCount는 GameView에서 백엔드 응답값으로 업데이트됨
 };
 
 // 카드 새로고침 에러 콜백
@@ -999,8 +999,12 @@ defineExpose({
   onCardRefreshSuccess,
   onCardRefreshError,
   updateCounts: (newRefreshCount, newExchangeCount) => {
-    refreshCount.value = newRefreshCount;
-    exchangeCount.value = newExchangeCount;
+    if (newRefreshCount !== null && newRefreshCount !== undefined) {
+      refreshCount.value = newRefreshCount;
+    }
+    if (newExchangeCount !== null && newExchangeCount !== undefined) {
+      exchangeCount.value = newExchangeCount;
+    }
   }
 });
 </script>

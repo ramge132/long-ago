@@ -555,7 +555,12 @@ public class GameService {
 
         log.info("[refreshStoryCard] 이야기카드 새로고침 완료: {} -> {}", targetCard.getKeyword(), newCard.getKeyword());
 
-        return ApiResponseUtil.success(newCard,
+        // 응답 데이터에 업데이트된 refreshCount 포함
+        java.util.Map<String, Object> responseData = new java.util.HashMap<>();
+        responseData.put("newCard", newCard);
+        responseData.put("refreshCount", playerStatus.getRefreshCount());
+
+        return ApiResponseUtil.success(responseData,
                 "이야기카드 새로고침 성공",
                 HttpStatus.OK,
                 request.getRequestURI());

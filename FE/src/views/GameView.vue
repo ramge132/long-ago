@@ -474,6 +474,12 @@ const setupConnection = (conn) => {
             storyCards.value = response.data.data.storyCards;
             endingCard.value = response.data.data.endingCard;
 
+            // InGameControl의 refreshCount 초기화
+            if (currentViewRef.value && currentViewRef.value.updateCounts) {
+              const playerStatus = response.data.data;
+              currentViewRef.value.updateCounts(playerStatus.refreshCount, playerStatus.exchangeCount);
+            }
+
             // 2. 내 카드 정보 추출
             const storyCardIds = storyCards.value.map(card => card.id);
             const endingCardId = endingCard.value.id;
@@ -958,6 +964,23 @@ const setupConnection = (conn) => {
             if (cardIndex !== -1) {
               playerCards[cardIndex] = data.newCard.id;
             }
+          }
+
+          // 다른 플레이어의 새로운 카드 이미지 프리로딩
+          try {
+            const newCardImageUrl = CardImage.getStoryCardImage(data.newCard.id);
+            console.log(`🎯 다른 플레이어 새로고침 카드 이미지 프리로딩: ${data.newCard.keyword} (ID: ${data.newCard.id})`);
+
+            const img = new Image();
+            img.onload = () => {
+              console.log(`✅ 다른 플레이어 새로고침 카드 이미지 로드 완료: ${data.newCard.keyword}`);
+            };
+            img.onerror = () => {
+              console.warn(`❌ 다른 플레이어 새로고침 카드 이미지 로드 실패: ${data.newCard.keyword}`);
+            };
+            img.src = newCardImageUrl;
+          } catch (error) {
+            console.warn(`❌ 다른 플레이어 새로고침 카드 이미지 프리로딩 중 오류: ${data.newCard.keyword}`, error);
           }
         }
         break;
@@ -1583,6 +1606,12 @@ const gameStart = async (data) => {
       gameID.value = response.data.data.gameId;
       storyCards.value = response.data.data.status.storyCards;
       endingCard.value = response.data.data.status.endingCard;
+
+      // InGameControl의 refreshCount 초기화 (방장용)
+      if (currentViewRef.value && currentViewRef.value.updateCounts) {
+        const playerStatus = response.data.data.status;
+        currentViewRef.value.updateCounts(playerStatus.refreshCount, playerStatus.exchangeCount);
+      }
     } catch (error) {
       // 에러 처리
     }
@@ -2379,11 +2408,10 @@ const voteEnd = async (data) => {
 
   if (currTurn.value === myTurn.value) {
     console.log("=== 현재 턴 플레이어 - watch 설정 ===");
-    let stopWatch = watch(() => [bookContents.value, votings.value], async ([newBookContents, newVotings]) => {
+    let stopWatch = watch(() => [pendingImage.value, votings.value], async ([newPendingImage, newVotings]) => {
       await nextTick();
-      const lastContent = newBookContents[newBookContents.length - 1];
-      console.log("watch 트리거 - lastContent:", lastContent, "newVotings 길이:", newVotings.length, "필요 길이:", participants.value.length);
-      if (lastContent && lastContent.image !== null && newVotings.length === participants.value.length) {
+      console.log("watch 트리거 - pendingImage 존재:", !!newPendingImage, "newVotings 길이:", newVotings.length, "필요 길이:", participants.value.length);
+      if (newPendingImage && newVotings.length === participants.value.length) {
         console.log("조건 만족 - sendVoteResult 호출");
         votings.value = [...votings.value, { sender: data.sender, selected: data.selected }];
         sendVoteResult();
@@ -2607,7 +2635,9 @@ const handleCardRefreshed = async (data) => {
     });
 
     if (response.data.success) {
-      const newCard = response.data.data;
+      const responseData = response.data.data;
+      const newCard = responseData.newCard;
+      const updatedRefreshCount = responseData.refreshCount;
 
       // storyCards에서 oldCard를 찾아 newCard로 교체
       const cardIndex = storyCards.value.findIndex(card => card.id === data.oldCard.id);
@@ -2637,9 +2667,32 @@ const handleCardRefreshed = async (data) => {
 
       console.log(`카드 새로고침 완료: ${data.oldCard.keyword} → ${newCard.keyword}`);
 
-      // InGameControl에 성공 알림
+      // 새로운 카드 이미지 프리로딩
+      try {
+        const newCardImageUrl = CardImage.getStoryCardImage(newCard.id);
+        console.log(`🎯 새로고침된 카드 이미지 프리로딩: ${newCard.keyword} (ID: ${newCard.id})`);
+
+        const img = new Image();
+        img.onload = () => {
+          console.log(`✅ 새로고침된 카드 이미지 로드 완료: ${newCard.keyword}`);
+        };
+        img.onerror = () => {
+          console.warn(`❌ 새로고침된 카드 이미지 로드 실패: ${newCard.keyword}`);
+        };
+        img.src = newCardImageUrl;
+      } catch (error) {
+        console.warn(`❌ 새로고침된 카드 이미지 프리로딩 중 오류: ${newCard.keyword}`, error);
+      }
+
+      // InGameControl에 성공 알림 및 refreshCount 업데이트
       if (currentViewRef.value && currentViewRef.value.onCardRefreshSuccess) {
         currentViewRef.value.onCardRefreshSuccess();
+      }
+
+      // InGameControl의 refreshCount 동기화
+      if (currentViewRef.value && currentViewRef.value.updateCounts) {
+        // exchangeCount는 현재 값 유지하고 refreshCount만 업데이트
+        currentViewRef.value.updateCounts(updatedRefreshCount, null);
       }
     } else {
       // 새로고침 실패
