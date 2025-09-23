@@ -873,7 +873,7 @@ const setupConnection = (conn) => {
                     }, p.connection);
                   }
                 });
-                
+
                 setTimeout(() => {
                   isForceStopped.value = "champ";
                   connectedPeers.value.forEach(async (p) => {
@@ -884,7 +884,7 @@ const setupConnection = (conn) => {
                       }, p.connection);
                     }
                   });
-                }, 1000);
+                }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
               } else {
                 const scoreIncrease = usedCard.value.isEnding ?
                   (usedCard.value.isFreeEnding ? 3 : 5) : 2;
@@ -1013,7 +1013,7 @@ const setupConnection = (conn) => {
                       }, p.connection);
                     }
                   });
-                }, 1000);
+                }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
               } else {
                 // ✅ 수정: 게스트 플레이어도 nextTurn 메시지 대기 (현재 턴 플레이어가 보낼 것임)
                 console.log("게스트 플레이어 - nextTurn 메시지 대기 중");
@@ -2201,8 +2201,20 @@ const nextTurn = async (data) => {
     prompt.value = data.prompt;
     currentVoteSelection.value = "up";
     votings.value = [];
-    
+
+    // 이미지 생성 중 재시도 알림 타이머 변수 선언
+    let retryNotificationTimer = null;
+
     try {
+      // 이미지 생성 중 재시도 알림 타이머 설정 (5초 후)
+      retryNotificationTimer = setTimeout(() => {
+        const retryWarningMessage = {
+          type: "retryingContent",
+          message: "부적절한 이미지가 나왔어요!\n다시 그려볼게요!"
+        };
+        showInappropriateWarningModal(retryWarningMessage);
+      }, 5000);
+
       const responseImage = await createImage({
         gameId: gameID.value,
         userId: peerId.value,
@@ -2210,6 +2222,12 @@ const nextTurn = async (data) => {
         turn: totalTurn.value++,
         isEnding: isEnding,
       });
+
+      // 이미지 생성이 성공하면 재시도 알림 타이머 해제
+      if (retryNotificationTimer) {
+        clearTimeout(retryNotificationTimer);
+        retryNotificationTimer = null;
+      }
       
       const imageBlob = URL.createObjectURL(responseImage.data);
       const arrayBuffer = await responseImage.data.arrayBuffer();
@@ -2242,6 +2260,12 @@ const nextTurn = async (data) => {
       }
       
     } catch (error) {
+      // 에러 발생 시에도 재시도 알림 타이머 해제
+      if (retryNotificationTimer) {
+        clearTimeout(retryNotificationTimer);
+        retryNotificationTimer = null;
+      }
+
       let errorMessage = "";
       let isInappropriateContent = false;
       
@@ -2291,7 +2315,7 @@ const nextTurn = async (data) => {
           if (usedCard.value.isEnding) {
             setTimeout(() => {
               isForceStopped.value = "champ";
-            }, 1000);
+            }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
             
             await gameEnd(true).then(() => {
               connectedPeers.value.forEach(async (p) => {
@@ -2481,7 +2505,7 @@ const voteEnd = async (data) => {
                   }, p.connection);
                 }
               });
-            }, 1000);
+            }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
           } else {
             console.log("=== 일반카드 처리 - 다음 턴 진행 ===");
             console.log("다음 턴으로 전환하는 메시지 전송 중...");
@@ -2690,7 +2714,7 @@ const voteEnd = async (data) => {
                 }, p.connection);
               }
             });
-          }, 1000);
+          }, 2000); // 1초 → 2초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
         }
       }
     }
