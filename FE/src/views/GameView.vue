@@ -189,9 +189,19 @@ watch(isElected, (newValue) => {
     if (pendingImage.value) {
       const lastIndex = bookContents.value.length - 1;
       console.log("🔥 마지막 항목에 이미지 설정:", lastIndex);
-      bookContents.value[lastIndex].image = pendingImage.value;
+
+      // ✅ 첫 번째 이미지 특별 처리: 중복된 첫 번째 이야기가 있으면 첫 번째 항목에 이미지 설정
+      if (bookContents.value.length >= 2 &&
+          bookContents.value[0].content === bookContents.value[1].content &&
+          bookContents.value[0].image === null) {
+        console.log("🔥 첫 번째 이미지 특별 처리 - 첫 번째 항목에 이미지 설정");
+        bookContents.value[0].image = pendingImage.value;
+      } else {
+        bookContents.value[lastIndex].image = pendingImage.value;
+      }
+
       console.log("✅ isElected watch: 임시 이미지를 책에 등록");
-      console.log("🔥 업데이트 후 마지막 항목:", bookContents.value[lastIndex]);
+      console.log("🔥 업데이트 후 bookContents:", bookContents.value);
       pendingImage.value = null; // 임시 이미지 초기화
     } else {
       console.log("❌ pendingImage가 없어서 이미지 추가 실패");
@@ -1803,17 +1813,20 @@ const showOverlay = (message, options = {}) => {
 // 책 데이터 추가
 const addBookContent = (newContent) => {
   console.log("📖 addBookContent 호출:", newContent);
+  console.log("📖 현재 bookContents 길이:", bookContents.value.length);
   console.log("📖 현재 bookContents:", bookContents.value);
+  console.log("📖 첫 번째 항목 content:", bookContents.value[0]?.content);
 
   if (bookContents.value[0].content === "") {
-    console.log("📖 첫 번째 항목 업데이트");
+    console.log("📖 ✅ 첫 번째 항목 업데이트 (정상)");
     bookContents.value[0].content = newContent.content;
     bookContents.value[0].image = newContent.image; // ✅ 이미지도 함께 설정
   } else {
-    console.log("📖 새 항목 추가");
+    console.log("📖 ❌ 새 항목 추가 (중복 가능성!)");
     bookContents.value.push(newContent);
   }
 
+  console.log("📖 업데이트 후 길이:", bookContents.value.length);
   console.log("📖 업데이트 후 bookContents:", bookContents.value);
 };
 
