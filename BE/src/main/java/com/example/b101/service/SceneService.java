@@ -181,6 +181,19 @@ public class SceneService {
 
         log.info("투표 결과 : {}, 결말 여부: {}", deleteSceneRequest.isAccepted(), isEnding);
 
+        // AI 서비스에 투표 결과 전달
+        try {
+            SceneRedis lastScene = scenes.get(scenes.size() - 1);
+            notifyVoteResultToAI(deleteSceneRequest.getGameId(),
+                               deleteSceneRequest.getUserId(),
+                               lastScene.getPrompt(),
+                               lastScene.getSceneOrder(),
+                               deleteSceneRequest.isAccepted());
+        } catch (Exception e) {
+            log.error("AI 서비스에 투표 결과 전달 실패: {}", e.getMessage());
+            // AI 서비스 호출 실패는 게임 진행에 영향을 주지 않도록 로그만 남김
+        }
+
         if(!deleteSceneRequest.isAccepted()){
             log.info("투표 결과 반대");
             //scene 데이터 삭제
@@ -660,6 +673,40 @@ public class SceneService {
         }
     }
     
+    /**
+     * AI 서비스에 투표 결과 전달
+     */
+    private void notifyVoteResultToAI(String gameId, String userId, String userPrompt, int turn, boolean accepted) {
+        try {
+            // Python 서비스 요청 데이터 구성
+            HashMap<String, Object> requestBody = new HashMap<>();
+            requestBody.put("gameId", gameId);
+            requestBody.put("userId", userId);
+            requestBody.put("userPrompt", userPrompt);
+            requestBody.put("turn", turn);
+            requestBody.put("accepted", accepted);
+            requestBody.put("selectedKeywords", null); // 필요시 추가 가능
+
+            log.info("AI 서비스에 투표 결과 전달: gameId={}, turn={}, accepted={}", gameId, turn, accepted);
+
+            // Python 서비스 호출 (비동기로 처리하여 게임 진행에 영향 없도록)
+            String response = pythonImageServiceClient
+                .post()
+                .uri("/vote-result")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(5))  // 짧은 타임아웃
+                .block();
+
+            log.info("AI 서비스 투표 결과 전달 성공: {}", response);
+
+        } catch (Exception e) {
+            log.error("AI 서비스 투표 결과 전달 실패: {}", e.getMessage());
+            // 예외를 다시 던지지 않음 - 게임 진행에 영향을 주지 않기 위해
+        }
+    }
+
     /**
      * Python 통합 이미지 생성 서비스 호출 - 바이너리 이미지 데이터 반환
      */

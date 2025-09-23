@@ -451,32 +451,36 @@ class ImageGenerationService:
         # 이전 스토리 컨텍스트 (전체 스토리 사용)
         previous_story = " ".join(context.story_history) if context.story_history else ""
         logger.info(f"Previous story length: {len(context.story_history)} sentences")
-        
+
         # 대명사 해결
         resolved_prompt = self._resolve_references(userPrompt, context)
-        
+
         # 엔티티 추출 (캐릭터 & 사물)
         entities = self.entity_extractor.extract_entities(resolved_prompt, selectedKeywords)
         characters = entities.get("characters", [])
         objects = entities.get("objects", [])
-        
+
         logger.info(f"Extracted characters: {characters}")
         logger.info(f"Extracted objects: {objects}")
-        
+
         # 마지막 언급된 사물 업데이트
         if objects:
             context.last_mentioned_object = objects[0]
+
+        # 주의: 투표 통과 후에만 실제 저장하도록 변경
+        # 현재는 임시로 컨텍스트에 추가하여 이미지 생성에만 사용
+        logger.info("임시 컨텍스트로 이미지 생성 진행 (투표 후 확정)")
         
-        # 스토리 히스토리에 추가
-        context.story_history.append(resolved_prompt)
-        
-        # 프롬프트 생성
+        # 프롬프트 생성 (현재 문장을 포함한 임시 컨텍스트 사용)
+        # 투표 통과 전이므로 임시로만 사용
+        temp_previous_story = previous_story + (" " + resolved_prompt if previous_story else resolved_prompt)
+
         if isEnding:
             # 엔딩인 경우 자연스러운 결말 장면 생성
             base_prompt = f"Final scene: {resolved_prompt}"
         else:
             base_prompt = CONTEXTUAL_PROMPT_TEMPLATE.format(
-                previous_story=previous_story,
+                previous_story=previous_story,  # 확정된 스토리만 사용
                 current_scene=resolved_prompt
             )
         
@@ -738,6 +742,15 @@ class BookCoverRequestFromJava(BaseModel):
     gameId: str
     drawingStyle: int
 
+class VoteResultRequest(BaseModel):
+    """투표 결과 전달 요청"""
+    gameId: str
+    userId: str
+    userPrompt: str
+    turn: int
+    accepted: bool
+    selectedKeywords: Optional[List[str]] = None
+
 # ================== 서비스 인스턴스 ==================
 image_service = ImageGenerationService()
 
@@ -803,6 +816,52 @@ async def generate_cover_endpoint(request: BookCoverRequestFromJava):
         logger.error(f"Unexpected error in cover generation: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/vote-result")
+async def handle_vote_result(request: VoteResultRequest):
+    """투표 결과 처리 - 찬성 시 컨텍스트에 추가, 반대 시 무시"""
+    try:
+        logger.info(f"=== 투표 결과 처리 ===")
+        logger.info(f"게임: {request.gameId}, 턴: {request.turn}, 승인: {request.accepted}")
+        logger.info(f"문장: {request.userPrompt}")
+
+        if request.gameId not in game_contexts:
+            logger.warning(f"게임 컨텍스트를 찾을 수 없음: {request.gameId}")
+            return {"message": "Game context not found", "success": False}
+
+        context = game_contexts[request.gameId]
+
+        if request.accepted:
+            # 투표 찬성 시: 컨텍스트에 정식 추가
+            resolved_prompt = image_service._resolve_references(request.userPrompt, context)
+            context.story_history.append(resolved_prompt)
+
+            # 엔티티 추출 및 마지막 언급 정보 업데이트
+            entities = image_service.entity_extractor.extract_entities(resolved_prompt, request.selectedKeywords)
+            characters = entities.get("characters", [])
+            objects = entities.get("objects", [])
+
+            if characters:
+                context.last_mentioned_character = characters[0]
+            if objects:
+                context.last_mentioned_object = objects[0]
+
+            logger.info(f"✅ 스토리 컨텍스트에 추가됨: [{resolved_prompt}]")
+            logger.info(f"현재 스토리 길이: {len(context.story_history)} 문장")
+        else:
+            # 투표 반대 시: 아무것도 하지 않음 (이미 컨텍스트에 추가되지 않은 상태)
+            logger.info(f"❌ 투표 반대로 컨텍스트에 추가하지 않음")
+
+        return {
+            "message": "Vote result processed successfully",
+            "success": True,
+            "context_updated": request.accepted,
+            "current_story_length": len(context.story_history)
+        }
+
+    except Exception as e:
+        logger.error(f"투표 결과 처리 중 오류: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.delete("/game/{game_id}")
 async def cleanup_game_endpoint(game_id: str):
     """게임 종료 시 데이터 정리"""
@@ -810,9 +869,9 @@ async def cleanup_game_endpoint(game_id: str):
         context = game_contexts[game_id]
         character_count = len(context.characters)
         turn_count = context.total_turns
-        
+
         del game_contexts[game_id]
-        
+
         logger.info(f"🗑️ Cleaned up game {game_id} (characters: {character_count}, turns: {turn_count})")
         return {
             "message": f"Cleaned up data for game {game_id}",
