@@ -206,7 +206,40 @@ watch(isElected, (newValue) => {
       console.log("🔥 업데이트 후 bookContents:", bookContents.value);
       pendingImage.value = null; // 임시 이미지 초기화
     } else {
-      console.log("❌ pendingImage가 없어서 이미지 추가 실패");
+      console.log("❌ pendingImage가 없음 - 이미지 도착 대기 중...");
+
+      // ✅ 수정: pendingImage가 없을 때 최대 3초 대기
+      let waitCount = 0;
+      const maxWaitTime = 30; // 3초 (100ms * 30)
+
+      const waitForImage = () => {
+        if (pendingImage.value) {
+          console.log("✅ 대기 중 이미지 도착 - 책에 추가");
+          const lastIndex = bookContents.value.length - 1;
+
+          // 첫 번째 이미지 특별 처리
+          if (bookContents.value.length >= 2 &&
+              bookContents.value[0].content === bookContents.value[1].content &&
+              bookContents.value[0].image === null) {
+            console.log("🔥 대기 후 첫 번째 이미지 특별 처리");
+            bookContents.value[0].image = pendingImage.value;
+          } else {
+            bookContents.value[lastIndex].image = pendingImage.value;
+          }
+
+          pendingImage.value = null;
+          return;
+        }
+
+        waitCount++;
+        if (waitCount < maxWaitTime) {
+          setTimeout(waitForImage, 100);
+        } else {
+          console.log("⏰ 이미지 대기 시간 초과 - 이미지 없이 진행");
+        }
+      };
+
+      setTimeout(waitForImage, 100);
     }
 
     setTimeout(() => {
@@ -2194,6 +2227,19 @@ const nextTurn = async (data) => {
       // 즉시 책에 추가하지 않고 투표 결과까지 임시 저장
       pendingImage.value = imageBlob;
       console.log("이미지 생성 완료 - 투표 결과 대기 중");
+
+      // ✅ 수정: 내가 이미지 생성 후 투표가 이미 완료되었다면 즉시 isElected 트리거
+      if (votings.value.length === participants.value.length) {
+        console.log("🎯 내 이미지 생성 후 투표 완료 확인 - isElected 즉시 설정");
+        const upCount = votings.value.filter(v => v.selected === 'up').length;
+        const downCount = votings.value.filter(v => v.selected === 'down').length;
+        const voteAccepted = upCount >= downCount;
+
+        if (voteAccepted && pendingImage.value) {
+          console.log("🎯 투표 통과 및 이미지 존재 - isElected 설정");
+          isElected.value = true;
+        }
+      }
       
     } catch (error) {
       let errorMessage = "";
