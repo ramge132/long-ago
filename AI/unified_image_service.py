@@ -11,6 +11,7 @@ import base64
 import logging
 import json
 import random
+import time
 from typing import Optional, Dict, List, Tuple
 from dataclasses import dataclass, field
 
@@ -315,14 +316,32 @@ class ImageGenerationService:
                     
                 except httpx.HTTPStatusError as e:
                     logger.error(f"Gemini API HTTP error (attempt {attempt + 1}/{retry_count}): {e}")
+
+                    # 첫 번째 재시도 시작 시 백엔드에 알림 전송
+                    if attempt == 0 and retry_count > 1:
+                        await self._send_retry_notification(
+                            "그림이 조금 이상하네요!\n다시 그려볼게요!",
+                            attempt + 1,
+                            retry_count
+                        )
+
                     if attempt == retry_count - 1:
                         raise HTTPException(status_code=503, detail="Image generation failed due to content policy")
-                        
+
                 except Exception as e:
                     logger.error(f"Gemini API error (attempt {attempt + 1}/{retry_count}): {e}")
+
+                    # 첫 번째 재시도 시작 시 백엔드에 알림 전송
+                    if attempt == 0 and retry_count > 1:
+                        await self._send_retry_notification(
+                            "그림이 조금 이상하네요!\n다시 그려볼게요!",
+                            attempt + 1,
+                            retry_count
+                        )
+
                     if attempt == retry_count - 1:
                         raise
-                    
+
                 # 재시도 전 대기
                 await asyncio.sleep(2 ** attempt)
         
@@ -720,6 +739,39 @@ class ImageGenerationService:
         책 표지 생성 (기본 스타일, 하위 호환성 유지)
         """
         return await self.generate_book_cover_with_style(gameId, title, summary, 0)
+
+    async def _send_retry_notification(
+        self,
+        message: str,
+        attempt: int,
+        max_attempts: int
+    ):
+        """
+        재시도 알림을 프론트엔드에 전송 (현재는 로깅만)
+
+        향후 WebSocket 또는 Server-Sent Events를 통해
+        실시간으로 프론트엔드에 알림을 전달할 수 있음
+
+        Args:
+            message: 사용자에게 표시할 메시지
+            attempt: 현재 재시도 번호
+            max_attempts: 최대 재시도 횟수
+        """
+        try:
+            logger.info(f"🔄 재시도 알림: {message}")
+            logger.info(f"   재시도 진행: {attempt}/{max_attempts}")
+
+            # TODO: 향후 개선 방안
+            # 1. WebSocket을 통해 실시간 알림 전송
+            # 2. Redis Pub/Sub을 통한 메시지 브로커 방식
+            # 3. Server-Sent Events (SSE) 활용
+            #
+            # 현재는 단순히 로깅만 수행하며,
+            # 프론트엔드는 기존의 503 에러 처리 방식을 사용
+
+        except Exception as e:
+            logger.error(f"❌ 재시도 알림 처리 중 오류: {e}")
+            # 알림 처리 실패는 이미지 생성을 중단시키지 않음
 
 # ================== API 모델 ==================
 class SceneGenerationRequest(BaseModel):
