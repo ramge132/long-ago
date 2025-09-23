@@ -94,9 +94,20 @@ export const voteResultSend = async (data) => {
 // 이야기카드 새로고침
 export const refreshStoryCard = async (data) => {
   try {
+    const params = {
+      gameId: data.gameId,
+      userId: data.userId,
+      cardId: data.cardId
+    };
+
+    // excludeCardIds가 있으면 params에 추가
+    if (data.excludeCardIds && data.excludeCardIds.length > 0) {
+      params.excludeCardIds = data.excludeCardIds;
+    }
+
     const response = await apiClient.patch("/apis/game/story-card/refresh",
       {},
-      { params: { gameId: data.gameId, userId: data.userId, cardId: data.cardId } }
+      { params: params }
     );
     return response;
   } catch (error) {

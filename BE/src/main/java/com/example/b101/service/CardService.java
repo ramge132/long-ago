@@ -103,4 +103,17 @@ public class CardService {
 
         return cards.subList(0, playerCnt);
     }
+
+    // 특정 속성의 모든 스토리 카드 가져오기 (새로고침용)
+    public List<StoryCard> getAllStoryCardsByAttribute(String attribute) {
+        log.info("[getAllStoryCardsByAttribute] '{}' 속성의 모든 스토리 카드 가져오는 중...", attribute);
+
+        List<StoryCard> cards = cachingService.getStoryCardAll().getStoryCards()
+                .stream()
+                .filter(storyCard -> storyCard.getAttribute().equals(attribute))
+                .collect(java.util.stream.Collectors.toList());
+
+        log.info("[getAllStoryCardsByAttribute] '{}' 속성의 스토리 카드 {}개 로드 완료", attribute, cards.size());
+        return cards;
+    }
 }

@@ -958,6 +958,17 @@ const setupConnection = (conn) => {
           console.log("7. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
           toast.successToast("카드 교환이 완료되었습니다!");
 
+          // 교환 완료 후 내 카드 정보 업데이트 (다른 플레이어들에게 전송)
+          const myCardIds = storyCards.value.map(card => card.id);
+          connectedPeers.value.forEach((peer) => {
+            if (peer.connection && peer.connection.open) {
+              sendMessage("playerCardsSync", {
+                userId: peerId.value,
+                cardIds: myCardIds
+              }, peer.connection);
+            }
+          });
+
           // 교환 완료 시 pending 상태 해제
           if (inGameControlRef.value) {
             inGameControlRef.value.clearPendingExchange(data.fromCardId);
@@ -2440,10 +2451,25 @@ const handleCardRefreshed = async (data) => {
       });
 
       console.log(`카드 새로고침 완료: ${data.oldCard.keyword} → ${newCard.keyword}`);
+
+      // InGameControl에 성공 알림
+      if (currentViewRef.value && currentViewRef.value.onCardRefreshSuccess) {
+        currentViewRef.value.onCardRefreshSuccess();
+      }
+    } else {
+      // 새로고침 실패
+      if (currentViewRef.value && currentViewRef.value.onCardRefreshError) {
+        currentViewRef.value.onCardRefreshError("새로고침에 실패했습니다.");
+      }
     }
   } catch (error) {
     console.error("카드 새로고침 중 오류:", error);
-    throw error; // InGameControl에서 처리하도록 다시 던짐
+
+    // InGameControl에 에러 알림
+    if (currentViewRef.value && currentViewRef.value.onCardRefreshError) {
+      const errorMessage = error.response?.data?.message || "새로고침 중 오류가 발생했습니다.";
+      currentViewRef.value.onCardRefreshError(errorMessage);
+    }
   }
 };
 
@@ -2553,6 +2579,17 @@ const handleCardExchanged = async (data) => {
 
         sendMessage("storyCardExchangeResponse", responseData, targetPeer.connection);
         console.log("10. 교환 응답 메시지 전송 완료");
+
+        // 교환 완료 후 내 카드 정보 업데이트 (다른 플레이어들에게 전송)
+        const myCardIds = storyCards.value.map(card => card.id);
+        connectedPeers.value.forEach((peer) => {
+          if (peer.connection && peer.connection.open) {
+            sendMessage("playerCardsSync", {
+              userId: peerId.value,
+              cardIds: myCardIds
+            }, peer.connection);
+          }
+        });
       } else {
         console.log("9. ERROR: targetPeer를 찾을 수 없음");
       }

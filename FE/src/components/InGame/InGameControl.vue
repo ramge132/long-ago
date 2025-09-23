@@ -798,24 +798,12 @@ const getCardHighlightClass = (cardId) => {
 
 // 플로팅 액션 버튼 함수들
 const refreshCard = async (card) => {
-  try {
-    // GameView에서 새로고침 처리하도록 변경 (중복 방지 포함)
-    await emit("cardRefreshed", {
-      oldCard: card,
-      gameId: props.gameId,
-      userId: props.peerId
-    });
-
-    // 성공 시에만 UI 업데이트
-    toast.successToast("카드가 새로고침되었습니다!");
-    refreshCount.value--;
-  } catch (error) {
-    if (error.response?.status === 400) {
-      toast.errorToast(error.response.data.message || "새로고침 실패");
-    } else {
-      toast.errorToast("새로고침 중 오류가 발생했습니다.");
-    }
-  }
+  // GameView에서 새로고침 처리하도록 변경 (중복 방지 포함)
+  emit("cardRefreshed", {
+    oldCard: card,
+    gameId: props.gameId,
+    userId: props.peerId
+  });
 };
 
 const openExchangeModal = (card) => {
@@ -844,24 +832,12 @@ const closeUserSelectModal = () => {
 };
 
 const handleRefreshCard = async () => {
-  try {
-    // GameView에서 새로고침 처리하도록 변경 (중복 방지 포함)
-    await emit("cardRefreshed", {
-      oldCard: selectedCard.value,
-      gameId: props.gameId,
-      userId: props.peerId
-    });
-
-    // 성공 시에만 UI 업데이트
-    toast.successToast("카드가 새로고침되었습니다!");
-    refreshCount.value--;
-  } catch (error) {
-    if (error.response?.status === 400) {
-      toast.errorToast(error.response.data.message || "새로고침 실패");
-    } else {
-      toast.errorToast("새로고침 중 오류가 발생했습니다.");
-    }
-  }
+  // GameView에서 새로고침 처리하도록 변경 (중복 방지 포함)
+  emit("cardRefreshed", {
+    oldCard: selectedCard.value,
+    gameId: props.gameId,
+    userId: props.peerId
+  });
 
   closeCardMenu();
 };
@@ -979,10 +955,23 @@ const clearPendingExchange = (cardId) => {
   pendingExchangeCards.value.delete(cardId);
 };
 
+// 카드 새로고침 성공 콜백
+const onCardRefreshSuccess = () => {
+  toast.successToast("카드가 새로고침되었습니다!");
+  refreshCount.value--;
+};
+
+// 카드 새로고침 에러 콜백
+const onCardRefreshError = (errorMessage) => {
+  toast.errorToast(errorMessage);
+};
+
 // 외부에서 접근할 수 있는 함수들
 defineExpose({
   showExchangeRequest,
   clearPendingExchange,
+  onCardRefreshSuccess,
+  onCardRefreshError,
   updateCounts: (newRefreshCount, newExchangeCount) => {
     refreshCount.value = newRefreshCount;
     exchangeCount.value = newExchangeCount;

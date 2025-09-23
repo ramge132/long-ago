@@ -473,8 +473,8 @@ public class GameService {
     }
 
     //이야기카드 새로고침
-    public ResponseEntity<?> refreshStoryCard(String gameId, String userId, int cardId, HttpServletRequest request) {
-        log.info("[refreshStoryCard] 이야기카드 새로고침 요청: gameId={}, userId={}, cardId={}", gameId, userId, cardId);
+    public ResponseEntity<?> refreshStoryCard(String gameId, String userId, int cardId, java.util.List<Integer> excludeCardIds, HttpServletRequest request) {
+        log.info("[refreshStoryCard] 이야기카드 새로고침 요청: gameId={}, userId={}, cardId={}, excludeCardIds={}", gameId, userId, cardId, excludeCardIds);
 
         //해당 gameId를 가진 게임 조회
         Game game = gameRepository.findById(gameId);
@@ -519,11 +519,23 @@ public class GameService {
 
         //같은 속성의 새로운 카드 가져오기
         String attribute = targetCard.getAttribute();
-        List<StoryCard> availableCards = cardService.shuffleStoryCard(1).stream()
-                .flatMap(List::stream)
-                .filter(card -> card.getAttribute().equals(attribute))
-                .filter(card -> card.getId() != cardId) // 현재 카드 제외
-                .toList();
+
+        // 제외할 카드 ID 목록 생성 (현재 카드 + 다른 플레이어 카드들)
+        java.util.Set<Integer> excludeIds = new java.util.HashSet<>();
+        excludeIds.add(cardId); // 현재 카드 제외
+
+        if (excludeCardIds != null && !excludeCardIds.isEmpty()) {
+            excludeIds.addAll(excludeCardIds); // 다른 플레이어 카드들 제외
+            log.info("[refreshStoryCard] 제외할 카드 ID 목록: {}", excludeIds);
+        }
+
+        // 같은 속성의 모든 카드를 가져와서 필터링
+        List<StoryCard> availableCards = cardService.getAllStoryCardsByAttribute(attribute).stream()
+                .filter(card -> !excludeIds.contains(card.getId())) // 제외 목록에 없는 카드만
+                .collect(java.util.stream.Collectors.toList());
+
+        // 리스트를 섞어서 랜덤하게 선택
+        java.util.Collections.shuffle(availableCards);
 
         if (availableCards.isEmpty()) {
             return ApiResponseUtil.failure("새로고침할 카드가 없습니다.",

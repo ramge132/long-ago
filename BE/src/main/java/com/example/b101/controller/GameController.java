@@ -50,8 +50,12 @@ public class GameController{
 
     //이야기카드 새로고침
     @PatchMapping("/story-card/refresh")
-    public ResponseEntity<?> refreshStoryCard(@RequestParam String gameId, @RequestParam String userId, @RequestParam int cardId, HttpServletRequest request) {
-        return gameService.refreshStoryCard(gameId, userId, cardId, request);
+    public ResponseEntity<?> refreshStoryCard(@RequestParam String gameId,
+                                            @RequestParam String userId,
+                                            @RequestParam int cardId,
+                                            @RequestParam(required = false) java.util.List<Integer> excludeCardIds,
+                                            HttpServletRequest request) {
+        return gameService.refreshStoryCard(gameId, userId, cardId, excludeCardIds, request);
     }
 
     //이야기카드 교환 처리
