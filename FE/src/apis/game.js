@@ -111,10 +111,21 @@ export const refreshStoryCard = async (data) => {
 
     console.log("API 요청 파라미터:", params);
 
-    const response = await apiClient.patch("/apis/game/story-card/refresh",
-      {},
-      { params: params }
-    );
+    // excludeCardIds 배열 처리를 위해 파라미터를 직접 구성
+    let url = "/apis/game/story-card/refresh";
+    url += `?gameId=${encodeURIComponent(params.gameId)}`;
+    url += `&userId=${encodeURIComponent(params.userId)}`;
+    url += `&cardId=${encodeURIComponent(params.cardId)}`;
+
+    if (params.excludeCardIds && params.excludeCardIds.length > 0) {
+      params.excludeCardIds.forEach(id => {
+        url += `&excludeCardIds=${encodeURIComponent(id)}`;
+      });
+    }
+
+    console.log("최종 요청 URL:", url);
+
+    const response = await apiClient.patch(url);
 
     console.log("API 응답 성공:", response.data);
     return response;

@@ -2382,8 +2382,8 @@ const voteEnd = async (data) => {
     let stopWatch = watch(() => [bookContents.value, votings.value], async ([newBookContents, newVotings]) => {
       await nextTick();
       const lastContent = newBookContents[newBookContents.length - 1];
-      console.log("watch 트리거 - lastContent:", lastContent, "newVotings 길이:", newVotings.length, "필요 길이:", participants.value.length - 1);
-      if (lastContent && lastContent.image !== null && newVotings.length === participants.value.length - 1) {
+      console.log("watch 트리거 - lastContent:", lastContent, "newVotings 길이:", newVotings.length, "필요 길이:", participants.value.length);
+      if (lastContent && lastContent.image !== null && newVotings.length === participants.value.length) {
         console.log("조건 만족 - sendVoteResult 호출");
         votings.value = [...votings.value, { sender: data.sender, selected: data.selected }];
         sendVoteResult();
