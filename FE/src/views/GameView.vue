@@ -180,11 +180,21 @@ const isPreview = ref(false);
 
 watch(isElected, (newValue) => {
   if (newValue === true) {
+    console.log("🔥 isElected watch 트리거");
+    console.log("🔥 pendingImage 존재:", !!pendingImage.value);
+    console.log("🔥 현재 bookContents:", bookContents.value);
+    console.log("🔥 마지막 항목 인덱스:", bookContents.value.length - 1);
+
     // ✅ 수정: 투표 통과 시 임시 이미지를 책에 추가
     if (pendingImage.value) {
-      bookContents.value[bookContents.value.length - 1].image = pendingImage.value;
+      const lastIndex = bookContents.value.length - 1;
+      console.log("🔥 마지막 항목에 이미지 설정:", lastIndex);
+      bookContents.value[lastIndex].image = pendingImage.value;
       console.log("✅ isElected watch: 임시 이미지를 책에 등록");
+      console.log("🔥 업데이트 후 마지막 항목:", bookContents.value[lastIndex]);
       pendingImage.value = null; // 임시 이미지 초기화
+    } else {
+      console.log("❌ pendingImage가 없어서 이미지 추가 실패");
     }
 
     setTimeout(() => {
@@ -1792,11 +1802,19 @@ const showOverlay = (message, options = {}) => {
 
 // 책 데이터 추가
 const addBookContent = (newContent) => {
+  console.log("📖 addBookContent 호출:", newContent);
+  console.log("📖 현재 bookContents:", bookContents.value);
+
   if (bookContents.value[0].content === "") {
+    console.log("📖 첫 번째 항목 업데이트");
     bookContents.value[0].content = newContent.content;
+    bookContents.value[0].image = newContent.image; // ✅ 이미지도 함께 설정
   } else {
+    console.log("📖 새 항목 추가");
     bookContents.value.push(newContent);
   }
+
+  console.log("📖 업데이트 후 bookContents:", bookContents.value);
 };
 
 
