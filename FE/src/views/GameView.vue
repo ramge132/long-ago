@@ -693,21 +693,35 @@ const setupConnection = (conn) => {
         break;
 
       case "voteResult":
+        console.log("=== voteResult 메시지 수신 ===");
+        console.log("수신된 투표:", data);
+        console.log("현재 votings:", votings.value);
+
         // 투표 배열에 추가 전 중복 체크
         const voteExists = votings.value.some(v => v.sender === data.sender);
+        console.log("투표 중복 여부:", voteExists);
+
         if (!voteExists) {
           votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
+          console.log("투표 추가 완료, 새로운 votings:", votings.value);
         }
 
+        console.log("전체 투표 수:", votings.value.length, "/ 필요 수:", participants.value.length);
+
         if (votings.value.length == participants.value.length) {
+          console.log("=== 모든 투표 수집 완료, 결과 처리 ===");
+
           let upCount = 0;
           let downCount = 0;
           votings.value.forEach((vote) => {
             if (vote.selected == 'up') upCount++;
             else downCount++;
           });
-          
+
+          console.log("찬성:", upCount, "반대:", downCount);
+
           const voteAccepted = upCount >= downCount;
+          console.log("투표 결과:", voteAccepted ? "통과" : "거절");
           
           if (currTurn.value === myTurn.value) {
             const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
@@ -2041,37 +2055,69 @@ const onVoteSelected = (voteType) => {
 };
 
 const voteEnd = async (data) => {
+  console.log("=== voteEnd 함수 시작 ===");
+  console.log("투표 데이터:", data);
+  console.log("현재 투표 상태 - isVoted:", isVoted.value);
+  console.log("현재 턴:", currTurn.value, "내 턴:", myTurn.value);
+
   currentVoteSelection.value = data.selected;
   prompt.value = "";
   isVoted.value = true;
 
   const sendVoteResult = async () => {
+    console.log("=== sendVoteResult 함수 시작 ===");
+    console.log("연결된 피어 수:", connectedPeers.value.length);
+
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
+        console.log(`피어 ${peer.id}에게 투표 결과 전송:`, { sender: data.sender, selected: data.selected });
         sendMessage("voteResult", { sender: data.sender, selected: data.selected }, peer.connection);
       }
     });
 
+    console.log("=== 투표 집계 시작 ===");
+    console.log("현재 투표 수:", votings.value.length);
+    console.log("총 참가자 수:", participants.value.length);
+    console.log("현재 투표 내역:", votings.value);
+
     if (votings.value.length == participants.value.length) {
+      console.log("=== 모든 투표 완료, 결과 집계 중 ===");
+
       let upCount = 0;
       votings.value.forEach((vote) => {
         if (vote.selected == 'up') upCount++;
       });
-      
+
+      console.log("찬성 투표 수:", upCount);
+      console.log("전체 투표 수:", votings.value.length);
+      console.log("과반수 기준:", votings.value.length / 2);
+
       const voteAccepted = upCount >= (votings.value.length / 2);
-      
+      console.log("투표 결과:", voteAccepted ? "통과" : "거절");
+
       if (currTurn.value === myTurn.value) {
+        console.log("=== 현재 턴 플레이어의 투표 처리 시작 ===");
         const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
         const currentPlayerIndex = inGameOrder.value[currTurn.value];
         const wasEndingCard = usedCard.value.isEnding; // 상태 초기화 전에 저장
 
         let accepted = voteAccepted;
         if (accepted) {
+          console.log("=== 투표 통과 처리 시작 ===");
+          console.log("현재 플레이어:", currentPlayer);
+          console.log("결말카드 여부:", wasEndingCard);
+          console.log("자유결말 여부:", usedCard.value.isFreeEnding);
+
           isElected.value = true;
           const scoreIncrease = wasEndingCard ?
             (usedCard.value.isFreeEnding ? 3 : 5) : 2;
           const wasFreeEnding = usedCard.value.isFreeEnding; // 상태 초기화 전에 저장
+
+          console.log("점수 증가량:", scoreIncrease);
+          console.log("기존 점수:", currentPlayer.score);
+
           currentPlayer.score += scoreIncrease;
+          console.log("새 점수:", currentPlayer.score);
 
           // 투표 찬성 시 임시 이미지를 책에 추가
           if (pendingImage.value) {
@@ -2080,8 +2126,12 @@ const voteEnd = async (data) => {
             pendingImage.value = null; // 임시 이미지 초기화
           }
 
+          console.log("현재 턴 변경 전:", currTurn.value);
           currTurn.value = (currTurn.value + 1) % participants.value.length;
+          console.log("현재 턴 변경 후:", currTurn.value);
+
           if (wasEndingCard) {
+            console.log("=== 결말카드 처리 - 게임 종료 ===");
             gameEnd(true);
             connectedPeers.value.forEach((p) => {
               if (p.id !== peerId.value && p.connection.open) {
@@ -2107,8 +2157,18 @@ const voteEnd = async (data) => {
               });
             }, 1000);
           } else {
+            console.log("=== 일반카드 처리 - 다음 턴 진행 ===");
+            console.log("다음 턴으로 전환하는 메시지 전송 중...");
+
             connectedPeers.value.forEach(async (p) => {
               if (p.id !== peerId.value && p.connection.open) {
+                console.log(`피어 ${p.id}에게 nextTurn 메시지 전송:`, {
+                  currTurn: currTurn.value,
+                  imageDelete: false,
+                  totalTurn: totalTurn.value,
+                  scoreChange: { type: "increase", amount: scoreIncrease, playerIndex: currentPlayerIndex },
+                  cardRemoval: { cardId: usedCard.value.id }
+                });
                 sendMessage("nextTurn", {
                   currTurn: currTurn.value,
                   imageDelete: false,
@@ -2122,6 +2182,7 @@ const voteEnd = async (data) => {
             // 카드는 이미 프롬프트 필터링 시점에 제거됨
 
             // 투표 찬성 후 백업 정리 및 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
+            console.log("usedCard 백업 정리 및 상태 초기화");
             usedCardBackup.value = null; // 백업 정리
             if (!wasEndingCard) {
               usedCard.value = {
@@ -2130,17 +2191,21 @@ const voteEnd = async (data) => {
                 isEnding: false,
                 isFreeEnding: false
               };
+              console.log("usedCard 상태 초기화 완료");
             }
 
+            console.log("턴 전환 오버레이 표시 시작");
             await showOverlay('whoTurn', {
               turnIndex: currTurn.value,
               participants: participants.value,
               inGameOrder: inGameOrder.value,
               peerId: peerId.value
             });
+            console.log("턴 전환 오버레이 완료, 게임 진행 재개");
             inProgress.value = true;
           }
         } else {
+          console.log("=== 투표 거절 처리 시작 ===");
           accepted = false;
 
           // 투표 반대 시 임시 이미지 삭제
@@ -2309,20 +2374,28 @@ const voteEnd = async (data) => {
     }
   }
 
+  console.log("=== voteEnd 함수 마지막 부분 ===");
+  console.log("현재 턴 vs 내 턴 비교:", currTurn.value, "===", myTurn.value);
+
   if (currTurn.value === myTurn.value) {
+    console.log("=== 현재 턴 플레이어 - watch 설정 ===");
     let stopWatch = watch(() => [bookContents.value, votings.value], async ([newBookContents, newVotings]) => {
       await nextTick();
       const lastContent = newBookContents[newBookContents.length - 1];
+      console.log("watch 트리거 - lastContent:", lastContent, "newVotings 길이:", newVotings.length, "필요 길이:", participants.value.length - 1);
       if (lastContent && lastContent.image !== null && newVotings.length === participants.value.length - 1) {
+        console.log("조건 만족 - sendVoteResult 호출");
         votings.value = [...votings.value, { sender: data.sender, selected: data.selected }];
         sendVoteResult();
         if (stopWatch) stopWatch();
       }
     }, { deep: true, immediate: true });
   } else {
+    console.log("=== 게스트 플레이어 - 즉시 sendVoteResult 호출 ===");
     votings.value = [...votings.value, { sender: data.sender, selected: data.selected }];
     sendVoteResult();
   }
+  console.log("=== voteEnd 함수 완료 ===");
 };
 
 const gameEnd = async (status) => {
