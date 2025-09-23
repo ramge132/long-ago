@@ -1159,9 +1159,6 @@ const setupConnection = (conn) => {
           console.log("7. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
           toast.successToast("카드 교환이 완료되었습니다!");
 
-          // 교환 기록 추가 (순환 교환 방지)
-          addExchangeHistory(data.fromCardId, data.toCard.id);
-
           // 교환받은 카드 이미지 프리로딩 (신청자)
           try {
             const receivedCardImageUrl = CardImage.getStoryCardImage(data.toCard.id);
@@ -1195,9 +1192,19 @@ const setupConnection = (conn) => {
             currentViewRef.value.clearPendingExchange(data.fromCardId);
           }
 
-          // 교환 성공 시 카드 상태 초기화
+          // 교환 성공 시 카드 상태 완전 초기화
+          console.log("📋 교환 성공 - 카드 상태 완전 초기화");
           setCardExchangeStatus(data.fromCardId, EXCHANGE_STATUS.IDLE);
           setCardExchangeStatus(data.toCard.id, EXCHANGE_STATUS.IDLE);
+
+          // 혹시 남아있을 수 있는 잘못된 상태들 정리
+          cardExchangeStatus.value.forEach((status, cardId) => {
+            if (status !== EXCHANGE_STATUS.IDLE &&
+                (cardId === data.fromCardId || cardId === data.toCard.id)) {
+              console.log(`📋 잔여 상태 정리: 카드 ${cardId} ${status} → idle`);
+              cardExchangeStatus.value.set(cardId, EXCHANGE_STATUS.IDLE);
+            }
+          });
         } else {
           console.log("3. 교환 거절됨");
 
@@ -2917,8 +2924,10 @@ const handleSendExchangeRequest = (data) => {
 
   // 카드 상태 확인
   const cardStatus = getCardExchangeStatus(data.cardId);
+  console.log(`1-1. 카드 ${data.cardId} 상태 확인: ${cardStatus}`);
+
   if (cardStatus !== EXCHANGE_STATUS.IDLE) {
-    console.log(`1-1. 카드 ${data.cardId}가 이미 교환 상태 ${cardStatus} - 중단`);
+    console.log(`1-1-1. 카드 ${data.cardId}가 이미 교환 상태 ${cardStatus} - 중단`);
     toast.warningToast("해당 카드는 이미 교환 요청 중입니다.");
     return;
   }
@@ -2930,20 +2939,13 @@ const handleSendExchangeRequest = (data) => {
     return;
   }
 
-  // 최근 교환 이력 확인 (순환 교환 방지)
-  const targetUserCards = otherPlayersCards.value.get(data.targetUserId) || [];
-  let isBlocked = false;
-
-  for (const targetCardId of targetUserCards) {
-    if (isRecentExchange(data.cardId, targetCardId)) {
-      console.log(`1-3. 최근 교환 이력으로 인한 차단: 내 카드 ${data.cardId} vs 상대 카드 ${targetCardId}`);
-      toast.warningToast("같은 카드들은 잠시 후에 다시 교환할 수 있습니다.");
-      isBlocked = true;
-      break;
-    }
+  // 내가 현재 실제로 소유한 카드인지 확인
+  const hasMyCard = storyCards.value.some(card => card.id === data.cardId);
+  if (!hasMyCard) {
+    console.log(`1-2. 내가 소유하지 않은 카드 ${data.cardId} - 중단`);
+    toast.warningToast("이미 교환된 카드입니다.");
+    return;
   }
-
-  if (isBlocked) return;
 
   console.log("2. targetUserId:", data.targetUserId);
   console.log("3. 현재 connectedPeers:", connectedPeers.value.map(p => ({id: p.id, connectionOpen: p.connection?.open})));
@@ -2998,9 +3000,6 @@ const cardExchangeStatus = ref(new Map());
 // 교환 요청 디바운싱을 위한 타이머 저장
 const exchangeDebounceTimers = ref(new Map());
 
-// 최근 교환 기록 저장 (순환 교환 방지용)
-const recentExchangeHistory = ref(new Map());
-
 // 교환 상태 열거형
 const EXCHANGE_STATUS = {
   IDLE: 'idle',
@@ -3036,34 +3035,6 @@ const debounceExchangeRequest = (cardId, action, delay = 1000) => {
   exchangeDebounceTimers.value.set(cardId, timer);
 };
 
-// 최근 교환 기록 추가 함수
-const addExchangeHistory = (cardId1, cardId2) => {
-  const key = `${Math.min(cardId1, cardId2)}-${Math.max(cardId1, cardId2)}`;
-  const timestamp = Date.now();
-  recentExchangeHistory.value.set(key, timestamp);
-
-  console.log(`📝 교환 기록 추가: ${key} at ${timestamp}`);
-
-  // 30초 후 기록 삭제
-  setTimeout(() => {
-    if (recentExchangeHistory.value.get(key) === timestamp) {
-      recentExchangeHistory.value.delete(key);
-      console.log(`🗑️ 교환 기록 삭제: ${key}`);
-    }
-  }, 30000);
-};
-
-// 최근 교환 여부 확인 함수
-const isRecentExchange = (cardId1, cardId2) => {
-  const key = `${Math.min(cardId1, cardId2)}-${Math.max(cardId1, cardId2)}`;
-  const hasRecent = recentExchangeHistory.value.has(key);
-  if (hasRecent) {
-    const timestamp = recentExchangeHistory.value.get(key);
-    const timeAgo = Date.now() - timestamp;
-    console.log(`🚫 최근 교환 감지: ${key} (${timeAgo}ms 전)`);
-  }
-  return hasRecent;
-};
 
 // 교환 수락 처리
 const handleCardExchanged = async (data) => {
@@ -3133,9 +3104,6 @@ const handleCardExchanged = async (data) => {
       }
 
       console.log("8. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
-
-      // 교환 기록 추가 (순환 교환 방지)
-      addExchangeHistory(data.fromCardId, data.toCardId);
 
       // 상대방에게 교환 응답 메시지 전송
       const targetPeer = connectedPeers.value.find(peer => peer.id === data.fromUserId);
@@ -3208,7 +3176,17 @@ const handleCardExchanged = async (data) => {
     isExchangeProcessing.value = false;
     setCardExchangeStatus(data.toCardId, EXCHANGE_STATUS.IDLE);
     setCardExchangeStatus(data.fromCardId, EXCHANGE_STATUS.IDLE);
-    console.log("📋 교환 상태 정리 완료");
+
+    // 혹시 남아있을 수 있는 잘못된 상태들 정리
+    cardExchangeStatus.value.forEach((status, cardId) => {
+      if (status !== EXCHANGE_STATUS.IDLE &&
+          (cardId === data.fromCardId || cardId === data.toCardId)) {
+        console.log(`📋 수신자 잔여 상태 정리: 카드 ${cardId} ${status} → idle`);
+        cardExchangeStatus.value.set(cardId, EXCHANGE_STATUS.IDLE);
+      }
+    });
+
+    console.log("📋 수신자 교환 상태 정리 완료");
   }
 
   console.log("=== 교환 수락 처리 끝 (수신자) ===");
