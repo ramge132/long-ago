@@ -898,8 +898,8 @@ const handleUserSelect = (participant) => {
   emit("sendExchangeRequest", requestData);
   console.log("4. sendExchangeRequest 이벤트 발송 완료");
 
-  // 교환 신청 시 횟수 차감
-  exchangeCount.value--;
+  // ❌ 제거: 교환 신청 시점에 차감하지 않음
+  // 올바른 시점: 교환 결과(성공/거절) 확정 후 백엔드에서 업데이트
 
   closeUserSelectModal();
   closeCardMenu();

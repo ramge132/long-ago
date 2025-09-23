@@ -1132,6 +1132,30 @@ const setupConnection = (conn) => {
         console.log("2. 교환 전 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
 
         if (data.accepted) {
+          // 교환 성공 - 신청자도 백엔드에 결과 알림 (교환 횟수 차감용)
+          try {
+            const requesterExchangeResponse = await exchangeStoryCard({
+              gameId: gameID.value,
+              fromUserId: data.fromUserId,
+              toUserId: data.toUserId,
+              fromCardId: data.fromCardId,
+              toCardId: data.toCardId,
+              status: 'requester_confirmed' // 신청자가 교환 완료를 확인
+            });
+
+            console.log("2-1. 신청자 백엔드 교환 확인 응답:", requesterExchangeResponse.data);
+
+            // 신청자의 교환 횟수 업데이트
+            if (requesterExchangeResponse.data.success && requesterExchangeResponse.data.data?.exchangeCount !== undefined) {
+              console.log("2-2. 신청자 exchangeCount 업데이트:", requesterExchangeResponse.data.data.exchangeCount);
+              if (currentViewRef.value && currentViewRef.value.updateCounts) {
+                currentViewRef.value.updateCounts(null, requesterExchangeResponse.data.data.exchangeCount);
+              }
+            }
+          } catch (error) {
+            console.error("2-1. 신청자 백엔드 교환 확인 API 호출 실패:", error);
+          }
+
           // 교환 성공 - 신청자 쪽에서 카드 교체
           const fromCardIndex = storyCards.value.findIndex(card => card.id === data.fromCardId);
           console.log("3. fromCardIndex (내가 보낸 카드):", fromCardIndex);
@@ -1187,6 +1211,31 @@ const setupConnection = (conn) => {
           setCardExchangeStatus(data.toCard.id, EXCHANGE_STATUS.IDLE);
         } else {
           console.log("3. 교환 거절됨");
+
+          // 교환 거절 - 신청자도 백엔드에 결과 알림 (교환 횟수 차감용)
+          try {
+            const requesterRejectResponse = await exchangeStoryCard({
+              gameId: gameID.value,
+              fromUserId: data.fromUserId,
+              toUserId: data.toUserId,
+              fromCardId: data.fromCardId,
+              toCardId: data.toCardId,
+              status: 'rejected' // 교환 거절
+            });
+
+            console.log("3-1. 신청자 백엔드 교환 거절 응답:", requesterRejectResponse.data);
+
+            // 신청자의 교환 횟수 업데이트 (거절되어도 차감)
+            if (requesterRejectResponse.data.success && requesterRejectResponse.data.data?.exchangeCount !== undefined) {
+              console.log("3-2. 신청자 교환 거절 시 exchangeCount 업데이트:", requesterRejectResponse.data.data.exchangeCount);
+              if (currentViewRef.value && currentViewRef.value.updateCounts) {
+                currentViewRef.value.updateCounts(null, requesterRejectResponse.data.data.exchangeCount);
+              }
+            }
+          } catch (error) {
+            console.error("3-1. 신청자 백엔드 교환 거절 API 호출 실패:", error);
+          }
+
           toast.errorToast("상대방이 교환을 거절했습니다.");
 
           // 교환 거절 시에도 pending 상태 해제
@@ -3041,6 +3090,7 @@ const handleCardExchanged = async (data) => {
 
     if (exchangeResponse.data.success) {
       console.log("3. 백엔드 교환 처리 성공");
+      console.log("3-1. 백엔드 응답 데이터:", exchangeResponse.data.data);
 
       // 수신자는 자신이 선택한 카드를 신청자의 카드로 교체
       const myCardIndex = storyCards.value.findIndex(card => card.id === data.toCardId);
@@ -3072,7 +3122,9 @@ const handleCardExchanged = async (data) => {
           fromCardId: data.fromCardId,
           toCardId: data.toCardId,
           fromCard: data.fromCard,
-          toCard: data.toCard
+          toCard: data.toCard,
+          // 수신자의 업데이트된 교환 횟수 포함
+          receiverExchangeCount: exchangeResponse.data.data?.exchangeCount
         };
         console.log("9. 신청자에게 전송할 응답 데이터:", responseData);
 
@@ -3094,6 +3146,14 @@ const handleCardExchanged = async (data) => {
           img.src = receivedCardImageUrl;
         } catch (error) {
           console.warn(`❌ 교환받은 카드 이미지 프리로딩 중 오류 (수신자): ${data.fromCard.keyword}`, error);
+        }
+
+        // 교환 완료 후 exchangeCount 업데이트 (백엔드에서 차감된 값 적용)
+        if (exchangeResponse.data.data && exchangeResponse.data.data.exchangeCount !== undefined) {
+          console.log("3-2. 교환 완료 후 exchangeCount 업데이트:", exchangeResponse.data.data.exchangeCount);
+          if (currentViewRef.value && currentViewRef.value.updateCounts) {
+            currentViewRef.value.updateCounts(null, exchangeResponse.data.data.exchangeCount);
+          }
         }
 
         // 교환 완료 후 내 카드 정보 업데이트 (다른 플레이어들에게 전송)
