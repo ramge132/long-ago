@@ -2801,6 +2801,11 @@ const handleCardRefreshed = async (data) => {
       }
 
       // InGameControl의 refreshCount 동기화
+      console.log("=== currentViewRef 상태 확인 ===");
+      console.log("currentViewRef.value:", currentViewRef.value);
+      console.log("currentViewRef.value가 존재하는가?", !!currentViewRef.value);
+      console.log("updateCounts 메서드가 존재하는가?", currentViewRef.value && typeof currentViewRef.value.updateCounts === 'function');
+
       if (currentViewRef.value && currentViewRef.value.updateCounts) {
         // exchangeCount는 현재 값 유지하고 refreshCount만 업데이트
         console.log("=== handleCardRefreshed에서 updateCounts 호출 ===");
@@ -2809,6 +2814,12 @@ const handleCardRefreshed = async (data) => {
 
         currentViewRef.value.updateCounts(updatedRefreshCount, null);
         console.log("=== updateCounts 호출 완료 ===");
+      } else {
+        console.error("❌ currentViewRef 또는 updateCounts 메서드가 없습니다!");
+        console.log("currentViewRef.value:", currentViewRef.value);
+        if (currentViewRef.value) {
+          console.log("currentViewRef의 메서드들:", Object.keys(currentViewRef.value));
+        }
       }
     } else {
       // 새로고침 실패
