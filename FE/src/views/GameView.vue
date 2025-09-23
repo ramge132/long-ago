@@ -729,13 +729,19 @@ const setupConnection = (conn) => {
           const voteAccepted = upCount >= downCount;
           console.log("투표 결과:", voteAccepted ? "통과" : "거절");
           
+          // 모든 플레이어가 동일한 투표 결과 처리
+          const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+          const currentPlayerIndex = inGameOrder.value[currTurn.value];
+
+          let accepted = voteAccepted;
+          if (accepted) {
+            // ✅ 수정: 모든 플레이어가 isElected 설정 (책 페이지 넘김 동기화)
+            isElected.value = true;
+          }
+
+          // 현재 턴 플레이어만 점수 및 턴 전환 처리
           if (currTurn.value === myTurn.value) {
-            const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-            const currentPlayerIndex = inGameOrder.value[currTurn.value];
-            
-            let accepted = voteAccepted;
             if (accepted) {
-              isElected.value = true;
               
               if (usedCard.value.isEnding) {
                 // 결말인 경우: 자유결말(3점) vs 결말카드(5점)
@@ -858,12 +864,11 @@ const setupConnection = (conn) => {
           }
         }
           } else {
+            // ✅ 수정: 게스트 플레이어 처리
             if (voteAccepted) {
-              isElected.value = true;
-              
               if (usedCard.value.isEnding && participants.value[0].id === peerId.value) {
                 gameEnd(true);
-                
+
                 setTimeout(() => {
                   isForceStopped.value = "champ";
                   connectedPeers.value.forEach(async (p) => {
@@ -875,7 +880,13 @@ const setupConnection = (conn) => {
                     }
                   });
                 }, 1000);
+              } else {
+                // ✅ 수정: 게스트 플레이어도 nextTurn 메시지 대기 (현재 턴 플레이어가 보낼 것임)
+                console.log("게스트 플레이어 - nextTurn 메시지 대기 중");
               }
+            } else {
+              // ✅ 수정: 투표 거절 시 게스트도 nextTurn 메시지 대기
+              console.log("게스트 플레이어 - 투표 거절, nextTurn 메시지 대기 중");
             }
           }
         }
@@ -2413,21 +2424,10 @@ const voteEnd = async (data) => {
   console.log("=== voteEnd 함수 마지막 부분 ===");
   console.log("현재 턴 vs 내 턴 비교:", currTurn.value, "===", myTurn.value);
 
-  if (currTurn.value === myTurn.value) {
-    console.log("=== 현재 턴 플레이어 - watch 설정 ===");
-    let stopWatch = watch(() => [pendingImage.value, votings.value], async ([newPendingImage, newVotings]) => {
-      await nextTick();
-      console.log("watch 트리거 - pendingImage 존재:", !!newPendingImage, "newVotings 길이:", newVotings.length, "필요 길이:", participants.value.length);
-      if (newPendingImage && newVotings.length === participants.value.length) {
-        console.log("조건 만족 - sendVoteResult 호출");
-        sendVoteResult();
-        if (stopWatch) stopWatch();
-      }
-    }, { deep: true, immediate: true });
-  } else {
-    console.log("=== 게스트 플레이어 - 즉시 sendVoteResult 호출 ===");
-    sendVoteResult();
-  }
+  // ✅ 수정: 투표 결과 전송만 담당, 실제 처리는 voteResult 케이스에서 처리
+  console.log("=== 📢 NEW 수정된 voteEnd 로직 실행 중 ===");
+  console.log("=== 투표 결과 브로드캐스트 ===");
+  sendVoteResult();
   console.log("=== voteEnd 함수 완료 ===");
 };
 
