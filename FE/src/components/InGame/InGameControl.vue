@@ -798,12 +798,26 @@ const getCardHighlightClass = (cardId) => {
 
 // 플로팅 액션 버튼 함수들
 const refreshCard = async (card) => {
+  console.log("=== 카드 새로고침 버튼 클릭 ===");
+  console.log("새로고침할 카드:", card);
+  console.log("현재 새로고침 횟수:", refreshCount.value);
+  console.log("gameId:", props.gameId);
+  console.log("userId:", props.peerId);
+
+  // 새로고침 횟수 체크
+  if (refreshCount.value <= 0) {
+    toast.errorToast("새로고침 횟수를 모두 사용했습니다.");
+    return;
+  }
+
   // GameView에서 새로고침 처리하도록 변경 (중복 방지 포함)
   emit("cardRefreshed", {
     oldCard: card,
     gameId: props.gameId,
     userId: props.peerId
   });
+
+  console.log("cardRefreshed 이벤트 발송 완료");
 };
 
 const openExchangeModal = (card) => {
@@ -832,6 +846,17 @@ const closeUserSelectModal = () => {
 };
 
 const handleRefreshCard = async () => {
+  console.log("=== 카드 메뉴에서 새로고침 클릭 ===");
+  console.log("새로고침할 카드:", selectedCard.value);
+  console.log("현재 새로고침 횟수:", refreshCount.value);
+
+  // 새로고침 횟수 체크
+  if (refreshCount.value <= 0) {
+    toast.errorToast("새로고침 횟수를 모두 사용했습니다.");
+    closeCardMenu();
+    return;
+  }
+
   // GameView에서 새로고침 처리하도록 변경 (중복 방지 포함)
   emit("cardRefreshed", {
     oldCard: selectedCard.value,
@@ -839,6 +864,7 @@ const handleRefreshCard = async () => {
     userId: props.peerId
   });
 
+  console.log("cardRefreshed 이벤트 발송 완료 (메뉴)");
   closeCardMenu();
 };
 

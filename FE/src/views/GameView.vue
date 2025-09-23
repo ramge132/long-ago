@@ -164,6 +164,8 @@ const usedCard = ref({
   isEnding: false,
   isFreeEnding: false
 });
+// 투표 거절 시 복원용 카드 정보 저장
+const usedCardBackup = ref(null);
 // 투표 결과 표시
 const votings = ref([]);
 // 프롬프트 선출 여부
@@ -1749,6 +1751,13 @@ const nextTurn = async (data) => {
           }
         })
 
+        // 투표 거절 시 복원을 위해 사용된 카드 백업
+        const usedCardObj = storyCards.value.find(card => card.id === usedCard.value.id);
+        if (usedCardObj) {
+          usedCardBackup.value = { ...usedCardObj };
+          console.log(`카드 백업 생성: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
+        }
+
         // 백엔드에서 결정한 사용된 카드를 즉시 패에서 제거
         storyCards.value = storyCards.value.filter(card => card.id !== usedCard.value.id);
         console.log(`카드 사용으로 제거됨: ID ${usedCard.value.id}, keyword: ${usedCard.value.keyword}`);
@@ -2060,7 +2069,8 @@ const voteEnd = async (data) => {
 
             // 카드는 이미 프롬프트 필터링 시점에 제거됨
 
-            // 투표 찬성 후 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
+            // 투표 찬성 후 백업 정리 및 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
+            usedCardBackup.value = null; // 백업 정리
             if (!wasEndingCard) {
               usedCard.value = {
                 id: 0,
@@ -2087,7 +2097,25 @@ const voteEnd = async (data) => {
             console.log("결말카드 투표 반대 - 결말모드 해제");
           }
 
-          // usedCard 상태 초기화
+          // 투표 거절 시 사용된 카드를 패에 복원 (자유 결말이 아닌 경우만)
+          if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+            storyCards.value.push(usedCardBackup.value);
+            console.log(`투표 거절로 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
+
+            // 복원된 카드 정보를 다른 플레이어들에게 전송
+            const myCardIds = storyCards.value.map(card => card.id);
+            connectedPeers.value.forEach((peer) => {
+              if (peer.connection && peer.connection.open) {
+                sendMessage("playerCardsSync", {
+                  userId: peerId.value,
+                  cardIds: myCardIds
+                }, peer.connection);
+              }
+            });
+          }
+
+          // 백업 정보 및 usedCard 상태 초기화
+          usedCardBackup.value = null;
           usedCard.value = {
             id: 0,
             keyword: "",
@@ -2404,6 +2432,9 @@ const goLobby = () => {
 
 // 카드 새로고침 처리
 const handleCardRefreshed = async (data) => {
+  console.log("=== 카드 새로고침 처리 시작 ===");
+  console.log("받은 데이터:", data);
+
   // 다른 플레이어들이 보유한 모든 카드 ID 수집
   const allOtherPlayerCards = [];
   otherPlayersCards.value.forEach((cardIds) => {

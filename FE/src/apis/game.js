@@ -94,6 +94,9 @@ export const voteResultSend = async (data) => {
 // 이야기카드 새로고침
 export const refreshStoryCard = async (data) => {
   try {
+    console.log("=== refreshStoryCard API 호출 ===");
+    console.log("전달받은 데이터:", data);
+
     const params = {
       gameId: data.gameId,
       userId: data.userId,
@@ -103,14 +106,20 @@ export const refreshStoryCard = async (data) => {
     // excludeCardIds가 있으면 params에 추가
     if (data.excludeCardIds && data.excludeCardIds.length > 0) {
       params.excludeCardIds = data.excludeCardIds;
+      console.log("제외할 카드 ID들:", data.excludeCardIds);
     }
+
+    console.log("API 요청 파라미터:", params);
 
     const response = await apiClient.patch("/apis/game/story-card/refresh",
       {},
       { params: params }
     );
+
+    console.log("API 응답 성공:", response.data);
     return response;
   } catch (error) {
+    console.error("API 호출 에러:", error);
     throw error;
   }
 }
