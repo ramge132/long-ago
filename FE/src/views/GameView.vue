@@ -2093,6 +2093,13 @@ const voteEnd = async (data) => {
   prompt.value = "";
   isVoted.value = true;
 
+  // 내 투표를 votings 배열에 추가 (중복 방지)
+  const voteExists = votings.value.some(v => v.sender === data.sender);
+  if (!voteExists) {
+    votings.value = [...votings.value, {sender: data.sender, selected: data.selected}];
+    console.log("내 투표 추가 완료, 현재 votings:", votings.value);
+  }
+
   const sendVoteResult = async () => {
     console.log("=== sendVoteResult 함수 시작 ===");
     console.log("연결된 피어 수:", connectedPeers.value.length);
@@ -2413,14 +2420,12 @@ const voteEnd = async (data) => {
       console.log("watch 트리거 - pendingImage 존재:", !!newPendingImage, "newVotings 길이:", newVotings.length, "필요 길이:", participants.value.length);
       if (newPendingImage && newVotings.length === participants.value.length) {
         console.log("조건 만족 - sendVoteResult 호출");
-        votings.value = [...votings.value, { sender: data.sender, selected: data.selected }];
         sendVoteResult();
         if (stopWatch) stopWatch();
       }
     }, { deep: true, immediate: true });
   } else {
     console.log("=== 게스트 플레이어 - 즉시 sendVoteResult 호출 ===");
-    votings.value = [...votings.value, { sender: data.sender, selected: data.selected }];
     sendVoteResult();
   }
   console.log("=== voteEnd 함수 완료 ===");
