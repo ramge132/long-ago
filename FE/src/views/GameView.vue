@@ -1132,28 +1132,14 @@ const setupConnection = (conn) => {
         console.log("2. 교환 전 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
 
         if (data.accepted) {
-          // 교환 성공 - 신청자도 백엔드에 결과 알림 (교환 횟수 차감용)
-          try {
-            const requesterExchangeResponse = await exchangeStoryCard({
-              gameId: gameID.value,
-              fromUserId: data.fromUserId,
-              toUserId: data.toUserId,
-              fromCardId: data.fromCardId,
-              toCardId: data.toCardId,
-              status: 'requester_confirmed' // 신청자가 교환 완료를 확인
-            });
-
-            console.log("2-1. 신청자 백엔드 교환 확인 응답:", requesterExchangeResponse.data);
-
-            // 신청자의 교환 횟수 업데이트
-            if (requesterExchangeResponse.data.success && requesterExchangeResponse.data.data?.exchangeCount !== undefined) {
-              console.log("2-2. 신청자 exchangeCount 업데이트:", requesterExchangeResponse.data.data.exchangeCount);
-              if (currentViewRef.value && currentViewRef.value.updateCounts) {
-                currentViewRef.value.updateCounts(null, requesterExchangeResponse.data.data.exchangeCount);
-              }
-            }
-          } catch (error) {
-            console.error("2-1. 신청자 백엔드 교환 확인 API 호출 실패:", error);
+          // 교환 성공 - 신청자도 교환 횟수 차감 (백엔드 API 방식 대신 로컬 차감)
+          console.log("2-1. 신청자 교환 성공 - exchangeCount 차감");
+          if (currentViewRef.value && currentViewRef.value.updateCounts) {
+            // 현재 exchangeCount에서 1 차감
+            const currentExchangeCount = document.querySelector('.exchange-button-container .expanded-content p:last-child')?.textContent || "3";
+            const newExchangeCount = Math.max(0, parseInt(currentExchangeCount) - 1);
+            console.log(`2-2. 신청자 exchangeCount 업데이트: ${currentExchangeCount} → ${newExchangeCount}`);
+            currentViewRef.value.updateCounts(null, newExchangeCount);
           }
 
           // 교환 성공 - 신청자 쪽에서 카드 교체
@@ -1172,6 +1158,9 @@ const setupConnection = (conn) => {
 
           console.log("7. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
           toast.successToast("카드 교환이 완료되었습니다!");
+
+          // 교환 기록 추가 (순환 교환 방지)
+          addExchangeHistory(data.fromCardId, data.toCard.id);
 
           // 교환받은 카드 이미지 프리로딩 (신청자)
           try {
@@ -1202,8 +1191,8 @@ const setupConnection = (conn) => {
           });
 
           // 교환 완료 시 pending 상태 해제
-          if (inGameControlRef.value) {
-            inGameControlRef.value.clearPendingExchange(data.fromCardId);
+          if (currentViewRef.value && currentViewRef.value.clearPendingExchange) {
+            currentViewRef.value.clearPendingExchange(data.fromCardId);
           }
 
           // 교환 성공 시 카드 상태 초기화
@@ -1212,35 +1201,21 @@ const setupConnection = (conn) => {
         } else {
           console.log("3. 교환 거절됨");
 
-          // 교환 거절 - 신청자도 백엔드에 결과 알림 (교환 횟수 차감용)
-          try {
-            const requesterRejectResponse = await exchangeStoryCard({
-              gameId: gameID.value,
-              fromUserId: data.fromUserId,
-              toUserId: data.toUserId,
-              fromCardId: data.fromCardId,
-              toCardId: data.toCardId,
-              status: 'rejected' // 교환 거절
-            });
-
-            console.log("3-1. 신청자 백엔드 교환 거절 응답:", requesterRejectResponse.data);
-
-            // 신청자의 교환 횟수 업데이트 (거절되어도 차감)
-            if (requesterRejectResponse.data.success && requesterRejectResponse.data.data?.exchangeCount !== undefined) {
-              console.log("3-2. 신청자 교환 거절 시 exchangeCount 업데이트:", requesterRejectResponse.data.data.exchangeCount);
-              if (currentViewRef.value && currentViewRef.value.updateCounts) {
-                currentViewRef.value.updateCounts(null, requesterRejectResponse.data.data.exchangeCount);
-              }
-            }
-          } catch (error) {
-            console.error("3-1. 신청자 백엔드 교환 거절 API 호출 실패:", error);
+          // 교환 거절 - 신청자도 교환 횟수 차감 (거절되어도 시도 비용)
+          console.log("3-1. 신청자 교환 거절 - exchangeCount 차감");
+          if (currentViewRef.value && currentViewRef.value.updateCounts) {
+            // 현재 exchangeCount에서 1 차감
+            const currentExchangeCount = document.querySelector('.exchange-button-container .expanded-content p:last-child')?.textContent || "3";
+            const newExchangeCount = Math.max(0, parseInt(currentExchangeCount) - 1);
+            console.log(`3-2. 신청자 교환 거절 시 exchangeCount 업데이트: ${currentExchangeCount} → ${newExchangeCount}`);
+            currentViewRef.value.updateCounts(null, newExchangeCount);
           }
 
           toast.errorToast("상대방이 교환을 거절했습니다.");
 
           // 교환 거절 시에도 pending 상태 해제
-          if (inGameControlRef.value) {
-            inGameControlRef.value.clearPendingExchange(data.fromCardId);
+          if (currentViewRef.value && currentViewRef.value.clearPendingExchange) {
+            currentViewRef.value.clearPendingExchange(data.fromCardId);
           }
 
           // 교환 거절 시 카드 상태 초기화
@@ -2955,6 +2930,21 @@ const handleSendExchangeRequest = (data) => {
     return;
   }
 
+  // 최근 교환 이력 확인 (순환 교환 방지)
+  const targetUserCards = otherPlayersCards.value.get(data.targetUserId) || [];
+  let isBlocked = false;
+
+  for (const targetCardId of targetUserCards) {
+    if (isRecentExchange(data.cardId, targetCardId)) {
+      console.log(`1-3. 최근 교환 이력으로 인한 차단: 내 카드 ${data.cardId} vs 상대 카드 ${targetCardId}`);
+      toast.warningToast("같은 카드들은 잠시 후에 다시 교환할 수 있습니다.");
+      isBlocked = true;
+      break;
+    }
+  }
+
+  if (isBlocked) return;
+
   console.log("2. targetUserId:", data.targetUserId);
   console.log("3. 현재 connectedPeers:", connectedPeers.value.map(p => ({id: p.id, connectionOpen: p.connection?.open})));
 
@@ -3008,6 +2998,9 @@ const cardExchangeStatus = ref(new Map());
 // 교환 요청 디바운싱을 위한 타이머 저장
 const exchangeDebounceTimers = ref(new Map());
 
+// 최근 교환 기록 저장 (순환 교환 방지용)
+const recentExchangeHistory = ref(new Map());
+
 // 교환 상태 열거형
 const EXCHANGE_STATUS = {
   IDLE: 'idle',
@@ -3041,6 +3034,35 @@ const debounceExchangeRequest = (cardId, action, delay = 1000) => {
   }, delay);
 
   exchangeDebounceTimers.value.set(cardId, timer);
+};
+
+// 최근 교환 기록 추가 함수
+const addExchangeHistory = (cardId1, cardId2) => {
+  const key = `${Math.min(cardId1, cardId2)}-${Math.max(cardId1, cardId2)}`;
+  const timestamp = Date.now();
+  recentExchangeHistory.value.set(key, timestamp);
+
+  console.log(`📝 교환 기록 추가: ${key} at ${timestamp}`);
+
+  // 30초 후 기록 삭제
+  setTimeout(() => {
+    if (recentExchangeHistory.value.get(key) === timestamp) {
+      recentExchangeHistory.value.delete(key);
+      console.log(`🗑️ 교환 기록 삭제: ${key}`);
+    }
+  }, 30000);
+};
+
+// 최근 교환 여부 확인 함수
+const isRecentExchange = (cardId1, cardId2) => {
+  const key = `${Math.min(cardId1, cardId2)}-${Math.max(cardId1, cardId2)}`;
+  const hasRecent = recentExchangeHistory.value.has(key);
+  if (hasRecent) {
+    const timestamp = recentExchangeHistory.value.get(key);
+    const timeAgo = Date.now() - timestamp;
+    console.log(`🚫 최근 교환 감지: ${key} (${timeAgo}ms 전)`);
+  }
+  return hasRecent;
 };
 
 // 교환 수락 처리
@@ -3112,6 +3134,9 @@ const handleCardExchanged = async (data) => {
 
       console.log("8. 교환 후 내 카드 목록:", storyCards.value.map(c => ({id: c.id, keyword: c.keyword})));
 
+      // 교환 기록 추가 (순환 교환 방지)
+      addExchangeHistory(data.fromCardId, data.toCardId);
+
       // 상대방에게 교환 응답 메시지 전송
       const targetPeer = connectedPeers.value.find(peer => peer.id === data.fromUserId);
       if (targetPeer && targetPeer.connection && targetPeer.connection.open) {
@@ -3148,12 +3173,14 @@ const handleCardExchanged = async (data) => {
           console.warn(`❌ 교환받은 카드 이미지 프리로딩 중 오류 (수신자): ${data.fromCard.keyword}`, error);
         }
 
-        // 교환 완료 후 exchangeCount 업데이트 (백엔드에서 차감된 값 적용)
-        if (exchangeResponse.data.data && exchangeResponse.data.data.exchangeCount !== undefined) {
-          console.log("3-2. 교환 완료 후 exchangeCount 업데이트:", exchangeResponse.data.data.exchangeCount);
-          if (currentViewRef.value && currentViewRef.value.updateCounts) {
-            currentViewRef.value.updateCounts(null, exchangeResponse.data.data.exchangeCount);
-          }
+        // 교환 완료 후 exchangeCount 업데이트 (수신자도 차감)
+        console.log("3-2. 수신자 교환 완료 - exchangeCount 차감");
+        if (currentViewRef.value && currentViewRef.value.updateCounts) {
+          // 현재 exchangeCount에서 1 차감
+          const currentExchangeCount = document.querySelector('.exchange-button-container .expanded-content p:last-child')?.textContent || "3";
+          const newExchangeCount = Math.max(0, parseInt(currentExchangeCount) - 1);
+          console.log(`3-3. 수신자 exchangeCount 업데이트: ${currentExchangeCount} → ${newExchangeCount}`);
+          currentViewRef.value.updateCounts(null, newExchangeCount);
         }
 
         // 교환 완료 후 내 카드 정보 업데이트 (다른 플레이어들에게 전송)

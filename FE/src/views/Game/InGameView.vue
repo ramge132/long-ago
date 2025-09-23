@@ -481,6 +481,16 @@ defineExpose({
     } else {
       console.error("❌ InGameControl ref 또는 updateCounts 메서드가 없습니다!");
     }
+  },
+  clearPendingExchange: (cardId) => {
+    console.log("=== InGameView clearPendingExchange 중계 ===");
+    console.log("cardId:", cardId);
+    if (inGameControlRef.value && inGameControlRef.value.clearPendingExchange) {
+      console.log("InGameControl로 clearPendingExchange 호출 중계");
+      inGameControlRef.value.clearPendingExchange(cardId);
+    } else {
+      console.error("❌ InGameControl ref 또는 clearPendingExchange 메서드가 없습니다!");
+    }
   }
 });
 
