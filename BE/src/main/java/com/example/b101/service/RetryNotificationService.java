@@ -1,7 +1,7 @@
 package com.example.b101.service;
 
 import com.example.b101.dto.RetryNotificationRequest;
-import com.example.b101.util.ApiResponseUtil;
+import com.example.b101.common.ApiResponseUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
