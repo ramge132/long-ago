@@ -45,8 +45,9 @@ public class RetryNotificationService {
             log.info("=== 재시도 알림 처리 완료 ===");
 
             return ApiResponseUtil.success(
-                    "재시도 알림이 성공적으로 처리되었습니다.",
                     responseData,
+                    "재시도 알림이 성공적으로 처리되었습니다.",
+                    HttpStatus.OK,
                     httpRequest.getRequestURI()
             );
 
