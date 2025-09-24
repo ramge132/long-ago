@@ -300,7 +300,73 @@ watch(isElected, (newValue) => {
         if (waitCount < maxWaitTime) {
           setTimeout(waitForImage, 100);
         } else {
-          console.log("⏰ 이미지 대기 시간 초과 - 이미지 없이 진행");
+          console.log("⏰ 이미지 대기 시간 초과 - 투표 부결 처리 시작");
+
+          // ✅ 핵심 수정: 이미지 대기 시간 초과 시 투표 부결과 동일한 처리
+          isElected.value = false; // isElected 상태 리셋
+
+          if (currTurn.value === myTurn.value) {
+            const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+
+            // 1. 점수 차감 (투표 부결과 동일)
+            currentPlayer.score -= 1;
+            console.log(`이미지 대기 초과 - 점수 차감: ${currentPlayer.name} (${currentPlayer.score})`);
+
+            // 2. 카드 복원 (투표 부결과 동일)
+            if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+              storyCards.value.push(usedCardBackup.value);
+              console.log(`이미지 대기 초과 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
+
+              // 복원된 카드 정보를 다른 플레이어들에게 전송
+              const myCardIds = storyCards.value.map(card => card.id);
+              connectedPeers.value.forEach((peer) => {
+                if (peer.connection && peer.connection.open) {
+                  sendMessage("playerCardsSync", {
+                    userId: peerId.value,
+                    cardIds: myCardIds
+                  }, peer.connection);
+                }
+              });
+            }
+
+            // 3. 책 내용 제거 (투표 부결과 동일)
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+            } else {
+              bookContents.value = bookContents.value.slice(0, -1);
+            }
+
+            // 4. 상태 초기화
+            usedCardBackup.value = null;
+            usedCard.value = {
+              id: 0,
+              keyword: "",
+              isEnding: false,
+              isFreeEnding: false
+            };
+
+            // 5. 다음 턴으로 진행
+            currTurn.value = (currTurn.value + 1) % participants.value.length;
+
+            // 6. 다른 플레이어들에게 알림
+            connectedPeers.value.forEach((peer) => {
+              if (peer.id !== peerId.value && peer.connection.open) {
+                sendMessage("nextTurn", {
+                  currTurn: currTurn.value,
+                  imageDelete: true,
+                  totalTurn: totalTurn.value,
+                  scoreChange: {
+                    type: "decrease",
+                    amount: 1,
+                    playerIndex: inGameOrder.value[currTurn.value === 0 ? participants.value.length - 1 : currTurn.value - 1]
+                  },
+                  reason: "이미지 대기 시간 초과"
+                }, peer.connection);
+              }
+            });
+
+            console.log("⏰ 이미지 대기 시간 초과 - 투표 부결 처리 완료");
+          }
         }
       };
 
@@ -2371,48 +2437,61 @@ const nextTurn = async (data) => {
 
           // ✅ 핵심 수정: waitingForImage 상태 확인
           if (waitingForImage.value && currentTurnVoteResult.value) {
-            console.log("=== 투표 통과 후 이미지 생성 실패 - 투표 부결 처리 ===");
+            console.log("=== 투표 통과 후 이미지 생성 실패 - 투표 부결과 동일한 처리 ===");
 
-            // 1. 사용된 카드를 플레이어 패에 되돌리기
-            const usedCardInfo = currentTurnVoteResult.value;
+            // 1. 사용된 카드를 플레이어 패에 되돌리기 (투표 부결과 동일)
+            if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+              storyCards.value.push(usedCardBackup.value);
+              console.log(`투표 통과 후 이미지 실패 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
 
-            // 카드 되돌리기 (결말카드가 아닌 경우에만)
-            if (!usedCard.value.isEnding) {
-              console.log("일반 카드 패에 되돌리기:", usedCard.value);
-              // 카드를 다시 추가하지 않음 - 이미 제거되지 않았거나 별도 처리됨
-
-              // 또는 필요 시 카드 복원 로직 추가
-              if (!storyCards.value.find(card => card.id === usedCard.value.id)) {
-                storyCards.value.push({
-                  id: usedCard.value.id,
-                  keyword: usedCard.value.keyword,
-                  attribute: usedCard.value.attribute
-                });
-              }
+              // 복원된 카드 정보를 다른 플레이어들에게 전송
+              const myCardIds = storyCards.value.map(card => card.id);
+              connectedPeers.value.forEach((peer) => {
+                if (peer.connection && peer.connection.open) {
+                  sendMessage("playerCardsSync", {
+                    userId: peerId.value,
+                    cardIds: myCardIds
+                  }, peer.connection);
+                }
+              });
             }
 
-            // 2. 투표 대기 상태 해제
+            // 2. 백업 정보 및 usedCard 상태 초기화
+            usedCardBackup.value = null;
+            usedCard.value = {
+              id: 0,
+              keyword: "",
+              isEnding: false,
+              isFreeEnding: false
+            };
+
+            // 3. 결말모드 해제 (결말카드인 경우)
+            if (usedCard.value.isEnding) {
+              isEndingMode.value = false;
+              console.log("투표 통과 후 이미지 실패 - 결말모드 해제");
+            }
+
+            // 4. 임시 이미지 삭제
+            if (pendingImage.value) {
+              console.log("투표 통과 후 이미지 실패 - pendingImage 정리");
+              pendingImage.value = null;
+            }
+
+            // 5. 투표 대기 상태 해제
             waitingForImage.value = false;
             currentTurnVoteResult.value = null;
 
-            // 3. 점수 차감 (투표 부결과 동일)
+            // 6. 점수 차감 (투표 부결과 동일)
             currentPlayer.score -= 1;
 
-            // 4. 책 내용 제거
+            // 7. 책 내용 제거 (투표 부결과 동일)
             if (bookContents.value.length === 1) {
               bookContents.value = [{ content: "", image: null }];
             } else {
               bookContents.value = bookContents.value.slice(0, -1);
             }
 
-            // 5. 경고 메시지
-            const warningMessage = {
-              type: "inappropriateContent",
-              playerName: currentPlayer.name,
-              message: "투표 통과 후 이미지 생성에 실패했습니다"
-            };
-
-            console.log("=== waitingForImage 상태에서 투표 부결 처리 완료 ===");
+            console.log("=== 투표 통과 후 이미지 실패 - 투표 부결과 동일한 처리 완료 ===");
 
           } else {
             // 기존 로직: 일반적인 부적절한 이미지 처리
@@ -2821,7 +2900,14 @@ const voteEnd = async (data) => {
         const wasEndingCard = usedCard.value.isEnding; // 상태 초기화 전에 저장
 
         if (voteAccepted) {
-          isElected.value = true;
+          // ✅ 핵심 수정: 게스트 플레이어도 이미지 상태 확인
+          if (pendingImage.value) {
+            console.log("✅ 게스트: pendingImage 존재 - isElected 설정");
+            isElected.value = true;
+          } else {
+            console.log("⏳ 게스트: pendingImage 대기 중 - isElected 설정 보류");
+            // 이미지가 없으면 isElected 설정하지 않음
+          }
 
           // ✅ 수정: 이미지 추가는 isElected watch에서 처리됨
           console.log("게스트: 투표 찬성 - 이미지는 isElected watch에서 처리됨");
