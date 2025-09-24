@@ -235,11 +235,30 @@ const processVoteSuccess = () => {
     // 다음 턴으로
     currTurn.value = (currTurn.value + 1) % participants.value.length;
 
+    console.log("🚨 DEBUG: processVoteSuccess에서 nextTurn 메시지 전송 준비");
+    console.log("🚨 DEBUG: currTurn.value:", currTurn.value);
+    console.log("🚨 DEBUG: connectedPeers 수:", connectedPeers.value.length);
+
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
-        sendMessage("nextTurn", { nextTurn: currTurn.value }, peer.connection);
+        console.log(`🚨 DEBUG: 피어 ${peer.id}에게 nextTurn 메시지 전송`);
+        sendMessage("nextTurn", {
+          currTurn: currTurn.value,
+          totalTurn: totalTurn.value,
+          imageDelete: false,
+          scoreChange: {
+            type: "increase",
+            amount: scoreIncrease,
+            playerIndex: playerIndex
+          },
+          cardRemoval: {
+            cardId: usedCard.value.id
+          }
+        }, peer.connection);
       }
     });
+
+    console.log("🚨 DEBUG: processVoteSuccess nextTurn 메시지 전송 완료");
   }
 
   console.log("=== processVoteSuccess 함수 완료 ===");
@@ -2683,8 +2702,13 @@ const voteEnd = async (data) => {
     console.log("총 참가자 수:", participants.value.length);
     console.log("현재 투표 내역:", votings.value);
 
+    console.log("🚨 DEBUG: sendVoteResult 투표 수 확인");
+    console.log("🚨 DEBUG: votings.value.length:", votings.value.length);
+    console.log("🚨 DEBUG: participants.value.length:", participants.value.length);
+    console.log("🚨 DEBUG: 완료 조건 만족:", votings.value.length == participants.value.length);
+
     if (votings.value.length == participants.value.length) {
-      console.log("=== 모든 투표 완료, 결과 집계 중 ===");
+      console.log("=== 🚨 sendVoteResult: 모든 투표 완료, 결과 집계 중 ===");
 
       let upCount = 0;
       votings.value.forEach((vote) => {
