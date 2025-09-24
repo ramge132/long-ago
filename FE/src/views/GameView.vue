@@ -44,7 +44,7 @@
         </h3>
         
         <!-- Message -->
-        <p class="text-[#5D4E37] font-katuri text-xl mb-6 leading-relaxed whitespace-pre-line">
+        <p class="text-[#5D4E37] font-katuri text-xl mb-6 leading-relaxed whitespace-pre-line min-h-[3.5rem] flex items-center justify-center">
           {{ warningModalMessage }}
         </p>
         
@@ -2524,7 +2524,7 @@ const nextTurn = async (data) => {
     // ✅ 전역 retryNotificationTimer 사용 (지역 변수 선언 제거)
 
     try {
-      // 이미지 생성 중 재시도 알림 타이머 설정 (15초 후)
+      // 이미지 생성 중 재시도 알림 타이머 설정 (12초 후)
       retryNotificationTimer = setTimeout(() => {
         const retryWarningMessage = {
           type: "retryingContent",
@@ -2544,7 +2544,7 @@ const nextTurn = async (data) => {
             sendMessage("warningNotification", retryWarningMessage, peer.connection);
           }
         });
-      }, 15000);
+      }, 12000); // ✅ 15초 → 12초로 변경
 
       const responseImage = await createImage({
         gameId: gameID.value,
