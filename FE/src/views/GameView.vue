@@ -180,6 +180,71 @@ const ISBN = ref("");
 // 시연 모드 on/off
 const isPreview = ref(false);
 
+// ✅ 투표 통과 후 이미지 생성 대기 상태 관리
+const waitingForImage = ref(false);
+const currentTurnVoteResult = ref(null);
+
+// ✅ 투표 통과 및 이미지 준비 완료 시 최종 턴 진행 함수
+const processVoteSuccess = () => {
+  console.log("=== processVoteSuccess 함수 시작 ===");
+
+  if (!currentTurnVoteResult.value) {
+    console.error("❌ currentTurnVoteResult가 없음");
+    return;
+  }
+
+  const { accepted, player, playerIndex, scoreIncrease, wasEndingCard, wasFreeEnding } = currentTurnVoteResult.value;
+
+  console.log("투표 통과 최종 처리 - 점수 증가:", scoreIncrease);
+
+  // 점수 증가
+  player.score += scoreIncrease;
+
+  // 상태 초기화
+  waitingForImage.value = false;
+  currentTurnVoteResult.value = null;
+
+  // usedCard 상태 초기화 (결말카드가 아닌 경우에만)
+  if (!wasEndingCard) {
+    usedCard.value = {
+      id: 0,
+      keyword: "",
+      isEnding: false,
+      isFreeEnding: false
+    };
+  }
+
+  // 턴 진행
+  if (wasEndingCard) {
+    console.log("=== 결말카드 최종 처리 - 게임 종료 ===");
+    gameEnd(true);
+
+    setTimeout(() => {
+      isForceStopped.value = "champ";
+      connectedPeers.value.forEach(async (p) => {
+        if (p.id !== peerId.value && p.connection.open) {
+          sendMessage("showResultsWithCover", {
+            bookCover: { title: "아주 먼 옛날", imageUrl: "" },
+            ISBN: "generating..."
+          }, p.connection);
+        }
+      });
+    }, 4000);
+  } else {
+    console.log("=== 일반 카드 최종 처리 - 다음 턴으로 ===");
+    // 다음 턴으로
+    currTurn.value = (currTurn.value + 1) % participants.value.length;
+
+    connectedPeers.value.forEach((peer) => {
+      if (peer.id !== peerId.value && peer.connection.open) {
+        sendMessage("nextTurn", { nextTurn: currTurn.value }, peer.connection);
+      }
+    });
+  }
+
+  console.log("=== processVoteSuccess 함수 완료 ===");
+};
+
 watch(isElected, (newValue) => {
   if (newValue === true) {
     console.log("🔥 isElected watch 트리거");
@@ -2246,6 +2311,13 @@ const nextTurn = async (data) => {
       pendingImage.value = imageBlob;
       console.log("이미지 생성 완료 - 투표 결과 대기 중");
 
+      // ✅ 핵심 추가: waitingForImage 상태 확인하여 processVoteSuccess 호출
+      if (waitingForImage.value && currentTurnVoteResult.value) {
+        console.log("=== 투표 통과 대기 중 이미지 완성 - processVoteSuccess 호출 ===");
+        processVoteSuccess();
+        return; // 여기서 함수 종료
+      }
+
       // ✅ 수정: 내가 이미지 생성 후 투표가 이미 완료되었다면 즉시 isElected 트리거
       if (votings.value.length === participants.value.length) {
         console.log("🎯 내 이미지 생성 후 투표 완료 확인 - isElected 즉시 설정");
@@ -2296,27 +2368,79 @@ const nextTurn = async (data) => {
       if (isInappropriateContent) {
         if (currTurn.value === myTurn.value) {
           const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
-          currentPlayer.score -= 1;
-          
-          if (bookContents.value.length === 1) {
-            bookContents.value = [{ content: "", image: null }];
+
+          // ✅ 핵심 수정: waitingForImage 상태 확인
+          if (waitingForImage.value && currentTurnVoteResult.value) {
+            console.log("=== 투표 통과 후 이미지 생성 실패 - 투표 부결 처리 ===");
+
+            // 1. 사용된 카드를 플레이어 패에 되돌리기
+            const usedCardInfo = currentTurnVoteResult.value;
+
+            // 카드 되돌리기 (결말카드가 아닌 경우에만)
+            if (!usedCard.value.isEnding) {
+              console.log("일반 카드 패에 되돌리기:", usedCard.value);
+              // 카드를 다시 추가하지 않음 - 이미 제거되지 않았거나 별도 처리됨
+
+              // 또는 필요 시 카드 복원 로직 추가
+              if (!storyCards.value.find(card => card.id === usedCard.value.id)) {
+                storyCards.value.push({
+                  id: usedCard.value.id,
+                  keyword: usedCard.value.keyword,
+                  attribute: usedCard.value.attribute
+                });
+              }
+            }
+
+            // 2. 투표 대기 상태 해제
+            waitingForImage.value = false;
+            currentTurnVoteResult.value = null;
+
+            // 3. 점수 차감 (투표 부결과 동일)
+            currentPlayer.score -= 1;
+
+            // 4. 책 내용 제거
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+            } else {
+              bookContents.value = bookContents.value.slice(0, -1);
+            }
+
+            // 5. 경고 메시지
+            const warningMessage = {
+              type: "inappropriateContent",
+              playerName: currentPlayer.name,
+              message: "투표 통과 후 이미지 생성에 실패했습니다"
+            };
+
+            console.log("=== waitingForImage 상태에서 투표 부결 처리 완료 ===");
+
           } else {
-            bookContents.value = bookContents.value.slice(0, -1);
+            // 기존 로직: 일반적인 부적절한 이미지 처리
+            currentPlayer.score -= 1;
+
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+            } else {
+              bookContents.value = bookContents.value.slice(0, -1);
+            }
+
+            const warningMessage = {
+              type: "inappropriateContent",
+              playerName: currentPlayer.name,
+              message: "부적절한 이미지가 생성되었습니다"
+            };
+
+            console.log("=== 일반 부적절한 이미지 처리 완료 ===");
           }
-          
-          const warningMessage = {
-            type: "inappropriateContent",
-            playerName: currentPlayer.name,
-            message: "부적절한 이미지가 생성되었습니다"
-          };
-          
+
+          // 공통 처리: 턴 진행
           currTurn.value = (currTurn.value + 1) % participants.value.length;
-          
+
           if (usedCard.value.isEnding) {
             setTimeout(() => {
               isForceStopped.value = "champ";
             }, 4000); // 2초 → 4초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
-            
+
             await gameEnd(true).then(() => {
               connectedPeers.value.forEach(async (p) => {
                 if (p.id !== peerId.value && p.connection.open) {
@@ -2327,13 +2451,19 @@ const nextTurn = async (data) => {
           } else {
             const stopVotingMessage = {
               type: "stopVotingAndShowWarning",
-              warningData: warningMessage,
+              warningData: {
+                type: "inappropriateContent",
+                playerName: currentPlayer.name,
+                message: waitingForImage.value ?
+                  "투표 통과 후 이미지 생성에 실패했습니다" :
+                  "부적절한 이미지가 생성되었습니다"
+              },
               currTurn: currTurn.value,
               totalTurn: totalTurn.value,
               imageDelete: true,
               isInappropriate: true
             };
-            
+
             connectedPeers.value.forEach((peer) => {
               if (peer.id !== peerId.value && peer.connection.open) {
                 sendMessage("stopVotingAndShowWarning", stopVotingMessage, peer.connection);
@@ -2462,23 +2592,46 @@ const voteEnd = async (data) => {
           console.log("결말카드 여부:", wasEndingCard);
           console.log("자유결말 여부:", usedCard.value.isFreeEnding);
 
-          isElected.value = true;
           const scoreIncrease = wasEndingCard ?
             (usedCard.value.isFreeEnding ? 3 : 5) : 2;
-          const wasFreeEnding = usedCard.value.isFreeEnding; // 상태 초기화 전에 저장
+          const wasFreeEnding = usedCard.value.isFreeEnding;
 
-          console.log("점수 증가량:", scoreIncrease);
-          console.log("기존 점수:", currentPlayer.score);
+          // ✅ 핵심 수정: 투표 결과 저장 후 이미지 상태 확인
+          currentTurnVoteResult.value = {
+            accepted: true,
+            player: currentPlayer,
+            playerIndex: currentPlayerIndex,
+            scoreIncrease: scoreIncrease,
+            wasEndingCard: wasEndingCard,
+            wasFreeEnding: wasFreeEnding
+          };
 
-          currentPlayer.score += scoreIncrease;
-          console.log("새 점수:", currentPlayer.score);
+          console.log("투표 결과 저장:", currentTurnVoteResult.value);
 
-          // ✅ 수정: 이미지 추가는 isElected watch에서 처리됨
-          console.log("투표 찬성 - 이미지는 isElected watch에서 처리됨");
+          // 이미지가 이미 준비되어 있는지 확인
+          if (pendingImage.value) {
+            console.log("=== 이미지 이미 준비됨 - 즉시 진행 ===");
+            processVoteSuccess();
+          } else {
+            console.log("=== 이미지 대기 상태로 전환 ===");
+            waitingForImage.value = true;
 
-          console.log("현재 턴 변경 전:", currTurn.value);
-          currTurn.value = (currTurn.value + 1) % participants.value.length;
-          console.log("현재 턴 변경 후:", currTurn.value);
+            // 다른 플레이어들에게 대기 상태 알림
+            connectedPeers.value.forEach((peer) => {
+              if (peer.id !== peerId.value && peer.connection.open) {
+                sendMessage("waitingForImage", {
+                  message: "이미지 생성 중...",
+                  playerName: currentPlayer.name
+                }, peer.connection);
+              }
+            });
+          }
+
+          // 결말카드는 이미지 대기 없이 즉시 처리
+          if (wasEndingCard) {
+            console.log("=== 결말카드 - 즉시 처리 ===");
+            processVoteSuccess();
+          }
 
           if (wasEndingCard) {
             console.log("=== 결말카드 처리 - 게임 종료 ===");
