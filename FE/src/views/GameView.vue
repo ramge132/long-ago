@@ -2516,7 +2516,17 @@ const nextTurn = async (data) => {
           type: "retryingContent",
           message: "그림이 조금 이상하네요!\n다시 그려볼게요!"
         };
+
+        // ✅ 수정: 자신에게도 알림 표시
         showInappropriateWarningModal(retryWarningMessage);
+
+        // ✅ 수정: 모든 다른 플레이어에게도 재시도 알림 전송
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            console.log(`🚨 피어 ${peer.id}에게 재시도 알림 전송`);
+            sendMessage("warningNotification", retryWarningMessage, peer.connection);
+          }
+        });
       }, 15000);
 
       const responseImage = await createImage({
