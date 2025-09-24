@@ -1,6 +1,7 @@
 // Logo
 export { default as Logo } from "./logo.png";
 export { default as WarningIcon } from "./warning.png";
+export { default as UnicornWarnIcon } from "./unicorn_warn.png";
 
 // images
 export { default as rule1 } from "./images/rules/how_1.svg";

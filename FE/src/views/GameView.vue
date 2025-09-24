@@ -73,7 +73,7 @@
 
 <script setup>
 import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend, exchangeStoryCard, refreshStoryCard } from "@/apis/game";
-import { currTurnImage, myTurnImage, startImage, MessageMusic, WarningIcon } from "@/assets";
+import { currTurnImage, myTurnImage, startImage, MessageMusic, WarningIcon, UnicornWarnIcon } from "@/assets";
 import CardImage from "@/assets/cards";
 import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
@@ -567,6 +567,7 @@ const currentVoteSelection = ref("up"); // 현재 선택된 투표 값 추적
 const pendingImage = ref(null);
 // ✅ 이미지 재시도 상태 추적을 위한 전역 변수
 let retryNotificationTimer = null;
+const isImageRetrying = ref(false); // 이미지 재시도 중인지 상태 추적
 // 게임 종료 애니메이션
 watch(isForceStopped, (newValue) => {
   if (newValue !== null) {
@@ -1110,6 +1111,17 @@ const setupConnection = (conn) => {
 
       case "warningNotification":
         showInappropriateWarningModal(data);
+        break;
+
+      case "retryWarningImage":
+        console.log("🦄 다른 플레이어로부터 경고 이미지 수신:", data);
+
+        // 지정된 페이지에 경고 이미지 설정
+        if (data.pageIndex >= 0 && data.pageIndex < bookContents.value.length) {
+          console.log(`🦄 페이지 ${data.pageIndex}에 경고 이미지 설정`);
+          bookContents.value[data.pageIndex].image = data.imageUrl;
+          isImageRetrying.value = true;
+        }
         break;
 
       case "stopVotingAndShowWarning":
@@ -2512,19 +2524,26 @@ const nextTurn = async (data) => {
     try {
       // 이미지 생성 중 재시도 알림 타이머 설정 (15초 후)
       retryNotificationTimer = setTimeout(() => {
-        const retryWarningMessage = {
-          type: "retryingContent",
-          message: "그림이 조금 이상하네요!\n다시 그려볼게요!"
-        };
+        console.log("🦄 이미지 재시도 - unicorn_warn 이미지 표시");
 
-        // ✅ 수정: 자신에게도 알림 표시
-        showInappropriateWarningModal(retryWarningMessage);
+        // ✅ 수정: 알림 모달 대신 책 페이지에 경고 이미지 설정
+        isImageRetrying.value = true;
 
-        // ✅ 수정: 모든 다른 플레이어에게도 재시도 알림 전송
+        // 현재 책의 마지막 페이지에 unicorn_warn 이미지 설정
+        const lastIndex = bookContents.value.length - 1;
+        if (lastIndex >= 0 && bookContents.value[lastIndex]) {
+          console.log(`🦄 책 페이지 ${lastIndex}에 경고 이미지 설정`);
+          bookContents.value[lastIndex].image = UnicornWarnIcon;
+        }
+
+        // ✅ 모든 다른 플레이어에게도 경고 이미지 전송
         connectedPeers.value.forEach((peer) => {
           if (peer.id !== peerId.value && peer.connection.open) {
-            console.log(`🚨 피어 ${peer.id}에게 재시도 알림 전송`);
-            sendMessage("warningNotification", retryWarningMessage, peer.connection);
+            console.log(`🦄 피어 ${peer.id}에게 경고 이미지 전송`);
+            sendMessage("retryWarningImage", {
+              imageUrl: UnicornWarnIcon,
+              pageIndex: lastIndex
+            }, peer.connection);
           }
         });
       }, 15000);
@@ -2543,8 +2562,18 @@ const nextTurn = async (data) => {
         retryNotificationTimer = null;
       }
 
+      // ✅ 재시도 상태 해제
+      isImageRetrying.value = false;
+
       const imageBlob = URL.createObjectURL(responseImage.data);
       const arrayBuffer = await responseImage.data.arrayBuffer();
+
+      // ✅ 경고 이미지를 정상 이미지로 교체
+      const lastIndex = bookContents.value.length - 1;
+      if (lastIndex >= 0 && bookContents.value[lastIndex] && bookContents.value[lastIndex].image === UnicornWarnIcon) {
+        console.log("🦄 경고 이미지를 정상 이미지로 교체");
+        bookContents.value[lastIndex].image = imageBlob;
+      }
 
       // ✅ 핵심 추가: 이미지 생성 완료 후 보류된 투표 처리
       console.log("🚨 이미지 생성 성공 - 보류된 투표 결과 처리 확인");
@@ -2602,6 +2631,9 @@ const nextTurn = async (data) => {
         clearTimeout(retryNotificationTimer);
         retryNotificationTimer = null;
       }
+
+      // ✅ 재시도 상태 해제
+      isImageRetrying.value = false;
 
       // ✅ 핵심 추가: 이미지 생성 실패 후 보류된 투표 처리
       console.log("🚨 이미지 생성 실패 - 보류된 투표 결과 처리 확인");
