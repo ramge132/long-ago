@@ -264,6 +264,165 @@ const processVoteSuccess = () => {
   console.log("=== processVoteSuccess 함수 완료 ===");
 };
 
+// ✅ 이미지 재시도 완료 후 보류된 투표 결과 처리
+const processDelayedVoteResult = () => {
+  console.log("=== processDelayedVoteResult 시작 ===");
+
+  if (votings.value.length !== participants.value.length) {
+    console.log("❌ 투표가 완료되지 않음 - 처리 중단");
+    return;
+  }
+
+  // 투표 결과 집계
+  let upCount = 0;
+  let downCount = 0;
+  votings.value.forEach((vote) => {
+    if (vote.selected == 'up') upCount++;
+    else downCount++;
+  });
+
+  console.log("지연 처리 - 찬성:", upCount, "반대:", downCount);
+
+  const voteAccepted = upCount >= downCount;
+  console.log("지연 처리 투표 결과:", voteAccepted ? "통과" : "거절");
+
+  // 현재 턴 플레이어만 처리
+  if (currTurn.value === myTurn.value) {
+    const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+    const currentPlayerIndex = inGameOrder.value[currTurn.value];
+
+    if (voteAccepted) {
+      // 투표 통과 - 기존 로직과 동일
+      const wasEndingCard = usedCard.value.isEnding;
+      const scoreIncrease = wasEndingCard ?
+        (usedCard.value.isFreeEnding ? 3 : 5) : 2;
+      const wasFreeEnding = usedCard.value.isFreeEnding;
+
+      // 이미지가 있는지 확인
+      if (pendingImage.value) {
+        console.log("=== 지연 처리: 투표 통과 + 이미지 존재 - 정상 진행 ===");
+        currentPlayer.score += scoreIncrease;
+
+        // 다음 턴 진행
+        currTurn.value = (currTurn.value + 1) % participants.value.length;
+
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            sendMessage("nextTurn", {
+              currTurn: currTurn.value,
+              totalTurn: totalTurn.value,
+              imageDelete: false,
+              scoreChange: {
+                type: "increase",
+                amount: scoreIncrease,
+                playerIndex: currentPlayerIndex
+              },
+              cardRemoval: { cardId: usedCard.value.id }
+            }, peer.connection);
+          }
+        });
+
+        // isElected 트리거
+        isElected.value = true;
+      } else {
+        console.log("=== 지연 처리: 투표 통과했지만 이미지 없음 - 투표 거절로 처리 ===");
+        // 투표 거절과 동일한 처리
+        currentPlayer.score -= 1;
+
+        // 카드 복원
+        if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+          storyCards.value.push(usedCardBackup.value);
+        }
+
+        // 스토리 삭제
+        if (bookContents.value.length === 1) {
+          bookContents.value = [{ content: "", image: null }];
+        } else {
+          bookContents.value = bookContents.value.slice(0, -1);
+        }
+
+        // 다음 턴 진행
+        currTurn.value = (currTurn.value + 1) % participants.value.length;
+
+        connectedPeers.value.forEach((peer) => {
+          if (peer.id !== peerId.value && peer.connection.open) {
+            sendMessage("nextTurn", {
+              currTurn: currTurn.value,
+              totalTurn: totalTurn.value,
+              imageDelete: true,
+              scoreChange: {
+                type: "decrease",
+                amount: 1,
+                playerIndex: currentPlayerIndex
+              }
+            }, peer.connection);
+          }
+        });
+
+        // 부적절한 이미지 알림 표시
+        showInappropriateWarningModal({
+          type: "inappropriateContent",
+          message: "부적절한 이미지가 생성되었습니다"
+        });
+      }
+    } else {
+      console.log("=== 지연 처리: 투표 거절 ===");
+      // 기존 투표 거절 로직과 동일
+      if (pendingImage.value) {
+        pendingImage.value = null;
+      }
+
+      if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+        storyCards.value.push(usedCardBackup.value);
+      }
+
+      usedCard.value = {
+        id: 0,
+        keyword: "",
+        isEnding: false,
+        isFreeEnding: false
+      };
+
+      currTurn.value = (currTurn.value + 1) % participants.value.length;
+
+      connectedPeers.value.forEach((peer) => {
+        if (peer.id !== peerId.value && peer.connection.open) {
+          sendMessage("nextTurn", {
+            currTurn: currTurn.value,
+            imageDelete: true,
+            totalTurn: totalTurn.value
+          }, peer.connection);
+        }
+      });
+
+      if (bookContents.value.length === 1) {
+        bookContents.value = [{ content: "", image: null }];
+      } else {
+        bookContents.value = bookContents.value.slice(0, -1);
+      }
+    }
+
+    // 상태 초기화
+    usedCardBackup.value = null;
+    isElected.value = false;
+
+    console.log("=== 지연 처리 완료 - 오버레이 표시 ===");
+    // 오버레이 표시
+    setTimeout(async () => {
+      inProgress.value = false;
+      await showOverlay('whoTurn', {
+        turnIndex: currTurn.value,
+        participants: participants.value,
+        inGameOrder: inGameOrder.value,
+        peerId: peerId.value
+      });
+      inProgress.value = true;
+    }, 100);
+  }
+
+  console.log("=== processDelayedVoteResult 완료 ===");
+};
+
 watch(isElected, (newValue) => {
   if (newValue === true) {
     console.log("🔥 isElected watch 트리거");
@@ -406,6 +565,8 @@ const isVoted = ref(false);
 const currentVoteSelection = ref("up"); // 현재 선택된 투표 값 추적
 // 투표 대기 중인 임시 이미지 저장
 const pendingImage = ref(null);
+// ✅ 이미지 재시도 상태 추적을 위한 전역 변수
+let retryNotificationTimer = null;
 // 게임 종료 애니메이션
 watch(isForceStopped, (newValue) => {
   if (newValue !== null) {
@@ -973,6 +1134,15 @@ const setupConnection = (conn) => {
 
         if (votings.value.length == participants.value.length) {
           console.log("=== 모든 투표 수집 완료, 결과 처리 ===");
+
+          // ✅ 핵심 수정: 이미지 재시도 중인지 확인
+          if (retryNotificationTimer !== null) {
+            console.log("🚨 이미지 재시도 중 - 투표 완료되었지만 턴 진행 보류");
+            console.log("🚨 retryNotificationTimer 상태:", !!retryNotificationTimer);
+            // 투표 결과는 저장하지만 턴은 진행하지 않음
+            // 이미지 생성이 완료되거나 실패했을 때 턴 진행 처리
+            return;
+          }
 
           let upCount = 0;
           let downCount = 0;
@@ -2337,8 +2507,7 @@ const nextTurn = async (data) => {
     currentVoteSelection.value = "up";
     votings.value = [];
 
-    // 이미지 생성 중 재시도 알림 타이머 변수 선언
-    let retryNotificationTimer = null;
+    // ✅ 전역 retryNotificationTimer 사용 (지역 변수 선언 제거)
 
     try {
       // 이미지 생성 중 재시도 알림 타이머 설정 (15초 후)
@@ -2363,9 +2532,19 @@ const nextTurn = async (data) => {
         clearTimeout(retryNotificationTimer);
         retryNotificationTimer = null;
       }
-      
+
       const imageBlob = URL.createObjectURL(responseImage.data);
       const arrayBuffer = await responseImage.data.arrayBuffer();
+
+      // ✅ 핵심 추가: 이미지 생성 완료 후 보류된 투표 처리
+      console.log("🚨 이미지 생성 성공 - 보류된 투표 결과 처리 확인");
+      if (votings.value.length === participants.value.length) {
+        console.log("🚨 보류된 투표가 있음 - 지연 처리 시작");
+        setTimeout(() => {
+          console.log("🚨 지연 후 투표 결과 처리 시작");
+          processDelayedVoteResult();
+        }, 500); // 0.5초 후 처리
+      }
 
       connectedPeers.value.forEach((peer, index) => {
         if (peer.id !== peerId.value && peer.connection.open) {
@@ -2412,6 +2591,16 @@ const nextTurn = async (data) => {
       if (retryNotificationTimer) {
         clearTimeout(retryNotificationTimer);
         retryNotificationTimer = null;
+      }
+
+      // ✅ 핵심 추가: 이미지 생성 실패 후 보류된 투표 처리
+      console.log("🚨 이미지 생성 실패 - 보류된 투표 결과 처리 확인");
+      if (votings.value.length === participants.value.length) {
+        console.log("🚨 보류된 투표가 있음 - 지연 처리 시작");
+        setTimeout(() => {
+          console.log("🚨 지연 후 투표 결과 처리 시작 (실패 케이스)");
+          processDelayedVoteResult();
+        }, 1000); // 1초 후 처리 (실패 알림 후)
       }
 
       let errorMessage = "";
@@ -2709,6 +2898,13 @@ const voteEnd = async (data) => {
 
     if (votings.value.length == participants.value.length) {
       console.log("=== 🚨 sendVoteResult: 모든 투표 완료, 결과 집계 중 ===");
+
+      // ✅ 핵심 수정: 이미지 재시도 중인지 확인
+      if (retryNotificationTimer !== null) {
+        console.log("🚨 sendVoteResult: 이미지 재시도 중 - 투표 완료되었지만 턴 진행 보류");
+        console.log("🚨 retryNotificationTimer 상태:", !!retryNotificationTimer);
+        return;
+      }
 
       let upCount = 0;
       votings.value.forEach((vote) => {
