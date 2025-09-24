@@ -23,7 +23,7 @@
     <!-- 부적절한 콘텐츠 경고 모달 - 게임 테마 맞춤 디자인 -->
     <div
       v-if="showWarningModal"
-      class="warning-modal fixed inset-0 bg-[#00000050] backdrop-blur-sm flex items-center justify-center z-50"
+      class="warning-modal fixed inset-0 flex items-center justify-center z-50"
       @click="hideWarningModal">
       <div 
         class="warning-content bg-[#ffffff85] backdrop-blur-[20px] border-[1px] border-[#ffffff60] rounded-2xl p-8 max-w-md mx-4 text-center transform transition-all duration-500 shadow-2xl"
@@ -34,7 +34,7 @@
         <div class="relative mb-6">
           <div class="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
           <div class="relative w-20 h-20 mx-auto bg-gradient-to-br from-orange-100 to-red-100 rounded-full p-4 shadow-lg">
-            <img :src="WarningIcon" alt="경고" class="w-full h-full object-contain filter drop-shadow-md">
+            <img :src="warningModalImage || WarningIcon" alt="경고" class="w-full h-full object-contain filter drop-shadow-md">
           </div>
         </div>
 
@@ -73,7 +73,7 @@
 
 <script setup>
 import { createGame, createImage, deleteGame, endingCardReroll, enterGame, promptFiltering, testGame, voteResultSend, exchangeStoryCard, refreshStoryCard } from "@/apis/game";
-import { currTurnImage, myTurnImage, startImage, MessageMusic, WarningIcon, UnicornWarnIcon } from "@/assets";
+import { currTurnImage, myTurnImage, startImage, MessageMusic, WarningIcon, UnicornWarnIcon, UnicornCuriousIcon } from "@/assets";
 import CardImage from "@/assets/cards";
 import toast from "@/functions/toast";
 import { useUserStore } from "@/stores/auth";
@@ -123,6 +123,7 @@ const isForceStopped = ref(null);
 // 부적절한 콘텐츠 경고 모달 관련
 const showWarningModal = ref(false);
 const warningModalMessage = ref("");
+const warningModalImage = ref(null); // ✅ 경고 모달 이미지 추가
 // 작은 알람 모달 관련 (35% 및 100% 도달용)
 const showSmallAlert = ref(false);
 const smallAlertMessage = ref("");
@@ -567,7 +568,6 @@ const currentVoteSelection = ref("up"); // 현재 선택된 투표 값 추적
 const pendingImage = ref(null);
 // ✅ 이미지 재시도 상태 추적을 위한 전역 변수
 let retryNotificationTimer = null;
-const isImageRetrying = ref(false); // 이미지 재시도 중인지 상태 추적
 // 게임 종료 애니메이션
 watch(isForceStopped, (newValue) => {
   if (newValue !== null) {
@@ -855,6 +855,7 @@ const setupConnection = (conn) => {
         // 알림/모달 상태 초기화 (게스트용)
         showWarningModal.value = false;
         warningModalMessage.value = "";
+        warningModalImage.value = null;
         showSmallAlert.value = false;
         smallAlertMessage.value = "";
 
@@ -1113,16 +1114,6 @@ const setupConnection = (conn) => {
         showInappropriateWarningModal(data);
         break;
 
-      case "retryWarningImage":
-        console.log("🦄 다른 플레이어로부터 경고 이미지 수신:", data);
-
-        // 지정된 페이지에 경고 이미지 설정
-        if (data.pageIndex >= 0 && data.pageIndex < bookContents.value.length) {
-          console.log(`🦄 페이지 ${data.pageIndex}에 경고 이미지 설정`);
-          bookContents.value[data.pageIndex].image = data.imageUrl;
-          isImageRetrying.value = true;
-        }
-        break;
 
       case "stopVotingAndShowWarning":
         stopVotingAndShowWarning(data);
@@ -1831,21 +1822,31 @@ const showInappropriateWarning = (warningData) => {
 
 // 부적절한 콘텐츠 경고 모달 표시
 const showInappropriateWarningModal = (warningData) => {
-  
+
   warningModalMessage.value = `${warningData.message}`;
+
+  // ✅ 이미지가 있으면 설정, 없으면 기본 WarningIcon 사용
+  if (warningData.image) {
+    console.log("🦄 경고 모달에 커스텀 이미지 설정:", warningData.image);
+    warningModalImage.value = warningData.image;
+  } else {
+    warningModalImage.value = null; // 기본 WarningIcon 사용
+  }
+
   showWarningModal.value = true;
-  
+
   // 3초 후 자동으로 모달 닫기
   setTimeout(() => {
     hideWarningModal();
   }, 3000);
-  
+
 };
 
 // 경고 모달 숨기기
 const hideWarningModal = () => {
   showWarningModal.value = false;
   warningModalMessage.value = "";
+  warningModalImage.value = null; // ✅ 이미지도 초기화
 };
 
 // 투표 중단 및 경고 표시 (모든 플레이어용)
@@ -2150,6 +2151,7 @@ const gameStart = async (data) => {
   // 알림/모달 상태 초기화
   showWarningModal.value = false;
   warningModalMessage.value = "";
+  warningModalImage.value = null;
   showSmallAlert.value = false;
   smallAlertMessage.value = "";
 
@@ -2524,26 +2526,22 @@ const nextTurn = async (data) => {
     try {
       // 이미지 생성 중 재시도 알림 타이머 설정 (15초 후)
       retryNotificationTimer = setTimeout(() => {
-        console.log("🦄 이미지 재시도 - unicorn_warn 이미지 표시");
+        const retryWarningMessage = {
+          type: "retryingContent",
+          message: "그림이 조금 이상하네요!\n다시 그려볼게요!",
+          image: UnicornCuriousIcon // ✅ unicorn_curious.png 이미지 추가
+        };
 
-        // ✅ 수정: 알림 모달 대신 책 페이지에 경고 이미지 설정
-        isImageRetrying.value = true;
+        console.log("🦄 이미지 재시도 - unicorn_curious 알림 표시");
 
-        // 현재 책의 마지막 페이지에 unicorn_warn 이미지 설정
-        const lastIndex = bookContents.value.length - 1;
-        if (lastIndex >= 0 && bookContents.value[lastIndex]) {
-          console.log(`🦄 책 페이지 ${lastIndex}에 경고 이미지 설정`);
-          bookContents.value[lastIndex].image = UnicornWarnIcon;
-        }
+        // ✅ 자신에게 알림 표시 (unicorn_curious 이미지 포함)
+        showInappropriateWarningModal(retryWarningMessage);
 
-        // ✅ 모든 다른 플레이어에게도 경고 이미지 전송
+        // ✅ 모든 다른 플레이어에게도 재시도 알림 전송
         connectedPeers.value.forEach((peer) => {
           if (peer.id !== peerId.value && peer.connection.open) {
-            console.log(`🦄 피어 ${peer.id}에게 경고 이미지 전송`);
-            sendMessage("retryWarningImage", {
-              imageUrl: UnicornWarnIcon,
-              pageIndex: lastIndex
-            }, peer.connection);
+            console.log(`🦄 피어 ${peer.id}에게 unicorn_curious 재시도 알림 전송`);
+            sendMessage("warningNotification", retryWarningMessage, peer.connection);
           }
         });
       }, 15000);
@@ -2562,18 +2560,8 @@ const nextTurn = async (data) => {
         retryNotificationTimer = null;
       }
 
-      // ✅ 재시도 상태 해제
-      isImageRetrying.value = false;
-
       const imageBlob = URL.createObjectURL(responseImage.data);
       const arrayBuffer = await responseImage.data.arrayBuffer();
-
-      // ✅ 경고 이미지를 정상 이미지로 교체
-      const lastIndex = bookContents.value.length - 1;
-      if (lastIndex >= 0 && bookContents.value[lastIndex] && bookContents.value[lastIndex].image === UnicornWarnIcon) {
-        console.log("🦄 경고 이미지를 정상 이미지로 교체");
-        bookContents.value[lastIndex].image = imageBlob;
-      }
 
       // ✅ 핵심 추가: 이미지 생성 완료 후 보류된 투표 처리
       console.log("🚨 이미지 생성 성공 - 보류된 투표 결과 처리 확인");
@@ -2631,9 +2619,6 @@ const nextTurn = async (data) => {
         clearTimeout(retryNotificationTimer);
         retryNotificationTimer = null;
       }
-
-      // ✅ 재시도 상태 해제
-      isImageRetrying.value = false;
 
       // ✅ 핵심 추가: 이미지 생성 실패 후 보류된 투표 처리
       console.log("🚨 이미지 생성 실패 - 보류된 투표 결과 처리 확인");
@@ -3429,6 +3414,7 @@ const goLobby = () => {
   // 모달 및 알림 상태 초기화
   showWarningModal.value = false;
   warningModalMessage.value = "";
+  warningModalImage.value = null;
   showSmallAlert.value = false;
   smallAlertMessage.value = "";
 
