@@ -25,26 +25,26 @@
       v-if="showWarningModal"
       class="warning-modal fixed inset-0 flex items-center justify-center z-50"
       @click="hideWarningModal">
-      <div 
-        class="warning-content bg-[#ffffff85] backdrop-blur-[20px] border-[1px] border-[#ffffff60] rounded-2xl p-8 max-w-md mx-4 text-center transform transition-all duration-500 shadow-2xl"
+      <div
+        class="warning-content bg-[#ffffff85] backdrop-blur-[20px] border-[1px] border-[#ffffff60] rounded-2xl p-10 max-w-lg mx-4 text-center transform transition-all duration-500 shadow-2xl"
         style="animation: gentleBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
         @click.stop>
         
         <!-- Warning Icon with Glow Effect -->
-        <div class="relative mb-6">
+        <div class="relative mb-8">
           <div class="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
-          <div class="relative w-20 h-20 mx-auto bg-gradient-to-br from-orange-100 to-red-100 rounded-full p-4 shadow-lg">
+          <div class="relative w-28 h-28 mx-auto bg-gradient-to-br from-orange-100 to-red-100 rounded-full p-6 shadow-lg">
             <img :src="warningModalImage || WarningIcon" alt="경고" class="w-full h-full object-contain filter drop-shadow-md">
           </div>
         </div>
 
         <!-- Title with Game Font -->
-        <h3 class="text-2xl font-katuri font-bold text-[#8B4513] mb-3 drop-shadow-sm">
+        <h3 class="text-3xl font-katuri font-bold text-[#8B4513] mb-4 drop-shadow-sm">
           🚨 부적절한 이야기 감지
         </h3>
         
         <!-- Message -->
-        <p class="text-[#5D4E37] font-katuri text-lg mb-6 leading-relaxed">
+        <p class="text-[#5D4E37] font-katuri text-xl mb-6 leading-relaxed whitespace-pre-line">
           {{ warningModalMessage }}
         </p>
         
@@ -1835,10 +1835,10 @@ const showInappropriateWarningModal = (warningData) => {
 
   showWarningModal.value = true;
 
-  // 3초 후 자동으로 모달 닫기
+  // ✅ 5초 후 자동으로 모달 닫기 (2초 연장)
   setTimeout(() => {
     hideWarningModal();
-  }, 3000);
+  }, 5000);
 
 };
 
