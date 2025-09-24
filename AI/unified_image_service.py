@@ -747,10 +747,7 @@ class ImageGenerationService:
         max_attempts: int
     ):
         """
-        재시도 알림을 프론트엔드에 전송 (현재는 로깅만)
-
-        향후 WebSocket 또는 Server-Sent Events를 통해
-        실시간으로 프론트엔드에 알림을 전달할 수 있음
+        재시도 알림을 백엔드를 통해 프론트엔드에 전송
 
         Args:
             message: 사용자에게 표시할 메시지
@@ -758,20 +755,35 @@ class ImageGenerationService:
             max_attempts: 최대 재시도 횟수
         """
         try:
-            logger.info(f"🔄 재시도 알림: {message}")
+            logger.info(f"🔄 재시도 알림 전송: {message}")
             logger.info(f"   재시도 진행: {attempt}/{max_attempts}")
 
-            # TODO: 향후 개선 방안
-            # 1. WebSocket을 통해 실시간 알림 전송
-            # 2. Redis Pub/Sub을 통한 메시지 브로커 방식
-            # 3. Server-Sent Events (SSE) 활용
-            #
-            # 현재는 단순히 로깅만 수행하며,
-            # 프론트엔드는 기존의 503 에러 처리 방식을 사용
+            # 백엔드의 재시도 알림 엔드포인트로 POST 요청
+            backend_url = os.getenv("BACKEND_URL", "http://localhost:8080")
+            notification_url = f"{backend_url}/api/retry-notification"
+
+            payload = {
+                "message": message,
+                "attempt": attempt,
+                "maxAttempts": max_attempts,
+                "timestamp": int(time.time() * 1000)  # 밀리초 단위 타임스탬프
+            }
+
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    notification_url,
+                    json=payload,
+                    timeout=5.0  # 5초 타임아웃
+                )
+
+                if response.status_code == 200:
+                    logger.info(f"✅ 재시도 알림 전송 성공: {response.status_code}")
+                else:
+                    logger.warning(f"⚠️ 재시도 알림 전송 실패: {response.status_code}")
 
         except Exception as e:
-            logger.error(f"❌ 재시도 알림 처리 중 오류: {e}")
-            # 알림 처리 실패는 이미지 생성을 중단시키지 않음
+            logger.error(f"❌ 재시도 알림 전송 중 오류: {e}")
+            # 알림 전송 실패는 이미지 생성을 중단시키지 않음
 
 # ================== API 모델 ==================
 class SceneGenerationRequest(BaseModel):

@@ -882,6 +882,11 @@ const setupConnection = (conn) => {
         currentVoteSelection.value = "up"; // 투표 선택값을 찬성으로 초기화
         votings.value = []; // 투표 배열 완전 초기화
         isElected.value = false; // 선출 상태 초기화
+
+        // ✅ 핵심 수정: 이미지 대기 관련 상태도 초기화
+        waitingForImage.value = false;
+        currentTurnVoteResult.value = null;
+        console.log("🚨 DEBUG: sendPrompt 케이스에서 waitingForImage 상태 초기화 완료");
         
         // 책 콘텐츠 추가
         addBookContent({ content: data.prompt, image: null });
@@ -1003,8 +1008,12 @@ const setupConnection = (conn) => {
                 console.log("=== voteResult - 이미지 이미 준비됨 - 즉시 진행 ===");
                 processVoteSuccess();
               } else {
-                console.log("=== voteResult - 이미지 대기 상태로 전환 ===");
+                console.log("=== 🚨 DEBUG: voteResult - 이미지 대기 상태로 전환 ===");
+                console.log("🚨 DEBUG: pendingImage.value 상태:", !!pendingImage.value);
+                console.log("🚨 DEBUG: currentTurnVoteResult.value 상태:", !!currentTurnVoteResult.value);
+                console.log("🚨 DEBUG: waitingForImage 설정 전 값:", waitingForImage.value);
                 waitingForImage.value = true;
+                console.log("🚨 DEBUG: waitingForImage 설정 후 값:", waitingForImage.value);
 
                 // 다른 플레이어들에게 대기 상태 알림
                 connectedPeers.value.forEach((peer) => {
@@ -2354,10 +2363,16 @@ const nextTurn = async (data) => {
       console.log("이미지 생성 완료 - 투표 결과 대기 중");
 
       // ✅ 핵심 추가: waitingForImage 상태 확인하여 processVoteSuccess 호출
+      console.log("🚨 DEBUG: createImage 성공 시 상태 확인");
+      console.log("🚨 DEBUG: waitingForImage.value:", waitingForImage.value);
+      console.log("🚨 DEBUG: currentTurnVoteResult.value:", !!currentTurnVoteResult.value);
+
       if (waitingForImage.value && currentTurnVoteResult.value) {
-        console.log("=== 투표 통과 대기 중 이미지 완성 - processVoteSuccess 호출 ===");
+        console.log("=== 🚨 투표 통과 대기 중 이미지 완성 - processVoteSuccess 호출 ===");
         processVoteSuccess();
         return; // 여기서 함수 종료
+      } else {
+        console.log("🚨 DEBUG: waitingForImage 조건 불만족 - 일반 처리 계속");
       }
 
       // ✅ 수정: 내가 이미지 생성 후 투표가 이미 완료되었다면 즉시 isElected 트리거
@@ -2412,8 +2427,14 @@ const nextTurn = async (data) => {
           const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
 
           // ✅ 핵심 수정: waitingForImage 상태 확인
+          console.log("🚨 DEBUG: createImage 실패 시 상태 확인");
+          console.log("🚨 DEBUG: waitingForImage.value:", waitingForImage.value);
+          console.log("🚨 DEBUG: currentTurnVoteResult.value:", !!currentTurnVoteResult.value);
+          console.log("🚨 DEBUG: isInappropriateContent:", isInappropriateContent);
+          console.log("🚨 DEBUG: currTurn === myTurn:", currTurn.value === myTurn.value);
+
           if (waitingForImage.value && currentTurnVoteResult.value) {
-            console.log("=== 투표 통과 후 이미지 생성 실패 - 투표 부결과 동일한 처리 ===");
+            console.log("=== 🚨 투표 통과 후 이미지 생성 실패 - 투표 부결과 동일한 처리 ===");
 
             // 1. 사용된 카드를 플레이어 패에 되돌리기 (투표 부결과 동일)
             if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
@@ -2530,9 +2551,52 @@ const nextTurn = async (data) => {
           }
         }
       } else {
-        // 일반 에러 시 즉시 턴 넘기기 (재시도하지 않음)
+        // 일반 에러 처리
+        console.log("🚨 DEBUG: 일반 에러 처리 시작");
+        console.log("🚨 DEBUG: waitingForImage.value:", waitingForImage.value);
+        console.log("🚨 DEBUG: currentTurnVoteResult.value:", !!currentTurnVoteResult.value);
+
         if (currTurn.value === myTurn.value) {
           const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
+
+          // ✅ 핵심 수정: waitingForImage 상태일 때는 투표 부결 처리
+          if (waitingForImage.value && currentTurnVoteResult.value) {
+            console.log("=== 🚨 일반 에러 - 투표 대기 중이었으므로 투표 부결 처리 ===");
+
+            // 투표 부결과 동일한 처리 (이미지 실패 시)
+            if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+              storyCards.value.push(usedCardBackup.value);
+              console.log(`일반 에러 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
+
+              const myCardIds = storyCards.value.map(card => card.id);
+              connectedPeers.value.forEach((peer) => {
+                if (peer.connection && peer.connection.open) {
+                  sendMessage("playerCardsSync", {
+                    userId: peerId.value,
+                    cardIds: myCardIds
+                  }, peer.connection);
+                }
+              });
+            }
+
+            usedCardBackup.value = null;
+            usedCard.value = {
+              id: 0,
+              keyword: "",
+              isEnding: false,
+              isFreeEnding: false
+            };
+
+            waitingForImage.value = false;
+            currentTurnVoteResult.value = null;
+
+            console.log("=== 일반 에러 - 투표 부결 처리로 대체 완료 ===");
+
+          } else {
+            console.log("=== 🚨 일반 에러 - 투표 대기 중이 아니므로 기존 로직 적용 ===");
+          }
+
+          // 공통 처리: 점수 차감, 책 내용 제거, 턴 진행
           currentPlayer.score -= 1; // 에러로 인한 점수 차감
 
           // 마지막 추가된 bookContent 제거 (이미지 실패로 인해)
@@ -2668,8 +2732,12 @@ const voteEnd = async (data) => {
             console.log("=== 이미지 이미 준비됨 - 즉시 진행 ===");
             processVoteSuccess();
           } else {
-            console.log("=== 이미지 대기 상태로 전환 ===");
+            console.log("=== 🚨 DEBUG: 이미지 대기 상태로 전환 ===");
+            console.log("🚨 DEBUG: pendingImage.value 상태:", !!pendingImage.value);
+            console.log("🚨 DEBUG: currentTurnVoteResult.value 상태:", !!currentTurnVoteResult.value);
+            console.log("🚨 DEBUG: waitingForImage 설정 전 값:", waitingForImage.value);
             waitingForImage.value = true;
+            console.log("🚨 DEBUG: waitingForImage 설정 후 값:", waitingForImage.value);
 
             // 다른 플레이어들에게 대기 상태 알림
             connectedPeers.value.forEach((peer) => {
