@@ -1111,6 +1111,8 @@ const setupConnection = (conn) => {
         break;
 
       case "warningNotification":
+        console.log("🦄 warningNotification 메시지 수신:", data);
+        console.log("🦄 수신된 이미지:", data.image);
         showInappropriateWarningModal(data);
         break;
 
@@ -2538,9 +2540,12 @@ const nextTurn = async (data) => {
         showInappropriateWarningModal(retryWarningMessage);
 
         // ✅ 모든 다른 플레이어에게도 재시도 알림 전송
+        console.log("🦄 연결된 피어 수:", connectedPeers.value.length);
         connectedPeers.value.forEach((peer) => {
+          console.log(`🦄 피어 ${peer.id} - 연결상태: ${peer.connection.open}`);
           if (peer.id !== peerId.value && peer.connection.open) {
             console.log(`🦄 피어 ${peer.id}에게 unicorn_curious 재시도 알림 전송`);
+            console.log("🦄 전송할 메시지:", retryWarningMessage);
             sendMessage("warningNotification", retryWarningMessage, peer.connection);
           }
         });
