@@ -162,7 +162,8 @@ export async function speakTextWithVolume(text, volume = 1.0, audioStore = null)
     const gainNode = context.createGain();
 
     source.buffer = audioBuffer;
-    gainNode.gain.value = volume;
+    // 초기 볼륨 설정 - audioStore 상태를 즉시 반영
+    gainNode.gain.value = audioStore && !audioStore.audioData ? 0 : (audioStore?.audioVolume || volume);
 
     // source -> gainNode -> destination
     source.connect(gainNode);
@@ -175,9 +176,9 @@ export async function speakTextWithVolume(text, volume = 1.0, audioStore = null)
           if (audioStore.audioData) {
             gainNode.gain.value = audioStore.audioVolume;
           } else {
-            gainNode.gain.value = 0; // 음소거
+            gainNode.gain.value = 0; // 음소거 (재생은 계속, 중간에 on하면 다시 들림)
           }
-        }, 100); // 100ms마다 체크
+        }, 50); // 50ms마다 체크 (더 빠른 반응)
 
         const cleanup = () => {
           clearInterval(volumeInterval);

@@ -2403,22 +2403,18 @@ const gameStart = async (data) => {
     // 4. 로딩 화면 종료
     emit("startLoading", {value: false});
 
-    // 5. 오버레이 표시
-    showOverlay('start').then(() => {
-      setTimeout(() => {
-        showOverlay('whoTurn').then(() => {
-          finalFailureShown = false; // 게임 시작 시 최종 실패 플래그 초기화
+    // 5. 방장 준비 완료 알림
+    console.log("🚀 방장: 프리로딩 완료, 모든 게스트 대기 중...");
 
-          console.log("🚀 방장: 모든 게스트 준비 완료 대기 중...");
-
-          // 방장: 모든 게스트가 준비될 때까지 2초 추가 대기
-          setTimeout(() => {
-            console.log("🚀 방장: 타이머 시작");
-            inProgress.value = true;
-          }, 2000);
-        });
-      }, 500);
+    // 모든 게스트에게 방장 준비 완료 알림
+    connectedPeers.value.forEach((peer) => {
+      if (peer.connection.open) {
+        sendMessage("bossReady", { ready: true }, peer.connection);
+      }
     });
+
+    // 방장은 모든 게스트의 준비 완료를 기다림
+    waitForAllPlayersReady();
 
   } catch (error) {
     console.error('❌ 카드 프리로딩 실패:', error);
