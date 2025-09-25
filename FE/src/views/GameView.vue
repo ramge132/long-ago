@@ -23,8 +23,7 @@
     <!-- 부적절한 콘텐츠 경고 모달 - 게임 테마 맞춤 디자인 -->
     <div
       v-if="showWarningModal"
-      class="warning-modal fixed inset-0 flex items-center justify-center z-50"
-      @click="hideWarningModal">
+      class="warning-modal fixed inset-0 flex items-center justify-center z-50">
       <div
         class="warning-content bg-[#ffffff85] backdrop-blur-[20px] border-[1px] border-[#ffffff60] rounded-2xl p-10 max-w-lg mx-4 text-center transform transition-all duration-500 shadow-2xl"
         style="animation: gentleBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
@@ -48,15 +47,21 @@
           {{ warningModalMessage }}
         </p>
         
+        <!-- Progress Bar -->
+        <div class="w-full mb-4">
+          <div class="bg-gray-200 rounded-full h-2 overflow-hidden border border-gray-300">
+            <div
+              class="progress-bar h-full rounded-full transition-all duration-100 ease-linear bg-gradient-to-r from-orange-500 to-red-600"
+              :style="{ width: warningProgressWidth + '%' }"
+            ></div>
+          </div>
+          <p class="text-sm text-gray-600 text-center mt-2 font-katuri">
+            {{ Math.ceil(warningRemainingTime / 1000) }}초 후 자동으로 닫힙니다
+          </p>
+        </div>
+
         <!-- Decorative Line -->
-        <div class="w-16 h-1 bg-gradient-to-r from-orange-300 to-red-400 rounded-full mx-auto mb-6"></div>
-        
-        <!-- Confirm Button -->
-        <button 
-          @click="hideWarningModal"
-          class="bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white font-katuri px-8 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95">
-          알겠습니다 ✨
-        </button>
+        <div class="w-16 h-1 bg-gradient-to-r from-orange-300 to-red-400 rounded-full mx-auto"></div>
       </div>
     </div>
 
@@ -123,7 +128,11 @@ const isForceStopped = ref(null);
 // 부적절한 콘텐츠 경고 모달 관련
 const showWarningModal = ref(false);
 const warningModalMessage = ref("");
-const warningModalImage = ref(null); // ✅ 경고 모달 이미지 추가
+const warningModalImage = ref(null);
+const warningProgressWidth = ref(100);
+const warningRemainingTime = ref(5000); // 5초
+let warningProgressInterval = null;
+let warningAutoCloseTimeout = null;
 // 작은 알람 모달 관련 (35% 및 100% 도달용)
 const showSmallAlert = ref(false);
 const smallAlertMessage = ref("");
@@ -3978,6 +3987,66 @@ watch(
   },
   { deep: true }
 )
+
+// 경고 모달 관련 함수들
+const showInappropriateWarningModal = (warningData) => {
+  console.log("🦄 경고 모달에 커스텀 이미지 설정:", warningData.image);
+
+  warningModalMessage.value = warningData.message;
+
+  if (warningData.image) {
+    warningModalImage.value = warningData.image;
+  } else {
+    warningModalImage.value = null; // 기본 WarningIcon 사용
+  }
+
+  showWarningModal.value = true;
+  startWarningProgressTimer();
+};
+
+const startWarningProgressTimer = () => {
+  const duration = 5000; // 5초
+  const interval = 100; // 100ms마다 업데이트
+  const totalSteps = duration / interval;
+  let currentStep = 0;
+
+  warningProgressWidth.value = 100;
+  warningRemainingTime.value = duration;
+
+  warningProgressInterval = setInterval(() => {
+    currentStep++;
+    const progress = ((totalSteps - currentStep) / totalSteps) * 100;
+    warningProgressWidth.value = Math.max(0, progress);
+    warningRemainingTime.value = Math.max(0, duration - (currentStep * interval));
+
+    if (currentStep >= totalSteps) {
+      clearInterval(warningProgressInterval);
+      hideWarningModal();
+    }
+  }, interval);
+
+  // 자동 닫기 타이머
+  warningAutoCloseTimeout = setTimeout(() => {
+    hideWarningModal();
+  }, duration);
+};
+
+const hideWarningModal = () => {
+  // 타이머들 정리
+  if (warningProgressInterval) {
+    clearInterval(warningProgressInterval);
+    warningProgressInterval = null;
+  }
+  if (warningAutoCloseTimeout) {
+    clearTimeout(warningAutoCloseTimeout);
+    warningAutoCloseTimeout = null;
+  }
+
+  showWarningModal.value = false;
+  warningModalMessage.value = "";
+  warningModalImage.value = null;
+};
+
 </script>
 <style>
 @keyframes gentleBounce {
