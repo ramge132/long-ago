@@ -318,12 +318,6 @@ const processDelayedVoteResult = () => {
       if (pendingImage.value || isElected.value) {
         console.log("=== 지연 처리: 투표 통과 + 이미지 존재 - 정상 진행 ===");
 
-        // 이미 isElected가 true인 경우 중복 처리 방지
-        if (isElected.value) {
-          console.log("=== 이미 isElected 처리됨 - 지연 처리 스킵 ===");
-          return;
-        }
-
         currentPlayer.score += scoreIncrease;
 
         // 다음 턴 진행
@@ -345,8 +339,24 @@ const processDelayedVoteResult = () => {
           }
         });
 
-        // isElected 트리거
-        isElected.value = true;
+        // 상태 초기화 (결말카드가 아닌 경우)
+        if (!wasEndingCard) {
+          usedCardBackup.value = null;
+          usedCard.value = {
+            id: 0,
+            keyword: "",
+            isEnding: false,
+            isFreeEnding: false
+          };
+        }
+
+        // isElected가 아직 설정되지 않은 경우에만 트리거
+        if (!isElected.value) {
+          console.log("=== 지연 처리: isElected 트리거 ===");
+          isElected.value = true;
+        } else {
+          console.log("=== 지연 처리: isElected 이미 설정됨 - 트리거 스킵 ===");
+        }
       } else {
         console.log("=== 지연 처리: 투표 통과했지만 이미지 없음 - 투표 거절로 처리 ===");
         // 투표 거절과 동일한 처리
