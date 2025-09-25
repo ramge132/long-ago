@@ -96,7 +96,7 @@
           (index !== 0 && props.myTurn === props.currTurn) ? 'chat-with-orb' : ''
         ]">
         <div class="flex flex-nowrap flex-col justify-center items-center relative cursor-pointer" @click="changeMode">
-          <p class="whitespace-nowrap absolute top-[-1.25rem] font-semibold" style="text-shadow: 2px 0 4px #fff, -2px 0 4px #fff, 0 2px 4px #fff, 0 -2px 4px #fff, 1px 1px #fff, -1px -1px 4px #fff, 1px -1px 4px #fff, -1px 1px 4px #fff;" v-text="mode.mark" :class="index === 1 ? 'text-[#c3b6a5]' : ''"></p>
+          <p class="whitespace-nowrap absolute top-[-1.25rem] font-semibold" style="text-shadow: 2px 0 4px #fff, -2px 0 4px #fff, 0 2px 4px #fff, 0 -2px 4px #fff, 1px 1px #fff, -1px -1px 4px #fff, 1px -1px 4px #fff, -1px 1px 4px #fff;" v-text="mode.mark" :class="getTextColorClass(index)"></p>
           <img :src="ChangeIcon" alt="채팅모드변경" class="h-3/5" />
         </div>
         <input type="text"
@@ -570,12 +570,30 @@ const chatMode = computed(() => {
     modes.push({
       mark: "자유 결말",
       fucntion: sendFreeEnding,
-      placeholder: "자유 결말은 카드보다 점수를 조금 얻습니다",
+      placeholder: "자유 결말은 결말 카드보다 득점이 적습니다",
     });
   }
 
   return modes;
 });
+
+// 채팅 모드별 텍스트 색상 클래스
+const getTextColorClass = (index) => {
+  const currentMode = chatMode.value[index];
+  if (!currentMode) return '';
+
+  switch(currentMode.mark) {
+    case '대화':
+      return 'text-black'; // 검은색
+    case '이야기':
+      return 'text-[#c3b6a5]'; // 베이지색
+    case '자유 결말':
+      return 'text-[#8dc3d2]'; // 8dc3d2 톤
+    default:
+      return '';
+  }
+};
+
 const currChatModeIdx = ref(0);
 
 window.addEventListener("keydown", (e) => {

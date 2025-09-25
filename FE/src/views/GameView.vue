@@ -367,8 +367,8 @@ const processDelayedVoteResult = () => {
         // 투표 거절과 동일한 처리
         currentPlayer.score -= 1;
 
-        // 카드 복원
-        if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+        // 카드 복원 (일반 이야기카드만)
+        if (usedCardBackup.value && !usedCard.value.isEnding) {
           storyCards.value.push(usedCardBackup.value);
         }
 
@@ -411,7 +411,8 @@ const processDelayedVoteResult = () => {
         pendingImage.value = null;
       }
 
-      if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+      // 카드 복원 (일반 이야기카드만)
+      if (usedCardBackup.value && !usedCard.value.isEnding) {
         storyCards.value.push(usedCardBackup.value);
       }
 
@@ -538,8 +539,8 @@ watch(isElected, (newValue) => {
             currentPlayer.score -= 1;
             console.log(`이미지 대기 초과 - 점수 차감: ${currentPlayer.name} (${currentPlayer.score})`);
 
-            // 2. 카드 복원 (투표 부결과 동일)
-            if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+            // 2. 카드 복원 (투표 부결과 동일, 일반 이야기카드만)
+            if (usedCardBackup.value && !usedCard.value.isEnding) {
               storyCards.value.push(usedCardBackup.value);
               console.log(`이미지 대기 초과 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
 
@@ -1380,14 +1381,15 @@ const setupConnection = (conn) => {
                 pendingImage.value = null;
               }
 
-              // ✅ 수정: 투표 거절 시 사용된 카드를 패에 복원
-              if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+              // ✅ 수정: 투표 거절 시 사용된 카드를 패에 복원 (일반 이야기카드만)
+              if (usedCardBackup.value && !usedCard.value.isEnding) {
                 storyCards.value.push(usedCardBackup.value);
                 console.log(`투표 거절로 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
               } else {
                 console.log("카드 복원 불가:", {
                   hasBackup: !!usedCardBackup.value,
-                  isFreeEnding: usedCard.value.isFreeEnding
+                  isEnding: usedCard.value.isEnding,
+                  reason: usedCard.value.isEnding ? "결말카드/자유결말은 복원 안됨" : "백업 없음"
                 });
               }
 
@@ -1488,10 +1490,16 @@ const setupConnection = (conn) => {
                 pendingImage.value = null;
               }
 
-              // 투표 거절 시 사용된 카드를 패에 복원
-              if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+              // 투표 거절 시 사용된 카드를 패에 복원 (일반 이야기카드만)
+              if (usedCardBackup.value && !usedCard.value.isEnding) {
                 storyCards.value.push(usedCardBackup.value);
                 console.log(`게스트: 투표 거절로 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
+              } else {
+                console.log("게스트: 카드 복원 불가:", {
+                  hasBackup: !!usedCardBackup.value,
+                  isEnding: usedCard.value.isEnding,
+                  reason: usedCard.value.isEnding ? "결말카드/자유결말은 복원 안됨" : "백업 없음"
+                });
               }
 
               // 백업 정보 및 usedCard 상태 초기화
@@ -2978,8 +2986,8 @@ const nextTurn = async (data) => {
           if (waitingForImage.value && currentTurnVoteResult.value) {
             console.log("=== 🚨 투표 통과 후 이미지 생성 실패 - 투표 부결과 동일한 처리 ===");
 
-            // 1. 사용된 카드를 플레이어 패에 되돌리기 (투표 부결과 동일)
-            if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+            // 1. 사용된 카드를 플레이어 패에 되돌리기 (투표 부결과 동일, 일반 이야기카드만)
+            if (usedCardBackup.value && !usedCard.value.isEnding) {
               storyCards.value.push(usedCardBackup.value);
               console.log(`투표 통과 후 이미지 실패 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
 
@@ -3037,7 +3045,7 @@ const nextTurn = async (data) => {
             currentPlayer.score -= 1;
 
             // ✅ 핵심 수정: 카드 복원 로직 추가 (투표 부결과 동일)
-            if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+            if (usedCardBackup.value && !usedCard.value.isEnding) {
               storyCards.value.push(usedCardBackup.value);
               console.log(`일반 부적절한 이미지 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
 
@@ -3127,7 +3135,7 @@ const nextTurn = async (data) => {
             console.log("=== 🚨 일반 에러 - 투표 대기 중이었으므로 투표 부결 처리 ===");
 
             // 투표 부결과 동일한 처리 (이미지 실패 시)
-            if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+            if (usedCardBackup.value && !usedCard.value.isEnding) {
               storyCards.value.push(usedCardBackup.value);
               console.log(`일반 에러 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
 
@@ -3400,8 +3408,8 @@ const voteEnd = async (data) => {
             console.log("결말카드 투표 반대 - 결말모드 해제");
           }
 
-          // 투표 거절 시 사용된 카드를 패에 복원 (자유 결말이 아닌 경우만)
-          if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+          // 투표 거절 시 사용된 카드를 패에 복원 (일반 이야기카드만)
+          if (usedCardBackup.value && !usedCard.value.isEnding) {
             storyCards.value.push(usedCardBackup.value);
             console.log(`투표 거절로 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
 
