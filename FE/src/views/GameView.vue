@@ -1120,10 +1120,6 @@ const setupConnection = (conn) => {
         const delayMs = data.showDelay || 12000; // 기본값 12초
         console.log(`🦄 ${delayMs/1000}초 후 재시도 알림 모달 표시 예정`);
 
-        // 🧪 테스트: 즉시 모달 표시 (임시)
-        console.log("🧪 테스트: 즉시 재시도 알림 모달 표시");
-        showInappropriateWarningModal(data);
-
         setTimeout(() => {
           console.log("🦄 다른 플레이어 - 지연 후 재시도 알림 모달 표시");
           showInappropriateWarningModal(data);
@@ -2541,8 +2537,8 @@ const nextTurn = async (data) => {
 
     try {
       // ✅ 핵심 수정: P2P 메시지를 즉시 전송 (연결이 안정적일 때)
+      // sendMessage 함수 시그니처에 맞게 type 필드 제거
       const retryWarningMessage = {
-        type: "retryingContent",
         message: "그림이 조금 이상하네요!\n다시 그려볼게요!",
         image: UnicornCuriousIcon,
         showDelay: 12000 // 12초 후 표시하도록 지시
@@ -2559,12 +2555,6 @@ const nextTurn = async (data) => {
         }
       });
 
-      // 🧪 테스트 목적: 항상 재시도 알림 실행 (임시 코드)
-      console.log("🧪 테스트: 강제 재시도 알림 실행");
-      setTimeout(() => {
-        console.log("🧪 테스트: 강제 재시도 알림 모달 표시");
-        showInappropriateWarningModal(retryWarningMessage);
-      }, 3000); // 3초 후 테스트용 알림
 
       // ✅ 자신에게도 12초 후 알림 표시 타이머 설정
       retryNotificationTimer = setTimeout(() => {
