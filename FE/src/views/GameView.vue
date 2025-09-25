@@ -3107,10 +3107,10 @@ const nextTurn = async (data) => {
                 sendMessage("stopVotingAndShowWarning", stopVotingMessage, peer.connection);
               }
             });
-            
+
             const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true, skipBookContentRemoval: true};
             stopVotingAndShowWarning(selfStopVotingMessage);
-          }
+        }
         }
       } else {
         // 일반 에러 처리
