@@ -1,13 +1,13 @@
 <template>
   <div class="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-20">
     <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl overflow-y-auto max-h-[640px] min-h-[600px]">
-      <h1 class="text-2xl font-bold text-gray-900 text-center">아주먼옛날(Long Ago) 이용약관</h1>
+      <h1 class="text-2xl font-bold text-gray-900 text-center">롱어고(Long Ago) 이용약관</h1>
       <hr class="my-4 border-gray-300" />
 
       <section>
         <h2 class="text-xl font-semibold text-gray-800">제1조 (목적)</h2>
         <p class="text-gray-700 mt-2 content-size">
-          본 약관은 아주먼옛날(이하 "게임")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임 사항 등을 규정하는 것을 목적으로 합니다. 
+          본 약관은 롱어고(이하 "게임")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임 사항 등을 규정하는 것을 목적으로 합니다. 
           이용자는 본 약관을 충분히 숙지한 후 게임을 이용해야 하며, 게임을 이용하는 경우 본 약관에 동의한 것으로 간주됩니다.
         </p>
       </section>
