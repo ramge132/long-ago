@@ -417,6 +417,10 @@ const processDelayedVoteResult = () => {
         isFreeEnding: false
       };
 
+      const currentPlayerIndex = inGameOrder.value[currTurn.value]; // 점수 차감 전 현재 턴 플레이어 인덱스
+      const currentPlayer = participants.value[currentPlayerIndex];
+      currentPlayer.score -= 1; // 투표 거절로 인한 점수 차감
+
       currTurn.value = (currTurn.value + 1) % participants.value.length;
 
       connectedPeers.value.forEach((peer) => {
@@ -424,7 +428,12 @@ const processDelayedVoteResult = () => {
           sendMessage("nextTurn", {
             currTurn: currTurn.value,
             imageDelete: true,
-            totalTurn: totalTurn.value
+            totalTurn: totalTurn.value,
+            scoreChange: {
+              type: "decrease",
+              amount: 1,
+              playerIndex: currentPlayerIndex
+            } // 투표 거절로 인한 점수 차감 동기화
           }, peer.connection);
         }
       });
@@ -1323,6 +1332,7 @@ const setupConnection = (conn) => {
                 isFreeEnding: false
               };
 
+              const currentPlayerIndex = inGameOrder.value[currTurn.value]; // 점수 차감 전 현재 턴 플레이어 인덱스
               currTurn.value = (currTurn.value + 1) % participants.value.length;
               connectedPeers.value.forEach((peer) => {
                 if (peer.id !== peerId.value && peer.connection.open) {
@@ -1332,6 +1342,11 @@ const setupConnection = (conn) => {
                       currTurn: currTurn.value,
                       imageDelete: true,
                       totalTurn: totalTurn.value,
+                      scoreChange: {
+                        type: "decrease",
+                        amount: 1,
+                        playerIndex: currentPlayerIndex
+                      } // 투표 거절로 인한 점수 차감 동기화
                     },
                     peer.connection
                   )
@@ -3276,6 +3291,7 @@ const voteEnd = async (data) => {
             isFreeEnding: false
           };
 
+          const currentPlayerIndex = inGameOrder.value[currTurn.value]; // 점수 차감 전 현재 턴 플레이어 인덱스
           currTurn.value = (currTurn.value + 1) % participants.value.length;
           connectedPeers.value.forEach((peer) => {
             if (peer.id !== peerId.value && peer.connection.open) {
@@ -3285,7 +3301,12 @@ const voteEnd = async (data) => {
                 totalTurn: totalTurn.value,
                 resetEndingState: true, // 다른 플레이어들도 결말상태 리셋 알림
                 voteRejected: true, // 투표 거절 명시적 표시
-                rejectedPrompt: prompt.value // 거절된 이야기 내용
+                rejectedPrompt: prompt.value, // 거절된 이야기 내용
+                scoreChange: {
+                  type: "decrease",
+                  amount: 1,
+                  playerIndex: currentPlayerIndex
+                } // 투표 부결로 인한 점수 차감 동기화
               }, peer.connection);
             }
           });
