@@ -779,8 +779,10 @@ const setupConnection = (conn) => {
 
       case "endingCardAvailable":
         // 결말카드 사용 가능 알림 (35% 도달)
-        isEndingMode.value = true; // 결말 모드 활성화
-        smallAlertMessage.value = "긴장감이 35%에 도달했습니다!\nTab키로 자유결말 전환 가능!";
+        hasReached35Percent.value = true;
+        canUseFreeEnding.value = true; // 35%는 자유결말만 해금
+        // isEndingMode는 false 유지 (100% 도달 시에만 true)
+        smallAlertMessage.value = "Tab키로 자유결말 전환 가능!";
         showSmallAlert.value = true;
         break;
 
@@ -4185,7 +4187,7 @@ watch(
   () => [percentage.value, usedCard.value, isElected.value],
   ([newPercent, newUsedCard, newIsElected], [oldPercent, oldUsedCard, oldIsElected]) => {
     // 35% 도달 체크 (한 번만 실행)
-    if (newPercent >= 35 && !hasReached35Percent.value && newIsElected) {
+    if (newPercent >= 35 && !hasReached35Percent.value) {
       hasReached35Percent.value = true;
 
       // 35% 도달 시에는 자유결말만 해금 (기본은 이야기 모드)
@@ -4201,7 +4203,7 @@ watch(
         sendMessage(
           "endingCardAvailable",
           {
-            message: "긴장감이 35%에 도달했습니다!\nTab키로 자유결말 전환 가능!"
+            message: "Tab키로 자유결말 전환 가능!"
           },
           peer.connection
         );
@@ -4209,7 +4211,7 @@ watch(
     }
 
     // 100% 도달 체크 (결말 모드 전환)
-    if (newPercent >= oldPercent && newPercent >= 100 && newUsedCard.isEnding == false && newIsElected && !isEndingMode.value) {
+    if (newPercent >= oldPercent && newPercent >= 100 && newUsedCard.isEnding == false && !isEndingMode.value) {
       // 결말 모드로 전환
       isEndingMode.value = true;
 

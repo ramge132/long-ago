@@ -556,20 +556,21 @@ const chatMode = computed(() => {
     }
   ];
 
-  // 35% 이상일 때 자유 결말 가능
-  if (props.canUseFreeEnding || props.isEndingMode) {
-    // 35% 도달 시 또는 결말 모드: 자유 결말 작성 가능
-    modes.push({
-      mark: "자유 결말",
-      fucntion: sendFreeEnding,
-      placeholder: "자유 결말은 카드보다 점수를 조금 얻습니다",
-    });
-  } else {
-    // 일반 모드: 이야기 모드
+  // 100% 도달 시(결말 모드)가 아니라면 이야기 모드 항상 추가
+  if (!props.isEndingMode) {
     modes.push({
       mark: "이야기",
       fucntion: sendprompt,
       placeholder: "카드는 자동 인식됩니다 (한 장만 사용 가능)",
+    });
+  }
+
+  // 35% 이상일 때 자유 결말 추가
+  if (props.canUseFreeEnding || props.isEndingMode) {
+    modes.push({
+      mark: "자유 결말",
+      fucntion: sendFreeEnding,
+      placeholder: "자유 결말은 카드보다 점수를 조금 얻습니다",
     });
   }
 
