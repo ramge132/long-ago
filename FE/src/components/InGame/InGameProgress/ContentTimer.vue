@@ -85,11 +85,37 @@ const startDisplayTimer = () => {
 // 타이머 시작 결정
 const startCountdown = () => {
   const bossId = gameStore.getBossId();
-  const isBoss = props.peerId === bossId;
+
+  // UUID 압축/해제 함수들 (GameView에서 가져옴)
+  function compressUUID(uuidStr) {
+    const cleanUUID = uuidStr.replace(/-/g, "");
+    const bytes = new Uint8Array(16);
+    for (let i = 0; i < 16; i++) {
+      bytes[i] = parseInt(cleanUUID.substr(i * 2, 2), 16);
+    }
+    const base64 = btoa(String.fromCharCode(...bytes));
+    return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  }
+
+  function decompressUUID(compressedStr) {
+    let base64 = compressedStr.replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4) base64 += "=";
+    const binary = atob(base64);
+    const bytes = new Uint8Array(16);
+    for (let i = 0; i < 16; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20, 32)].join('-');
+  }
+
+  // 방장 판별: bossId가 압축된 형태이므로 decompressUUID로 비교하거나, peerId를 압축해서 비교
+  const isBoss = bossId && (decompressUUID(bossId) === props.peerId);
 
   console.log("🔍 방장 판별 디버그:");
   console.log("  props.peerId:", props.peerId);
   console.log("  gameStore.getBossId():", bossId);
+  console.log("  decompressUUID(bossId):", bossId ? decompressUUID(bossId) : 'N/A');
   console.log("  isBoss:", isBoss);
 
   if (isBoss) {
