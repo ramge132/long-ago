@@ -2527,7 +2527,7 @@ const nextTurn = async (data) => {
 
     try {
       // 이미지 생성 중 재시도 알림 타이머 설정 (12초 후)
-      retryNotificationTimer = setTimeout(() => {
+      retryNotificationTimer = setTimeout(async () => {
         const retryWarningMessage = {
           type: "retryingContent",
           message: "그림이 조금 이상하네요!\n다시 그려볼게요!",
