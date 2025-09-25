@@ -3085,22 +3085,8 @@ const nextTurn = async (data) => {
           // 공통 처리: 턴 진행
           currTurn.value = (currTurn.value + 1) % participants.value.length;
 
-          if (usedCard.value.isEnding) {
-            console.log("=== 결말카드 - 부적절한 이미지 후 정상 게임 종료 처리 ===");
-            gameEnd(true);
-
-            setTimeout(() => {
-              isForceStopped.value = "champ";
-              connectedPeers.value.forEach(async (p) => {
-                if (p.id !== peerId.value && p.connection.open) {
-                  sendMessage("showResultsWithCover", {
-                    bookCover: { title: "아주 먼 옛날", imageUrl: "" },
-                    ISBN: "generating..."
-                  }, p.connection);
-                }
-              });
-            }, 4000);
-          } else {
+          // ✅ 수정: 결말카드도 일반 이야기카드와 동일하게 처리 (즉시 게임 종료 X)
+          // 결말카드든 일반카드든 부적절한 이미지 시에는 알림만 표시하고 재시도 대기
             const stopVotingMessage = {
               type: "stopVotingAndShowWarning",
               warningData: {
