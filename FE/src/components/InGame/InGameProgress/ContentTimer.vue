@@ -84,7 +84,13 @@ const startDisplayTimer = () => {
 
 // 타이머 시작 결정
 const startCountdown = () => {
-  const isBoss = props.peerId === gameStore.getBossId();
+  const bossId = gameStore.getBossId();
+  const isBoss = props.peerId === bossId;
+
+  console.log("🔍 방장 판별 디버그:");
+  console.log("  props.peerId:", props.peerId);
+  console.log("  gameStore.getBossId():", bossId);
+  console.log("  isBoss:", isBoss);
 
   if (isBoss) {
     console.log("🎯 방장: 마스터 타이머 시작");
