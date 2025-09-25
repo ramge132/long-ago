@@ -163,6 +163,8 @@
       :roomConfigs="roomConfigs"
       :inProgress="inProgress"
       :percentage="percentage"
+      :peerId="peerId"
+      ref="progressRef"
     />
     <InGameVote class="z-50" @vote-end="voteEnd" @vote-selected="onVoteSelected" :prompt="prompt" :usedCard="usedCard" :isPreview="isPreview" :key="`vote-${prompt}-${usedCard?.id || 'default'}`" v-if="prompt !== '' && isVoted === false"/>
     <!-- <Transition name="fade">
@@ -213,8 +215,9 @@ const chatTime = ref([
   [undefined, undefined],
 ]);
 
-// InGameControl 컴포넌트 참조
+// 컴포넌트 참조들
 const inGameControlRef = ref(null);
+const progressRef = ref(null);
 
 const emit = defineEmits(["broadcastMessage", "gameExit", "nextTurn", "cardReroll", "voteEnd", "voteSelected", "goLobby", "winner-shown", "narration-complete", "card-refreshed", "send-exchange-request", "card-exchanged", "reject-exchange"]);
 
@@ -490,6 +493,15 @@ defineExpose({
       inGameControlRef.value.clearPendingExchange(cardId);
     } else {
       console.error("❌ InGameControl ref 또는 clearPendingExchange 메서드가 없습니다!");
+    }
+  },
+  // 타이머 동기화 함수 추가
+  updateTimer: (newTime) => {
+    console.log("🕰️ InGameView에서 타이머 업데이트:", newTime);
+    if (progressRef.value && progressRef.value.updateTimer) {
+      progressRef.value.updateTimer(newTime);
+    } else {
+      console.error("❌ Progress ref 또는 updateTimer 메서드가 없습니다!");
     }
   }
 });

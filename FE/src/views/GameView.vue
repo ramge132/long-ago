@@ -1066,6 +1066,15 @@ const setupConnection = (conn) => {
         inProgress.value = true;
         break;
 
+      // 타이머 동기화 메시지 처리
+      case "timerSync":
+        console.log("🕰️ 타이머 동기화 수신:", data.timeLeft, "초");
+        // InGameView에 타이머 업데이트 전달
+        if (currentViewRef.value && currentViewRef.value.updateTimer) {
+          currentViewRef.value.updateTimer(data.timeLeft);
+        }
+        break;
+
       case "newParticipantJoined":
         const isExisting = participants.value.some(
           (existing) => existing.id === data.data.id,
@@ -2491,7 +2500,10 @@ const addBookContent = (newContent) => {
 
 const nextTurn = async (data) => {
   const isMyCurrentTurn = inGameOrder.value[currTurn.value] === myTurn.value;
-  
+  const isBoss = peerId.value === gameStore.getBossId();
+
+  console.log("🕰️ nextTurn 호출 - isBoss:", isBoss, ", isMyCurrentTurn:", isMyCurrentTurn);
+
   if ((!data || !data.prompt) && isMyCurrentTurn) {
     const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
     currentPlayer.score -= 1;
@@ -2507,7 +2519,7 @@ const nextTurn = async (data) => {
       inGameOrder: inGameOrder.value,
       peerId: peerId.value
     });
-    
+
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(

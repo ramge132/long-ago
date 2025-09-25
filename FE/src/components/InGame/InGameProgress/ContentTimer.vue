@@ -47,13 +47,18 @@ const startMasterTimer = () => {
   let timeLeft = props.currTurnTime;
   restTime.value = timeLeft;
 
+  console.log("🕰️ 방장 마스터 타이머 시작:", timeLeft, "초");
+
   masterTimer = setInterval(() => {
     timeLeft--;
     restTime.value = timeLeft;
 
+    console.log("🕰️ 방장 타이머:", timeLeft, "초");
+
     if (timeLeft <= 0) {
       clearInterval(masterTimer);
       masterTimer = null;
+      console.log("🕰️ 방장 타이머 만료 - nextTurn 이벤트 발생");
       emit('nextTurn'); // 방장만 nextTurn 이벤트 발생
     }
   }, 1000);
