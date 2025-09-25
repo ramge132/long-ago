@@ -816,7 +816,12 @@ const setupConnection = (conn) => {
         currTurn.value %= participants.value.length;
         if (currTurnExited && gameStarted.value) {
           inProgress.value = false;
-          await showOverlay('whoTurn');
+          await showOverlay('whoTurn', {
+            turnIndex: currTurn.value,
+            participants: participants.value,
+            inGameOrder: inGameOrder.value,
+            peerId: peerId.value
+          });
           finalFailureShown = false; // 새로운 턴 시작 시 최종 실패 플래그 초기화
           inProgress.value = true;
         }
@@ -2077,7 +2082,12 @@ const stopVotingAndShowWarning = async (data) => {
     }
     
     // whoTurn 오버레이 표시
-    await showOverlay('whoTurn');
+    await showOverlay('whoTurn', {
+      turnIndex: currTurn.value,
+      participants: participants.value,
+      inGameOrder: inGameOrder.value,
+      peerId: peerId.value
+    });
     
     // 다음 턴을 위한 상태 확인 (이미 false로 설정되어 있어야 함)
     // 현재 isVoted 상태 확인
@@ -2500,9 +2510,8 @@ const addBookContent = (newContent) => {
 
 const nextTurn = async (data) => {
   const isMyCurrentTurn = inGameOrder.value[currTurn.value] === myTurn.value;
-  const isBoss = peerId.value === gameStore.getBossId();
 
-  console.log("🕰️ nextTurn 호출 - isBoss:", isBoss, ", isMyCurrentTurn:", isMyCurrentTurn);
+  console.log("🕰️ nextTurn 호출 - isMyCurrentTurn:", isMyCurrentTurn);
 
   if ((!data || !data.prompt) && isMyCurrentTurn) {
     const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
@@ -3042,7 +3051,12 @@ const nextTurn = async (data) => {
           toast.errorToast("이미지 생성에 실패하여 턴이 넘어갑니다: " + (error?.message || "알 수 없는 오류"));
 
           // 다음 턴 오버레이 표시
-          await showOverlay('whoTurn');
+          await showOverlay('whoTurn', {
+            turnIndex: currTurn.value,
+            participants: participants.value,
+            inGameOrder: inGameOrder.value,
+            peerId: peerId.value
+          });
           finalFailureShown = false; // 새로운 턴 시작 시 최종 실패 플래그 초기화
           inProgress.value = true;
         } else {
@@ -3187,32 +3201,7 @@ const voteEnd = async (data) => {
             processVoteSuccess();
           }
 
-          if (wasEndingCard) {
-            console.log("=== 결말카드 처리 - 게임 종료 ===");
-            gameEnd(true);
-            connectedPeers.value.forEach((p) => {
-              if (p.id !== peerId.value && p.connection.open) {
-                sendMessage("endingCardScoreUpdate", {
-                  scoreChange: {
-                    type: "increase",
-                    amount: wasFreeEnding ? 3 : 5,
-                    playerIndex: currentPlayerIndex
-                  }
-                }, p.connection);
-              }
-            });
-            
-            setTimeout(() => {
-              isForceStopped.value = "champ";
-              connectedPeers.value.forEach(async (p) => {
-                if (p.id !== peerId.value && p.connection.open) {
-                  sendMessage("showResultsWithCover", {
-                    bookCover: { title: "아주 먼 옛날", imageUrl: "" },
-                    ISBN: "generating..."
-                  }, p.connection);
-                }
-              });
-            }, 4000); // 2초 → 4초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
+          // 결말카드 처리는 processVoteSuccess()에서 이미 처리됨 - 중복 제거
           } else {
             console.log("=== 일반카드 처리 - 다음 턴 진행 ===");
             console.log("다음 턴으로 전환하는 메시지 전송 중...");
@@ -3335,7 +3324,12 @@ const voteEnd = async (data) => {
 
           console.log("삭제 후 책 내용:", bookContents.value);
           currentPlayer.score -= 1;
-          await showOverlay('whoTurn');
+          await showOverlay('whoTurn', {
+            turnIndex: currTurn.value,
+            participants: participants.value,
+            inGameOrder: inGameOrder.value,
+            peerId: peerId.value
+          });
           finalFailureShown = false; // 새로운 턴 시작 시 최종 실패 플래그 초기화
           inProgress.value = true;
         }
@@ -3423,20 +3417,7 @@ const voteEnd = async (data) => {
           };
         }
 
-        if (voteAccepted && wasEndingCard && participants.value[0].id === peerId.value) {
-          gameEnd(true);
-          setTimeout(() => {
-            isForceStopped.value = "champ";
-            connectedPeers.value.forEach(async (p) => {
-              if (p.id !== peerId.value && p.connection.open) {
-                sendMessage("showResultsWithCover", {
-                  bookCover: { title: "아주 먼 옛날", imageUrl: "" },
-                  ISBN: "generating..."
-                }, p.connection);
-              }
-            });
-          }, 4000); // 2초 → 4초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
-        }
+        // 게스트의 결말카드 처리는 processVoteSuccess에서 통합 처리됨 - 중복 제거
       }
     }
   }
