@@ -2510,9 +2510,10 @@ const addBookContent = (newContent) => {
 
 
 const nextTurn = async (data) => {
-  const isMyCurrentTurn = inGameOrder.value[currTurn.value] === myTurn.value;
+  const isMyCurrentTurn = currTurn.value === myTurn.value;
 
   console.log("🕰️ nextTurn 호출 - isMyCurrentTurn:", isMyCurrentTurn);
+  console.log("🕰️ DEBUG - currTurn.value:", currTurn.value, "myTurn.value:", myTurn.value);
 
   if ((!data || !data.prompt) && isMyCurrentTurn) {
     const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
