@@ -1843,12 +1843,12 @@ const showInappropriateWarning = (warningData) => {
 
 // 부적절한 콘텐츠 경고 모달 표시
 const showInappropriateWarningModal = (warningData) => {
+  console.log("🦄 경고 모달에 커스텀 이미지 설정:", warningData.image);
 
-  warningModalMessage.value = `${warningData.message}`;
+  warningModalMessage.value = warningData.message;
 
   // ✅ 이미지가 있으면 설정, 없으면 기본 WarningIcon 사용
   if (warningData.image) {
-    console.log("🦄 경고 모달에 커스텀 이미지 설정:", warningData.image);
     warningModalImage.value = warningData.image;
   } else {
     warningModalImage.value = null; // 기본 WarningIcon 사용
@@ -1856,18 +1856,25 @@ const showInappropriateWarningModal = (warningData) => {
 
   showWarningModal.value = true;
 
-  // ✅ 5초 후 자동으로 모달 닫기 (2초 연장)
-  setTimeout(() => {
-    hideWarningModal();
-  }, 5000);
-
+  // ✅ 프로그레스바 타이머 시작
+  startWarningProgressTimer();
 };
 
 // 경고 모달 숨기기
 const hideWarningModal = () => {
+  // 타이머들 정리
+  if (warningProgressInterval) {
+    clearInterval(warningProgressInterval);
+    warningProgressInterval = null;
+  }
+  if (warningAutoCloseTimeout) {
+    clearTimeout(warningAutoCloseTimeout);
+    warningAutoCloseTimeout = null;
+  }
+
   showWarningModal.value = false;
   warningModalMessage.value = "";
-  warningModalImage.value = null; // ✅ 이미지도 초기화
+  warningModalImage.value = null;
 };
 
 // 투표 중단 및 경고 표시 (모든 플레이어용)
@@ -3988,22 +3995,7 @@ watch(
   { deep: true }
 )
 
-// 경고 모달 관련 함수들
-const showInappropriateWarningModal = (warningData) => {
-  console.log("🦄 경고 모달에 커스텀 이미지 설정:", warningData.image);
-
-  warningModalMessage.value = warningData.message;
-
-  if (warningData.image) {
-    warningModalImage.value = warningData.image;
-  } else {
-    warningModalImage.value = null; // 기본 WarningIcon 사용
-  }
-
-  showWarningModal.value = true;
-  startWarningProgressTimer();
-};
-
+// 경고 모달 관련 유틸리티 함수들
 const startWarningProgressTimer = () => {
   const duration = 5000; // 5초
   const interval = 100; // 100ms마다 업데이트
