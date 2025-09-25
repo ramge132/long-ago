@@ -159,6 +159,9 @@ const totalTurn = ref(1);
 // 나의 턴 순서
 const myTurn = ref(null);
 const inProgress = ref(false);
+// 게임 시작 동기화 관련
+const playersReady = ref(new Map()); // Map<userId, boolean>
+const allPlayersReadyPromise = ref(null);
 // 내가 가지고있는 스토리카드
 const storyCards = ref([]);
 // 다른 플레이어들의 카드 정보 추적 (중복 방지용)
@@ -946,21 +949,23 @@ const setupConnection = (conn) => {
             // 5. 로딩 화면 종료
             emit("startLoading", {value: false});
 
-            // 6. 오버레이 표시
-            await showOverlay('start');
-            setTimeout(() => {
-              showOverlay('whoTurn').then(() => {
-                finalFailureShown = false; // 게임 시작/재시작 시 최종 실패 플래그 초기화
+            // 6. 게스트 준비 완료 알림
+            console.log("🚀 게스트: 프리로딩 완료, 방장에게 준비 완료 알림");
 
-                console.log("🚀 게스트: 방장과 동기화를 위해 대기 중...");
+            // 방장에게 게스트 준비 완료 알림
+            const bossConnection = connectedPeers.value.find(peer =>
+              peer.id === participants.value[0].id
+            );
 
-                // 게스트: 방장과 동기화를 위해 동일한 2초 대기
-                setTimeout(() => {
-                  console.log("🚀 게스트: 타이머 시작");
-                  inProgress.value = true;
-                }, 2000);
-              });
-            }, 500);
+            if (bossConnection && bossConnection.connection.open) {
+              sendMessage("guestReady", {
+                userId: peerId.value,
+                ready: true
+              }, bossConnection.connection);
+            }
+
+            // 게스트는 모든 플레이어 준비 완료 신호를 기다림
+            waitForGameStart();
 
           } catch (error) {
             console.error('❌ 게스트 카드 프리로딩 실패:', error);
@@ -968,13 +973,43 @@ const setupConnection = (conn) => {
             await router.push("/game/play");
             emit("startLoading", {value: false});
 
-            // 에러 시에도 동기화를 위해 동일한 대기 시간 적용
-            setTimeout(() => {
-              console.log("🚀 게스트 (에러 복구): 타이머 시작");
-              inProgress.value = true;
-            }, 3000); // 오버레이 시간 고려해서 3초
+            // 에러 시에도 방장에게 준비 완료 알림
+            console.log("🚀 게스트 (에러 복구): 프리로딩 완료, 방장에게 준비 완료 알림");
+
+            const bossConnection = connectedPeers.value.find(peer =>
+              peer.id === participants.value[0].id
+            );
+
+            if (bossConnection && bossConnection.connection.open) {
+              sendMessage("guestReady", {
+                userId: peerId.value,
+                ready: true
+              }, bossConnection.connection);
+            }
+
+            waitForGameStart();
           }
         });
+        break;
+
+      case "guestReady":
+        console.log("🚀 방장: 게스트 준비 완료 수신", data.userId);
+        playersReady.value.set(data.userId, true);
+
+        // 모든 플레이어 준비 상태 체크
+        if (allPlayersReadyPromise.value && allPlayersReadyPromise.value.checkAllReady) {
+          allPlayersReadyPromise.value.checkAllReady();
+        }
+        break;
+
+      case "bossReady":
+        console.log("🚀 게스트: 방장 준비 완료 수신");
+        // 게스트는 방장 준비 완료를 확인만 함 (별도 처리 불필요)
+        break;
+
+      case "allPlayersReady":
+        console.log("🚀 게스트: 모든 플레이어 준비 완료! 게임 시작");
+        startGameForAll();
         break;
 
       case "nextTurn":
@@ -2342,6 +2377,10 @@ const gameStart = async (data) => {
   gameStarted.value = data.gameStarted;
   inGameOrder.value = data.order;
 
+  // 게임 시작 동기화 상태 초기화
+  playersReady.value.clear();
+  allPlayersReadyPromise.value = null;
+
   // 게임 시작 시 교환 횟수 초기화
   exchangeCount.value = 3;
   
@@ -2422,11 +2461,16 @@ const gameStart = async (data) => {
     await router.push("/game/play");
     emit("startLoading", {value: false});
 
-    // 에러 시에도 동기화를 위해 동일한 대기 시간 적용
-    setTimeout(() => {
-      console.log("🚀 방장 (에러 복구): 타이머 시작");
-      inProgress.value = true;
-    }, 3000); // 오버레이 시간 고려해서 3초
+    // 에러 시에도 모든 플레이어 준비 완료 대기
+    console.log("🚀 방장 (에러 복구): 프리로딩 완료, 모든 게스트 대기 중...");
+
+    connectedPeers.value.forEach((peer) => {
+      if (peer.connection.open) {
+        sendMessage("bossReady", { ready: true }, peer.connection);
+      }
+    });
+
+    waitForAllPlayersReady();
   }
 };
 
@@ -2452,6 +2496,62 @@ const startReceived = (data) => {
     resolve();
   });
 }
+
+// 게임 시작 동기화 함수들
+const waitForAllPlayersReady = () => {
+  console.log("🚀 방장: 모든 플레이어 준비 완료 대기 시작");
+
+  // 방장 자신도 준비 완료로 표시
+  playersReady.value.set(peerId.value, true);
+
+  return new Promise((resolve) => {
+    const checkAllReady = () => {
+      const totalPlayers = participants.value.length;
+      const readyCount = playersReady.value.size;
+
+      console.log(`🚀 준비 완료: ${readyCount}/${totalPlayers} 플레이어`);
+
+      if (readyCount >= totalPlayers) {
+        console.log("🚀 방장: 모든 플레이어 준비 완료! 게임 시작");
+
+        // 모든 게스트에게 게임 시작 신호 전송
+        connectedPeers.value.forEach((peer) => {
+          if (peer.connection.open) {
+            sendMessage("allPlayersReady", { startGame: true }, peer.connection);
+          }
+        });
+
+        startGameForAll();
+        resolve();
+      }
+    };
+
+    // 정기적으로 체크 (이미 모든 플레이어가 준비됐을 수도 있음)
+    checkAllReady();
+
+    // Promise를 저장해서 guestReady 메시지에서 사용
+    allPlayersReadyPromise.value = { checkAllReady };
+  });
+};
+
+const waitForGameStart = () => {
+  console.log("🚀 게스트: 게임 시작 신호 대기 중...");
+  // 게스트는 allPlayersReady 메시지를 기다림 (P2P 메시지 핸들러에서 처리)
+};
+
+const startGameForAll = () => {
+  console.log("🚀 게임 시작: 오버레이 표시");
+
+  showOverlay('start').then(() => {
+    setTimeout(() => {
+      showOverlay('whoTurn').then(() => {
+        finalFailureShown = false;
+        console.log("🚀 모든 플레이어 동시 타이머 시작");
+        inProgress.value = true;
+      });
+    }, 500);
+  });
+};
 
 const showOverlay = (message, options = {}) => {
   return new Promise((resolve) => {
