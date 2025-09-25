@@ -577,8 +577,6 @@ const isVoted = ref(false);
 const currentVoteSelection = ref("up"); // 현재 선택된 투표 값 추적
 // 투표 대기 중인 임시 이미지 저장
 const pendingImage = ref(null);
-// ✅ 이미지 재시도 상태 추적을 위한 전역 변수
-let retryNotificationTimer = null;
 // 게임 종료 애니메이션
 watch(isForceStopped, (newValue) => {
   if (newValue !== null) {
