@@ -4023,22 +4023,6 @@ const startWarningProgressTimer = () => {
   }, duration);
 };
 
-const hideWarningModal = () => {
-  // 타이머들 정리
-  if (warningProgressInterval) {
-    clearInterval(warningProgressInterval);
-    warningProgressInterval = null;
-  }
-  if (warningAutoCloseTimeout) {
-    clearTimeout(warningAutoCloseTimeout);
-    warningAutoCloseTimeout = null;
-  }
-
-  showWarningModal.value = false;
-  warningModalMessage.value = "";
-  warningModalImage.value = null;
-};
-
 </script>
 <style>
 @keyframes gentleBounce {
