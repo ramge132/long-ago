@@ -146,6 +146,8 @@ let warningTimer = null;
 let retryNotificationTimer = null;
 // 다른 플레이어의 재시도 알림 타이머 관리
 let otherPlayerRetryTimer = null;
+// 최종 실패 알람이 표시되었는지 추적하는 플래그
+let finalFailureShown = false;
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -374,6 +376,7 @@ const processDelayedVoteResult = () => {
         });
 
         // 부적절한 이미지 알림 표시
+        finalFailureShown = true; // 최종 실패 알람 표시 플래그 설정
         showInappropriateWarningModal({
           type: "inappropriateContent",
           message: "부적절한 이미지가 생성되었습니다"
@@ -788,6 +791,7 @@ const setupConnection = (conn) => {
         if (currTurnExited && gameStarted.value) {
           inProgress.value = false;
           await showOverlay('whoTurn');
+          finalFailureShown = false; // 새로운 턴 시작 시 최종 실패 플래그 초기화
           inProgress.value = true;
         }
 
@@ -914,6 +918,7 @@ const setupConnection = (conn) => {
             await showOverlay('start');
             setTimeout(() => {
               showOverlay('whoTurn').then(() => {
+                finalFailureShown = false; // 게임 시작/재시작 시 최종 실패 플래그 초기화
                 inProgress.value = true;
               });
             }, 500);
@@ -1141,8 +1146,12 @@ const setupConnection = (conn) => {
 
         // ✅ 타이머 ID 저장하여 나중에 취소할 수 있도록 함
         otherPlayerRetryTimer = setTimeout(() => {
-          console.log("🦄 다른 플레이어 - 지연 후 재시도 알림 모달 표시");
-          showInappropriateWarningModal(data);
+          if (!finalFailureShown) { // 최종 실패 알람이 표시되지 않았을 때만
+            console.log("🦄 다른 플레이어 - 지연 후 재시도 알림 모달 표시");
+            showInappropriateWarningModal(data);
+          } else {
+            console.log("🦄 최종 실패 알람이 이미 표시되어 다른 플레이어 재시도 알림 차단");
+          }
           otherPlayerRetryTimer = null; // 타이머 완료 후 null로 설정
         }, delayMs);
         break;
@@ -1997,6 +2006,9 @@ const stopVotingAndShowWarning = async (data) => {
   
   // 4. 경고 모달 표시
   // 경고 모달 표시
+  if (data.warningData && data.warningData.type === "inappropriateContent") {
+    finalFailureShown = true; // 최종 실패 알람 표시 플래그 설정
+  }
   showInappropriateWarningModal(data.warningData);
   
   // 5. 턴 정보 업데이트
@@ -2330,6 +2342,7 @@ const gameStart = async (data) => {
     showOverlay('start').then(() => {
       setTimeout(() => {
         showOverlay('whoTurn').then(() => {
+          finalFailureShown = false; // 게임 시작 시 최종 실패 플래그 초기화
           inProgress.value = true;
         });
       }, 500);
@@ -2614,8 +2627,13 @@ const nextTurn = async (data) => {
 
       // ✅ 자신에게도 12초 후 알림 표시 타이머 설정
       retryNotificationTimer = setTimeout(() => {
-        console.log("🦄 12초 경과 - 자신에게 재시도 알림 모달 표시");
-        showInappropriateWarningModal(retryWarningMessage);
+        if (!finalFailureShown) { // 최종 실패 알람이 표시되지 않았을 때만
+          console.log("🦄 12초 경과 - 자신에게 재시도 알림 모달 표시");
+          showInappropriateWarningModal(retryWarningMessage);
+        } else {
+          console.log("🦄 최종 실패 알람이 이미 표시되어 재시도 알림 차단");
+          return; // 재시도 알림 차단
+        }
 
         // ✅ 백엔드를 통한 재시도 알림 전송 (선택적)
         fetch('/api/retry-notification', {
@@ -2981,6 +2999,7 @@ const nextTurn = async (data) => {
 
           // 다음 턴 오버레이 표시
           await showOverlay('whoTurn');
+          finalFailureShown = false; // 새로운 턴 시작 시 최종 실패 플래그 초기화
           inProgress.value = true;
         } else {
           toast.errorToast("이미지 생성에 실패했습니다: " + (error?.message || "알 수 없는 오류"));
@@ -3267,6 +3286,7 @@ const voteEnd = async (data) => {
           console.log("삭제 후 책 내용:", bookContents.value);
           currentPlayer.score -= 1;
           await showOverlay('whoTurn');
+          finalFailureShown = false; // 새로운 턴 시작 시 최종 실패 플래그 초기화
           inProgress.value = true;
         }
 
