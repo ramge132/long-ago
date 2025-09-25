@@ -3005,14 +3005,17 @@ const nextTurn = async (data) => {
               });
             }
 
-            // 2. 백업 정보 및 usedCard 상태 초기화
+            // 2. 백업 정보 초기화 (usedCard는 결말카드일 때 유지)
             usedCardBackup.value = null;
-            usedCard.value = {
-              id: 0,
-              keyword: "",
-              isEnding: false,
-              isFreeEnding: false
-            };
+            // ✅ 결말카드가 아닌 경우에만 usedCard 상태 초기화
+            if (!usedCard.value.isEnding) {
+              usedCard.value = {
+                id: 0,
+                keyword: "",
+                isEnding: false,
+                isFreeEnding: false
+              };
+            }
 
             // 3. 결말모드 해제 (결말카드인 경우)
             if (usedCard.value.isEnding) {
@@ -3028,7 +3031,10 @@ const nextTurn = async (data) => {
 
             // 5. 투표 대기 상태 해제
             waitingForImage.value = false;
-            currentTurnVoteResult.value = null;
+            // ✅ 결말카드가 아닌 경우에만 currentTurnVoteResult 초기화
+            if (!usedCard.value.isEnding) {
+              currentTurnVoteResult.value = null;
+            }
 
             // 6. 점수 차감 (투표 부결과 동일)
             currentPlayer.score -= 1;
@@ -3141,15 +3147,21 @@ const nextTurn = async (data) => {
             }
 
             usedCardBackup.value = null;
-            usedCard.value = {
-              id: 0,
-              keyword: "",
-              isEnding: false,
-              isFreeEnding: false
-            };
+            // ✅ 결말카드가 아닌 경우에만 usedCard 상태 초기화
+            if (!usedCard.value.isEnding) {
+              usedCard.value = {
+                id: 0,
+                keyword: "",
+                isEnding: false,
+                isFreeEnding: false
+              };
+            }
 
             waitingForImage.value = false;
-            currentTurnVoteResult.value = null;
+            // ✅ 결말카드가 아닌 경우에만 currentTurnVoteResult 초기화
+            if (!usedCard.value.isEnding) {
+              currentTurnVoteResult.value = null;
+            }
 
             console.log("=== 일반 에러 - 투표 부결 처리로 대체 완료 ===");
 
