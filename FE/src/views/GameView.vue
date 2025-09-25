@@ -221,17 +221,7 @@ const processVoteSuccess = () => {
   // 점수 증가
   player.score += scoreIncrease;
 
-  // ✅ 점수 변화를 다른 플레이어들에게 알림 (P2P 동기화)
-  connectedPeers.value.forEach((peer) => {
-    if (peer.id !== peerId.value && peer.connection.open) {
-      sendMessage("scoreUpdate", {
-        userId: peerId.value,
-        scoreChange: scoreIncrease,
-        playerIndex: playerIndex,
-        message: wasEndingCard ? "결말카드 점수 증가" : "이야기카드 점수 증가"
-      }, peer.connection);
-    }
-  });
+  // ✅ 점수 동기화는 nextTurn 메시지의 scoreChange로 이미 처리됨 (중복 제거)
 
   // 상태 초기화
   waitingForImage.value = false;
