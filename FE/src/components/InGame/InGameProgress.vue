@@ -13,8 +13,8 @@ import { ref } from "vue";
 import { ContentTimer, ContentGuage } from "@/components";
 
 const emit = defineEmits(["nextTurn"]);
-const nextTurn = () => {
-  emit("nextTurn");
+const nextTurn = (data) => {
+  emit("nextTurn", data);
 };
 
 const props = defineProps({

@@ -59,7 +59,7 @@ const startMasterTimer = () => {
       clearInterval(masterTimer);
       masterTimer = null;
       console.log("🕰️ 방장 타이머 만료 - nextTurn 이벤트 발생");
-      emit('nextTurn'); // 방장만 nextTurn 이벤트 발생
+      emit('nextTurn', null); // 방장만 nextTurn 이벤트 발생 (타임아웃으로 인한 턴 넘김)
     }
   }, 1000);
 };
