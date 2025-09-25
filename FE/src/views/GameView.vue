@@ -3199,10 +3199,8 @@ const voteEnd = async (data) => {
           if (wasEndingCard) {
             console.log("=== 결말카드 - 즉시 처리 ===");
             processVoteSuccess();
-          }
-
-          // 결말카드 처리는 processVoteSuccess()에서 이미 처리됨 - 중복 제거
           } else {
+            // 일반카드 처리 - 다음 턴 진행
             console.log("=== 일반카드 처리 - 다음 턴 진행 ===");
             console.log("다음 턴으로 전환하는 메시지 전송 중...");
 
