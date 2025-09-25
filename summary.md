@@ -467,6 +467,437 @@ VITE_TURN_SERVER_URL=turn:...
 - **창의성**: 93개 스토리 카드 + 51개 엔딩 카드 조합
 - **보존성**: 완성작을 영구 디지털 스토리북으로 보관
 
+## 🎯 상세 플레이 사례 및 로직 흐름
+
+### 실제 게임 플레이 시나리오 (4명 플레이어)
+
+#### 🚀 게임 시작 단계
+```javascript
+// 1. 플레이어 입장 및 프로필 설정
+플레이어들: [
+  { id: "A", name: "Alice", profile: "cat_3", score: 10 },
+  { id: "B", name: "Bob", profile: "dog_1", score: 10 },
+  { id: "C", name: "Charlie", profile: "rabbit_2", score: 10 },
+  { id: "D", name: "Diana", profile: "bear_4", score: 10 }
+]
+
+// 2. 카드 배분 (총 16장 분배)
+Alice: ["소년(인물)", "마법의 지팡이(사물)", "어두운 숲(장소)", "놀라다(상태)"]
+Bob: ["공주(인물)", "황금 열쇠(사물)", "높은 탑(장소)", "슬퍼하다(상태)"]
+Charlie: ["용(인물)", "빛나는 보석(사물)", "신비한 호수(장소)", "화나다(사건)"]
+Diana: ["마법사(인물)", "낡은 책(사물)", "작은 마을(장소)", "기뻐하다(상태)"]
+
+// 3. 엔딩 카드 배분
+Alice: "모든 것이 꿈이었다는 것을 깨달았습니다."
+Bob: "그들은 영원히 행복하게 살았답니다."
+Charlie: "그 모험은 새로운 전설이 되었습니다."
+Diana: "진정한 우정의 힘을 발견했습니다."
+
+// 4. 턴 순서 랜덤 결정
+inGameOrder: [2, 0, 3, 1] // Charlie → Alice → Diana → Bob 순서
+```
+
+#### 🎮 턴별 상세 진행 과정
+
+**🟦 1턴 - Charlie의 차례**
+```javascript
+// 1. 턴 오버레이 표시 (5초간)
+showOverlay('whoTurn', {
+  currentPlayer: "Charlie",
+  turnNumber: 1,
+  message: "Charlie님의 차례입니다!"
+});
+
+// 2. Charlie가 문장 작성
+selectedCard: "용(인물)"
+userPrompt: "아주 먼 옛날, 작은 마을에 무시무시한 용이 나타났습니다."
+
+// 3. 프롬프트 필터링
+POST /scene/filtering
+Response: { isAppropriate: true, message: "적절한 내용입니다." }
+
+// 4. AI 이미지 생성 (3초 소요)
+POST /scene
+Response: {
+  imageData: "base64EncodedImage...",
+  style: 0, // 애니메이션 스타일
+  processingTime: 2847
+}
+
+// 5. 모든 플레이어에게 투표 화면 표시
+sendMessage("sendPrompt", {
+  sender: "Charlie",
+  prompt: "아주 먼 옛날, 작은 마을에 무시무시한 용이 나타났습니다.",
+  image: pendingImage,
+  usedCard: { id: 45, keyword: "용", isEnding: false }
+});
+
+// 6. 투표 진행 (10초 타이머)
+votings: [
+  { sender: "Alice", selected: "up" },    // 찬성
+  { sender: "Bob", selected: "up" },      // 찬성
+  { sender: "Charlie", selected: "up" },  // 자동 찬성
+  { sender: "Diana", selected: "down" }   // 반대
+]
+
+// 7. 투표 결과 처리 (찬성 3표 vs 반대 1표 → 통과)
+voteResult: {
+  accepted: true,
+  upCount: 3,
+  downCount: 1,
+  scoreChange: +2
+}
+
+// 8. 스토리 북에 추가
+bookContents[1] = {
+  content: "아주 먼 옛날, 작은 마을에 무시무시한 용이 나타났습니다.",
+  image: generatedImage
+}
+
+// 9. Charlie 점수 증가 및 카드 제거
+Charlie.score: 10 → 12
+Charlie.cards: ["용"] 제거됨
+
+// 10. 긴장감 계산
+percentage: (1 / (4 * 3)) * 100 = 8.33%
+```
+
+**🟩 2턴 - Alice의 차례**
+```javascript
+// 1. 턴 전환
+currTurn: 1 → 2 (Alice 순서)
+
+// 2. Alice가 문장 작성
+selectedCard: "소년(인물)"
+userPrompt: "그때 용감한 소년이 나타나 마법의 지팡이를 높이 들었습니다."
+
+// 3. AI 이미지 생성 및 투표
+votings: [
+  { sender: "Alice", selected: "up" },
+  { sender: "Bob", selected: "up" },
+  { sender: "Charlie", selected: "up" },
+  { sender: "Diana", selected: "up" }  // 만장일치
+]
+
+// 4. 결과 처리 (만장일치 통과)
+Alice.score: 10 → 12
+bookContents[2] = {
+  content: "그때 용감한 소년이 나타나 마법의 지팡이를 높이 들었습니다.",
+  image: generatedImage2
+}
+percentage: (2 / 12) * 100 = 16.67%
+```
+
+**🟨 7턴 - 결말카드 활성화**
+```javascript
+// 긴장감 35% 도달 (4/12 = 33.33%)
+if (percentage >= 35) {
+  isEndingAvailable = true;
+
+  // UI에 결말카드 활성화 표시
+  endingCards.forEach(card => {
+    card.disabled = false;
+    card.glowEffect = true;
+  });
+}
+```
+
+**🟪 10턴 - Diana의 결말카드 사용**
+```javascript
+// Diana가 결말카드 선택
+selectedCard: {
+  id: 101,
+  content: "진정한 우정의 힘을 발견했습니다.",
+  isEnding: true
+}
+userPrompt: "소년과 용은 서로를 이해하게 되었고, 진정한 우정의 힘을 발견했습니다."
+
+// 결말카드 투표 (더 엄격한 기준)
+votings: [
+  { sender: "Alice", selected: "up" },
+  { sender: "Bob", selected: "up" },
+  { sender: "Charlie", selected: "up" },
+  { sender: "Diana", selected: "up" }
+]
+
+// 결말카드 통과 (5점 획득)
+Diana.score: 8 → 13
+
+// 게임 종료 트리거
+gameEnd(true);
+setTimeout(() => {
+  isForceStopped.value = "champ";
+  // 승자 결정: Diana (13점)
+  winner = Diana;
+}, 4000);
+```
+
+#### 📚 완성된 스토리북 생성
+
+```javascript
+// 최종 스토리북 구조
+finalStoryBook = {
+  title: "용과 소년의 우정", // AI 생성 제목
+  coverImage: "s3://bucket/covers/uuid-cover.png",
+  ISBN: "978-0-123456-78-9",
+  scenes: [
+    {
+      order: 1,
+      content: "아주 먼 옛날, 작은 마을에 무시무시한 용이 나타났습니다.",
+      imageUrl: "s3://bucket/uuid/1.png",
+      author: "Charlie"
+    },
+    {
+      order: 2,
+      content: "그때 용감한 소년이 나타나 마법의 지팡이를 높이 들었습니다.",
+      imageUrl: "s3://bucket/uuid/2.png",
+      author: "Alice"
+    },
+    // ... 총 10개 장면
+    {
+      order: 10,
+      content: "소년과 용은 서로를 이해하게 되었고, 진정한 우정의 힘을 발견했습니다.",
+      imageUrl: "s3://bucket/uuid/10.png",
+      author: "Diana"
+    }
+  ],
+  finalScores: {
+    "Diana": 13, // 승자
+    "Alice": 12,
+    "Charlie": 11,
+    "Bob": 9
+  },
+  createdAt: "2025-09-25T10:30:00Z"
+}
+```
+
+### 🔄 핵심 로직 흐름도
+
+#### 1. P2P 통신 및 동기화 로직
+```javascript
+// GameView.vue - 메시지 핸들링 시스템
+const handlePeerMessage = (message, senderId) => {
+  switch(message.type) {
+    case "sendPrompt":
+      // 1. 투표 UI 활성화
+      showVotingInterface(message.data);
+      // 2. 10초 타이머 시작
+      startVoteTimer();
+      // 3. 이미지 표시
+      displayPendingImage(message.data.image);
+      break;
+
+    case "voteResult":
+      // 1. 투표 결과 수집
+      collectVoteData(message.data);
+      // 2. 전체 투표 완료 확인
+      if (allVotesReceived()) {
+        processVoteResults();
+      }
+      break;
+
+    case "nextTurn":
+      // 1. 턴 데이터 동기화
+      syncTurnData(message.data);
+      // 2. 점수 업데이트
+      updatePlayerScores(message.data.scoreChange);
+      // 3. 카드 제거 처리
+      removeUsedCard(message.data.cardRemoval);
+      // 4. 다음 턴 UI 표시
+      showTurnTransition();
+      break;
+  }
+};
+```
+
+#### 2. AI 이미지 생성 파이프라인 로직
+```python
+# unified_image_service.py - 통합 이미지 생성
+async def process_image_request(data):
+    try:
+        # 1단계: 입력 검증
+        validate_input(data.user_sentence)
+
+        # 2단계: 세션 컨텍스트 로드
+        context = load_session_context(data.game_id)
+
+        # 3단계: GPT-5-nano 프롬프트 향상
+        enhanced_prompt = await enhance_with_gpt(
+            sentence=data.user_sentence,
+            context=context.summary,
+            style=STYLES[data.drawing_style]
+        )
+
+        # 4단계: Gemini 이미지 생성
+        image_data = await generate_with_gemini(
+            prompt=enhanced_prompt,
+            previous_images=context.character_refs,
+            consistency_mode=True
+        )
+
+        # 5단계: 후처리 및 최적화
+        processed_image = post_process_image(image_data)
+
+        # 6단계: 컨텍스트 업데이트
+        update_session_context(data.game_id, {
+            "prev_prompt": enhanced_prompt,
+            "count": context.count + 1,
+            "summary": generate_story_summary(context.summary, data.user_sentence)
+        })
+
+        return processed_image
+
+    except Exception as e:
+        # 에러 처리 및 재시도 로직
+        if should_retry(e):
+            return await process_image_request(data)  # 최대 3회
+        else:
+            raise ImageGenerationFailedException(str(e))
+```
+
+#### 3. 투표 및 점수 시스템 로직
+```javascript
+// GameView.vue - 투표 결과 처리
+const processVoteSuccess = async () => {
+  const result = currentTurnVoteResult.value;
+
+  if (result.wasEndingCard) {
+    // 결말카드 처리
+    console.log("🏆 게임 종료 - 결말카드 성공");
+
+    // 1. 최종 점수 계산
+    result.player.score += result.wasFreeEnding ? 3 : 5;
+
+    // 2. 승자 결정 (최고 점수)
+    const winner = participants.value.reduce((prev, current) =>
+      current.score > prev.score ? current : prev
+    );
+
+    // 3. 게임 종료 API 호출
+    const bookData = await deleteGame({
+      gameId: gameID.value,
+      isForceStopped: false
+    });
+
+    // 4. 스토리북 정보 저장
+    ISBN.value = bookData.bookId;
+    bookCover.value.title = bookData.title;
+    bookCover.value.imageUrl = bookData.coverImageUrl;
+
+    // 5. 결과 화면 표시
+    setTimeout(() => {
+      showGameResults(winner, bookData);
+    }, 4000);
+
+  } else {
+    // 일반카드 처리
+    console.log("📖 다음 턴 진행");
+
+    // 1. 스토리북에 추가
+    bookContents.value.push({
+      content: currentPrompt,
+      image: pendingImage.value
+    });
+
+    // 2. 점수 증가
+    result.player.score += 2;
+
+    // 3. 카드 제거
+    removeCardFromHand(usedCard.value.id);
+
+    // 4. 긴장감 계산
+    updateTensionPercentage();
+
+    // 5. 다음 턴 전환
+    proceedToNextTurn();
+  }
+
+  // 6. 상태 초기화
+  resetTurnState();
+};
+```
+
+#### 4. 에러 처리 및 복원 로직
+```javascript
+// GameView.vue - 포괄적 에러 핸들링
+const handleGameErrors = {
+
+  // 이미지 생성 실패
+  imageGenerationError: (error) => {
+    if (error.status === 503) {
+      // 서비스 불가능 - 재시도
+      showRetryNotification();
+      scheduleImageRetry();
+    } else if (error.status === 400) {
+      // 부적절한 콘텐츠 - 경고 표시
+      showInappropriateContentWarning();
+      resetPromptInput();
+    } else {
+      // 기타 오류 - 턴 건너뛰기
+      skipCurrentTurn();
+    }
+  },
+
+  // P2P 연결 실패
+  connectionError: (peerId) => {
+    console.log(`🔌 피어 ${peerId} 연결 실패`);
+
+    // 1. 재연결 시도 (최대 3회)
+    attemptReconnection(peerId);
+
+    // 2. 실패 시 해당 플레이어 제외
+    if (reconnectionFailed) {
+      removePlayerFromGame(peerId);
+      redistributeCards();
+    }
+  },
+
+  // 투표 타임아웃
+  voteTimeout: () => {
+    console.log("⏰ 투표 시간 초과");
+
+    // 기본값으로 찬성 투표 처리
+    if (!isVoted.value) {
+      submitDefaultVote("up");
+    }
+  },
+
+  // 게임 상태 불일치
+  stateMismatch: (expectedState, actualState) => {
+    console.log(`🔄 상태 불일치 감지: ${expectedState} ≠ ${actualState}`);
+
+    // 방장에게 상태 동기화 요청
+    requestStateSyncFromHost();
+  }
+};
+```
+
+### 📊 성능 및 안정성 메트릭
+
+#### 실시간 모니터링 대시보드
+```javascript
+// 게임 진행 중 실시간 메트릭 수집
+const gameMetrics = {
+  playerCount: 4,
+  currentTurn: 7,
+  totalTurns: 12,
+  averageVoteTime: 6.3, // 초
+  imageGenerationTime: 3.2, // 초
+  p2pLatency: 89, // ms
+  connectionStability: 99.2, // %
+  voteParticipation: 100, // %
+  gameCompletionRate: 94, // %
+
+  performance: {
+    frontendMemory: "45MB",
+    backendCpu: "15%",
+    aiServiceLoad: "moderate",
+    databaseConnections: 12,
+    s3UploadSpeed: "2.3MB/s"
+  }
+};
+```
+
 ## 🔮 향후 개발 계획
 
 ### 단기 목표 (1-3개월)

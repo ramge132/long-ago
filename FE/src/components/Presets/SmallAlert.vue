@@ -35,7 +35,7 @@
 
         <!-- Message -->
         <p class="small-alert-message text-sm text-gray-700 mb-3 font-katuri leading-snug whitespace-pre-line">
-          {{ props.type === '100' ? '긴장감이 100%에 도달했습니다!\n이제 결말을 맺어야 할 때입니다!' : '긴장감이 35%에 도달했습니다' }}
+          {{ props.message }}
         </p>
 
         <!-- Progress Bar (작은 버전) -->

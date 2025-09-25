@@ -69,8 +69,8 @@
     <SmallAlert
       v-if="showSmallAlert"
       :message="smallAlertMessage"
-      :type="isEndingMode ? '100' : '35'"
-      :duration="isEndingMode ? 5000 : 3000"
+      :type="percentage >= 100 ? '100' : '35'"
+      :duration="percentage >= 100 ? 5000 : 3000"
       @close="showSmallAlert = false"
     />
   </div>
@@ -774,7 +774,8 @@ const setupConnection = (conn) => {
 
       case "endingCardAvailable":
         // 결말카드 사용 가능 알림 (35% 도달)
-        smallAlertMessage.value = "긴장감이 35%에 도달했습니다";
+        isEndingMode.value = true; // 결말 모드 활성화
+        smallAlertMessage.value = "긴장감이 35%에 도달했습니다!\nTab키로 자유결말 전환 가능!";
         showSmallAlert.value = true;
         break;
 
@@ -4053,8 +4054,11 @@ watch(
     if (newPercent >= 35 && !hasReached35Percent.value && newIsElected) {
       hasReached35Percent.value = true;
 
+      // 35% 도달 시에도 결말 모드 활성화 (자유결말 사용 가능)
+      isEndingMode.value = true;
+
       // 작은 알림 표시 (모든 사용자에게)
-      smallAlertMessage.value = "긴장감이 35%에 도달했습니다";
+      smallAlertMessage.value = "긴장감이 35%에 도달했습니다!\nTab키로 자유결말 전환 가능!";
       showSmallAlert.value = true;
 
       // WebRTC로 다른 플레이어들에게 결말카드 사용 가능 알림
@@ -4062,7 +4066,7 @@ watch(
         sendMessage(
           "endingCardAvailable",
           {
-            message: "긴장감이 35%에 도달했습니다"
+            message: "긴장감이 35%에 도달했습니다!\nTab키로 자유결말 전환 가능!"
           },
           peer.connection
         );
