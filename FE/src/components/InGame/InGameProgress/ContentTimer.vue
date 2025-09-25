@@ -12,7 +12,6 @@
 
 <script setup>
 import { ref, onUnmounted, watch } from "vue";
-import { useGameStore } from "@/stores/game";
 
 const emit = defineEmits(["nextTurn"]);
 const props = defineProps({
@@ -27,115 +26,36 @@ const props = defineProps({
   }
 })
 
-const gameStore = useGameStore();
 const timer = ref(null);
 const restTime = ref(0); // 초기 시간 설정
 const timeWarningClass = ref(""); // 경고 상태를 위한 클래스
 let worker = null; // Web Worker를 저장할 변수
-let masterTimer = null; // 방장 전용 타이머
 
 const initCountdown = () => {
   restTime.value = props.currTurnTime;
 }
 
-// 방장 전용: 마스터 타이머 시작 (실제 시간 관리)
-const startMasterTimer = () => {
-  if (masterTimer) {
-    clearInterval(masterTimer);
-  }
+// Web Worker 초기화 및 타이머 시작
+const startCountdown = () => {
+  console.log("🕰️ 타이머 시작 - 모든 플레이어 동일한 Worker 타이머");
 
-  let timeLeft = props.currTurnTime;
-  restTime.value = timeLeft;
-
-  console.log("🕰️ 방장 마스터 타이머 시작:", timeLeft, "초");
-
-  masterTimer = setInterval(() => {
-    timeLeft--;
-    restTime.value = timeLeft;
-
-    console.log("🕰️ 방장 타이머:", timeLeft, "초");
-
-    if (timeLeft <= 0) {
-      clearInterval(masterTimer);
-      masterTimer = null;
-      console.log("🕰️ 방장 타이머 만료 - nextTurn 이벤트 발생");
-      emit('nextTurn', null); // 방장만 nextTurn 이벤트 발생 (타임아웃으로 인한 턴 넘김)
-    }
-  }, 1000);
-};
-
-// 게스트 전용: UI만 표시하는 더미 타이머
-const startDisplayTimer = () => {
-  // Worker가 없으면 새로 생성 (UI 표시용)
+  // Worker가 없으면 새로 생성
   if (!worker) {
     worker = new Worker(new URL('@/functions/worker.js', import.meta.url));
   }
   // Web Worker에 초기 시간 전달
   worker.postMessage({ initialTime: props.currTurnTime });
 
-  // Web Worker에서 메시지 받기 (UI 업데이트만)
+  // Web Worker에서 메시지 받기
   worker.onmessage = (e) => {
-    if (e.data !== 'done') {
-      restTime.value = e.data; // 남은 시간 UI 업데이트만
+    if (e.data === 'done') {
+      console.log("🕰️ 타이머 완료 - nextTurn 이벤트 발생");
+      emit('nextTurn'); // 타이머가 종료되면 'nextTurn' 이벤트 발생
+    } else {
+      restTime.value = e.data; // 남은 시간 업데이트
     }
-    // 게스트는 nextTurn 이벤트를 발생시키지 않음
   };
 };
-
-// 타이머 시작 결정
-const startCountdown = () => {
-  const bossId = gameStore.getBossId();
-
-  // UUID 압축/해제 함수들 (GameView에서 가져옴)
-  function compressUUID(uuidStr) {
-    const cleanUUID = uuidStr.replace(/-/g, "");
-    const bytes = new Uint8Array(16);
-    for (let i = 0; i < 16; i++) {
-      bytes[i] = parseInt(cleanUUID.substr(i * 2, 2), 16);
-    }
-    const base64 = btoa(String.fromCharCode(...bytes));
-    return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-  }
-
-  function decompressUUID(compressedStr) {
-    let base64 = compressedStr.replace(/-/g, "+").replace(/_/g, "/");
-    while (base64.length % 4) base64 += "=";
-    const binary = atob(base64);
-    const bytes = new Uint8Array(16);
-    for (let i = 0; i < 16; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-    return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20, 32)].join('-');
-  }
-
-  // 현재 차례인 사람이 마스터 타이머 담당 (방장 판별 대신)
-  const gameStore = useGameStore();
-
-  console.log("🔍 타이머 담당자 판별 디버그:");
-  console.log("  props.peerId:", props.peerId);
-  console.log("  현재 차례인가?:", "현재 턴 체크 필요");
-
-  // 임시로 방장 시스템 사용하되, 없으면 첫 번째 플레이어가 담당
-  let isTimerMaster = false;
-  if (bossId && decompressUUID(bossId) === props.peerId) {
-    isTimerMaster = true;
-    console.log("  → 방장이므로 마스터 타이머 담당");
-  } else if (!bossId) {
-    // bossId가 없으면 현재 차례 플레이어가 담당 (임시)
-    isTimerMaster = true;
-    console.log("  → bossId 없음, 현재 플레이어가 마스터 타이머 담당");
-  }
-
-  if (isTimerMaster) {
-    console.log("🎯 마스터 타이머 담당: 실제 타이머 시작");
-    startMasterTimer();
-  } else {
-    console.log("👥 게스트: 디스플레이 타이머 시작");
-    startDisplayTimer();
-  }
-};
-
 
 // restTime 값 변경을 감지하여 경고 상태 처리
 watch(restTime, (newTime) => {
@@ -146,7 +66,7 @@ watch(restTime, (newTime) => {
   }
 });
 
-// 타이머 업데이트 함수 (P2P 메시지로 동기화)
+// 타이머 업데이트 함수 (P2P 메시지로 동기화) - 기존 호환성 유지
 const updateTimerFromPeer = (newTime) => {
   restTime.value = newTime;
 };
@@ -161,26 +81,16 @@ watch(() => props.inProgress, () => {
     startCountdown();
   } else {
     initCountdown();
-
-    // 타이머 정리
-    if (masterTimer) {
-      clearInterval(masterTimer);
-      masterTimer = null;
-    }
     if (worker) {
-      worker.postMessage('reset'); // Web Worker에 초기화 명령 보내기
+        worker.postMessage('reset'); // Web Worker에 초기화 명령 보내기
     }
   }
 }, {immediate: true});
 
-// 컴포넌트 정리
+// Web Worker 종료
 onUnmounted(() => {
   if (worker) {
     worker.terminate(); // 컴포넌트가 파괴될 때 Worker 종료
-  }
-  if (masterTimer) {
-    clearInterval(masterTimer);
-    masterTimer = null;
   }
 });
 </script>

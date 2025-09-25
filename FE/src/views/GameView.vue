@@ -2515,6 +2515,7 @@ const nextTurn = async (data) => {
   console.log("🕰️ nextTurn 호출 - isMyCurrentTurn:", isMyCurrentTurn);
   console.log("🕰️ DEBUG - currTurn.value:", currTurn.value, "myTurn.value:", myTurn.value);
 
+  // 타임아웃으로 인한 턴 넘김은 현재 턴인 사람만 처리
   if ((!data || !data.prompt) && isMyCurrentTurn) {
     const currentPlayer = participants.value[inGameOrder.value[currTurn.value]];
     currentPlayer.score -= 1;
