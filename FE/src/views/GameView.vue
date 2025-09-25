@@ -1113,13 +1113,19 @@ const setupConnection = (conn) => {
       case "warningNotification":
         console.log("🦄 warningNotification 메시지 수신:", data);
         console.log("🦄 수신된 이미지:", data.image);
+        console.log("🦄 현재 플레이어 ID:", peerId.value);
+        console.log("🦄 메시지 발신자 확인 - 연결된 피어들:", connectedPeers.value.map(p => p.id));
 
         // ✅ 핵심 수정: 12초 후에 모달 표시 (즉시 표시하지 않음)
         const delayMs = data.showDelay || 12000; // 기본값 12초
         console.log(`🦄 ${delayMs/1000}초 후 재시도 알림 모달 표시 예정`);
 
+        // 🧪 테스트: 즉시 모달 표시 (임시)
+        console.log("🧪 테스트: 즉시 재시도 알림 모달 표시");
+        showInappropriateWarningModal(data);
+
         setTimeout(() => {
-          console.log("🦄 다른 플레이어 - 재시도 알림 모달 표시");
+          console.log("🦄 다른 플레이어 - 지연 후 재시도 알림 모달 표시");
           showInappropriateWarningModal(data);
         }, delayMs);
         break;
@@ -2552,6 +2558,13 @@ const nextTurn = async (data) => {
           sendMessage("warningNotification", retryWarningMessage, peer.connection);
         }
       });
+
+      // 🧪 테스트 목적: 항상 재시도 알림 실행 (임시 코드)
+      console.log("🧪 테스트: 강제 재시도 알림 실행");
+      setTimeout(() => {
+        console.log("🧪 테스트: 강제 재시도 알림 모달 표시");
+        showInappropriateWarningModal(retryWarningMessage);
+      }, 3000); // 3초 후 테스트용 알림
 
       // ✅ 자신에게도 12초 후 알림 표시 타이머 설정
       retryNotificationTimer = setTimeout(() => {
