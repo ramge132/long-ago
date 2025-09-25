@@ -1113,7 +1113,15 @@ const setupConnection = (conn) => {
       case "warningNotification":
         console.log("🦄 warningNotification 메시지 수신:", data);
         console.log("🦄 수신된 이미지:", data.image);
-        showInappropriateWarningModal(data);
+
+        // ✅ 핵심 수정: 12초 후에 모달 표시 (즉시 표시하지 않음)
+        const delayMs = data.showDelay || 12000; // 기본값 12초
+        console.log(`🦄 ${delayMs/1000}초 후 재시도 알림 모달 표시 예정`);
+
+        setTimeout(() => {
+          console.log("🦄 다른 플레이어 - 재시도 알림 모달 표시");
+          showInappropriateWarningModal(data);
+        }, delayMs);
         break;
 
 
@@ -2526,62 +2534,49 @@ const nextTurn = async (data) => {
     // ✅ 전역 retryNotificationTimer 사용 (지역 변수 선언 제거)
 
     try {
-      // 이미지 생성 중 재시도 알림 타이머 설정 (12초 후)
-      retryNotificationTimer = setTimeout(async () => {
-        const retryWarningMessage = {
-          type: "retryingContent",
-          message: "그림이 조금 이상하네요!\n다시 그려볼게요!",
-          image: UnicornCuriousIcon // ✅ unicorn_curious.png 이미지 추가
-        };
+      // ✅ 핵심 수정: P2P 메시지를 즉시 전송 (연결이 안정적일 때)
+      const retryWarningMessage = {
+        type: "retryingContent",
+        message: "그림이 조금 이상하네요!\n다시 그려볼게요!",
+        image: UnicornCuriousIcon,
+        showDelay: 12000 // 12초 후 표시하도록 지시
+      };
 
-        console.log("🦄 이미지 재시도 - unicorn_curious 알림 표시");
+      console.log("🦄 이미지 생성 시작 - 즉시 재시도 알림 P2P 메시지 전송");
 
-        // ✅ 자신에게 알림 표시 (unicorn_curious 이미지 포함)
+      // ✅ 즉시 모든 플레이어에게 재시도 알림 메시지 전송
+      connectedPeers.value.forEach((peer) => {
+        console.log(`🦄 피어 ${peer.id} - 연결상태: ${peer.connection.open}`);
+        if (peer.id !== peerId.value && peer.connection.open) {
+          console.log(`🦄 피어 ${peer.id}에게 즉시 재시도 알림 메시지 전송`);
+          sendMessage("warningNotification", retryWarningMessage, peer.connection);
+        }
+      });
+
+      // ✅ 자신에게도 12초 후 알림 표시 타이머 설정
+      retryNotificationTimer = setTimeout(() => {
+        console.log("🦄 12초 경과 - 자신에게 재시도 알림 모달 표시");
         showInappropriateWarningModal(retryWarningMessage);
 
-        // ✅ 백엔드를 통한 재시도 알림 전송 (더 안정적)
-        try {
-          console.log("🦄 백엔드를 통한 재시도 알림 전송 시도");
-          await fetch('/api/retry-notification', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: "그림이 조금 이상하네요!\n다시 그려볼게요!",
-              attempt: 1,
-              maxAttempts: 3,
-              timestamp: Date.now(),
-              gameId: gameID.value,
-              playerId: peerId.value,
-              imageType: UnicornCuriousIcon
-            })
-          });
-          console.log("🦄 백엔드 알림 전송 완료");
-        } catch (backendError) {
-          console.warn("🦄 백엔드 알림 전송 실패, P2P로 폴백:", backendError);
-        }
-
-        // ✅ P2P 백업 방법: 모든 다른 플레이어에게도 재시도 알림 전송 (재시도 포함)
-        console.log("🦄 연결된 피어 수:", connectedPeers.value.length);
-        connectedPeers.value.forEach((peer) => {
-          console.log(`🦄 피어 ${peer.id} - 연결상태: ${peer.connection.open}`);
-          if (peer.id !== peerId.value && peer.connection.open) {
-            console.log(`🦄 피어 ${peer.id}에게 unicorn_curious 재시도 알림 전송`);
-            console.log("🦄 전송할 메시지:", retryWarningMessage);
-
-            // 메시지를 3번 전송하여 확실히 도달하도록 함
-            for (let i = 0; i < 3; i++) {
-              setTimeout(() => {
-                if (peer.connection.open) {
-                  sendMessage("warningNotification", retryWarningMessage, peer.connection);
-                  console.log(`🦄 ${i + 1}번째 재시도 전송 완료 (피어: ${peer.id})`);
-                }
-              }, i * 100); // 100ms 간격으로 3번 전송
-            }
-          }
+        // ✅ 백엔드를 통한 재시도 알림 전송 (선택적)
+        fetch('/api/retry-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: "그림이 조금 이상하네요!\n다시 그려볼게요!",
+            attempt: 1,
+            maxAttempts: 3,
+            timestamp: Date.now(),
+            gameId: gameID.value,
+            playerId: peerId.value,
+            imageType: UnicornCuriousIcon
+          })
+        }).catch(error => {
+          console.warn("🦄 백엔드 알림 전송 실패:", error);
         });
-      }, 12000); // ✅ 15초 → 12초로 변경
+      }, 12000);
 
       const responseImage = await createImage({
         gameId: gameID.value,
