@@ -3029,10 +3029,10 @@ const nextTurn = async (data) => {
               pendingImage.value = null;
             }
 
-            // 5. 투표 대기 상태 해제
-            waitingForImage.value = false;
-            // ✅ 결말카드가 아닌 경우에만 currentTurnVoteResult 초기화
+            // 5. 투표 대기 상태 해제 (결말카드가 아닌 경우에만)
+            // ✅ 결말카드가 아닌 경우에만 waitingForImage와 currentTurnVoteResult 초기화
             if (!usedCard.value.isEnding) {
+              waitingForImage.value = false;
               currentTurnVoteResult.value = null;
             }
 
@@ -3157,9 +3157,9 @@ const nextTurn = async (data) => {
               };
             }
 
-            waitingForImage.value = false;
-            // ✅ 결말카드가 아닌 경우에만 currentTurnVoteResult 초기화
+            // ✅ 결말카드가 아닌 경우에만 waitingForImage와 currentTurnVoteResult 초기화
             if (!usedCard.value.isEnding) {
+              waitingForImage.value = false;
               currentTurnVoteResult.value = null;
             }
 
