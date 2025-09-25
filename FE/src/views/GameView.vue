@@ -3087,7 +3087,7 @@ const nextTurn = async (data) => {
 
           // ✅ 수정: 결말카드도 일반 이야기카드와 동일하게 처리 (즉시 게임 종료 X)
           // 결말카드든 일반카드든 부적절한 이미지 시에는 알림만 표시하고 재시도 대기
-            const stopVotingMessage = {
+          const stopVotingMessage = {
               type: "stopVotingAndShowWarning",
               warningData: {
                 type: "inappropriateContent",
