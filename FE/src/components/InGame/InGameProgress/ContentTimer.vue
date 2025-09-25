@@ -109,17 +109,26 @@ const startCountdown = () => {
     return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20, 32)].join('-');
   }
 
-  // 방장 판별: bossId가 압축된 형태이므로 decompressUUID로 비교하거나, peerId를 압축해서 비교
-  const isBoss = bossId && (decompressUUID(bossId) === props.peerId);
+  // 현재 차례인 사람이 마스터 타이머 담당 (방장 판별 대신)
+  const gameStore = useGameStore();
 
-  console.log("🔍 방장 판별 디버그:");
+  console.log("🔍 타이머 담당자 판별 디버그:");
   console.log("  props.peerId:", props.peerId);
-  console.log("  gameStore.getBossId():", bossId);
-  console.log("  decompressUUID(bossId):", bossId ? decompressUUID(bossId) : 'N/A');
-  console.log("  isBoss:", isBoss);
+  console.log("  현재 차례인가?:", "현재 턴 체크 필요");
 
-  if (isBoss) {
-    console.log("🎯 방장: 마스터 타이머 시작");
+  // 임시로 방장 시스템 사용하되, 없으면 첫 번째 플레이어가 담당
+  let isTimerMaster = false;
+  if (bossId && decompressUUID(bossId) === props.peerId) {
+    isTimerMaster = true;
+    console.log("  → 방장이므로 마스터 타이머 담당");
+  } else if (!bossId) {
+    // bossId가 없으면 현재 차례 플레이어가 담당 (임시)
+    isTimerMaster = true;
+    console.log("  → bossId 없음, 현재 플레이어가 마스터 타이머 담당");
+  }
+
+  if (isTimerMaster) {
+    console.log("🎯 마스터 타이머 담당: 실제 타이머 시작");
     startMasterTimer();
   } else {
     console.log("👥 게스트: 디스플레이 타이머 시작");
