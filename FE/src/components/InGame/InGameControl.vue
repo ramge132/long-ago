@@ -107,6 +107,8 @@
           v-model="message"
           @keyup.enter="mode.fucntion"
           @input="handleMessageInput"
+          @compositionstart="handleCompositionStart"
+          @compositionend="handleCompositionEnd"
           :maxlength="index === 0 ? null : 40"
           :placeholder="mode.placeholder"
           :ref="(el) => (chatRefs[index] = el)" />
@@ -230,6 +232,7 @@ const userStore = useUserStore();
 const { toClipboard } = useCilpboard();
 const toggleEmoticon = ref(false);
 const message = ref("");
+const isComposing = ref(false); // IME 조합 상태 추적
 const chatRefs = ref([]);
 const cardRef = ref(null);
 const rerollCount = ref(3);
@@ -425,8 +428,23 @@ const emit = defineEmits([
   "rejectExchange"
 ]);
 
+// IME 조합 시작 핸들러
+const handleCompositionStart = () => {
+  isComposing.value = true;
+};
+
+// IME 조합 종료 핸들러
+const handleCompositionEnd = (event) => {
+  isComposing.value = false;
+  // 조합 완료 후 실제 처리
+  handleMessageInput(event);
+};
+
 // 메시지 입력 핸들러 - 40자 제한 (이야기/자유 결말 모드에서만)
 const handleMessageInput = (event) => {
+  // 한글 조합 중이면 처리하지 않음
+  if (isComposing.value) return;
+
   const value = event.target.value;
   const currentIndex = currChatModeIdx.value;
 
