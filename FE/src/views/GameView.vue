@@ -951,7 +951,14 @@ const setupConnection = (conn) => {
             setTimeout(() => {
               showOverlay('whoTurn').then(() => {
                 finalFailureShown = false; // 게임 시작/재시작 시 최종 실패 플래그 초기화
-                inProgress.value = true;
+
+                console.log("🚀 게스트: 방장과 동기화를 위해 대기 중...");
+
+                // 게스트: 방장과 동기화를 위해 동일한 2초 대기
+                setTimeout(() => {
+                  console.log("🚀 게스트: 타이머 시작");
+                  inProgress.value = true;
+                }, 2000);
               });
             }, 500);
 
@@ -960,6 +967,12 @@ const setupConnection = (conn) => {
             // 에러가 발생해도 게임은 계속 진행
             await router.push("/game/play");
             emit("startLoading", {value: false});
+
+            // 에러 시에도 동기화를 위해 동일한 대기 시간 적용
+            setTimeout(() => {
+              console.log("🚀 게스트 (에러 복구): 타이머 시작");
+              inProgress.value = true;
+            }, 3000); // 오버레이 시간 고려해서 3초
           }
         });
         break;
@@ -2395,7 +2408,14 @@ const gameStart = async (data) => {
       setTimeout(() => {
         showOverlay('whoTurn').then(() => {
           finalFailureShown = false; // 게임 시작 시 최종 실패 플래그 초기화
-          inProgress.value = true;
+
+          console.log("🚀 방장: 모든 게스트 준비 완료 대기 중...");
+
+          // 방장: 모든 게스트가 준비될 때까지 2초 추가 대기
+          setTimeout(() => {
+            console.log("🚀 방장: 타이머 시작");
+            inProgress.value = true;
+          }, 2000);
         });
       }, 500);
     });
@@ -2405,6 +2425,12 @@ const gameStart = async (data) => {
     // 에러가 발생해도 게임은 계속 진행
     await router.push("/game/play");
     emit("startLoading", {value: false});
+
+    // 에러 시에도 동기화를 위해 동일한 대기 시간 적용
+    setTimeout(() => {
+      console.log("🚀 방장 (에러 복구): 타이머 시작");
+      inProgress.value = true;
+    }, 3000); // 오버레이 시간 고려해서 3초
   }
 };
 
