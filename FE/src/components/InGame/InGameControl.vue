@@ -737,14 +737,30 @@ onMounted(() => {
 
 onkeydown = (e) => {
   // 입력창이 이미 포커스되어 있지 않고, 일반 문자 키인 경우에만
-  if (!e.target.matches('input, textarea, [contenteditable]') && 
-      e.key.length === 1 && 
+  if (!e.target.matches('input, textarea, [contenteditable]') &&
+      e.key.length === 1 &&
       !e.ctrlKey && !e.altKey && !e.metaKey) {
     const chatInput = chatRefs.value[currChatModeIdx.value];
     if (chatInput) {
-      chatInput.focus();
+      // 한국어 입력 가능성이 있는 경우 미세한 지연으로 IME 조합 시작을 기다림
+      if (isKoreanInput(e.key)) {
+        setTimeout(() => {
+          chatInput.focus();
+        }, 0);
+      } else {
+        chatInput.focus();
+      }
     }
   }
+};
+
+// 한국어 입력 감지 함수
+const isKoreanInput = (key) => {
+  // 한국어 자음/모음 범위 체크
+  const code = key.charCodeAt(0);
+  return (code >= 12593 && code <= 12643) || // 한글 자음/모음 (ㄱ-ㅣ)
+         (code >= 44032 && code <= 55203) || // 한글 완성형 (가-힣)
+         /[ㄱ-ㅎ가-힣ㅏ-ㅣ]/.test(key);        // 추가 한글 문자 체크
 };
 
 const formatCardText = (text) => {
