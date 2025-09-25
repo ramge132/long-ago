@@ -3086,17 +3086,20 @@ const nextTurn = async (data) => {
           currTurn.value = (currTurn.value + 1) % participants.value.length;
 
           if (usedCard.value.isEnding) {
+            console.log("=== 결말카드 - 부적절한 이미지 후 정상 게임 종료 처리 ===");
+            gameEnd(true);
+
             setTimeout(() => {
               isForceStopped.value = "champ";
-            }, 4000); // 2초 → 4초로 변경하여 이미지 적용된 페이지를 충분히 보여줌
-
-            await gameEnd(true).then(() => {
               connectedPeers.value.forEach(async (p) => {
                 if (p.id !== peerId.value && p.connection.open) {
-                  sendMessage("gameEnd", {}, p.connection);
+                  sendMessage("showResultsWithCover", {
+                    bookCover: { title: "아주 먼 옛날", imageUrl: "" },
+                    ISBN: "generating..."
+                  }, p.connection);
                 }
               });
-            });
+            }, 4000);
           } else {
             const stopVotingMessage = {
               type: "stopVotingAndShowWarning",
