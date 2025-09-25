@@ -233,7 +233,6 @@ const { toClipboard } = useCilpboard();
 const toggleEmoticon = ref(false);
 const message = ref("");
 const isComposing = ref(false); // IME 조합 상태 추적
-const pendingKoreanKey = ref(null); // 자동 포커스시 대기 중인 한국어 키
 const chatRefs = ref([]);
 const cardRef = ref(null);
 const rerollCount = ref(3);
@@ -632,6 +631,17 @@ watch(() => props.currTurn, (newVal) => {
   }
 }, {immediate: true});
 
+// 게임 상태에 따른 포커스 유지 관리
+watch(() => props.gameStarted, (gameStarted) => {
+  if (gameStarted) {
+    // 게임 시작시 포커스 유지 시작
+    setTimeout(() => startFocusMaintenance(), 500);
+  } else {
+    // 게임 종료시 포커스 유지 중지
+    stopFocusMaintenance();
+  }
+}, {immediate: true});
+
 watch(currChatModeIdx, async (newIndex, oldIndex) => {
   // 기존 input blur()
   if (chatRefs.value[oldIndex]) {
@@ -733,92 +743,42 @@ onMounted(() => {
   // 컴포넌트 언마운트 시 이벤트 리스너 제거
   onBeforeUnmount(() => {
     window.removeEventListener('showExchangeRequest', handleExchangeRequest);
+    stopFocusMaintenance(); // 포커스 유지 인터벌 정리
   });
 });
 
+// 채팅창 포커스 유지 함수
+const maintainChatFocus = () => {
+  const chatInput = chatRefs.value[currChatModeIdx.value];
+  if (chatInput && document.activeElement !== chatInput) {
+    chatInput.focus();
+  }
+};
+
+// 주기적으로 채팅창 포커스 유지 (게임 중일 때만)
+let focusInterval = null;
+const startFocusMaintenance = () => {
+  if (focusInterval) clearInterval(focusInterval);
+  focusInterval = setInterval(maintainChatFocus, 100); // 100ms마다 체크
+};
+
+const stopFocusMaintenance = () => {
+  if (focusInterval) {
+    clearInterval(focusInterval);
+    focusInterval = null;
+  }
+};
+
+// 기존 간단한 keydown 처리자로 변경 (IME 시뮬레이션 제거)
 onkeydown = (e) => {
-  // 입력창이 이미 포커스되어 있지 않고, 일반 문자 키인 경우에만
+  // 기본 자동 포커스 로직은 유지하되 있지만, 즉시 포커스도 지원
   if (!e.target.matches('input, textarea, [contenteditable]') &&
       e.key.length === 1 &&
       !e.ctrlKey && !e.altKey && !e.metaKey) {
-    const chatInput = chatRefs.value[currChatModeIdx.value];
-    if (chatInput) {
-      if (isKoreanInput(e.key)) {
-        // 한국어 키 이벤트 차단 및 저장
-        e.preventDefault();
-        e.stopPropagation();
-
-        // 포커스 후 한국어 입력 재처리
-        chatInput.focus();
-        pendingKoreanKey.value = e.key;
-
-        // 다음 틱에서 한국어 입력 시뮬레이션
-        setTimeout(() => {
-          simulateKoreanInput(chatInput, e.key);
-          pendingKoreanKey.value = null;
-        }, 10);
-      } else {
-        chatInput.focus();
-      }
-    }
+    maintainChatFocus();
   }
 };
 
-// 한국어 입력 감지 함수
-const isKoreanInput = (key) => {
-  // 한국어 자음/모음 범위 체크
-  const code = key.charCodeAt(0);
-  return (code >= 12593 && code <= 12643) || // 한글 자음/모음 (ㄱ-ㅣ)
-         (code >= 44032 && code <= 55203) || // 한글 완성형 (가-힣)
-         /[ㄱ-ㅎ가-힣ㅏ-ㅣ]/.test(key);        // 추가 한글 문자 체크
-};
-
-// 한국어 입력 시뮬레이션 함수
-const simulateKoreanInput = (inputElement, key) => {
-  if (!inputElement) return;
-
-  try {
-    // 1. CompositionEvent 시작 시뮬레이션
-    const compositionStartEvent = new CompositionEvent('compositionstart', {
-      bubbles: true,
-      cancelable: true,
-      data: ''
-    });
-    inputElement.dispatchEvent(compositionStartEvent);
-
-    // 2. 입력 값 직접 설정
-    const currentValue = inputElement.value;
-    const newValue = currentValue + key;
-    inputElement.value = newValue;
-
-    // 3. v-model 동기화를 위한 input 이벤트 발생
-    const inputEvent = new InputEvent('input', {
-      bubbles: true,
-      cancelable: true,
-      inputType: 'insertText',
-      data: key
-    });
-    inputElement.dispatchEvent(inputEvent);
-
-    // 4. CompositionEvent 종료 시뮬레이션
-    const compositionEndEvent = new CompositionEvent('compositionend', {
-      bubbles: true,
-      cancelable: true,
-      data: key
-    });
-    inputElement.dispatchEvent(compositionEndEvent);
-
-    // 5. 커서 위치 조정
-    const newPosition = newValue.length;
-    inputElement.setSelectionRange(newPosition, newPosition);
-
-  } catch (error) {
-    // 폴백: 직접 값 설정
-    console.warn('한국어 입력 시뮬레이션 실패, 폴백 사용:', error);
-    inputElement.value += key;
-    message.value = inputElement.value;
-  }
-};
 
 const formatCardText = (text) => {
   if (!text || text.length <= 3) {
