@@ -144,6 +144,8 @@ let voteTimer = null;
 let warningTimer = null;
 // 재시도 알림 타이머 관리
 let retryNotificationTimer = null;
+// 다른 플레이어의 재시도 알림 타이머 관리
+let otherPlayerRetryTimer = null;
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -1125,14 +1127,33 @@ const setupConnection = (conn) => {
         console.log("🦄 현재 플레이어 ID:", peerId.value);
         console.log("🦄 메시지 발신자 확인 - 연결된 피어들:", connectedPeers.value.map(p => p.id));
 
+        // ✅ 기존 다른 플레이어 재시도 타이머가 있다면 정리
+        if (otherPlayerRetryTimer) {
+          clearTimeout(otherPlayerRetryTimer);
+          otherPlayerRetryTimer = null;
+          console.log("🦄 기존 다른 플레이어 재시도 타이머 정리");
+        }
+
         // ✅ 핵심 수정: 12초 후에 모달 표시 (즉시 표시하지 않음)
         const delayMs = data.showDelay || 12000; // 기본값 12초
         console.log(`🦄 ${delayMs/1000}초 후 재시도 알림 모달 표시 예정`);
 
-        setTimeout(() => {
+        // ✅ 타이머 ID 저장하여 나중에 취소할 수 있도록 함
+        otherPlayerRetryTimer = setTimeout(() => {
           console.log("🦄 다른 플레이어 - 지연 후 재시도 알림 모달 표시");
           showInappropriateWarningModal(data);
+          otherPlayerRetryTimer = null; // 타이머 완료 후 null로 설정
         }, delayMs);
+        break;
+
+      case "cancelRetryNotification":
+        console.log("🦄 재시도 알림 취소 메시지 수신");
+        // ✅ 다른 플레이어의 재시도 알림 타이머 취소
+        if (otherPlayerRetryTimer) {
+          clearTimeout(otherPlayerRetryTimer);
+          otherPlayerRetryTimer = null;
+          console.log("🦄 다른 플레이어 재시도 알림 타이머 취소 완료");
+        }
         break;
 
 
@@ -2627,7 +2648,16 @@ const nextTurn = async (data) => {
       if (retryNotificationTimer) {
         clearTimeout(retryNotificationTimer);
         retryNotificationTimer = null;
+        console.log("🦄 이미지 생성 성공 - 재시도 알림 타이머 해제");
       }
+
+      // ✅ 다른 플레이어들에게도 재시도 알림 취소 메시지 전송
+      connectedPeers.value.forEach((peer) => {
+        if (peer.id !== peerId.value && peer.connection.open) {
+          console.log(`🦄 피어 ${peer.id}에게 재시도 알림 취소 메시지 전송`);
+          sendMessage("cancelRetryNotification", {}, peer.connection);
+        }
+      });
 
       const imageBlob = URL.createObjectURL(responseImage.data);
       const arrayBuffer = await responseImage.data.arrayBuffer();
