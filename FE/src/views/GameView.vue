@@ -142,6 +142,8 @@ const hasReached35Percent = ref(false);
 let voteTimer = null;
 // 경고 후 상태 리셋 타이머 관리
 let warningTimer = null;
+// 재시도 알림 타이머 관리
+let retryNotificationTimer = null;
 // 게임 방 ID
 const gameID = ref("");
 // 게임 진행 순서 참가자 인덱스 배열
@@ -1845,6 +1847,18 @@ const showInappropriateWarning = (warningData) => {
 const showInappropriateWarningModal = (warningData) => {
   console.log("🦄 경고 모달에 커스텀 이미지 설정:", warningData.image);
 
+  // ✅ 기존 경고 모달 타이머들 정리 (중복 방지 및 타이머 겹침 방지)
+  if (warningProgressInterval) {
+    clearInterval(warningProgressInterval);
+    warningProgressInterval = null;
+    console.log("🦄 기존 경고 모달 프로그레스 타이머 정리");
+  }
+  if (warningAutoCloseTimeout) {
+    clearTimeout(warningAutoCloseTimeout);
+    warningAutoCloseTimeout = null;
+    console.log("🦄 기존 경고 모달 자동 닫기 타이머 정리");
+  }
+
   warningModalMessage.value = warningData.message;
 
   // ✅ 이미지가 있으면 설정, 없으면 기본 WarningIcon 사용
@@ -2552,6 +2566,13 @@ const nextTurn = async (data) => {
     // ✅ 전역 retryNotificationTimer 사용 (지역 변수 선언 제거)
 
     try {
+      // ✅ 기존 재시도 알림 타이머 정리 (중복 방지)
+      if (retryNotificationTimer) {
+        clearTimeout(retryNotificationTimer);
+        retryNotificationTimer = null;
+        console.log("🦄 이전 재시도 알림 타이머 정리");
+      }
+
       // ✅ 핵심 수정: P2P 메시지를 즉시 전송 (연결이 안정적일 때)
       // sendMessage 함수 시그니처에 맞게 type 필드 제거
       const retryWarningMessage = {
@@ -2570,7 +2591,6 @@ const nextTurn = async (data) => {
           sendMessage("warningNotification", retryWarningMessage, peer.connection);
         }
       });
-
 
       // ✅ 자신에게도 12초 후 알림 표시 타이머 설정
       retryNotificationTimer = setTimeout(() => {
