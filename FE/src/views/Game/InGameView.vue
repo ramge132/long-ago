@@ -85,6 +85,7 @@
         :endingCard="endingCard"
         :gameStarted="gameStarted"
         :isEndingMode="isEndingMode"
+        :canUseFreeEnding="canUseFreeEnding"
         :ISBN="ISBN"
         :participants="participants"
         :peerId="peerId"
@@ -307,6 +308,10 @@ const props = defineProps({
   },
   isEndingMode: {
     type: Boolean,
+  },
+  canUseFreeEnding: {
+    type: Boolean,
+    default: false,
   },
   isElected: {
     type: Boolean,

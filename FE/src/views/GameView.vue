@@ -4,7 +4,7 @@
       <Transition name="fade" mode="out-in">
         <component ref="currentViewRef" :is="Component" :configurable="configurable" :connectedPeers="connectedPeers"
           v-model:roomConfigs="roomConfigs" :participants="participants" :receivedMessages="receivedMessages"
-          :InviteLink="InviteLink" :gameStarted="gameStarted" :isEndingMode="isEndingMode" :inGameOrder="inGameOrder" :currTurn="currTurn" :ISBN="ISBN"
+          :InviteLink="InviteLink" :gameStarted="gameStarted" :isEndingMode="isEndingMode" :canUseFreeEnding="canUseFreeEnding" :inGameOrder="inGameOrder" :currTurn="currTurn" :ISBN="ISBN"
           :myTurn="myTurn" :peerId="peerId" :inProgress="inProgress" :bookContents="bookContents" :isElected="isElected"
           :storyCards="storyCards" :endingCard="endingCard" :prompt="prompt" :votings="votings" :percentage="percentage"
           :usedCard="usedCard" :isForceStopped="isForceStopped" :isVoted="isVoted" :bookCover="bookCover" :isPreview="isPreview"
@@ -123,6 +123,8 @@ const InviteLink = ref("");
 const gameStarted = ref(false);
 // 결말 모드 여부 (긴장감 100% 도달 시)
 const isEndingMode = ref(false);
+// 35% 도달 여부 (자유결말 해금, 이야기는 여전히 가능)
+const canUseFreeEnding = ref(false);
 // 게임 정상 종료 : "champ" 비정상 종료 : "fail" 디폴트 : null
 const isForceStopped = ref(null);
 // 부적절한 콘텐츠 경고 모달 관련
@@ -879,6 +881,7 @@ const setupConnection = (conn) => {
         isForceStopped.value = null;
         isEndingMode.value = false;
         hasReached35Percent.value = false;
+        canUseFreeEnding.value = false;
         usedCard.value = {
           id: 0,
           keyword: "",
@@ -2296,6 +2299,7 @@ const gameStart = async (data) => {
   isForceStopped.value = null;
   isEndingMode.value = false;
   hasReached35Percent.value = false;
+  canUseFreeEnding.value = false;
   participants.value.forEach((participant) => {
     participant.score = 10;
   })
@@ -3709,6 +3713,7 @@ const goLobby = () => {
   // 게임 모드 및 설정 초기화
   isEndingMode.value = false;
   hasReached35Percent.value = false;
+  canUseFreeEnding.value = false;
   isPreview.value = false;
 
   // 모달 및 알림 상태 초기화
@@ -4183,11 +4188,12 @@ watch(
     if (newPercent >= 35 && !hasReached35Percent.value && newIsElected) {
       hasReached35Percent.value = true;
 
-      // 35% 도달 시에도 결말 모드 활성화 (자유결말 사용 가능)
-      isEndingMode.value = true;
+      // 35% 도달 시에는 자유결말만 해금 (기본은 이야기 모드)
+      canUseFreeEnding.value = true;
+      // isEndingMode는 여전히 false (100% 도달 시에만 true)
 
       // 작은 알림 표시 (모든 사용자에게)
-      smallAlertMessage.value = "긴장감이 35%에 도달했습니다!\nTab키로 자유결말 전환 가능!";
+      smallAlertMessage.value = "Tab키로 자유결말 전환 가능!";
       showSmallAlert.value = true;
 
       // WebRTC로 다른 플레이어들에게 결말카드 사용 가능 알림

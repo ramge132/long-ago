@@ -398,6 +398,10 @@ const props = defineProps({
   isEndingMode: {
     type: Boolean,
   },
+  canUseFreeEnding: {
+    type: Boolean,
+    default: false,
+  },
   ISBN: {
     type: String,
   },
@@ -470,6 +474,8 @@ const sendprompt = () => {
     toast.errorToast("게임 진행중에만 이야기를 제출할 수 있습니다!");
     return;
   }
+  // 100% 도달 시(결말 모드)에만 이야기 제출 막기
+  // 35% 도달 시에는 여전히 이야기 제출 가능
   if (props.isEndingMode) {
     toast.errorToast("결말 모드에서는 이야기를 입력할 수 없습니다! 결말 카드를 사용하세요!");
     return;
@@ -520,8 +526,9 @@ const sendFreeEnding = () => {
     toast.errorToast("게임 진행중에만 결말을 제출할 수 있습니다!");
     return;
   }
-  if (!props.isEndingMode) {
-    toast.errorToast("결말 모드에서만 자유 결말을 작성할 수 있습니다!");
+  // 35% 이상 도달해야 자유결말 사용 가능
+  if (!props.canUseFreeEnding && !props.isEndingMode) {
+    toast.errorToast("긴장감 35% 이상에서만 자유 결말을 작성할 수 있습니다!");
     return;
   }
   if (props.myTurn !== props.currTurn) {
@@ -549,9 +556,9 @@ const chatMode = computed(() => {
     }
   ];
 
-  // 결말 모드에 따라 다른 모드 추가
-  if (props.isEndingMode) {
-    // 결말 모드: 자유 결말 작성 가능
+  // 35% 이상일 때 자유 결말 가능
+  if (props.canUseFreeEnding || props.isEndingMode) {
+    // 35% 도달 시 또는 결말 모드: 자유 결말 작성 가능
     modes.push({
       mark: "자유 결말",
       fucntion: sendFreeEnding,
