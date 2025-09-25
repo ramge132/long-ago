@@ -314,9 +314,16 @@ const processDelayedVoteResult = () => {
         (usedCard.value.isFreeEnding ? 3 : 5) : 2;
       const wasFreeEnding = usedCard.value.isFreeEnding;
 
-      // 이미지가 있는지 확인
-      if (pendingImage.value) {
+      // 이미지가 있는지 확인 (pendingImage 또는 isElected가 이미 설정된 경우)
+      if (pendingImage.value || isElected.value) {
         console.log("=== 지연 처리: 투표 통과 + 이미지 존재 - 정상 진행 ===");
+
+        // 이미 isElected가 true인 경우 중복 처리 방지
+        if (isElected.value) {
+          console.log("=== 이미 isElected 처리됨 - 지연 처리 스킵 ===");
+          return;
+        }
+
         currentPlayer.score += scoreIncrease;
 
         // 다음 턴 진행
