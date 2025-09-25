@@ -331,7 +331,7 @@ const processDelayedVoteResult = () => {
                 amount: scoreIncrease,
                 playerIndex: currentPlayerIndex
               },
-              cardRemoval: { cardId: usedCard.value.id }
+              cardRemoval: { cardId: usedCard.value.id, userId: peerId.value }
             }, peer.connection);
           }
         });
@@ -1002,9 +1002,10 @@ const setupConnection = (conn) => {
           }
         }
         
-        // 4. 카드 삭제 처리 (P2P 동기화)
-        if (data.cardRemoval) {
+        // 4. 카드 삭제 처리 (P2P 동기화) - 카드를 사용한 플레이어만 카드 제거
+        if (data.cardRemoval && data.cardRemoval.userId === peerId.value) {
           storyCards.value = storyCards.value.filter(card => card.id !== data.cardRemoval.cardId);
+          console.log(`카드 삭제 (P2P 동기화): ID ${data.cardRemoval.cardId} 제거됨`);
         }
 
         // 4.5. 결말 상태 리셋 처리 (결말카드 투표 반대 시)
@@ -3160,14 +3161,14 @@ const voteEnd = async (data) => {
                   imageDelete: false,
                   totalTurn: totalTurn.value,
                   scoreChange: { type: "increase", amount: scoreIncrease, playerIndex: currentPlayerIndex },
-                  cardRemoval: { cardId: usedCard.value.id }
+                  cardRemoval: { cardId: usedCard.value.id, userId: peerId.value }
                 });
                 sendMessage("nextTurn", {
                   currTurn: currTurn.value,
                   imageDelete: false,
                   totalTurn: totalTurn.value,
                   scoreChange: { type: "increase", amount: scoreIncrease, playerIndex: currentPlayerIndex },
-                  cardRemoval: { cardId: usedCard.value.id }
+                  cardRemoval: { cardId: usedCard.value.id, userId: peerId.value }
                 }, p.connection);
               }
             });
