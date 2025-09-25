@@ -2522,16 +2522,10 @@ const nextTurn = async (data) => {
 
     const nextTurnIndex = (currTurn.value + 1) % participants.value.length;
     currTurn.value = nextTurnIndex;
-    inProgress.value = false;
 
-    // 정확한 턴 정보를 즉시 전달
-    await showOverlay('whoTurn', {
-      turnIndex: nextTurnIndex,
-      participants: participants.value,
-      inGameOrder: inGameOrder.value,
-      peerId: peerId.value
-    });
+    console.log("🚀 타임아웃: 즉시 P2P 메시지 전송");
 
+    // 1. 먼저 다른 플레이어들에게 즉시 알림 (병렬 처리)
     connectedPeers.value.forEach((peer) => {
       if (peer.id !== peerId.value && peer.connection.open) {
         sendMessage(
@@ -2545,8 +2539,19 @@ const nextTurn = async (data) => {
         )
       }
     });
-    
-    inProgress.value = true;
+
+    // 2. 오버레이 표시 (P2P 전송과 병렬로 처리)
+    inProgress.value = false;
+    showOverlay('whoTurn', {
+      turnIndex: nextTurnIndex,
+      participants: participants.value,
+      inGameOrder: inGameOrder.value,
+      peerId: peerId.value
+    }).then(() => {
+      console.log("🚀 타임아웃: 오버레이 완료 후 타이머 재시작");
+      inProgress.value = true;
+    });
+
     return;
   }
   
