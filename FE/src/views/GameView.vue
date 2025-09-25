@@ -3111,7 +3111,6 @@ const nextTurn = async (data) => {
             const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true, skipBookContentRemoval: true};
             stopVotingAndShowWarning(selfStopVotingMessage);
         }
-        }
       } else {
         // 일반 에러 처리
         console.log("🚨 DEBUG: 일반 에러 처리 시작");
