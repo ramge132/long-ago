@@ -233,6 +233,7 @@ const { toClipboard } = useCilpboard();
 const toggleEmoticon = ref(false);
 const message = ref("");
 const isComposing = ref(false); // IME 조합 상태 추적
+const pendingKoreanKey = ref(null); // 자동 포커스시 대기 중인 한국어 키
 const chatRefs = ref([]);
 const cardRef = ref(null);
 const rerollCount = ref(3);
@@ -742,11 +743,20 @@ onkeydown = (e) => {
       !e.ctrlKey && !e.altKey && !e.metaKey) {
     const chatInput = chatRefs.value[currChatModeIdx.value];
     if (chatInput) {
-      // 한국어 입력 가능성이 있는 경우 미세한 지연으로 IME 조합 시작을 기다림
       if (isKoreanInput(e.key)) {
+        // 한국어 키 이벤트 차단 및 저장
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 포커스 후 한국어 입력 재처리
+        chatInput.focus();
+        pendingKoreanKey.value = e.key;
+
+        // 다음 틱에서 한국어 입력 시뮬레이션
         setTimeout(() => {
-          chatInput.focus();
-        }, 0);
+          simulateKoreanInput(chatInput, e.key);
+          pendingKoreanKey.value = null;
+        }, 10);
       } else {
         chatInput.focus();
       }
@@ -761,6 +771,53 @@ const isKoreanInput = (key) => {
   return (code >= 12593 && code <= 12643) || // 한글 자음/모음 (ㄱ-ㅣ)
          (code >= 44032 && code <= 55203) || // 한글 완성형 (가-힣)
          /[ㄱ-ㅎ가-힣ㅏ-ㅣ]/.test(key);        // 추가 한글 문자 체크
+};
+
+// 한국어 입력 시뮬레이션 함수
+const simulateKoreanInput = (inputElement, key) => {
+  if (!inputElement) return;
+
+  try {
+    // 1. CompositionEvent 시작 시뮬레이션
+    const compositionStartEvent = new CompositionEvent('compositionstart', {
+      bubbles: true,
+      cancelable: true,
+      data: ''
+    });
+    inputElement.dispatchEvent(compositionStartEvent);
+
+    // 2. 입력 값 직접 설정
+    const currentValue = inputElement.value;
+    const newValue = currentValue + key;
+    inputElement.value = newValue;
+
+    // 3. v-model 동기화를 위한 input 이벤트 발생
+    const inputEvent = new InputEvent('input', {
+      bubbles: true,
+      cancelable: true,
+      inputType: 'insertText',
+      data: key
+    });
+    inputElement.dispatchEvent(inputEvent);
+
+    // 4. CompositionEvent 종료 시뮬레이션
+    const compositionEndEvent = new CompositionEvent('compositionend', {
+      bubbles: true,
+      cancelable: true,
+      data: key
+    });
+    inputElement.dispatchEvent(compositionEndEvent);
+
+    // 5. 커서 위치 조정
+    const newPosition = newValue.length;
+    inputElement.setSelectionRange(newPosition, newPosition);
+
+  } catch (error) {
+    // 폴백: 직접 값 설정
+    console.warn('한국어 입력 시뮬레이션 실패, 폴백 사용:', error);
+    inputElement.value += key;
+    message.value = inputElement.value;
+  }
 };
 
 const formatCardText = (text) => {
