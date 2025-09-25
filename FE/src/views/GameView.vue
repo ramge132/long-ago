@@ -2539,14 +2539,46 @@ const nextTurn = async (data) => {
         // ✅ 자신에게 알림 표시 (unicorn_curious 이미지 포함)
         showInappropriateWarningModal(retryWarningMessage);
 
-        // ✅ 모든 다른 플레이어에게도 재시도 알림 전송
+        // ✅ 백엔드를 통한 재시도 알림 전송 (더 안정적)
+        try {
+          console.log("🦄 백엔드를 통한 재시도 알림 전송 시도");
+          await fetch('/api/retry-notification', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: "그림이 조금 이상하네요!\n다시 그려볼게요!",
+              attempt: 1,
+              maxAttempts: 3,
+              timestamp: Date.now(),
+              gameId: gameID.value,
+              playerId: peerId.value,
+              imageType: UnicornCuriousIcon
+            })
+          });
+          console.log("🦄 백엔드 알림 전송 완료");
+        } catch (backendError) {
+          console.warn("🦄 백엔드 알림 전송 실패, P2P로 폴백:", backendError);
+        }
+
+        // ✅ P2P 백업 방법: 모든 다른 플레이어에게도 재시도 알림 전송 (재시도 포함)
         console.log("🦄 연결된 피어 수:", connectedPeers.value.length);
         connectedPeers.value.forEach((peer) => {
           console.log(`🦄 피어 ${peer.id} - 연결상태: ${peer.connection.open}`);
           if (peer.id !== peerId.value && peer.connection.open) {
             console.log(`🦄 피어 ${peer.id}에게 unicorn_curious 재시도 알림 전송`);
             console.log("🦄 전송할 메시지:", retryWarningMessage);
-            sendMessage("warningNotification", retryWarningMessage, peer.connection);
+
+            // 메시지를 3번 전송하여 확실히 도달하도록 함
+            for (let i = 0; i < 3; i++) {
+              setTimeout(() => {
+                if (peer.connection.open) {
+                  sendMessage("warningNotification", retryWarningMessage, peer.connection);
+                  console.log(`🦄 ${i + 1}번째 재시도 전송 완료 (피어: ${peer.id})`);
+                }
+              }, i * 100); // 100ms 간격으로 3번 전송
+            }
           }
         });
       }, 12000); // ✅ 15초 → 12초로 변경
@@ -2734,6 +2766,27 @@ const nextTurn = async (data) => {
             // 기존 로직: 일반적인 부적절한 이미지 처리
             currentPlayer.score -= 1;
 
+            // ✅ 핵심 수정: 카드 복원 로직 추가 (투표 부결과 동일)
+            if (usedCardBackup.value && !usedCard.value.isFreeEnding) {
+              storyCards.value.push(usedCardBackup.value);
+              console.log(`일반 부적절한 이미지 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
+
+              const myCardIds = storyCards.value.map(card => card.id);
+              connectedPeers.value.forEach((peer) => {
+                if (peer.id !== peerId.value && peer.connection.open) {
+                  sendMessage("playerCardsSync", {
+                    userId: peerId.value,
+                    cardIds: myCardIds
+                  }, peer.connection);
+                }
+              });
+            } else {
+              console.log("일반 부적절한 이미지 - 카드 복원 불가:", {
+                hasBackup: !!usedCardBackup.value,
+                isFreeEnding: usedCard.value.isFreeEnding
+              });
+            }
+
             if (bookContents.value.length === 1) {
               bookContents.value = [{ content: "", image: null }];
             } else {
@@ -2746,7 +2799,7 @@ const nextTurn = async (data) => {
               message: "부적절한 이미지가 생성되었습니다"
             };
 
-            console.log("=== 일반 부적절한 이미지 처리 완료 ===");
+            console.log("=== 일반 부적절한 이미지 처리 완료 (카드 복원 포함) ===");
           }
 
           // 공통 처리: 턴 진행
