@@ -367,6 +367,12 @@ const processDelayedVoteResult = () => {
         } else {
           console.log("=== 지연 처리: isElected 이미 설정됨 - 트리거 스킵 ===");
         }
+
+        // ✅ 핵심 수정: 결말카드 게임 종료 처리 추가
+        if (wasEndingCard) {
+          console.log("=== 지연 처리: 결말카드 최종 처리 - 게임 종료 ===");
+          gameEnd(true);
+        }
       } else {
         console.log("=== 지연 처리: 투표 통과했지만 이미지 없음 - 투표 거절로 처리 ===");
         // 투표 거절과 동일한 처리
