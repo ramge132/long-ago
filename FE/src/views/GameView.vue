@@ -374,11 +374,16 @@ const processDelayedVoteResult = () => {
           storyCards.value.push(usedCardBackup.value);
         }
 
-        // 스토리 삭제
-        if (bookContents.value.length === 1) {
-          bookContents.value = [{ content: "", image: null }];
-        } else {
-          bookContents.value = bookContents.value.slice(0, -1);
+        // 스토리 삭제 (일반카드만)
+        // 결말카드인 경우 bookContents 제거하지 않음 (긴장감 보존)
+        // 여기는 processDelayedVoteResult의 투표 통과했지만 이미지 없음 케이스이므로
+        // usedCard 상태를 확인해야 함
+        if (!usedCard.value.isEnding) {
+          if (bookContents.value.length === 1) {
+            bookContents.value = [{ content: "", image: null }];
+          } else {
+            bookContents.value = bookContents.value.slice(0, -1);
+          }
         }
 
         // 다음 턴 진행
@@ -413,9 +418,24 @@ const processDelayedVoteResult = () => {
         pendingImage.value = null;
       }
 
-      // 카드 복원 (일반 이야기카드만)
-      if (usedCardBackup.value && !usedCard.value.isEnding) {
-        storyCards.value.push(usedCardBackup.value);
+      const currentPlayerIndex = inGameOrder.value[currTurn.value]; // 점수 차감 전 현재 턴 플레이어 인덱스
+      const currentPlayer = participants.value[currentPlayerIndex];
+
+      // ✅ 결말카드와 일반카드 구분 처리
+      const wasEndingCard = usedCard.value.isEnding;
+
+      if (!wasEndingCard) {
+        // 일반카드만 점수 차감 및 카드 복원
+        console.log("=== 일반카드 투표 거절 - 점수 차감 ===");
+        currentPlayer.score -= 1; // 투표 거절로 인한 점수 차감
+
+        // 카드 복원 (일반 이야기카드만)
+        if (usedCardBackup.value) {
+          storyCards.value.push(usedCardBackup.value);
+        }
+      } else {
+        // 결말카드는 점수 차감 없음
+        console.log("=== 결말카드 투표 거절 - 점수 차감 없음 ===");
       }
 
       usedCard.value = {
@@ -425,31 +445,37 @@ const processDelayedVoteResult = () => {
         isFreeEnding: false
       };
 
-      const currentPlayerIndex = inGameOrder.value[currTurn.value]; // 점수 차감 전 현재 턴 플레이어 인덱스
-      const currentPlayer = participants.value[currentPlayerIndex];
-      currentPlayer.score -= 1; // 투표 거절로 인한 점수 차감
-
       currTurn.value = (currTurn.value + 1) % participants.value.length;
+
+      const scoreChange = wasEndingCard ? null : {
+        type: "decrease",
+        amount: 1,
+        playerIndex: currentPlayerIndex
+      };
 
       connectedPeers.value.forEach((peer) => {
         if (peer.id !== peerId.value && peer.connection.open) {
-          sendMessage("nextTurn", {
+          const message = {
             currTurn: currTurn.value,
-            imageDelete: true,
-            totalTurn: totalTurn.value,
-            scoreChange: {
-              type: "decrease",
-              amount: 1,
-              playerIndex: currentPlayerIndex
-            } // 투표 거절로 인한 점수 차감 동기화
-          }, peer.connection);
+            imageDelete: !wasEndingCard,  // 결말카드는 imageDelete: false
+            totalTurn: totalTurn.value
+          };
+
+          if (scoreChange) {
+            message.scoreChange = scoreChange;
+          }
+
+          sendMessage("nextTurn", message, peer.connection);
         }
       });
 
-      if (bookContents.value.length === 1) {
-        bookContents.value = [{ content: "", image: null }];
-      } else {
-        bookContents.value = bookContents.value.slice(0, -1);
+      // 스토리 삭제 (결말카드는 제외)
+      if (!wasEndingCard) {
+        if (bookContents.value.length === 1) {
+          bookContents.value = [{ content: "", image: null }];
+        } else {
+          bookContents.value = bookContents.value.slice(0, -1);
+        }
       }
     }
 
@@ -558,11 +584,13 @@ watch(isElected, (newValue) => {
               });
             }
 
-            // 3. 책 내용 제거 (투표 부결과 동일)
-            if (bookContents.value.length === 1) {
-              bookContents.value = [{ content: "", image: null }];
-            } else {
-              bookContents.value = bookContents.value.slice(0, -1);
+            // 3. 책 내용 제거 (결말카드는 제외)
+            if (!usedCard.value.isEnding) {
+              if (bookContents.value.length === 1) {
+                bookContents.value = [{ content: "", image: null }];
+              } else {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
             }
 
             // 4. 상태 초기화
@@ -1395,6 +1423,9 @@ const setupConnection = (conn) => {
                 });
               }
 
+              // 결말카드 정보 백업 (초기화 전에)
+              const wasEndingCard = usedCard.value.isEnding;
+
               // 백업 정보 및 usedCard 상태 초기화
               usedCardBackup.value = null;
               usedCard.value = {
@@ -1405,33 +1436,60 @@ const setupConnection = (conn) => {
               };
 
               const currentPlayerIndex = inGameOrder.value[currTurn.value]; // 점수 차감 전 현재 턴 플레이어 인덱스
-              currTurn.value = (currTurn.value + 1) % participants.value.length;
-              connectedPeers.value.forEach((peer) => {
-                if (peer.id !== peerId.value && peer.connection.open) {
-                  sendMessage(
-                    "nextTurn",
-                    {
-                      currTurn: currTurn.value,
-                      imageDelete: true,
-                      totalTurn: totalTurn.value,
-                      scoreChange: {
-                        type: "decrease",
-                        amount: 1,
-                        playerIndex: currentPlayerIndex
-                      } // 투표 거절로 인한 점수 차감 동기화
-                    },
-                    peer.connection
-                  )
-                }
-              });
 
-              if (bookContents.value.length === 1) {
-                bookContents.value = [{ content: "", image: null }];
+              // 결말카드 처리 구분
+              if (!wasEndingCard) {
+                // 일반카드: 정상 처리
+                currTurn.value = (currTurn.value + 1) % participants.value.length;
+                connectedPeers.value.forEach((peer) => {
+                  if (peer.id !== peerId.value && peer.connection.open) {
+                    sendMessage(
+                      "nextTurn",
+                      {
+                        currTurn: currTurn.value,
+                        imageDelete: true,
+                        totalTurn: totalTurn.value,
+                        scoreChange: {
+                          type: "decrease",
+                          amount: 1,
+                          playerIndex: currentPlayerIndex
+                        } // 투표 거절로 인한 점수 차감 동기화
+                      },
+                      peer.connection
+                    )
+                  }
+                });
+
+                // bookContents 제거 (일반카드만)
+                if (bookContents.value.length === 1) {
+                  bookContents.value = [{ content: "", image: null }];
+                } else {
+                  bookContents.value = bookContents.value.slice(0, -1);
+                }
               } else {
-                bookContents.value = bookContents.value.slice(0, -1);
+                // 결말카드: 점수 차감 없음, bookContents 제거 없음
+                currTurn.value = (currTurn.value + 1) % participants.value.length;
+                connectedPeers.value.forEach((peer) => {
+                  if (peer.id !== peerId.value && peer.connection.open) {
+                    sendMessage(
+                      "nextTurn",
+                      {
+                        currTurn: currTurn.value,
+                        imageDelete: false,  // 결말카드는 이미지 삭제 없음
+                        totalTurn: totalTurn.value
+                        // scoreChange 없음 (점수 차감 없음)
+                      },
+                      peer.connection
+                    )
+                  }
+                });
+                // bookContents 제거 안함
               }
 
-              currentPlayer.score -= 1;
+              // 점수 차감 (결말카드는 제외)
+              if (!wasEndingCard) {
+                currentPlayer.score -= 1;
+              }
 
               await showOverlay('whoTurn');
               inProgress.value = true;
@@ -3036,11 +3094,13 @@ const nextTurn = async (data) => {
             // 6. 점수 차감 (투표 부결과 동일)
             currentPlayer.score -= 1;
 
-            // 7. 책 내용 제거 (투표 부결과 동일)
-            if (bookContents.value.length === 1) {
-              bookContents.value = [{ content: "", image: null }];
-            } else {
-              bookContents.value = bookContents.value.slice(0, -1);
+            // 7. 책 내용 제거 (결말카드는 제외)
+            if (!usedCard.value.isEnding) {
+              if (bookContents.value.length === 1) {
+                bookContents.value = [{ content: "", image: null }];
+              } else {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
             }
 
             console.log("=== 투표 통과 후 이미지 실패 - 투표 부결과 동일한 처리 완료 ===");
@@ -3158,11 +3218,13 @@ const nextTurn = async (data) => {
           // 공통 처리: 점수 차감, 책 내용 제거, 턴 진행
           currentPlayer.score -= 1; // 에러로 인한 점수 차감
 
-          // 마지막 추가된 bookContent 제거 (이미지 실패로 인해)
-          if (bookContents.value.length === 1) {
-            bookContents.value = [{ content: "", image: null }];
-          } else {
-            bookContents.value = bookContents.value.slice(0, -1);
+          // 마지막 추가된 bookContent 제거 (결말카드는 제외)
+          if (!usedCard.value.isEnding) {
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+            } else {
+              bookContents.value = bookContents.value.slice(0, -1);
+            }
           }
 
           currTurn.value = (currTurn.value + 1) % participants.value.length;
@@ -3413,6 +3475,9 @@ const voteEnd = async (data) => {
             });
           }
 
+          // 결말카드 정보 백업 (초기화 전에)
+          const wasEndingCard = usedCard.value.isEnding;
+
           // 백업 정보 및 usedCard 상태 초기화
           usedCardBackup.value = null;
           usedCard.value = {
@@ -3424,36 +3489,51 @@ const voteEnd = async (data) => {
 
           const currentPlayerIndex = inGameOrder.value[currTurn.value]; // 점수 차감 전 현재 턴 플레이어 인덱스
           currTurn.value = (currTurn.value + 1) % participants.value.length;
+
+          const nextTurnMessage = {
+            currTurn: currTurn.value,
+            imageDelete: !wasEndingCard, // 결말카드는 이미지 삭제 안함
+            totalTurn: totalTurn.value,
+            resetEndingState: true, // 다른 플레이어들도 결말상태 리셋 알림
+            voteRejected: true, // 투표 거절 명시적 표시
+            rejectedPrompt: prompt.value // 거절된 이야기 내용
+          };
+
+          // 일반카드인 경우에만 점수 차감 정보 추가
+          if (!wasEndingCard) {
+            nextTurnMessage.scoreChange = {
+              type: "decrease",
+              amount: 1,
+              playerIndex: currentPlayerIndex
+            };
+          }
+
           connectedPeers.value.forEach((peer) => {
             if (peer.id !== peerId.value && peer.connection.open) {
-              sendMessage("nextTurn", {
-                currTurn: currTurn.value,
-                imageDelete: true,
-                totalTurn: totalTurn.value,
-                resetEndingState: true, // 다른 플레이어들도 결말상태 리셋 알림
-                voteRejected: true, // 투표 거절 명시적 표시
-                rejectedPrompt: prompt.value, // 거절된 이야기 내용
-                scoreChange: {
-                  type: "decrease",
-                  amount: 1,
-                  playerIndex: currentPlayerIndex
-                } // 투표 부결로 인한 점수 차감 동기화
-              }, peer.connection);
+              sendMessage("nextTurn", nextTurnMessage, peer.connection);
             }
           });
 
           console.log("투표 거절로 인한 책 내용 삭제 처리 (작성자)");
           console.log("삭제 전 책 내용:", bookContents.value);
+          console.log("결말카드 여부:", wasEndingCard);
 
-          if (bookContents.value.length === 1) {
-            bookContents.value = [{ content: "", image: null }];
-          } else {
-            // 마지막 항목(거절된 이야기와 이미지) 완전 제거
-            bookContents.value = bookContents.value.slice(0, -1);
+          // 책 내용 제거 (결말카드는 제외)
+          if (!wasEndingCard) {
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+            } else {
+              // 마지막 항목(거절된 이야기와 이미지) 완전 제거
+              bookContents.value = bookContents.value.slice(0, -1);
+            }
           }
 
           console.log("삭제 후 책 내용:", bookContents.value);
-          currentPlayer.score -= 1;
+
+          // 점수 차감 (결말카드는 제외)
+          if (!wasEndingCard) {
+            currentPlayer.score -= 1;
+          }
           await showOverlay('whoTurn', {
             turnIndex: currTurn.value,
             participants: participants.value,
