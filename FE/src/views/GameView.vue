@@ -205,6 +205,9 @@ const isPreview = ref(false);
 const waitingForImage = ref(false);
 const currentTurnVoteResult = ref(null);
 
+// ✅ 결말카드 추적 상태 (긴장감 계산 정확성을 위해)
+const lastItemIsEndingCard = ref(false);
+
 // ✅ 투표 통과 및 이미지 준비 완료 시 최종 턴 진행 함수
 const processVoteSuccess = () => {
   console.log("=== processVoteSuccess 함수 시작 ===");
@@ -378,8 +381,13 @@ const processDelayedVoteResult = () => {
         // 이 케이스는 부적절 이미지의 최종 실패이므로 결말카드도 일반 투표 부결과 동일하게 처리
         if (bookContents.value.length === 1) {
           bookContents.value = [{ content: "", image: null }];
+          lastItemIsEndingCard.value = false; // 초기 상태로 리셋
         } else {
           bookContents.value = bookContents.value.slice(0, -1);
+          // 새로운 마지막 항목이 결말카드인지 확인 (usedCard 기록을 통해)
+          // 하지만 제거된 경우이므로 이전 항목의 결말카드 여부를 판단하기 어려움
+          // 안전하게 false로 설정 (일반적으로 결말카드는 게임 마지막에만 나타나므로)
+          lastItemIsEndingCard.value = false;
         }
 
         // 다음 턴 진행
@@ -390,7 +398,7 @@ const processDelayedVoteResult = () => {
             sendMessage("nextTurn", {
               currTurn: currTurn.value,
               totalTurn: totalTurn.value,
-              imageDelete: true,
+              imageDelete: false,  // 사용자A가 이미 제거했으므로 중복 방지
               isEndingCardFinalFailure: usedCard.value.isEnding,  // 결말카드 최종 실패 플래그
               fromDelayedResult: true,  // processDelayedVoteResult에서 호출됨을 표시
               scoreChange: {
@@ -471,8 +479,10 @@ const processDelayedVoteResult = () => {
       if (!wasEndingCard) {
         if (bookContents.value.length === 1) {
           bookContents.value = [{ content: "", image: null }];
+          lastItemIsEndingCard.value = false; // 초기 상태로 리셋
         } else {
           bookContents.value = bookContents.value.slice(0, -1);
+          lastItemIsEndingCard.value = false; // 일반카드 제거이므로 false로 설정
         }
       }
     }
@@ -482,7 +492,7 @@ const processDelayedVoteResult = () => {
     isElected.value = false;
 
     console.log("=== 지연 처리 완료 - 오버레이 표시 ===");
-    // 오버레이 표시
+    // 오버레이 표시 (부적절 이미지 모달 후 충분한 지연)
     setTimeout(async () => {
       inProgress.value = false;
       await showOverlay('whoTurn', {
@@ -492,7 +502,7 @@ const processDelayedVoteResult = () => {
         peerId: peerId.value
       });
       inProgress.value = true;
-    }, 100);
+    }, 3500);  // 부적절 이미지 모달이 3초간 표시되므로 그 이후에 오버레이 표시
   }
 
   console.log("=== processDelayedVoteResult 완료 ===");
@@ -586,8 +596,10 @@ watch(isElected, (newValue) => {
             if (!usedCard.value.isEnding) {
               if (bookContents.value.length === 1) {
                 bookContents.value = [{ content: "", image: null }];
+                lastItemIsEndingCard.value = false; // 초기 상태로 리셋
               } else {
                 bookContents.value = bookContents.value.slice(0, -1);
+                lastItemIsEndingCard.value = false; // 일반카드 제거이므로 false로 설정
               }
             }
 
@@ -660,8 +672,8 @@ const percentage = computed(() => {
     const nonEndingContents = bookContents.value.filter((content, index) => {
       // 첫 번째는 빈 content이므로 제외, 마지막이 결말카드인 경우 제외
       if (index === 0 && content.content === "") return false;
-      // 현재 마지막 콘텐츠가 결말카드인지 확인 (usedCard.isEnding으로 판단)
-      if (index === bookContents.value.length - 1 && usedCard.value.isEnding) return false;
+      // 현재 마지막 콘텐츠가 결말카드인지 확인 (lastItemIsEndingCard로 판단)
+      if (index === bookContents.value.length - 1 && lastItemIsEndingCard.value) return false;
       return true;
     });
     return Math.round((nonEndingContents.length / (participants.value.length * 3)) * 100)
@@ -1067,8 +1079,10 @@ const setupConnection = (conn) => {
             // 결말카드의 최종 실패는 일반 투표 부결과 동일하게 처리
             if (bookContents.value.length === 1) {
               bookContents.value = [{ content: "", image: null }];
+              lastItemIsEndingCard.value = false; // 초기 상태로 리셋
             } else {
               bookContents.value = bookContents.value.slice(0, -1);
+              lastItemIsEndingCard.value = false; // 결말카드 제거 후 false로 설정
             }
           } else if (data.voteRejected && data.rejectedPrompt) {
             console.log("거절된 이야기:", data.rejectedPrompt);
@@ -1091,16 +1105,20 @@ const setupConnection = (conn) => {
               // 기본 로직: 마지막 항목 제거
               if (bookContents.value.length === 1) {
                 bookContents.value = [{ content: "", image: null }];
+                lastItemIsEndingCard.value = false; // 초기 상태로 리셋
               } else {
                 bookContents.value = bookContents.value.slice(0, -1);
+                lastItemIsEndingCard.value = false; // 제거 후 false로 설정
               }
             }
           } else {
             // 기본 로직: 마지막 항목 제거
             if (bookContents.value.length === 1) {
               bookContents.value = [{ content: "", image: null }];
+              lastItemIsEndingCard.value = false; // 초기 상태로 리셋
             } else {
               bookContents.value = bookContents.value.slice(0, -1);
+              lastItemIsEndingCard.value = false; // 제거 후 false로 설정
             }
           }
 
@@ -1154,8 +1172,8 @@ const setupConnection = (conn) => {
         currTurn.value = data.currTurn;
         
         // 6. 상태 업데이트 후 오버레이 표시
-        // processDelayedVoteResult에서 호출된 경우 오버레이 중복 방지
         if (!data.fromDelayedResult) {
+          // 일반 케이스: 즉시 오버레이 표시
           inProgress.value = false;
           await showOverlay('whoTurn', {
             turnIndex: data.currTurn,
@@ -1165,7 +1183,18 @@ const setupConnection = (conn) => {
           });
           inProgress.value = true;
         } else {
-          console.log("=== processDelayedVoteResult에서 호출된 nextTurn - 오버레이 스킵 ===");
+          // processDelayedVoteResult에서 호출된 경우: 지연 후 오버레이 표시
+          console.log("=== processDelayedVoteResult에서 호출된 nextTurn - 지연 오버레이 실행 ===");
+          setTimeout(async () => {
+            inProgress.value = false;
+            await showOverlay('whoTurn', {
+              turnIndex: data.currTurn,
+              participants: participants.value,
+              inGameOrder: inGameOrder.value,
+              peerId: peerId.value
+            });
+            inProgress.value = true;
+          }, 3500);  // 부적절 이미지 모달과 동일한 타이밍으로 지연
         }
         break;
 
@@ -1227,6 +1256,9 @@ const setupConnection = (conn) => {
         
         // 책 콘텐츠 추가
         addBookContent({ content: data.prompt, image: null });
+
+        // 결말카드 추적 상태 업데이트
+        lastItemIsEndingCard.value = data.usedCard.isEnding;
         
         // 새로운 투표 타이머 설정
         voteTimer = setTimeout(async () => {
@@ -1476,8 +1508,10 @@ const setupConnection = (conn) => {
                 // bookContents 제거 (일반카드만)
                 if (bookContents.value.length === 1) {
                   bookContents.value = [{ content: "", image: null }];
+                  lastItemIsEndingCard.value = false; // 초기 상태로 리셋
                 } else {
                   bookContents.value = bookContents.value.slice(0, -1);
+                  lastItemIsEndingCard.value = false; // 일반카드 제거 후 false로 설정
                 }
               } else {
                 // 결말카드: 점수 차감 없음, bookContents 제거 없음
@@ -2177,8 +2211,10 @@ const stopVotingAndShowWarning = async (data) => {
     const beforeLength = bookContents.value.length;
     if (bookContents.value.length === 1) {
       bookContents.value = [{ content: "", image: null }];
+      lastItemIsEndingCard.value = false; // 초기 상태로 리셋
     } else {
       bookContents.value = bookContents.value.slice(0, -1);
+      lastItemIsEndingCard.value = false; // 제거 후 false로 설정
     }
     // 책 페이지 제거
   } else if (data.skipBookContentRemoval) {
@@ -2861,6 +2897,9 @@ const nextTurn = async (data) => {
 
     addBookContent({ content: data.prompt, image: null });
 
+    // 결말카드 추적 상태 업데이트
+    lastItemIsEndingCard.value = usedCard.value.isEnding;
+
     inProgress.value = false;
     prompt.value = data.prompt;
     currentVoteSelection.value = "up";
@@ -3111,8 +3150,10 @@ const nextTurn = async (data) => {
             if (!usedCard.value.isEnding) {
               if (bookContents.value.length === 1) {
                 bookContents.value = [{ content: "", image: null }];
+                lastItemIsEndingCard.value = false; // 초기 상태로 리셋
               } else {
                 bookContents.value = bookContents.value.slice(0, -1);
+                lastItemIsEndingCard.value = false; // 일반카드 제거 후 false로 설정
               }
             }
 
@@ -3235,8 +3276,10 @@ const nextTurn = async (data) => {
           if (!usedCard.value.isEnding) {
             if (bookContents.value.length === 1) {
               bookContents.value = [{ content: "", image: null }];
+              lastItemIsEndingCard.value = false; // 초기 상태로 리셋
             } else {
               bookContents.value = bookContents.value.slice(0, -1);
+              lastItemIsEndingCard.value = false; // 일반카드 제거 후 false로 설정
             }
           }
 
@@ -3535,9 +3578,11 @@ const voteEnd = async (data) => {
           if (!wasEndingCard) {
             if (bookContents.value.length === 1) {
               bookContents.value = [{ content: "", image: null }];
+              lastItemIsEndingCard.value = false; // 초기 상태로 리셋
             } else {
               // 마지막 항목(거절된 이야기와 이미지) 완전 제거
               bookContents.value = bookContents.value.slice(0, -1);
+              lastItemIsEndingCard.value = false; // 일반카드 제거 후 false로 설정
             }
           }
 
