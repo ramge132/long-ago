@@ -374,16 +374,12 @@ const processDelayedVoteResult = () => {
           storyCards.value.push(usedCardBackup.value);
         }
 
-        // 스토리 삭제 (일반카드만)
-        // 결말카드인 경우 bookContents 제거하지 않음 (긴장감 보존)
-        // 여기는 processDelayedVoteResult의 투표 통과했지만 이미지 없음 케이스이므로
-        // usedCard 상태를 확인해야 함
-        if (!usedCard.value.isEnding) {
-          if (bookContents.value.length === 1) {
-            bookContents.value = [{ content: "", image: null }];
-          } else {
-            bookContents.value = bookContents.value.slice(0, -1);
-          }
+        // 스토리 삭제 (결말카드도 최종 실패 시에는 제거)
+        // 이 케이스는 부적절 이미지의 최종 실패이므로 결말카드도 일반 투표 부결과 동일하게 처리
+        if (bookContents.value.length === 1) {
+          bookContents.value = [{ content: "", image: null }];
+        } else {
+          bookContents.value = bookContents.value.slice(0, -1);
         }
 
         // 다음 턴 진행
@@ -395,6 +391,8 @@ const processDelayedVoteResult = () => {
               currTurn: currTurn.value,
               totalTurn: totalTurn.value,
               imageDelete: true,
+              isEndingCardFinalFailure: usedCard.value.isEnding,  // 결말카드 최종 실패 플래그
+              fromDelayedResult: true,  // processDelayedVoteResult에서 호출됨을 표시
               scoreChange: {
                 type: "decrease",
                 amount: 1,
@@ -1055,6 +1053,7 @@ const setupConnection = (conn) => {
         if (data.imageDelete === true) {
           console.log("투표 거절로 인한 책 내용 삭제 처리");
           console.log("삭제 전 책 내용:", bookContents.value);
+          console.log("결말카드 최종 실패 여부:", data.isEndingCardFinalFailure);
 
           // 투표 반대로 인한 삭제 시 임시 이미지도 함께 삭제
           if (pendingImage.value) {
@@ -1062,7 +1061,16 @@ const setupConnection = (conn) => {
             pendingImage.value = null;
           }
 
-          if (data.voteRejected && data.rejectedPrompt) {
+          // 결말카드 최종 실패인 경우 특별 처리
+          if (data.isEndingCardFinalFailure) {
+            console.log("=== 결말카드 최종 실패 - 정상 제거 (긴장감 계산에서 제외되므로 안전) ===");
+            // 결말카드의 최종 실패는 일반 투표 부결과 동일하게 처리
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+            } else {
+              bookContents.value = bookContents.value.slice(0, -1);
+            }
+          } else if (data.voteRejected && data.rejectedPrompt) {
             console.log("거절된 이야기:", data.rejectedPrompt);
 
             // 거절된 이야기와 일치하는 항목을 찾아서 제거
@@ -1146,14 +1154,19 @@ const setupConnection = (conn) => {
         currTurn.value = data.currTurn;
         
         // 6. 상태 업데이트 후 오버레이 표시
-        inProgress.value = false;
-        await showOverlay('whoTurn', {
-          turnIndex: data.currTurn,
-          participants: participants.value,
-          inGameOrder: inGameOrder.value,
-          peerId: peerId.value
-        });
-        inProgress.value = true;
+        // processDelayedVoteResult에서 호출된 경우 오버레이 중복 방지
+        if (!data.fromDelayedResult) {
+          inProgress.value = false;
+          await showOverlay('whoTurn', {
+            turnIndex: data.currTurn,
+            participants: participants.value,
+            inGameOrder: inGameOrder.value,
+            peerId: peerId.value
+          });
+          inProgress.value = true;
+        } else {
+          console.log("=== processDelayedVoteResult에서 호출된 nextTurn - 오버레이 스킵 ===");
+        }
         break;
 
       // 타이머 동기화 메시지 처리
