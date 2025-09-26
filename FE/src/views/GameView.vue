@@ -3029,12 +3029,9 @@ const nextTurn = async (data) => {
               pendingImage.value = null;
             }
 
-            // 5. 투표 대기 상태 해제 (결말카드가 아닌 경우에만)
-            // ✅ 결말카드가 아닌 경우에만 waitingForImage와 currentTurnVoteResult 초기화
-            if (!usedCard.value.isEnding) {
-              waitingForImage.value = false;
-              currentTurnVoteResult.value = null;
-            }
+            // 5. 투표 대기 상태 해제
+            waitingForImage.value = false;
+            currentTurnVoteResult.value = null;
 
             // 6. 점수 차감 (투표 부결과 동일)
             currentPlayer.score -= 1;
@@ -3088,19 +3085,18 @@ const nextTurn = async (data) => {
             console.log("=== 일반 부적절한 이미지 처리 완료 (카드 복원 포함) ===");
           }
 
-          // 공통 처리: 턴 진행
-          currTurn.value = (currTurn.value + 1) % participants.value.length;
+          // ✅ 결말카드인 경우: 재시도 로직에 맡김 (상태 유지)
+          // ✅ 일반카드인 경우: 즉시 투표 부결 처리
+          if (!usedCard.value.isEnding) {
+            // 일반카드: 즉시 투표 부결 처리
+            currTurn.value = (currTurn.value + 1) % participants.value.length;
 
-          // ✅ 수정: 결말카드도 일반 이야기카드와 동일하게 처리 (즉시 게임 종료 X)
-          // 결말카드든 일반카드든 부적절한 이미지 시에는 알림만 표시하고 재시도 대기
-          const stopVotingMessage = {
+            const stopVotingMessage = {
               type: "stopVotingAndShowWarning",
               warningData: {
                 type: "inappropriateContent",
                 playerName: currentPlayer.name,
-                message: waitingForImage.value ?
-                  "투표 통과 후 이미지 생성에 실패했습니다" :
-                  "부적절한 이미지가 생성되었습니다"
+                message: "부적절한 이미지가 생성되었습니다"
               },
               currTurn: currTurn.value,
               totalTurn: totalTurn.value,
@@ -3116,6 +3112,8 @@ const nextTurn = async (data) => {
 
             const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true, skipBookContentRemoval: true};
             stopVotingAndShowWarning(selfStopVotingMessage);
+          }
+          // 결말카드인 경우: 아무것도 하지 않음 (재시도 로직이 처리)
         }
       } else {
         // 일반 에러 처리
@@ -3157,11 +3155,8 @@ const nextTurn = async (data) => {
               };
             }
 
-            // ✅ 결말카드가 아닌 경우에만 waitingForImage와 currentTurnVoteResult 초기화
-            if (!usedCard.value.isEnding) {
-              waitingForImage.value = false;
-              currentTurnVoteResult.value = null;
-            }
+            waitingForImage.value = false;
+            currentTurnVoteResult.value = null;
 
             console.log("=== 일반 에러 - 투표 부결 처리로 대체 완료 ===");
 
