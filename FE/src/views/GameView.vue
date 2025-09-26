@@ -383,22 +383,41 @@ const processDelayedVoteResult = () => {
           storyCards.value.push(usedCardBackup.value);
         }
 
-        // 스토리 삭제 (결말카드도 최종 실패 시에는 제거)
-        // 이 케이스는 부적절 이미지의 최종 실패이므로 결말카드도 일반 투표 부결과 동일하게 처리
-        if (bookContents.value.length === 1) {
-          bookContents.value = [{ content: "", image: null }];
-          lastItemIsEndingCard.value = false; // 초기 상태로 리셋
-        } else {
-          // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
-          const lastItem = bookContents.value[bookContents.value.length - 1];
-          if (!lastItem.image && lastItem.content !== "") {
-            bookContents.value = bookContents.value.slice(0, -1);
+        // ✅ 사용자A도 동일한 처리를 받도록 nextTurn 로직 직접 호출
+        console.log("부적절한 이미지 최종 실패 - 사용자A도 nextTurn 처리 적용");
+
+        // 자신에게도 동일한 nextTurn 처리 적용
+        const nextTurnData = {
+          currTurn: currTurn.value,
+          totalTurn: totalTurn.value,
+          imageDelete: true,
+          isEndingCardFinalFailure: usedCard.value.isEnding,
+          fromDelayedResult: true,
+          scoreChange: {
+            type: "decrease",
+            amount: 1,
+            playerIndex: currentPlayerIndex
           }
-          // 새로운 마지막 항목이 결말카드인지 확인 (usedCard 기록을 통해)
-          // 하지만 제거된 경우이므로 이전 항목의 결말카드 여부를 판단하기 어려움
-          // 안전하게 false로 설정 (일반적으로 결말카드는 게임 마지막에만 나타나므로)
-          lastItemIsEndingCard.value = false;
-        }
+        };
+
+        // nextTurn case 로직 직접 실행 (지연 처리)
+        setTimeout(() => {
+          // Line 1090-1110과 동일한 로직 적용
+          if (nextTurnData.imageDelete === true) {
+            console.log("사용자A - 부적절한 이미지 최종 실패로 인한 책 내용 삭제 처리");
+
+            // 결말카드와 일반카드 모두 처리
+            console.log("=== 사용자A - 부적절한 이미지 최종 실패 - 강제 제거 ===");
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+              lastItemIsEndingCard.value = false;
+            } else {
+              // 강제 제거 (이미지 있어도 제거)
+              bookContents.value = bookContents.value.slice(0, -1);
+              lastItemIsEndingCard.value = false;
+            }
+          }
+        }, 100);
 
         // 다음 턴 진행
         currTurn.value = (currTurn.value + 1) % participants.value.length;
@@ -408,7 +427,7 @@ const processDelayedVoteResult = () => {
             sendMessage("nextTurn", {
               currTurn: currTurn.value,
               totalTurn: totalTurn.value,
-              imageDelete: false,  // 사용자A가 이미 제거했으므로 중복 방지
+              imageDelete: true,   // 부적절한 이미지 최종 실패 시 모든 사용자가 제거해야 함
               isEndingCardFinalFailure: usedCard.value.isEnding,  // 결말카드 최종 실패 플래그
               fromDelayedResult: true,  // processDelayedVoteResult에서 호출됨을 표시
               scoreChange: {
