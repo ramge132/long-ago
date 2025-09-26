@@ -3192,11 +3192,9 @@ const nextTurn = async (data) => {
                 bookContents.value = [{ content: "", image: null }];
                 lastItemIsEndingCard.value = false; // 초기 상태로 리셋
               } else {
-                // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
-                const lastItem = bookContents.value[bookContents.value.length - 1];
-                if (!lastItem.image && lastItem.content !== "") {
-                  bookContents.value = bookContents.value.slice(0, -1);
-                }
+                // ✅ 부적절한 이미지 실패 시 강제 제거 (이미지 있어도 제거)
+                console.log("부적절한 이미지 실패 - 투표 통과 후 강제 제거");
+                bookContents.value = bookContents.value.slice(0, -1);
                 lastItemIsEndingCard.value = false; // 일반카드 제거 후 false로 설정
               }
             }
