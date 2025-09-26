@@ -3246,6 +3246,18 @@ const nextTurn = async (data) => {
               });
             }
 
+            // 책 내용 제거 (일반카드 부적절한 이미지)
+            console.log("일반카드 부적절한 이미지 - bookContents 제거 시작");
+            if (bookContents.value.length === 1) {
+              bookContents.value = [{ content: "", image: null }];
+              lastItemIsEndingCard.value = false;
+            } else {
+              // 강제 제거 (이미지 있어도 제거)
+              bookContents.value = bookContents.value.slice(0, -1);
+              lastItemIsEndingCard.value = false;
+            }
+            console.log("일반카드 부적절한 이미지 - bookContents 제거 완료");
+
             // 다음 턴으로 진행
             currTurn.value = (currTurn.value + 1) % participants.value.length;
 
@@ -3269,11 +3281,11 @@ const nextTurn = async (data) => {
               }
             });
 
-            // 자신에게는 중복 처리 방지
+            // 자신에게는 중복 처리 방지 (점수만 스킵, 이야기는 이미 제거했으므로 다른 처리 스킵)
             const selfStopVotingMessage = {
               ...stopVotingMessage,
               skipScoreDeduction: true,
-              skipBookContentRemoval: true
+              skipBookContentRemoval: true  // 이미 위에서 제거했으므로 중복 방지
             };
             stopVotingAndShowWarning(selfStopVotingMessage);
           } else {
