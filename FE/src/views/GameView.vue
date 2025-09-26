@@ -389,7 +389,11 @@ const processDelayedVoteResult = () => {
           bookContents.value = [{ content: "", image: null }];
           lastItemIsEndingCard.value = false; // 초기 상태로 리셋
         } else {
-          bookContents.value = bookContents.value.slice(0, -1);
+          // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+          const lastItem = bookContents.value[bookContents.value.length - 1];
+          if (!lastItem.image && lastItem.content !== "") {
+            bookContents.value = bookContents.value.slice(0, -1);
+          }
           // 새로운 마지막 항목이 결말카드인지 확인 (usedCard 기록을 통해)
           // 하지만 제거된 경우이므로 이전 항목의 결말카드 여부를 판단하기 어려움
           // 안전하게 false로 설정 (일반적으로 결말카드는 게임 마지막에만 나타나므로)
@@ -487,7 +491,11 @@ const processDelayedVoteResult = () => {
           bookContents.value = [{ content: "", image: null }];
           lastItemIsEndingCard.value = false; // 초기 상태로 리셋
         } else {
-          bookContents.value = bookContents.value.slice(0, -1);
+          // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+          const lastItem = bookContents.value[bookContents.value.length - 1];
+          if (!lastItem.image && lastItem.content !== "") {
+            bookContents.value = bookContents.value.slice(0, -1);
+          }
           lastItemIsEndingCard.value = false; // 일반카드 제거이므로 false로 설정
         }
       }
@@ -604,7 +612,11 @@ watch(isElected, (newValue) => {
                 bookContents.value = [{ content: "", image: null }];
                 lastItemIsEndingCard.value = false; // 초기 상태로 리셋
               } else {
-                bookContents.value = bookContents.value.slice(0, -1);
+                // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+                const lastItem = bookContents.value[bookContents.value.length - 1];
+                if (!lastItem.image && lastItem.content !== "") {
+                  bookContents.value = bookContents.value.slice(0, -1);
+                }
                 lastItemIsEndingCard.value = false; // 일반카드 제거이므로 false로 설정
               }
             }
@@ -680,6 +692,8 @@ const percentage = computed(() => {
       if (index === 0 && content.content === "") return false;
       // 현재 마지막 콘텐츠가 결말카드인지 확인 (lastItemIsEndingCard로 판단)
       if (index === bookContents.value.length - 1 && lastItemIsEndingCard.value) return false;
+      // ✅ 투표 통과되지 않은 이야기(이미지 없는)는 긴장감 계산에서 제외
+      if (!content.image && content.content !== "") return false;
       return true;
     });
     return Math.round((nonEndingContents.length / (participants.value.length * 3)) * 100)
@@ -1087,7 +1101,11 @@ const setupConnection = (conn) => {
               bookContents.value = [{ content: "", image: null }];
               lastItemIsEndingCard.value = false; // 초기 상태로 리셋
             } else {
-              bookContents.value = bookContents.value.slice(0, -1);
+              // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+              const lastItem = bookContents.value[bookContents.value.length - 1];
+              if (!lastItem.image && lastItem.content !== "") {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
               lastItemIsEndingCard.value = false; // 결말카드 제거 후 false로 설정
             }
           } else if (data.voteRejected && data.rejectedPrompt) {
@@ -1113,7 +1131,11 @@ const setupConnection = (conn) => {
                 bookContents.value = [{ content: "", image: null }];
                 lastItemIsEndingCard.value = false; // 초기 상태로 리셋
               } else {
-                bookContents.value = bookContents.value.slice(0, -1);
+                // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+                const lastItem = bookContents.value[bookContents.value.length - 1];
+                if (!lastItem.image && lastItem.content !== "") {
+                  bookContents.value = bookContents.value.slice(0, -1);
+                }
                 lastItemIsEndingCard.value = false; // 제거 후 false로 설정
               }
             }
@@ -1123,7 +1145,11 @@ const setupConnection = (conn) => {
               bookContents.value = [{ content: "", image: null }];
               lastItemIsEndingCard.value = false; // 초기 상태로 리셋
             } else {
-              bookContents.value = bookContents.value.slice(0, -1);
+              // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+              const lastItem = bookContents.value[bookContents.value.length - 1];
+              if (!lastItem.image && lastItem.content !== "") {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
               lastItemIsEndingCard.value = false; // 제거 후 false로 설정
             }
           }
@@ -1516,7 +1542,11 @@ const setupConnection = (conn) => {
                   bookContents.value = [{ content: "", image: null }];
                   lastItemIsEndingCard.value = false; // 초기 상태로 리셋
                 } else {
-                  bookContents.value = bookContents.value.slice(0, -1);
+                  // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+                  const lastItem = bookContents.value[bookContents.value.length - 1];
+                  if (!lastItem.image && lastItem.content !== "") {
+                    bookContents.value = bookContents.value.slice(0, -1);
+                  }
                   lastItemIsEndingCard.value = false; // 일반카드 제거 후 false로 설정
                 }
               } else {
@@ -2219,7 +2249,11 @@ const stopVotingAndShowWarning = async (data) => {
       bookContents.value = [{ content: "", image: null }];
       lastItemIsEndingCard.value = false; // 초기 상태로 리셋
     } else {
-      bookContents.value = bookContents.value.slice(0, -1);
+      // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+      const lastItem = bookContents.value[bookContents.value.length - 1];
+      if (!lastItem.image && lastItem.content !== "") {
+        bookContents.value = bookContents.value.slice(0, -1);
+      }
       lastItemIsEndingCard.value = false; // 제거 후 false로 설정
     }
     // 책 페이지 제거
@@ -3158,7 +3192,11 @@ const nextTurn = async (data) => {
                 bookContents.value = [{ content: "", image: null }];
                 lastItemIsEndingCard.value = false; // 초기 상태로 리셋
               } else {
-                bookContents.value = bookContents.value.slice(0, -1);
+                // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+                const lastItem = bookContents.value[bookContents.value.length - 1];
+                if (!lastItem.image && lastItem.content !== "") {
+                  bookContents.value = bookContents.value.slice(0, -1);
+                }
                 lastItemIsEndingCard.value = false; // 일반카드 제거 후 false로 설정
               }
             }
@@ -3284,7 +3322,11 @@ const nextTurn = async (data) => {
               bookContents.value = [{ content: "", image: null }];
               lastItemIsEndingCard.value = false; // 초기 상태로 리셋
             } else {
-              bookContents.value = bookContents.value.slice(0, -1);
+              // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+              const lastItem = bookContents.value[bookContents.value.length - 1];
+              if (!lastItem.image && lastItem.content !== "") {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
               lastItemIsEndingCard.value = false; // 일반카드 제거 후 false로 설정
             }
           }
@@ -3586,8 +3628,11 @@ const voteEnd = async (data) => {
               bookContents.value = [{ content: "", image: null }];
               lastItemIsEndingCard.value = false; // 초기 상태로 리셋
             } else {
-              // 마지막 항목(거절된 이야기와 이미지) 완전 제거
-              bookContents.value = bookContents.value.slice(0, -1);
+              // ✅ 안전장치: 마지막 항목이 이미지 없는 경우에만 제거
+              const lastItem = bookContents.value[bookContents.value.length - 1];
+              if (!lastItem.image && lastItem.content !== "") {
+                bookContents.value = bookContents.value.slice(0, -1);
+              }
               lastItemIsEndingCard.value = false; // 일반카드 제거 후 false로 설정
             }
           }
