@@ -3045,14 +3045,20 @@ const nextTurn = async (data) => {
 
             console.log("=== 투표 통과 후 이미지 실패 - 투표 부결과 동일한 처리 완료 ===");
 
-          } else {
-            // 기존 로직: 일반적인 부적절한 이미지 처리
+          }
+
+          // ✅ 결말카드와 일반카드 구분 처리
+          if (!usedCard.value.isEnding) {
+            // 일반카드: 즉시 투표 부결 처리
+            console.log("=== 일반카드 부적절한 이미지 - 즉시 투표 부결 처리 ===");
+
+            // 점수 차감
             currentPlayer.score -= 1;
 
-            // ✅ 핵심 수정: 카드 복원 로직 추가 (투표 부결과 동일)
-            if (usedCardBackup.value && !usedCard.value.isEnding) {
+            // 카드 복원 로직
+            if (usedCardBackup.value) {
               storyCards.value.push(usedCardBackup.value);
-              console.log(`일반 부적절한 이미지 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
+              console.log(`일반카드 - 카드 복원: ID ${usedCardBackup.value.id}, keyword: ${usedCardBackup.value.keyword}`);
 
               const myCardIds = storyCards.value.map(card => card.id);
               connectedPeers.value.forEach((peer) => {
@@ -3063,32 +3069,9 @@ const nextTurn = async (data) => {
                   }, peer.connection);
                 }
               });
-            } else {
-              console.log("일반 부적절한 이미지 - 카드 복원 불가:", {
-                hasBackup: !!usedCardBackup.value,
-                isFreeEnding: usedCard.value.isFreeEnding
-              });
             }
 
-            if (bookContents.value.length === 1) {
-              bookContents.value = [{ content: "", image: null }];
-            } else {
-              bookContents.value = bookContents.value.slice(0, -1);
-            }
-
-            const warningMessage = {
-              type: "inappropriateContent",
-              playerName: currentPlayer.name,
-              message: "부적절한 이미지가 생성되었습니다"
-            };
-
-            console.log("=== 일반 부적절한 이미지 처리 완료 (카드 복원 포함) ===");
-          }
-
-          // ✅ 결말카드인 경우: 재시도 로직에 맡김 (상태 유지)
-          // ✅ 일반카드인 경우: 즉시 투표 부결 처리
-          if (!usedCard.value.isEnding) {
-            // 일반카드: 즉시 투표 부결 처리
+            // 다음 턴으로 진행
             currTurn.value = (currTurn.value + 1) % participants.value.length;
 
             const stopVotingMessage = {
@@ -3104,16 +3087,24 @@ const nextTurn = async (data) => {
               isInappropriate: true
             };
 
+            // 다른 플레이어들에게 알림 (점수 차감 및 이미지 제거 포함)
             connectedPeers.value.forEach((peer) => {
               if (peer.id !== peerId.value && peer.connection.open) {
                 sendMessage("stopVotingAndShowWarning", stopVotingMessage, peer.connection);
               }
             });
 
-            const selfStopVotingMessage = {...stopVotingMessage, skipScoreDeduction: true, skipBookContentRemoval: true};
+            // 자신에게는 중복 처리 방지
+            const selfStopVotingMessage = {
+              ...stopVotingMessage,
+              skipScoreDeduction: true,
+              skipBookContentRemoval: true
+            };
             stopVotingAndShowWarning(selfStopVotingMessage);
+          } else {
+            // 결말카드: 재시도 로직에 맡김 (아무것도 하지 않음)
+            console.log("=== 결말카드 부적절한 이미지 - 재시도 대기 (상태 유지) ===");
           }
-          // 결말카드인 경우: 아무것도 하지 않음 (재시도 로직이 처리)
         }
       } else {
         // 일반 에러 처리
