@@ -3540,53 +3540,9 @@ const voteEnd = async (data) => {
             console.log("=== 결말카드 - 즉시 처리 ===");
             processVoteSuccess();
           } else {
-            // 일반카드 처리 - 다음 턴 진행
-            console.log("=== 일반카드 처리 - 다음 턴 진행 ===");
-            console.log("다음 턴으로 전환하는 메시지 전송 중...");
-
-            connectedPeers.value.forEach(async (p) => {
-              if (p.id !== peerId.value && p.connection.open) {
-                console.log(`피어 ${p.id}에게 nextTurn 메시지 전송:`, {
-                  currTurn: currTurn.value,
-                  imageDelete: false,
-                  totalTurn: totalTurn.value,
-                  scoreChange: { type: "increase", amount: scoreIncrease, playerIndex: currentPlayerIndex },
-                  cardRemoval: { cardId: usedCard.value.id, userId: peerId.value }
-                });
-                sendMessage("nextTurn", {
-                  currTurn: currTurn.value,
-                  imageDelete: false,
-                  totalTurn: totalTurn.value,
-                  scoreChange: { type: "increase", amount: scoreIncrease, playerIndex: currentPlayerIndex },
-                  cardRemoval: { cardId: usedCard.value.id, userId: peerId.value }
-                }, p.connection);
-              }
-            });
-
-            // 카드는 이미 프롬프트 필터링 시점에 제거됨
-
-            // 투표 찬성 후 백업 정리 및 usedCard 상태 초기화 (결말카드가 아닌 경우에만)
-            console.log("usedCard 백업 정리 및 상태 초기화");
-            usedCardBackup.value = null; // 백업 정리
-            if (!wasEndingCard) {
-              usedCard.value = {
-                id: 0,
-                keyword: "",
-                isEnding: false,
-                isFreeEnding: false
-              };
-              console.log("usedCard 상태 초기화 완료");
-            }
-
-            console.log("턴 전환 오버레이 표시 시작");
-            await showOverlay('whoTurn', {
-              turnIndex: currTurn.value,
-              participants: participants.value,
-              inGameOrder: inGameOrder.value,
-              peerId: peerId.value
-            });
-            console.log("턴 전환 오버레이 완료, 게임 진행 재개");
-            inProgress.value = true;
+            // 일반카드 처리 - processVoteSuccess()로 통합
+            console.log("=== 일반카드 처리 - processVoteSuccess() 호출 ===");
+            processVoteSuccess();
           }
         } else {
           console.log("=== 투표 거절 처리 시작 ===");
