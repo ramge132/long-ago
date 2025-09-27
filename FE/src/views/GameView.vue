@@ -285,6 +285,19 @@ const processVoteSuccess = () => {
     });
 
     console.log("🚨 DEBUG: processVoteSuccess nextTurn 메시지 전송 완료");
+
+    // ✅ 사용자A도 동일한 처리: whoTurn 오버레이 + 타이머 재시작
+    setTimeout(async () => {
+      inProgress.value = false;
+      await showOverlay('whoTurn', {
+        turnIndex: currTurn.value,
+        participants: participants.value,
+        inGameOrder: inGameOrder.value,
+        peerId: peerId.value
+      });
+      inProgress.value = true;
+      console.log("✅ 사용자A - whoTurn 오버레이 및 타이머 재시작 완료");
+    }, 100); // 즉시 실행 (다른 사용자들과 동기화)
   }
 
   console.log("=== processVoteSuccess 함수 완료 ===");
