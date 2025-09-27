@@ -209,7 +209,7 @@ const currentTurnVoteResult = ref(null);
 const lastItemIsEndingCard = ref(false);
 
 // ✅ 투표 통과 및 이미지 준비 완료 시 최종 턴 진행 함수
-const processVoteSuccess = () => {
+const processVoteSuccess = async () => {
   console.log("=== processVoteSuccess 함수 시작 ===");
 
   if (!currentTurnVoteResult.value) {
@@ -1482,7 +1482,7 @@ const setupConnection = (conn) => {
               // 이미지가 이미 준비되어 있는지 확인
               if (pendingImage.value) {
                 console.log("=== voteResult - 이미지 이미 준비됨 - 즉시 진행 ===");
-                processVoteSuccess();
+                await processVoteSuccess();
               } else {
                 console.log("=== 🚨 DEBUG: voteResult - 이미지 대기 상태로 전환 ===");
                 console.log("🚨 DEBUG: pendingImage.value 상태:", !!pendingImage.value);
@@ -1505,7 +1505,7 @@ const setupConnection = (conn) => {
               // 결말카드는 이미지 대기 없이 즉시 처리
               if (wasEndingCard) {
                 console.log("=== voteResult - 결말카드 - 즉시 처리 ===");
-                processVoteSuccess();
+                await processVoteSuccess();
               }
               // ✅ voteResult 케이스의 투표 통과 처리는 processVoteSuccess()가 담당
             } else {
@@ -3060,14 +3060,23 @@ const nextTurn = async (data) => {
       const imageBlob = URL.createObjectURL(responseImage.data);
       const arrayBuffer = await responseImage.data.arrayBuffer();
 
-      // ✅ 핵심 추가: 이미지 생성 완료 후 보류된 투표 처리
-      console.log("🚨 이미지 생성 성공 - 보류된 투표 결과 처리 확인");
+      // ✅ 수정: 정상적인 투표 통과 시에는 processDelayedVoteResult 호출하지 않음
+      console.log("🚨 이미지 생성 성공 - 투표 상태 확인");
       if (votings.value.length === participants.value.length) {
-        console.log("🚨 보류된 투표가 있음 - 지연 처리 시작");
-        setTimeout(() => {
-          console.log("🚨 지연 후 투표 결과 처리 시작");
-          processDelayedVoteResult();
-        }, 500); // 0.5초 후 처리
+        const upCount = votings.value.filter(v => v.selected === 'up').length;
+        const downCount = votings.value.filter(v => v.selected === 'down').length;
+        const voteAccepted = upCount >= downCount;
+
+        if (!voteAccepted) {
+          // 투표 실패한 경우에만 processDelayedVoteResult 호출
+          console.log("🚨 투표 실패 - 지연 처리 시작");
+          setTimeout(() => {
+            console.log("🚨 지연 후 투표 결과 처리 시작 (실패 케이스)");
+            processDelayedVoteResult();
+          }, 500);
+        } else {
+          console.log("🚨 투표 통과 - processDelayedVoteResult 호출 안함 (중복 방지)");
+        }
       }
 
       connectedPeers.value.forEach((peer, index) => {
@@ -3091,7 +3100,7 @@ const nextTurn = async (data) => {
 
       if (waitingForImage.value && currentTurnVoteResult.value) {
         console.log("=== 🚨 투표 통과 대기 중 이미지 완성 - processVoteSuccess 호출 ===");
-        processVoteSuccess();
+        await processVoteSuccess();
         return; // 여기서 함수 종료
       } else {
         console.log("🚨 DEBUG: waitingForImage 조건 불만족 - 일반 처리 계속");
@@ -3513,7 +3522,7 @@ const voteEnd = async (data) => {
           // 이미지가 이미 준비되어 있는지 확인
           if (pendingImage.value) {
             console.log("=== 이미지 이미 준비됨 - 즉시 진행 ===");
-            processVoteSuccess();
+            await processVoteSuccess();
           } else {
             console.log("=== 🚨 DEBUG: 이미지 대기 상태로 전환 ===");
             console.log("🚨 DEBUG: pendingImage.value 상태:", !!pendingImage.value);
@@ -3536,11 +3545,11 @@ const voteEnd = async (data) => {
           // 결말카드는 이미지 대기 없이 즉시 처리
           if (wasEndingCard) {
             console.log("=== 결말카드 - 즉시 처리 ===");
-            processVoteSuccess();
+            await processVoteSuccess();
           } else {
             // 일반카드 처리 - processVoteSuccess()로 통합
             console.log("=== 일반카드 처리 - processVoteSuccess() 호출 ===");
-            processVoteSuccess();
+            await processVoteSuccess();
           }
         } else {
           console.log("=== 투표 거절 처리 시작 ===");
