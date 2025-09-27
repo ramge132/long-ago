@@ -2506,6 +2506,10 @@ const gameStart = async (data) => {
   usedCardBackup.value = null;
   pendingImage.value = null;
 
+  // ✅ 핵심 수정: 이미지 대기 관련 상태 초기화 (첫 번째 턴 버그 수정)
+  waitingForImage.value = false;
+  currentTurnVoteResult.value = null;
+
   // 프롬프트 초기화
   prompt.value = "";
 
